@@ -1,10 +1,9 @@
-# The Network State GPT
+# Wreck: the RECKLESS Lightning Specification Bot
 
-AI-powered search and chat for [Balaji Srinivasan's](https://twitter.com/balajis) ["The Network State."](https://thenetworkstate.com/)
+AI-powered search and chat for the lightning network BOLTs specification and major implementations: CoreLN, LND, Rust-Lightning, and Eclair
 
-All code & data used is 100% open-source.
+All code & data used is 100% open-source. This is a fork of McKay Wrigley's excellent Network State GPT chatbot.
 
-[![The Network State GPT](./public/cover.png)](https://the-network-state-gpt.vercel.app/)
 
 ## Dataset
 
@@ -18,8 +17,8 @@ I recommend getting familiar with fetching, cleaning, and storing data as outlin
 
 The Network State GPT provides 2 things:
 
-1. A search interface for the book.
-2. A chat interface for the book.
+1. A search interface for the major lightning implementations
+2. A chat interface for the BOLTS spec
 
 ### Search
 
@@ -66,7 +65,7 @@ Note: You don't have to use Supabase. Use whatever method you prefer to store yo
 3. Clone repo
 
 ```bash
-git clone https://github.com/mckaywrigley/the-network-state-gpt.git
+git clone https://github.com/kodylow/ln-spec-bot.git
 ```
 
 4. Install dependencies
@@ -114,11 +113,7 @@ npm run dev
 
 ## Credits
 
-Thanks to [Balaji Srinivasan](https://twitter.com/balajis) for his work on [The Network State](https://www.thenetworkstate.com). This project would not be possible if he didn't make the book open-source. I highly recommend you check it out.
-
-## Contact
-
-If you have any questions, feel free to reach out to me on [Twitter](https://twitter.com/mckaywrigley).
+Thanks to [McKay Wrigley](https://github.com/mckaywrigley) for his open source work on GPT models and education around implementing AI applications. This project would not be possible without him. I highly recommend you check it out.
 
 ## Notes
 
