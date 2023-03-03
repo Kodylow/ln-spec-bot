@@ -1,3 +1,7 @@
+[submodule "bolts"]
+	path = bolts
+	url = https://github.com/lightning/bolts
+
 [submodule "implementations/c/core-ln"]
 	path = implementations/c/core-ln
 	url = https://github.com/ElementsProject/lightning
@@ -7,3 +11,6 @@
 [submodule "implementations/rust/rust-lightning"]
 	path = implementations/rust/rust-lightning
 	url = https://github.com/lightningdevkit/rust-lightning
+[submodule "implementations/scala/eclair"]
+	path = implementations/scala/eclair
+	url = https://github.com/ACINQ/eclair
