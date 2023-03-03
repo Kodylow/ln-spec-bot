@@ -1,0 +1,9 @@
+[submodule "implementations/c/core-ln"]
+	path = implementations/c/core-ln
+	url = https://github.com/ElementsProject/lightning
+[submodule "implementations/go/lnd"]
+	path = implementations/go/lnd
+	url = https://github.com/lightningnetwork/lnd
+[submodule "implementations/rust/rust-lightning"]
+	path = implementations/rust/rust-lightning
+	url = https://github.com/lightningdevkit/rust-lightning
