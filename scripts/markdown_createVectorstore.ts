@@ -9,7 +9,11 @@ const dirs = ["../bips", "../bolts"];
 for (const dir of dirs) {
   const data = [];
   const files: string[] = await new Promise((resolve, reject) =>
-    glob(`${dir}/**/*.md`, (err, files) => (err ? reject(err) : resolve(files)))
+    glob(
+      `${dir}/**/*.md`,
+      (err: any, files: string[] | PromiseLike<string[]>) =>
+        err ? reject(err) : resolve(files)
+    )
   );
 
   for (const file of files) {

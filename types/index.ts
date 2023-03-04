@@ -1,39 +1,61 @@
 export enum OpenAIModel {
-  DAVINCI_TURBO = "gpt-3.5-turbo"
+  DAVINCI_TURBO = "gpt-3.5-turbo",
 }
 
-export type TNSSection = {
-  chapter_num: number;
-  chapter_title: string;
-  section_title: string;
-  section_url: string;
-  section_num: number;
+export type WBWPost = {
+  title: string;
+  url: string;
+  date: string;
+  type: "post" | "mini";
   content: string;
-  content_length: number;
-  content_tokens: number;
-  chunks: TNSChunk[];
+  length: number;
+  tokens: number;
+  chunks: WBWChunk[];
 };
 
-export type TNSChunk = {
-  chapter_num: number;
-  chapter_title: string;
-  section_title: string;
-  section_url: string;
-  section_num: number;
-  chunk_num: number;
+export type WBWChunk = {
+  post_title: string;
+  post_url: string;
+  post_date: string | undefined;
+  post_type: "post" | "mini";
   content: string;
   content_length: number;
   content_tokens: number;
   embedding: number[];
 };
 
-export type TNSBook = {
-  book_title: string;
-  author: string;
-  book_url: string;
-  publication_date: string;
+export type WBWJSON = {
   current_date: string;
+  author: string;
+  url: string;
   length: number;
   tokens: number;
-  sections: TNSSection[];
+  posts: WBWPost[];
+};
+
+export type LNURLPAYDATA = {
+  status: string;
+  tag: string;
+  commentAllowed: number;
+  callback: string;
+  metadata: string;
+  minSendable: number;
+  maxSendable: number;
+  payerData: {
+    name: { mandatory: boolean };
+    email: { mandatory: boolean };
+  };
+  nostrPubkey: string;
+  allowsNostr: boolean;
+};
+
+export type LightningInvoice = {
+  status: string;
+  successAction: {
+    tag: string;
+    message: string;
+  };
+  verify: string;
+  routes: any[]; // You can replace this with a more specific type if needed
+  pr: string;
 };
