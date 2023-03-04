@@ -8,5 +8,111 @@
   "Type": "Process",
   "Created": "2016-02-03",
   "License": "BSD-2-Clause",
-  "Replaces": "1"
+  "Replaces": "1",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "BIP workflow {#bip_workflow}",
+      "content": ""
+    },
+    {
+      "header": "Transferring BIP Ownership {#transferring_bip_ownership}",
+      "content": ""
+    },
+    {
+      "header": "BIP Editors {#bip_editors}",
+      "content": ""
+    },
+    {
+      "header": "BIP Editor Responsibilities & Workflow {#bip_editor_responsibilities_workflow}",
+      "content": ""
+    },
+    {
+      "header": "BIP format and structure {#bip_format_and_structure}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "BIP header preamble {#bip_header_preamble}",
+      "content": ""
+    },
+    {
+      "header": "Auxiliary Files {#auxiliary_files}",
+      "content": ""
+    },
+    {
+      "header": "BIP types {#bip_types}",
+      "content": ""
+    },
+    {
+      "header": "BIP status field {#bip_status_field}",
+      "content": ""
+    },
+    {
+      "header": "Specification {#specification_1}",
+      "content": ""
+    },
+    {
+      "header": "Progression to Final status {#progression_to_final_status}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "BIP comments {#bip_comments}",
+      "content": ""
+    },
+    {
+      "header": "Specification {#specification_2}",
+      "content": ""
+    },
+    {
+      "header": "Rationale {#rationale_1}",
+      "content": ""
+    },
+    {
+      "header": "BIP licensing {#bip_licensing}",
+      "content": ""
+    },
+    {
+      "header": "Specification {#specification_3}",
+      "content": ""
+    },
+    {
+      "header": "Recommended licenses {#recommended_licenses}",
+      "content": ""
+    },
+    {
+      "header": "Not recommended, but acceptable licenses {#not_recommended_but_acceptable_licenses}",
+      "content": ""
+    },
+    {
+      "header": "Not acceptable licenses {#not_acceptable_licenses}",
+      "content": ""
+    },
+    {
+      "header": "Rationale {#rationale_2}",
+      "content": ""
+    },
+    {
+      "header": "Changes from BIP 1 {#changes_from_bip_1}",
+      "content": ""
+    },
+    {
+      "header": "See Also {#see_also}",
+      "content": ""
+    }
+  ]
 }

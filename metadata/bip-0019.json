@@ -8,5 +8,35 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2012-01-30",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Templates",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,47 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2016-01-08",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Serialization",
+      "content": ""
+    },
+    {
+      "header": "Handshake",
+      "content": ""
+    },
+    {
+      "header": "Hashes",
+      "content": ""
+    },
+    {
+      "header": "Relay",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

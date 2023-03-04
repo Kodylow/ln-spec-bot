@@ -7,5 +7,51 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0061",
   "Status": "Final",
   "Type": "Standards Track",
-  "Created": "2014-06-18"
+  "Created": "2014-06-18",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "reject",
+      "content": ""
+    },
+    {
+      "header": "common payload {#common_payload}",
+      "content": ""
+    },
+    {
+      "header": "rejection codes common to all message types {#rejection_codes_common_to_all_message_types}",
+      "content": ""
+    },
+    {
+      "header": "reject version codes {#reject_version_codes}",
+      "content": ""
+    },
+    {
+      "header": "reject tx payload, codes {#reject_tx_payload_codes}",
+      "content": ""
+    },
+    {
+      "header": "payload, reject block {#payload_reject_block}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Implementation notes {#implementation_notes}",
+      "content": ""
+    }
+  ]
 }

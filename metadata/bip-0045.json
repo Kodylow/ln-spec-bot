@@ -7,5 +7,79 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0045",
   "Status": "Proposed",
   "Type": "Standards Track",
-  "Created": "2014-04-25"
+  "Created": "2014-04-25",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Cosigner Index {#cosigner_index}",
+      "content": ""
+    },
+    {
+      "header": "Change",
+      "content": ""
+    },
+    {
+      "header": "Address Index {#address_index}",
+      "content": ""
+    },
+    {
+      "header": "HDPM Wallet High-level Description {#hdpm_wallet_high_level_description}",
+      "content": ""
+    },
+    {
+      "header": "Address Generation Procedure {#address_generation_procedure}",
+      "content": ""
+    },
+    {
+      "header": "Receive address case {#receive_address_case}",
+      "content": ""
+    },
+    {
+      "header": "Change address case {#change_address_case}",
+      "content": ""
+    },
+    {
+      "header": "Transaction creation and signing {#transaction_creation_and_signing}",
+      "content": ""
+    },
+    {
+      "header": "Address discovery {#address_discovery}",
+      "content": ""
+    },
+    {
+      "header": "Address gap limit {#address_gap_limit}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Compatible wallets {#compatible_wallets}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

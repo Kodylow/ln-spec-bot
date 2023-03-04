@@ -7,5 +7,43 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0016",
   "Status": "Final",
   "Type": "Standards Track",
-  "Created": "2012-01-03"
+  "Created": "2012-01-03",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "520-byte limitation on serialized script size {#byte_limitation_on_serialized_script_size}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "See Also {#see_also}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

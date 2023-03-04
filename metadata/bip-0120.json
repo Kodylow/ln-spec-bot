@@ -7,5 +7,47 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0120",
   "Status": "Withdrawn",
   "Type": "Standards Track",
-  "Created": "2015-07-28"
+  "Created": "2015-07-28",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Data structure {#data_structure}",
+      "content": ""
+    },
+    {
+      "header": "Process",
+      "content": ""
+    },
+    {
+      "header": "Validating a PoP {#validating_a_pop}",
+      "content": ""
+    },
+    {
+      "header": "Security considerations {#security_considerations}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

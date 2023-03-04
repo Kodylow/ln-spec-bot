@@ -8,5 +8,143 @@
   "Type": "Standards Track",
   "Created": "2019-03-08",
   "License": "BSD-3-Clause",
-  "Replaces": "151"
+  "Replaces": "151",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "\\*\\* Send their 16-byte garbage terminator[^2] followed by a **garbage",
+      "content": "authentication packet**[^3], an **encrypted packet** (see further) with\narbitrary **contents**, and **associated data** equal to the garbage."
+    },
+    {
+      "header": "\\*\\* Receive up to 4111 bytes, stopping when encountering the garbage",
+      "content": "terminator."
+    },
+    {
+      "header": "\\*\\* Receive an encrypted packet, verify that it decrypts correctly",
+      "content": "with associated data set to the garbage received, and then ignore its\ncontents."
+    },
+    {
+      "header": "\\* At this point, both parties have the same keys, and all further",
+      "content": "communication proceeds in the form of encrypted packets. Packets have an\n**ignore bit**, which makes them **decoy packets** if set. Decoy packets\nare to be ignored by the receiver apart from verifying they decrypt\ncorrectly. Either peer may send such decoy packets at any point after\nthis. These form the primary shapability mechanism in the protocol. How\nand when to use them is out of scope for this document."
+    },
+    {
+      "header": "Handshake: key exchange and version negotiation {#handshake_key_exchange_and_version_negotiation}",
+      "content": ""
+    },
+    {
+      "header": "Shared secret computation {#shared_secret_computation}",
+      "content": ""
+    },
+    {
+      "header": "Initiating, place our public key encoding first.",
+      "content": "return sha256_tagged(\"bip324_ellswift_xonly_ecdh\", ellswift_ours + ellswift_theirs + ecdh_point_x32)\nelse:\n# Responding, place their public key encoding first.\nreturn sha256_tagged(\"bip324_ellswift_xonly_ecdh\", ellswift_theirs + ellswift_ours + ecdh_point_x32)"
+    },
+    {
+      "header": "ElligatorSwift encoding of curve X coordinates {#elligatorswift_encoding_of_curve_x_coordinates}",
+      "content": ""
+    },
+    {
+      "header": "Keys and session ID derivation {#keys_and_session_id_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Include NETWORK_MAGIC to ensure a connection between nodes on different networks will immediately fail",
+      "content": "prk = HKDF_Extract(Hash=sha256, salt=b'bitcoin_v2_shared_secret' + NETWORK_MAGIC, ikm=ecdh_secret)"
+    },
+    {
+      "header": "Initialize the packet encryption ciphers.",
+      "content": "initiator_L = HKDF_Expand(Hash=sha256, PRK=prk, info=b'initiator_L', L=32)\ninitiator_P = HKDF_Expand(Hash=sha256, PRK=prk, info=b'initiator_P', L=32)\nresponder_L = HKDF_Expand(Hash=sha256, PRK=prk, info=b'responder_L', L=32)\nresponder_P = HKDF_Expand(Hash=sha256, PRK=prk, info=b'responder_P', L=32)\ngarbage_terminators = HKDF_Expand(Hash=sha256, PRK=prk, info=b'garbage_terminators', L=32)\ninitiator_garbage_terminator = garbage_terminators[:16]\nresponder_garbage_terminator = garbage_terminators[16:]"
+    },
+    {
+      "header": "To achieve forward secrecy we must wipe the key material used to initialize the ciphers:",
+      "content": "memory_cleanse(ecdh_secret, prk, initiator_L, initiator_P, responder_L, responder_K)"
+    },
+    {
+      "header": "Overall handshake pseudocode {#overall_handshake_pseudocode}",
+      "content": ""
+    },
+    {
+      "header": "Send garbage terminator + garbage authentication packet + version packet.",
+      "content": "send(peer, peer.send_garbage_terminator +\nv2_enc_packet(peer, b'', aad=peer.sent_garbage) +\nv2_enc_packet(peer, TRANSPORT_VERSION))\n# Skip garbage, until encountering garbage terminator.\nreceived_garbage = recv(peer, 16)\nfor i in range(4096):\nif received_garbage[-16:] == peer.recv_garbage_terminator:\n# Receive, decode, and ignore garbage authentication packet (decoy or not)\nv2_receive_packet(peer, aad=received_garbage, skip_decoy=False)\n# Receive, decode, and ignore version packet, skipping decoys\nv2_receive_packet(peer)\nreturn\nelse:\nreceived_garbage += recv(peer, 1)\n# Garbage terminator was not seen after 4 KiB of garbage.\ndisconnect(peer)"
+    },
+    {
+      "header": "Packet encryption {#packet_encryption}",
+      "content": ""
+    },
+    {
+      "header": "Existing cryptographic primitives {#existing_cryptographic_primitives}",
+      "content": ""
+    },
+    {
+      "header": "Rekeying wrappers: FSChaCha20Poly1305 and FSChaCha20 {#rekeying_wrappers_fschacha20poly1305_and_fschacha20}",
+      "content": ""
+    },
+    {
+      "header": "Overall packet encryption and decryption pseudocode {#overall_packet_encryption_and_decryption_pseudocode}",
+      "content": ""
+    },
+    {
+      "header": "Performance",
+      "content": ""
+    },
+    {
+      "header": "Application layer specification {#application_layer_specification}",
+      "content": ""
+    },
+    {
+      "header": "v2 Bitcoin P2P message structure {#v2_bitcoin_p2p_message_structure}",
+      "content": ""
+    },
+    {
+      "header": "Signaling specification {#signaling_specification}",
+      "content": ""
+    },
+    {
+      "header": "Signaling v2 support {#signaling_v2_support}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Rationale and References {#rationale_and_references}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Goals",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Transport layer specification {#transport_layer_specification}",
+      "content": ""
+    },
+    {
+      "header": "Overview and design {#overview_and_design}",
+      "content": ""
+    }
+  ]
 }

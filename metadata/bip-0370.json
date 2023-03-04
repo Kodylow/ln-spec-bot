@@ -8,5 +8,75 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2021-01-14",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Determining Lock Time {#determining_lock_time}",
+      "content": ""
+    },
+    {
+      "header": "Unique Identification {#unique_identification}",
+      "content": ""
+    },
+    {
+      "header": "Roles",
+      "content": ""
+    },
+    {
+      "header": "Creator",
+      "content": ""
+    },
+    {
+      "header": "Constructor",
+      "content": ""
+    },
+    {
+      "header": "Updater",
+      "content": ""
+    },
+    {
+      "header": "Signer",
+      "content": ""
+    },
+    {
+      "header": "Transaction Extractor {#transaction_extractor}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    }
+  ]
 }

@@ -7,5 +7,99 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2022-07-10",
-  "License": "MIT"
+  "License": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Method",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Public Key Derivation Path {#public_key_derivation_path}",
+      "content": ""
+    },
+    {
+      "header": "Payment Code Structure and Encoding {#payment_code_structure_and_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Address Types {#address_types}",
+      "content": ""
+    },
+    {
+      "header": "Notifications",
+      "content": ""
+    },
+    {
+      "header": "Allowing Notification Collisions {#allowing_notification_collisions}",
+      "content": ""
+    },
+    {
+      "header": "Scanning Requirement {#scanning_requirement}",
+      "content": ""
+    },
+    {
+      "header": "Transacting",
+      "content": ""
+    },
+    {
+      "header": "Backward Compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Appendix A: Test Vectors {#appendix_a_test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Alice\\'s Wallet {#alices_wallet}",
+      "content": ""
+    },
+    {
+      "header": "Bob\\'s Wallet {#bobs_wallet}",
+      "content": ""
+    },
+    {
+      "header": "Alice notifying Bob {#alice_notifying_bob}",
+      "content": ""
+    },
+    {
+      "header": "Alice sending to Bob {#alice_sending_to_bob}",
+      "content": ""
+    },
+    {
+      "header": "Bob spending {#bob_spending}",
+      "content": ""
+    },
+    {
+      "header": "Appendix B: Potential OP_RETURN Services {#appendix_b_potential_op_return_services}",
+      "content": ""
+    },
+    {
+      "header": "Appendix C: Potential Notification Transaction Services {#appendix_c_potential_notification_transaction_services}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

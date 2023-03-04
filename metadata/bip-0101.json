@@ -7,5 +7,75 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0101",
   "Status": "Withdrawn",
   "Type": "Standards Track",
-  "Created": "2015-06-22"
+  "Created": "2015-06-22",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Test network {#test_network}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Objections to this proposal {#objections_to_this_proposal}",
+      "content": ""
+    },
+    {
+      "header": "Centralization of full nodes {#centralization_of_full_nodes}",
+      "content": ""
+    },
+    {
+      "header": "Centralization of mining: costs {#centralization_of_mining_costs}",
+      "content": ""
+    },
+    {
+      "header": "Centralization of mining: big-block attacks {#centralization_of_mining_big_block_attacks}",
+      "content": ""
+    },
+    {
+      "header": "Unspent Transaction Output Growth {#unspent_transaction_output_growth}",
+      "content": ""
+    },
+    {
+      "header": "Long-term fee incentives {#long_term_fee_incentives}",
+      "content": ""
+    },
+    {
+      "header": "Other solutions considered {#other_solutions_considered}",
+      "content": ""
+    },
+    {
+      "header": "One-time increase {#one_time_increase}",
+      "content": ""
+    },
+    {
+      "header": "Dynamic limit proposals {#dynamic_limit_proposals}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    }
+  ]
 }

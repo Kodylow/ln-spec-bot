@@ -8,5 +8,51 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2015-06-11",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Dynamic Maximum Block Size {#dynamic_maximum_block_size}",
+      "content": ""
+    },
+    {
+      "header": "Signature Hashing Operations Limits {#signature_hashing_operations_limits}",
+      "content": ""
+    },
+    {
+      "header": "Recommendations",
+      "content": ""
+    },
+    {
+      "header": "Publication of `hardLimit` {#publication_of_hardlimit}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Implementations",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

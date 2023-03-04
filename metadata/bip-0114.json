@@ -8,5 +8,99 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2016-04-02",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Evolution of Bitcoin script system {#evolution_of_bitcoin_script_system}",
+      "content": ""
+    },
+    {
+      "header": "Merkelized Abstract Syntax Tree {#merkelized_abstract_syntax_tree}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "MAST Structure {#mast_structure}",
+      "content": ""
+    },
+    {
+      "header": "MAST Version {#mast_version}",
+      "content": ""
+    },
+    {
+      "header": "nOpCount limit {#nopcount_limit}",
+      "content": ""
+    },
+    {
+      "header": "Script evaluation {#script_evaluation}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Calculation of MAST Root {#calculation_of_mast_root}",
+      "content": ""
+    },
+    {
+      "header": "Imbalance MAST {#imbalance_mast}",
+      "content": ""
+    },
+    {
+      "header": "Escrow with Timeout {#escrow_with_timeout}",
+      "content": ""
+    },
+    {
+      "header": "Hashed Time-Lock Contract {#hashed_time_lock_contract}",
+      "content": ""
+    },
+    {
+      "header": "Large multi-signature constructs {#large_multi_signature_constructs}",
+      "content": ""
+    },
+    {
+      "header": "Commitment of non-consensus enforced data {#commitment_of_non_consensus_enforced_data}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

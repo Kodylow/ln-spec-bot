@@ -8,5 +8,115 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2020-03-20",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Test case 1 {#test_case_1}",
+      "content": ""
+    },
+    {
+      "header": "Test case 2 {#test_case_2}",
+      "content": ""
+    },
+    {
+      "header": "BIP85-DRNG {#bip85_drng}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors_1}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Other Implementations {#other_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Applications",
+      "content": ""
+    },
+    {
+      "header": "BIP39",
+      "content": ""
+    },
+    {
+      "header": "12 English words {#english_words}",
+      "content": ""
+    },
+    {
+      "header": "18 English words {#english_words_1}",
+      "content": ""
+    },
+    {
+      "header": "24 English words {#english_words_2}",
+      "content": ""
+    },
+    {
+      "header": "HD-Seed WIF {#hd_seed_wif}",
+      "content": ""
+    },
+    {
+      "header": "XPRV",
+      "content": ""
+    },
+    {
+      "header": "HEX",
+      "content": ""
+    },
+    {
+      "header": "RSA",
+      "content": ""
+    },
+    {
+      "header": "RSA GPG {#rsa_gpg}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Discussion",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

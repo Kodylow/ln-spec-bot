@@ -8,5 +8,71 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2015-08-10",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Contracts With Expiration Deadlines {#contracts_with_expiration_deadlines}",
+      "content": ""
+    },
+    {
+      "header": "Escrow with Timeout {#escrow_with_timeout}",
+      "content": ""
+    },
+    {
+      "header": "Retroactive Invalidation {#retroactive_invalidation}",
+      "content": ""
+    },
+    {
+      "header": "Hash Time-Locked Contracts {#hash_time_locked_contracts}",
+      "content": ""
+    },
+    {
+      "header": "Bidirectional Payment Channels {#bidirectional_payment_channels}",
+      "content": ""
+    },
+    {
+      "header": "Lightning Network {#lightning_network}",
+      "content": ""
+    },
+    {
+      "header": "2-Way Pegged Sidechains {#way_pegged_sidechains}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

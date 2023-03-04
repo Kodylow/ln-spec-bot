@@ -8,5 +8,39 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2018-04-04",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

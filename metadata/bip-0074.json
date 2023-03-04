@@ -8,5 +8,31 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2016-01-29",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

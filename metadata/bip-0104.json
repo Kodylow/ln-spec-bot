@@ -8,5 +8,39 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2017-01-13",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Other solutions considered {#other_solutions_considered}",
+      "content": ""
+    },
+    {
+      "header": "Backward Compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Activation",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

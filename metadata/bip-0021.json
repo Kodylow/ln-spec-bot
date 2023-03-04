@@ -7,5 +7,87 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0021",
   "Status": "Final",
   "Type": "Standards Track",
-  "Created": "2012-01-29"
+  "Created": "2012-01-29",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "General rules for handling (important!) {#general_rules_for_handling_important}",
+      "content": ""
+    },
+    {
+      "header": "Operating system integration {#operating_system_integration}",
+      "content": ""
+    },
+    {
+      "header": "General Format {#general_format}",
+      "content": ""
+    },
+    {
+      "header": "ABNF grammar {#abnf_grammar}",
+      "content": ""
+    },
+    {
+      "header": "Query Keys {#query_keys}",
+      "content": ""
+    },
+    {
+      "header": "Transfer amount {#transfer_amount}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Payment identifiers, not person identifiers {#payment_identifiers_not_person_identifiers}",
+      "content": ""
+    },
+    {
+      "header": "Accessibility (URI scheme name) {#accessibility_uri_scheme_name}",
+      "content": ""
+    },
+    {
+      "header": "Forward compatibility {#forward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Appendix",
+      "content": ""
+    },
+    {
+      "header": "Simpler syntax {#simpler_syntax}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Bitcoin clients {#bitcoin_clients}",
+      "content": ""
+    },
+    {
+      "header": "Libraries",
+      "content": ""
+    }
+  ]
 }

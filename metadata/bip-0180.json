@@ -8,5 +8,59 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2017-03-17",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Proof format {#proof_format}",
+      "content": ""
+    },
+    {
+      "header": "Proof verification {#proof_verification}",
+      "content": ""
+    },
+    {
+      "header": "Network protocol {#network_protocol}",
+      "content": ""
+    },
+    {
+      "header": "Information",
+      "content": ""
+    },
+    {
+      "header": "Creation of proofs {#creation_of_proofs}",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    }
+  ]
 }

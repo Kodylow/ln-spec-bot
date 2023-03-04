@@ -8,5 +8,47 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2021-06-27",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "`pk()`",
+      "content": ""
+    },
+    {
+      "header": "`pkh()`",
+      "content": ""
+    },
+    {
+      "header": "`sh()`",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    }
+  ]
 }

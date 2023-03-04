@@ -7,5 +7,47 @@
   "Status": "Deferred",
   "Type": "Informational",
   "Created": "2014-08-11",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Path levels {#path_levels}",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Series",
+      "content": ""
+    },
+    {
+      "header": "Index",
+      "content": ""
+    },
+    {
+      "header": "Compatible wallets {#compatible_wallets}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

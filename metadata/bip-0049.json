@@ -8,5 +8,51 @@
   "Status": "Final",
   "Type": "Informational",
   "Created": "2016-05-19",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Considerations",
+      "content": ""
+    },
+    {
+      "header": "Specifications",
+      "content": ""
+    },
+    {
+      "header": "Public key derivation {#public_key_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Address derivation {#address_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Extended Key Version {#extended_key_version}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

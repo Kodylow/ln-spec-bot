@@ -9,5 +9,71 @@
   "Type": "Standards Track",
   "Created": "2016-03-23",
   "License": "PD",
-  "Superseded-By": "324"
+  "Superseded-By": "324",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Symmetric Encryption Cipher Keys {#symmetric_encryption_cipher_keys}",
+      "content": ""
+    },
+    {
+      "header": "Session ID {#session_id}",
+      "content": ""
+    },
+    {
+      "header": "The `encinit` message type {#the_encinit_message_type}",
+      "content": ""
+    },
+    {
+      "header": "ChaCha20-Poly1305 Cipher Suite {#chacha20_poly1305_cipher_suite}",
+      "content": ""
+    },
+    {
+      "header": "The `encack` message type {#the_encack_message_type}",
+      "content": ""
+    },
+    {
+      "header": "Encrypted Messages Structure {#encrypted_messages_structure}",
+      "content": ""
+    },
+    {
+      "header": "Re-Keying {#re_keying}",
+      "content": ""
+    },
+    {
+      "header": "Risks",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

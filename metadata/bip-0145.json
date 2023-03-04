@@ -8,5 +8,51 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2016-01-30",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Block Template {#block_template}",
+      "content": ""
+    },
+    {
+      "header": "Transactions Object Format {#transactions_object_format}",
+      "content": ""
+    },
+    {
+      "header": "Sigops",
+      "content": ""
+    },
+    {
+      "header": "Block Assembly with Witness Transactions {#block_assembly_with_witness_transactions}",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "See Also {#see_also}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

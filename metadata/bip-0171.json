@@ -8,5 +8,55 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2017-03-04",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Enumerating supported currency-pair tokens {#enumerating_supported_currency_pair_tokens}",
+      "content": ""
+    },
+    {
+      "header": "Currency-pair information {#currency_pair_information}",
+      "content": ""
+    },
+    {
+      "header": "Current exchange rate {#current_exchange_rate}",
+      "content": ""
+    },
+    {
+      "header": "Historical exchange rates {#historical_exchange_rates}",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "See also {#see_also}",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,35 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2016-02-13",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Considerations",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

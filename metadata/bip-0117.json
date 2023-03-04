@@ -9,5 +9,51 @@
   "Type": "Standards Track",
   "Created": "2017-08-25",
   "License": "CC-BY-SA-4.0",
-  "License-Code": "MIT"
+  "License-Code": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Generalized MAST {#generalized_mast}",
+      "content": ""
+    },
+    {
+      "header": "Comparison with BIP114 {#comparison_with_bip114}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,67 @@
   "Status": "Proposed",
   "Type": "Standards Track",
   "Created": "2020-12-16",
-  "License": "MIT"
+  "License": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Key sorting {#key_sorting}",
+      "content": ""
+    },
+    {
+      "header": "Path levels {#path_levels}",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Account",
+      "content": ""
+    },
+    {
+      "header": "Script",
+      "content": ""
+    },
+    {
+      "header": "Change",
+      "content": ""
+    },
+    {
+      "header": "Index",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

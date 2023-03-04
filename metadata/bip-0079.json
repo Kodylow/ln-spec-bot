@@ -9,5 +9,83 @@
   "Type": "Informational",
   "Created": "2018-10-05",
   "License": "CC0-1.0",
-  "Superseded-By": "78"
+  "Superseded-By": "78",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Overview",
+      "content": ""
+    },
+    {
+      "header": "Step 1. Sender creates a bitcoin transaction paying the receiver {#step_1._sender_creates_a_bitcoin_transaction_paying_the_receiver}",
+      "content": ""
+    },
+    {
+      "header": "Step 2. Sender gives the \\\"template transaction\\\" to the receiver {#step_2._sender_gives_the_template_transaction_to_the_receiver}",
+      "content": ""
+    },
+    {
+      "header": "Step 3. Receiver processes the transaction and returns a partially signed coinjoin {#step_3._receiver_processes_the_transaction_and_returns_a_partially_signed_coinjoin}",
+      "content": ""
+    },
+    {
+      "header": "Step 4. Sender validates, re-signs, and propagates on the bitcoin network {#step_4._sender_validates_re_signs_and_propagates_on_the_bitcoin_network}",
+      "content": ""
+    },
+    {
+      "header": "Step 5. Receiver observes the finalized transaction on the bitcoin network {#step_5._receiver_observes_the_finalized_transaction_on_the_bitcoin_network}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Contributed Input Choice {#contributed_input_choice}",
+      "content": ""
+    },
+    {
+      "header": "Output Adjustment {#output_adjustment}",
+      "content": ""
+    },
+    {
+      "header": "Returning the partial transaction {#returning_the_partial_transaction}",
+      "content": ""
+    },
+    {
+      "header": "Sender Validation {#sender_validation}",
+      "content": ""
+    },
+    {
+      "header": "Creating Final Transaction {#creating_final_transaction}",
+      "content": ""
+    },
+    {
+      "header": "Transaction Publishing {#transaction_publishing}",
+      "content": ""
+    },
+    {
+      "header": "Implementation Notes {#implementation_notes}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,47 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2014-04-01",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Details",
+      "content": ""
+    },
+    {
+      "header": "Other solutions {#other_solutions}",
+      "content": ""
+    },
+    {
+      "header": "Floating-point approximation {#floating_point_approximation}",
+      "content": ""
+    },
+    {
+      "header": "Truncation",
+      "content": ""
+    },
+    {
+      "header": "Proposal",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

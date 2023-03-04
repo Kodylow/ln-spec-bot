@@ -7,5 +7,43 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0039",
   "Status": "Proposed",
   "Type": "Standards Track",
-  "Created": "2013-09-10"
+  "Created": "2013-09-10",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Generating the mnemonic {#generating_the_mnemonic}",
+      "content": ""
+    },
+    {
+      "header": "Wordlist",
+      "content": ""
+    },
+    {
+      "header": "From mnemonic to seed {#from_mnemonic_to_seed}",
+      "content": ""
+    },
+    {
+      "header": "Wordlists",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Other Implementations {#other_implementations}",
+      "content": ""
+    }
+  ]
 }

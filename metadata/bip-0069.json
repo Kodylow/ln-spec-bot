@@ -9,5 +9,59 @@
   "Status": "Proposed",
   "Type": "Informational",
   "Created": "2015-06-12",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Applicability",
+      "content": ""
+    },
+    {
+      "header": "Lexicographical Ordering {#lexicographical_ordering}",
+      "content": ""
+    },
+    {
+      "header": "Transaction Inputs {#transaction_inputs}",
+      "content": ""
+    },
+    {
+      "header": "Transaction Outputs {#transaction_outputs}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Discussion",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Implementations",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,127 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2015-12-21",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Transaction ID {#transaction_id}",
+      "content": ""
+    },
+    {
+      "header": "Commitment structure {#commitment_structure}",
+      "content": ""
+    },
+    {
+      "header": "Witness program {#witness_program}",
+      "content": ""
+    },
+    {
+      "header": "Other consensus critical limits {#other_consensus_critical_limits}",
+      "content": ""
+    },
+    {
+      "header": "Block size {#block_size}",
+      "content": ""
+    },
+    {
+      "header": "Sigops",
+      "content": ""
+    },
+    {
+      "header": "Additional definitions {#additional_definitions}",
+      "content": ""
+    },
+    {
+      "header": "Transaction size calculations {#transaction_size_calculations}",
+      "content": ""
+    },
+    {
+      "header": "New script semantics {#new_script_semantics}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "P2WPKH",
+      "content": ""
+    },
+    {
+      "header": "P2WPKH nested in BIP16 P2SH {#p2wpkh_nested_in_bip16_p2sh}",
+      "content": ""
+    },
+    {
+      "header": "P2WSH",
+      "content": ""
+    },
+    {
+      "header": "P2WSH nested in BIP16 P2SH {#p2wsh_nested_in_bip16_p2sh}",
+      "content": ""
+    },
+    {
+      "header": "Extensible commitment structure {#extensible_commitment_structure}",
+      "content": ""
+    },
+    {
+      "header": "Trust-free unconfirmed transaction dependency chain {#trust_free_unconfirmed_transaction_dependency_chain}",
+      "content": ""
+    },
+    {
+      "header": "Future extensions {#future_extensions}",
+      "content": ""
+    },
+    {
+      "header": "Compact fraud proof for SPV nodes {#compact_fraud_proof_for_spv_nodes}",
+      "content": ""
+    },
+    {
+      "header": "New script system {#new_script_system}",
+      "content": ""
+    },
+    {
+      "header": "Per-input lock-time and relative-lock-time {#per_input_lock_time_and_relative_lock_time}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

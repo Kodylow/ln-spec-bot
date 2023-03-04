@@ -8,5 +8,51 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2019-01-28",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "What this BIP is not doing {#what_this_bip_is_not_doing}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Proof Format {#proof_format}",
+      "content": ""
+    },
+    {
+      "header": "Proof File Format {#proof_file_format}",
+      "content": ""
+    },
+    {
+      "header": "PSBT (BIP 174) extension {#psbt_bip_174_extension}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Implementations",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    }
+  ]
 }

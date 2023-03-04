@@ -8,5 +8,43 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2021-06-22",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specifications",
+      "content": ""
+    },
+    {
+      "header": "Public key derivation {#public_key_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Address derivation {#address_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

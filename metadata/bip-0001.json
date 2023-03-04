@@ -7,5 +7,55 @@
   "Status": "Replaced",
   "Type": "Process",
   "Created": "2011-09-19",
-  "Superseded-By": "2"
+  "Superseded-By": "2",
+  "sections": [
+    {
+      "header": "What is a BIP? {#what_is_a_bip}",
+      "content": ""
+    },
+    {
+      "header": "BIP Types {#bip_types}",
+      "content": ""
+    },
+    {
+      "header": "BIP Work Flow {#bip_work_flow}",
+      "content": ""
+    },
+    {
+      "header": "What belongs in a successful BIP? {#what_belongs_in_a_successful_bip}",
+      "content": ""
+    },
+    {
+      "header": "BIP Formats and Templates {#bip_formats_and_templates}",
+      "content": ""
+    },
+    {
+      "header": "BIP Header Preamble {#bip_header_preamble}",
+      "content": ""
+    },
+    {
+      "header": "Auxiliary Files {#auxiliary_files}",
+      "content": ""
+    },
+    {
+      "header": "Transferring BIP Ownership {#transferring_bip_ownership}",
+      "content": ""
+    },
+    {
+      "header": "BIP Editors {#bip_editors}",
+      "content": ""
+    },
+    {
+      "header": "BIP Editor Responsibilities & Workflow {#bip_editor_responsibilities_workflow}",
+      "content": ""
+    },
+    {
+      "header": "History",
+      "content": ""
+    },
+    {
+      "header": "Changelog",
+      "content": ""
+    }
+  ]
 }

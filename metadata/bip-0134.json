@@ -8,5 +8,63 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2016-07-27",
-  "License": "CC-BY-SA-4.0"
+  "License": "CC-BY-SA-4.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Features",
+      "content": ""
+    },
+    {
+      "header": "Tokens",
+      "content": ""
+    },
+    {
+      "header": "Scripting changes {#scripting_changes}",
+      "content": ""
+    },
+    {
+      "header": "Serialization order {#serialization_order}",
+      "content": ""
+    },
+    {
+      "header": "Block-malleability {#block_malleability}",
+      "content": ""
+    },
+    {
+      "header": "Future extensibility {#future_extensibility}",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

@@ -10,5 +10,67 @@
   "Created": "2020-01-19",
   "License": "BSD-3-Clause",
   "Requires": "340, 341",
-  "Post-History": "2019-05-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-May/016914.html [bitcoin-dev] Taproot proposal"
+  "Post-History": "2019-05-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-May/016914.html [bitcoin-dev] Taproot proposal",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Design",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Script execution {#script_execution}",
+      "content": ""
+    },
+    {
+      "header": "Rules for signature opcodes {#rules_for_signature_opcodes}",
+      "content": ""
+    },
+    {
+      "header": "Common Signature Message Extension {#common_signature_message_extension}",
+      "content": ""
+    },
+    {
+      "header": "Signature validation {#signature_validation}",
+      "content": ""
+    },
+    {
+      "header": "Resource limits {#resource_limits}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

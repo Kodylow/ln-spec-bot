@@ -1,3 +1,53 @@
 {
-  "**NOTICE": "This document is a work in progress and is not complete,"
+  "**NOTICE": "This document is a work in progress and is not complete,",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "New rules {#new_rules}",
+      "content": ""
+    },
+    {
+      "header": "Block validity {#block_validity}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Low S values in signatures {#low_s_values_in_signatures}",
+      "content": ""
+    },
+    {
+      "header": "DER encoding {#der_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Push operators {#push_operators}",
+      "content": ""
+    },
+    {
+      "header": "Numbers",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    }
+  ]
 }

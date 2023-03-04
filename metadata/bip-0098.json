@@ -9,5 +9,59 @@
   "Type": "Standards Track",
   "Created": "2017-08-24",
   "License": "CC-BY-SA-4.0",
-  "License-Code": "MIT"
+  "License-Code": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Inclusion Proofs {#inclusion_proofs}",
+      "content": ""
+    },
+    {
+      "header": "Example",
+      "content": ""
+    },
+    {
+      "header": "Rationale {#rationale_1}",
+      "content": ""
+    },
+    {
+      "header": "Fast Merkle Lists {#fast_merkle_lists}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

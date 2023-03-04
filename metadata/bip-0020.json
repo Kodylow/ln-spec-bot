@@ -8,5 +8,99 @@
   "Status": "Replaced",
   "Type": "Standards Track",
   "Created": "2011-01-10",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "General rules for handling (important!) {#general_rules_for_handling_important}",
+      "content": ""
+    },
+    {
+      "header": "Operating system integration {#operating_system_integration}",
+      "content": ""
+    },
+    {
+      "header": "BNF grammar {#bnf_grammar}",
+      "content": ""
+    },
+    {
+      "header": "Query Keys {#query_keys}",
+      "content": ""
+    },
+    {
+      "header": "Transfer amount/size {#transfer_amountsize}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Payment identifiers, not person identifiers {#payment_identifiers_not_person_identifiers}",
+      "content": ""
+    },
+    {
+      "header": "Accessibility (URI scheme name) {#accessibility_uri_scheme_name}",
+      "content": ""
+    },
+    {
+      "header": "Forward compatibility {#forward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Appendix",
+      "content": ""
+    },
+    {
+      "header": "Simpler syntax {#simpler_syntax}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Sending money via private key {#sending_money_via_private_key}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Bitcoin clients {#bitcoin_clients}",
+      "content": ""
+    },
+    {
+      "header": "Parsing amount {#parsing_amount}",
+      "content": ""
+    },
+    {
+      "header": "ECMAScript",
+      "content": ""
+    },
+    {
+      "header": "Python",
+      "content": ""
+    },
+    {
+      "header": "C",
+      "content": ""
+    }
+  ]
 }

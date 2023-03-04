@@ -10,5 +10,83 @@
   "Created": "2020-12-16",
   "License": "BSD-2-Clause",
   "Replaces": "173",
-  "Post-History": "2021-01-05: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-January/018338.html [bitcoin-dev] Bech32m BIP: new checksum, and usage for segwit address"
+  "Post-History": "2021-01-05: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-January/018338.html [bitcoin-dev] Bech32m BIP: new checksum, and usage for segwit address",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Bech32m",
+      "content": ""
+    },
+    {
+      "header": "Addresses for segregated witness outputs {#addresses_for_segregated_witness_outputs}",
+      "content": ""
+    },
+    {
+      "header": "Witness programs are between 2 and 40 bytes in length.",
+      "content": "if decoded is None or len(decoded) < 2 or len(decoded) > 40:\nreturn (None, None)\n# Witness versions are in range 0..16.\nif data[0] > 16:\nreturn (None, None)\n# Witness v0 programs must be exactly length 20 or 32.\nif data[0] == 0 and len(decoded) != 20 and len(decoded) != 32:\nreturn (None, None)\n# Witness v0 uses Bech32; v1 through v16 use Bech32m.\nif data[0] == 0 and spec != Encoding.BECH32 or data[0] != 0 and spec != Encoding.BECH32M:\nreturn (None, None)\n# Success.\nreturn (data[0], decoded)"
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors for Bech32m {#test_vectors_for_bech32m}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors for v0-v16 native segregated witness addresses {#test_vectors_for_v0_v16_native_segregated_witness_addresses}",
+      "content": ""
+    },
+    {
+      "header": "Appendix: checksum design & properties {#appendix_checksum_design_properties}",
+      "content": ""
+    },
+    {
+      "header": "Error patterns & detection probability {#error_patterns_detection_probability}",
+      "content": ""
+    },
+    {
+      "header": "Detection properties of Bech32m {#detection_properties_of_bech32m}",
+      "content": ""
+    },
+    {
+      "header": "Selection process {#selection_process}",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

@@ -7,5 +7,63 @@
   "Status": "Final",
   "Type": "Informational",
   "Created": "2015-10-04",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Selection guidelines {#selection_guidelines}",
+      "content": ""
+    },
+    {
+      "header": "States",
+      "content": ""
+    },
+    {
+      "header": "Bit flags {#bit_flags}",
+      "content": ""
+    },
+    {
+      "header": "New consensus rules {#new_consensus_rules}",
+      "content": ""
+    },
+    {
+      "header": "State transitions {#state_transitions}",
+      "content": ""
+    },
+    {
+      "header": "Warning mechanism {#warning_mechanism}",
+      "content": ""
+    },
+    {
+      "header": "getblocktemplate changes {#getblocktemplate_changes}",
+      "content": ""
+    },
+    {
+      "header": "Support for future changes {#support_for_future_changes}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Deployments",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

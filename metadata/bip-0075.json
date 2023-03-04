@@ -8,5 +8,163 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2015-11-20",
-  "License": "CC-BY-4.0"
+  "License": "CC-BY-4.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "\\* Make Bitcoin logs (wallet transaction history) more human readable",
+      "content": ""
+    },
+    {
+      "header": "\\* Give the user the ability to decide whether or not they share their",
+      "content": "Bitcoin address and other payment details when requested"
+    },
+    {
+      "header": "\\* Allow for an open standards based way for businesses to keep",
+      "content": "verifiable records of their financial transactions, to better meet the\nneeds of accounting practices or other reporting and statutory\nrequirements"
+    },
+    {
+      "header": "\\* Automate the active exchange of payment addresses, so static",
+      "content": "addresses and BIP32 X-Pubs can be avoided to maintain privacy and\nconvenience"
+    },
+    {
+      "header": "Example Use Cases {#example_use_cases}",
+      "content": ""
+    },
+    {
+      "header": "Modifying BIP70 pki_type {#modifying_bip70_pki_type}",
+      "content": ""
+    },
+    {
+      "header": "New Messages {#new_messages}",
+      "content": ""
+    },
+    {
+      "header": "InvoiceRequest",
+      "content": ""
+    },
+    {
+      "header": "ProtocolMessageType Enum {#protocolmessagetype_enum}",
+      "content": ""
+    },
+    {
+      "header": "ProtocolMessage",
+      "content": ""
+    },
+    {
+      "header": "Versioning",
+      "content": ""
+    },
+    {
+      "header": "EncryptedProtocolMessage",
+      "content": ""
+    },
+    {
+      "header": "Payment Protocol Process with InvoiceRequests {#payment_protocol_process_with_invoicerequests}",
+      "content": ""
+    },
+    {
+      "header": "Message Interaction Details {#message_interaction_details}",
+      "content": ""
+    },
+    {
+      "header": "HTTP Content Types for New Message Types {#http_content_types_for_new_message_types}",
+      "content": ""
+    },
+    {
+      "header": "Payment Protocol Status Communication {#payment_protocol_status_communication}",
+      "content": ""
+    },
+    {
+      "header": "Payment Protocol Status Codes {#payment_protocol_status_codes}",
+      "content": ""
+    },
+    {
+      "header": "Transport Layer Communication Errors {#transport_layer_communication_errors}",
+      "content": ""
+    },
+    {
+      "header": "Extended Payment Protocol Process Details {#extended_payment_protocol_process_details}",
+      "content": ""
+    },
+    {
+      "header": "InvoiceRequest Message Creation {#invoicerequest_message_creation}",
+      "content": ""
+    },
+    {
+      "header": "InvoiceRequest Validation {#invoicerequest_validation}",
+      "content": ""
+    },
+    {
+      "header": "Sending Encrypted Payment Protocol Messages using EncryptedProtocolMessages {#sending_encrypted_payment_protocol_messages_using_encryptedprotocolmessages}",
+      "content": ""
+    },
+    {
+      "header": "Validating and Decrypting Payment Protocol Messages using EncryptedProtocolMessages {#validating_and_decrypting_payment_protocol_messages_using_encryptedprotocolmessages}",
+      "content": ""
+    },
+    {
+      "header": "ECDH Point Generation and AES-256 (GCM Mode) Setup {#ecdh_point_generation_and_aes_256_gcm_mode_setup}",
+      "content": ""
+    },
+    {
+      "header": "AES-256 GCM Authentication Tag Use {#aes_256_gcm_authentication_tag_use}",
+      "content": ""
+    },
+    {
+      "header": "AES-256 GCM Additional Authenticated Data {#aes_256_gcm_additional_authenticated_data}",
+      "content": ""
+    },
+    {
+      "header": "Initial Public Key Retrieval for InvoiceRequest Encryption {#initial_public_key_retrieval_for_invoicerequest_encryption}",
+      "content": ""
+    },
+    {
+      "header": "Payment / PaymentACK Messages with a HTTP Store & Forward Server {#payment_paymentack_messages_with_a_http_store_forward_server}",
+      "content": ""
+    },
+    {
+      "header": "Public Key & Signature Encoding {#public_key_signature_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "BIP70 Extension {#bip70_extension}",
+      "content": ""
+    },
+    {
+      "header": "Mobile to Mobile Examples {#mobile_to_mobile_examples}",
+      "content": ""
+    },
+    {
+      "header": "Full Payment Protocol {#full_payment_protocol}",
+      "content": ""
+    },
+    {
+      "header": "Encrypting Initial InvoiceRequest via EncryptedProtocolMessage {#encrypting_initial_invoicerequest_via_encryptedprotocolmessage}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

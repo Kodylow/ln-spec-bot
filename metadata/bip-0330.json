@@ -9,5 +9,119 @@
   "Type": "Standards Track",
   "Created": "2019-09-25",
   "License": "CC0-1.0",
-  "License-Code": "MIT"
+  "License-Code": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Erlay",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "New data structures {#new_data_structures}",
+      "content": ""
+    },
+    {
+      "header": "32-bit short transaction IDs {#bit_short_transaction_ids}",
+      "content": ""
+    },
+    {
+      "header": "Short transaction ID sketches {#short_transaction_id_sketches}",
+      "content": ""
+    },
+    {
+      "header": "Intended Protocol Flow {#intended_protocol_flow}",
+      "content": ""
+    },
+    {
+      "header": "Sketch extension {#sketch_extension}",
+      "content": ""
+    },
+    {
+      "header": "New messages {#new_messages}",
+      "content": ""
+    },
+    {
+      "header": "sendtxrcncl",
+      "content": ""
+    },
+    {
+      "header": "reqrecon",
+      "content": ""
+    },
+    {
+      "header": "sketch",
+      "content": ""
+    },
+    {
+      "header": "reqsketchext",
+      "content": ""
+    },
+    {
+      "header": "reconcildiff",
+      "content": ""
+    },
+    {
+      "header": "Local state {#local_state}",
+      "content": ""
+    },
+    {
+      "header": "Reconciliation salt {#reconciliation_salt}",
+      "content": ""
+    },
+    {
+      "header": "Reconciliation sets {#reconciliation_sets}",
+      "content": ""
+    },
+    {
+      "header": "Reconciliation set snapshot {#reconciliation_set_snapshot}",
+      "content": ""
+    },
+    {
+      "header": "Sketch capacity estimation and q-coefficient {#sketch_capacity_estimation_and_q_coefficient}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Why use PinSketch for set reconciliation? {#why_use_pinsketch_for_set_reconciliation}",
+      "content": ""
+    },
+    {
+      "header": "Why use 32-bit short transaction IDs? {#why_use_32_bit_short_transaction_ids}",
+      "content": ""
+    },
+    {
+      "header": "Why use sketch extensions instead of bisection? {#why_use_sketch_extensions_instead_of_bisection}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgments",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

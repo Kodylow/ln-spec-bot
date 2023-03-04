@@ -7,5 +7,55 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0033",
   "Status": "Rejected",
   "Type": "Standards Track",
-  "Created": "2012-05-15"
+  "Created": "2012-05-15",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "History",
+      "content": ""
+    },
+    {
+      "header": "Overview",
+      "content": ""
+    },
+    {
+      "header": "NODE_SERVICE",
+      "content": ""
+    },
+    {
+      "header": "NODE_STRATIZED",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Initialisation",
+      "content": ""
+    },
+    {
+      "header": "Updates",
+      "content": ""
+    },
+    {
+      "header": "Security",
+      "content": ""
+    },
+    {
+      "header": "Privacy",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    }
+  ]
 }

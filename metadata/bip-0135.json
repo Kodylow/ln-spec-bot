@@ -10,5 +10,95 @@
   "Created": "2017-03-29",
   "License": "CC0-1.0",
   "Post-History": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-April/013969.html",
-  "Replaces": "9"
+  "Replaces": "9",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Terms and conventions {#terms_and_conventions}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Signaling bits {#signaling_bits}",
+      "content": ""
+    },
+    {
+      "header": "Deployment states {#deployment_states}",
+      "content": ""
+    },
+    {
+      "header": "Fork deployment parameters {#fork_deployment_parameters}",
+      "content": ""
+    },
+    {
+      "header": "Tallying",
+      "content": ""
+    },
+    {
+      "header": "State transitions {#state_transitions}",
+      "content": ""
+    },
+    {
+      "header": "New consensus rules {#new_consensus_rules}",
+      "content": ""
+    },
+    {
+      "header": "Optional operator notifications {#optional_operator_notifications}",
+      "content": ""
+    },
+    {
+      "header": "getblocktemplate changes {#getblocktemplate_changes}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Guidelines",
+      "content": ""
+    },
+    {
+      "header": "Parameter selection guidelines {#parameter_selection_guidelines}",
+      "content": ""
+    },
+    {
+      "header": "Signaling guidelines {#signaling_guidelines}",
+      "content": ""
+    },
+    {
+      "header": "Settings for BIP9 compatibility {#settings_for_bip9_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

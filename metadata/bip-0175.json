@@ -8,5 +8,71 @@
   "Status": "Rejected",
   "Type": "Informational",
   "Created": "2017-07-17",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Payment address generation {#payment_address_generation}",
+      "content": ""
+    },
+    {
+      "header": "Payment address verification {#payment_address_verification}",
+      "content": ""
+    },
+    {
+      "header": "Redemption",
+      "content": ""
+    },
+    {
+      "header": "Hash to partial derivation path mapping {#hash_to_partial_derivation_path_mapping}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Payment address generation {#payment_address_generation_1}",
+      "content": ""
+    },
+    {
+      "header": "Verification example (negative test) {#verification_example_negative_test}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

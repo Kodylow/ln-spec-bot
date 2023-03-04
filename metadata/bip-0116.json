@@ -9,5 +9,55 @@
   "Type": "Standards Track",
   "Created": "2017-08-25",
   "License": "CC-BY-SA-4.0",
-  "License-Code": "MIT"
+  "License-Code": "MIT",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Applications",
+      "content": ""
+    },
+    {
+      "header": "1-of-N for large N {#of_n_for_large_n}",
+      "content": ""
+    },
+    {
+      "header": "Honeypots",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

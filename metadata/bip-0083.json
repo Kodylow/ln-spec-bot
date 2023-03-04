@@ -8,5 +8,47 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2015-11-16",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Notation",
+      "content": ""
+    },
+    {
+      "header": "Mappings",
+      "content": ""
+    },
+    {
+      "header": "Use Cases {#use_cases}",
+      "content": ""
+    },
+    {
+      "header": "Account Hierarchies {#account_hierarchies}",
+      "content": ""
+    },
+    {
+      "header": "Bidirectional Payment Channels {#bidirectional_payment_channels}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

@@ -7,5 +7,19 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0010",
   "Status": "Withdrawn",
   "Type": "Informational",
-  "Created": "2011-10-28"
+  "Created": "2011-10-28",
+  "sections": [
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    }
+  ]
 }

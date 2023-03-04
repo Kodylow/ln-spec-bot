@@ -1,3 +1,137 @@
 {
-  "RECENT CHANGES": ""
+  "RECENT CHANGES": "",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Path levels {#path_levels}",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Identity",
+      "content": ""
+    },
+    {
+      "header": "Versions",
+      "content": ""
+    },
+    {
+      "header": "Recommended Versions {#recommended_versions}",
+      "content": ""
+    },
+    {
+      "header": "Version 1 {#version_1}",
+      "content": ""
+    },
+    {
+      "header": "Representation",
+      "content": ""
+    },
+    {
+      "header": "Binary Serialization {#binary_serialization}",
+      "content": ""
+    },
+    {
+      "header": "Base58 Serialization {#base58_serialization}",
+      "content": ""
+    },
+    {
+      "header": "Protocol",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Notification Transaction {#notification_transaction}",
+      "content": ""
+    },
+    {
+      "header": "Standard Notification Transaction Scripts {#standard_notification_transaction_scripts}",
+      "content": ""
+    },
+    {
+      "header": "Post-Notification Privacy Considerations {#post_notification_privacy_considerations}",
+      "content": ""
+    },
+    {
+      "header": "Sending",
+      "content": ""
+    },
+    {
+      "header": "Refunds",
+      "content": ""
+    },
+    {
+      "header": "Anonymous Payments {#anonymous_payments}",
+      "content": ""
+    },
+    {
+      "header": "Cold Storage {#cold_storage}",
+      "content": ""
+    },
+    {
+      "header": "Wallet Recovery {#wallet_recovery}",
+      "content": ""
+    },
+    {
+      "header": "Wallet Sharing {#wallet_sharing}",
+      "content": ""
+    },
+    {
+      "header": "Alternate Notification Methods {#alternate_notification_methods}",
+      "content": ""
+    },
+    {
+      "header": "Bitmessage Notification {#bitmessage_notification}",
+      "content": ""
+    },
+    {
+      "header": "Version 2 {#version_2}",
+      "content": ""
+    },
+    {
+      "header": "Representation {#representation_1}",
+      "content": ""
+    },
+    {
+      "header": "Binary Serialization {#binary_serialization_1}",
+      "content": ""
+    },
+    {
+      "header": "Protocol {#protocol_1}",
+      "content": ""
+    },
+    {
+      "header": "Definitions {#definitions_1}",
+      "content": ""
+    },
+    {
+      "header": "Notification Transaction {#notification_transaction_1}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

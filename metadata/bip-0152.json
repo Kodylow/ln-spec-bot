@@ -8,5 +8,127 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2016-04-27",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification for version 1 {#specification_for_version_1}",
+      "content": ""
+    },
+    {
+      "header": "Intended Protocol Flow {#intended_protocol_flow}",
+      "content": ""
+    },
+    {
+      "header": "New data structures {#new_data_structures}",
+      "content": ""
+    },
+    {
+      "header": "PrefilledTransaction",
+      "content": ""
+    },
+    {
+      "header": "HeaderAndShortIDs",
+      "content": ""
+    },
+    {
+      "header": "BlockTransactionsRequest",
+      "content": ""
+    },
+    {
+      "header": "BlockTransactions",
+      "content": ""
+    },
+    {
+      "header": "Short transaction IDs {#short_transaction_ids}",
+      "content": ""
+    },
+    {
+      "header": "New messages {#new_messages}",
+      "content": ""
+    },
+    {
+      "header": "sendcmpct",
+      "content": ""
+    },
+    {
+      "header": "MSG_CMPCT_BLOCK",
+      "content": ""
+    },
+    {
+      "header": "cmpctblock",
+      "content": ""
+    },
+    {
+      "header": "getblocktxn",
+      "content": ""
+    },
+    {
+      "header": "blocktxn",
+      "content": ""
+    },
+    {
+      "header": "Protocol Versioning {#protocol_versioning}",
+      "content": ""
+    },
+    {
+      "header": "Sample Version Implementation {#sample_version_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Specification for version 2 {#specification_for_version_2}",
+      "content": ""
+    },
+    {
+      "header": "Implementation Notes {#implementation_notes}",
+      "content": ""
+    },
+    {
+      "header": "Pre-Validation Relay and Consistency Considerations {#pre_validation_relay_and_consistency_considerations}",
+      "content": ""
+    },
+    {
+      "header": "Justification",
+      "content": ""
+    },
+    {
+      "header": "Protocol design {#protocol_design}",
+      "content": ""
+    },
+    {
+      "header": "Short transaction ID calculation {#short_transaction_id_calculation}",
+      "content": ""
+    },
+    {
+      "header": "Random collision probabilty {#random_collision_probabilty}",
+      "content": ""
+    },
+    {
+      "header": "Separate version for segregated witness {#separate_version_for_segregated_witness}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

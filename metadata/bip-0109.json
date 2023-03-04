@@ -8,5 +8,55 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2016-01-28",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "MAX_BLOCK_SIZE increased to 2,000,000 bytes {#max_block_size_increased_to_2000000_bytes}",
+      "content": ""
+    },
+    {
+      "header": "Switch to accurately-counted sigop limit of 20,000 per block {#switch_to_accurately_counted_sigop_limit_of_20000_per_block}",
+      "content": ""
+    },
+    {
+      "header": "Add a new limit of 1,300,000,000 bytes hashed to compute transaction signatures per block {#add_a_new_limit_of_1300000000_bytes_hashed_to_compute_transaction_signatures_per_block}",
+      "content": ""
+    },
+    {
+      "header": "Activation: 75% hashpower support trigger, followed by 28-day \\'grace period\\' {#activation_75_hashpower_support_trigger_followed_by_28_day_grace_period}",
+      "content": ""
+    },
+    {
+      "header": "Expiration: 1-Jan-2018 {#expiration_1_jan_2018}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

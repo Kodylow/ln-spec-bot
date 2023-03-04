@@ -9,5 +9,59 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0326",
   "Created": "2021-06-10",
   "License": "CC0-1.0",
-  "Post-History": "2021-6-10: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-June/019048.html"
+  "Post-History": "2021-6-10: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-June/019048.html",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Background",
+      "content": ""
+    },
+    {
+      "header": "Fee sniping {#fee_sniping}",
+      "content": ""
+    },
+    {
+      "header": "Absolute vs relative locktime {#absolute_vs_relative_locktime}",
+      "content": ""
+    },
+    {
+      "header": "Transaction pinning {#transaction_pinning}",
+      "content": ""
+    },
+    {
+      "header": "Specifications",
+      "content": ""
+    },
+    {
+      "header": "Pseudocode",
+      "content": ""
+    },
+    {
+      "header": "bip68 requires v=2",
+      "content": "transaction.version = 2\n# Initialize all nsequence to indicate the requested RBF state\n# nsequence can not be 2**32 - 1 in order for nlocktime to take effect\nfor input in transaction.inputs:\nif rbf_set:\ninput.nsequence = 2**32 - 3\nelse:\ninput.nsequence = 2**32 - 2\n# always set nlocktime if any of the transaction inputs have more\n# confirmations than 65535 or are not taproot inputs, or have\n# unconfirmed inputs\n# otherwise choose either nlocktime or nsequence with 50% probability\nif not rbf_set || any(map(lambda input: input.confirmations() > 65535\n|| !input.is_taproot() || input.confirmations() == 0,\ntransaction.inputs)) || randint(2) == 0:\ntransaction.nlocktime = blockchain.height()\nif randint(10) == 0:\ntransaction.nlocktime = max(0, transaction.nlocktime\n- randint(0, 99))\n# nsequence must be set in order for nlocktime to take effect\nelse:\ntransaction.nlocktime = 0\ninput_index = randint(len(transaction.inputs))\ntransaction.inputs[input_index].nsequence = transaction.inputs\\\n[input_index].confirmations()\nif randint(10) == 0:\ntransaction.inputs[input_index].nsequence = max(1,\ntransaction.inputs[input_index].nsequence - randint(0, 99))"
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

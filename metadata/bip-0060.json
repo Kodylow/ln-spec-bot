@@ -8,5 +8,31 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2013-06-16",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "version",
+      "content": ""
+    },
+    {
+      "header": "Code Updates {#code_updates}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

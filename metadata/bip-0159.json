@@ -8,5 +8,47 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2017-05-11",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "New service bit {#new_service_bit}",
+      "content": ""
+    },
+    {
+      "header": "Address relay {#address_relay}",
+      "content": ""
+    },
+    {
+      "header": "Counter-measures for peer fingerprinting {#counter_measures_for_peer_fingerprinting}",
+      "content": ""
+    },
+    {
+      "header": "Risks",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

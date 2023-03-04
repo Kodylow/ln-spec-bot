@@ -11,5 +11,75 @@
   "License": "BSD-3-Clause",
   "Requires": "340",
   "Post-History": "2019-05-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-May/016914.html [bitcoin-dev] Taproot proposal",
-  "2019-10-09": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-October/017378.html [bitcoin-dev] Taproot updates"
+  "2019-10-09": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-October/017378.html [bitcoin-dev] Taproot updates",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Design",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Script validation rules {#script_validation_rules}",
+      "content": ""
+    },
+    {
+      "header": "Signature validation rules {#signature_validation_rules}",
+      "content": ""
+    },
+    {
+      "header": "Common signature message {#common_signature_message}",
+      "content": ""
+    },
+    {
+      "header": "Taproot key path spending signature validation {#taproot_key_path_spending_signature_validation}",
+      "content": ""
+    },
+    {
+      "header": "Constructing and spending Taproot outputs {#constructing_and_spending_taproot_outputs}",
+      "content": ""
+    },
+    {
+      "header": "Security",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

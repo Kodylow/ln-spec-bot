@@ -8,5 +8,87 @@
   "Type": "Informational",
   "Created": "2015-06-20",
   "License": "PD",
-  "Post-History": "http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-June/008936.html"
+  "Post-History": "http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-June/008936.html",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "REPLACE_libsecp256k1_PR), it is still not a complete specification",
+      "content": "of the consensus rules. Since libconsensus doesn\\'t manage the\ncurrent state but only the validation of the next block given that\nstate, it is known that this long effort of encapsulation and\ndecoupling will eventually finish, and that the person who moves the\nlast line"
+    },
+    {
+      "header": "Taxonomy of consensus forks {#taxonomy_of_consensus_forks}",
+      "content": ""
+    },
+    {
+      "header": "Accidental consensus fork {#accidental_consensus_fork}",
+      "content": ""
+    },
+    {
+      "header": "11/12 March 2013 Chain Fork {#march_2013_chain_fork}",
+      "content": ""
+    },
+    {
+      "header": "Unilateral softforks {#unilateral_softforks}",
+      "content": ""
+    },
+    {
+      "header": "Schism hardforks {#schism_hardforks}",
+      "content": ""
+    },
+    {
+      "header": "ASIC-reset hardfork {#asic_reset_hardfork}",
+      "content": ""
+    },
+    {
+      "header": "Anti-Block-creator hardfork {#anti_block_creator_hardfork}",
+      "content": ""
+    },
+    {
+      "header": "Anti-cabal hardfork {#anti_cabal_hardfork}",
+      "content": ""
+    },
+    {
+      "header": "Uncontroversial consensus upgrades {#uncontroversial_consensus_upgrades}",
+      "content": ""
+    },
+    {
+      "header": "Uncontroversial softforks {#uncontroversial_softforks}",
+      "content": ""
+    },
+    {
+      "header": "Uncontroversial hardforks {#uncontroversial_hardforks}",
+      "content": ""
+    },
+    {
+      "header": "Uncontroversial emergency hardforks {#uncontroversial_emergency_hardforks}",
+      "content": ""
+    },
+    {
+      "header": "Code",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    },
+    {
+      "header": "Attribution",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

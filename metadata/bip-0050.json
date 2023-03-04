@@ -7,5 +7,51 @@
   "Status": "Final",
   "Type": "Informational",
   "Created": "2013-03-20",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "What went wrong {#what_went_wrong}",
+      "content": ""
+    },
+    {
+      "header": "What went right {#what_went_right}",
+      "content": ""
+    },
+    {
+      "header": "Root cause {#root_cause}",
+      "content": ""
+    },
+    {
+      "header": "Action items {#action_items}",
+      "content": ""
+    },
+    {
+      "header": "Immediately",
+      "content": ""
+    },
+    {
+      "header": "Alert system {#alert_system}",
+      "content": ""
+    },
+    {
+      "header": "Safe mode {#safe_mode}",
+      "content": ""
+    },
+    {
+      "header": "Testing",
+      "content": ""
+    },
+    {
+      "header": "Double spending {#double_spending}",
+      "content": ""
+    },
+    {
+      "header": "Resolution",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,31 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2011-10-18",
-  "Post-History": "2011-10-02"
+  "Post-History": "2011-10-02",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Post History {#post_history}",
+      "content": ""
+    }
+  ]
 }

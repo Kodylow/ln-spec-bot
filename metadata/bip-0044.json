@@ -7,5 +7,59 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0044",
   "Status": "Proposed",
   "Type": "Standards Track",
-  "Created": "2014-04-24"
+  "Created": "2014-04-24",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Path levels {#path_levels}",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Account",
+      "content": ""
+    },
+    {
+      "header": "Change",
+      "content": ""
+    },
+    {
+      "header": "Index",
+      "content": ""
+    },
+    {
+      "header": "Account discovery {#account_discovery}",
+      "content": ""
+    },
+    {
+      "header": "Address gap limit {#address_gap_limit}",
+      "content": ""
+    },
+    {
+      "header": "Registered coin types {#registered_coin_types}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }

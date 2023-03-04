@@ -8,5 +8,51 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2016-09-23",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Securely recovering from double spends {#securely_recovering_from_double_spends}",
+      "content": ""
+    },
+    {
+      "header": "Replay protection in the event of a persistent blockchain split {#replay_protection_in_the_event_of_a_persistent_blockchain_split}",
+      "content": ""
+    },
+    {
+      "header": "Best practices for wallets {#best_practices_for_wallets}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    }
+  ]
 }

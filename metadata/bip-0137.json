@@ -8,5 +8,55 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2019-02-16",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Background on ECDSA Signatures {#background_on_ecdsa_signatures}",
+      "content": ""
+    },
+    {
+      "header": "Conventions with signatures used in Bitcoin {#conventions_with_signatures_used_in_bitcoin}",
+      "content": ""
+    },
+    {
+      "header": "Procedure for signing/verifying a signature {#procedure_for_signingverifying_a_signature}",
+      "content": ""
+    },
+    {
+      "header": "Sample Code for processing a signature {#sample_code_for_processing_a_signature}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Implications",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

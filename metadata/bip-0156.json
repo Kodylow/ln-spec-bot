@@ -7,5 +7,71 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2017-06-09",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "How Dandelion Works {#how_dandelion_works}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Dandelion transaction support {#dandelion_transaction_support}",
+      "content": ""
+    },
+    {
+      "header": "Dandelion routing data and logic {#dandelion_routing_data_and_logic}",
+      "content": ""
+    },
+    {
+      "header": "Periodic Dandelion route shuffling {#periodic_dandelion_route_shuffling}",
+      "content": ""
+    },
+    {
+      "header": "Memory pool logic {#memory_pool_logic}",
+      "content": ""
+    },
+    {
+      "header": "The fluff mechanism {#the_fluff_mechanism}",
+      "content": ""
+    },
+    {
+      "header": "Transaction embargoes {#transaction_embargoes}",
+      "content": ""
+    },
+    {
+      "header": "Dandelion transaction logic {#dandelion_transaction_logic}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

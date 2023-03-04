@@ -8,5 +8,63 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2019-07-23",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Notation and Example {#notation_and_example}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "h\\*",
+      "content": ""
+    },
+    {
+      "header": "BMM Accept {#bmm_accept}",
+      "content": ""
+    },
+    {
+      "header": "BMM Request {#bmm_request}",
+      "content": ""
+    },
+    {
+      "header": "4, then the main:miner singles out one BMM Request to include.",
+      "content": "3.  The 4-bytes of prevMainHeaderBytes must match the last four bytes of\nthe previous main:blockheader. Thus, Simon\\'s txns are only valid\nfor the current block, in the block history that he knows about (and\ntherefore, the current sidechain history that he knows about)."
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Thanks",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

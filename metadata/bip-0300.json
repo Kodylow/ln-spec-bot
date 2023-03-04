@@ -9,5 +9,99 @@
   "Type": "Standards Track",
   "Created": "2017-08-14",
   "License": "BSD-2-Clause",
-  "Post-History": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-May/014364.html"
+  "Post-History": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-May/014364.html",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Overview",
+      "content": ""
+    },
+    {
+      "header": "D1 (The Sidechain List) {#d1_the_sidechain_list}",
+      "content": ""
+    },
+    {
+      "header": "D2 (The Withdrawal List) {#d2_the_withdrawal_list}",
+      "content": ""
+    },
+    {
+      "header": "The Six New Bip300 Messages {#the_six_new_bip300_messages}",
+      "content": ""
+    },
+    {
+      "header": "M1 \\-- Propose Sidechain {#m1____propose_sidechain}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "M2 \\-- ACK Sidechain Proposal {#m2____ack_sidechain_proposal}",
+      "content": ""
+    },
+    {
+      "header": "Notes",
+      "content": ""
+    },
+    {
+      "header": "Notes on Withdrawing Coins {#notes_on_withdrawing_coins}",
+      "content": ""
+    },
+    {
+      "header": "What are Bundles? {#what_are_bundles}",
+      "content": ""
+    },
+    {
+      "header": "M3 \\-- Propose Bundle {#m3____propose_bundle}",
+      "content": ""
+    },
+    {
+      "header": "M4 \\-- ACK Bundle(s) {#m4____ack_bundles}",
+      "content": ""
+    },
+    {
+      "header": "M5 \\-- Deposit BTC to Sidechain {#m5____deposit_btc_to_sidechain}",
+      "content": ""
+    },
+    {
+      "header": "M6 \\-- Withdraw BTC from a Sidechain {#m6____withdraw_btc_from_a_sidechain}",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

@@ -8,5 +8,75 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2021-05-13",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Simple Summary {#simple_summary}",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "HeavyHash",
+      "content": ""
+    },
+    {
+      "header": "Random matrix generation {#random_matrix_generation}",
+      "content": ""
+    },
+    {
+      "header": "Discussion",
+      "content": ""
+    },
+    {
+      "header": "Geographic Distribution of Mining Relative to CAPEX-OPEX Ratio of Mining Costs {#geographic_distribution_of_mining_relative_to_capex_opex_ratio_of_mining_costs}",
+      "content": ""
+    },
+    {
+      "header": "Why does CAPEX to OPEX shift lead to lower energy consumption? {#why_does_capex_to_opex_shift_lead_to_lower_energy_consumption}",
+      "content": ""
+    },
+    {
+      "header": "Working Principles of Photonic Processors {#working_principles_of_photonic_processors}",
+      "content": ""
+    },
+    {
+      "header": "Block Reward Considerations {#block_reward_considerations}",
+      "content": ""
+    },
+    {
+      "header": "Implementation on the Bitcoin Network {#implementation_on_the_bitcoin_network}",
+      "content": ""
+    },
+    {
+      "header": "Reverse compatibility {#reverse_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "ASICBOOST",
+      "content": ""
+    },
+    {
+      "header": "Endnotes",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgments",
+      "content": ""
+    }
+  ]
 }

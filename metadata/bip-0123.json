@@ -7,5 +7,51 @@
   "Status": "Active",
   "Type": "Process",
   "Created": "2015-08-26",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "1. Consensus Layer {#consensus_layer}",
+      "content": ""
+    },
+    {
+      "header": "Soft Forks {#soft_forks}",
+      "content": ""
+    },
+    {
+      "header": "Hard Forks {#hard_forks}",
+      "content": ""
+    },
+    {
+      "header": "2. Peer Services Layer {#peer_services_layer}",
+      "content": ""
+    },
+    {
+      "header": "3. API/RPC Layer {#apirpc_layer}",
+      "content": ""
+    },
+    {
+      "header": "4. Applications Layer {#applications_layer}",
+      "content": ""
+    },
+    {
+      "header": "Classification of existing BIPs {#classification_of_existing_bips}",
+      "content": ""
+    }
+  ]
 }

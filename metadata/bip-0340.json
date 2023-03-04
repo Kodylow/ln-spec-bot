@@ -8,5 +8,91 @@
   "Type": "Standards Track",
   "License": "BSD-2-Clause",
   "Created": "2020-01-19",
-  "Post-History": "2018-07-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-July/016203.html [bitcoin-dev] Schnorr signatures BIP"
+  "Post-History": "2018-07-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-July/016203.html [bitcoin-dev] Schnorr signatures BIP",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Description",
+      "content": ""
+    },
+    {
+      "header": "Design",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Public Key Generation {#public_key_generation}",
+      "content": ""
+    },
+    {
+      "header": "Public Key Conversion {#public_key_conversion}",
+      "content": ""
+    },
+    {
+      "header": "Default Signing {#default_signing}",
+      "content": ""
+    },
+    {
+      "header": "Alternative Signing {#alternative_signing}",
+      "content": ""
+    },
+    {
+      "header": "Verification",
+      "content": ""
+    },
+    {
+      "header": "Batch Verification {#batch_verification}",
+      "content": ""
+    },
+    {
+      "header": "Applications",
+      "content": ""
+    },
+    {
+      "header": "Multisignatures and Threshold Signatures {#multisignatures_and_threshold_signatures}",
+      "content": ""
+    },
+    {
+      "header": "Adaptor Signatures {#adaptor_signatures}",
+      "content": ""
+    },
+    {
+      "header": "Blind Signatures {#blind_signatures}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors and Reference Code {#test_vectors_and_reference_code}",
+      "content": ""
+    },
+    {
+      "header": "Changelog",
+      "content": ""
+    },
+    {
+      "header": "Footnotes",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

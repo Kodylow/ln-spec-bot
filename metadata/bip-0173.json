@@ -9,5 +9,71 @@
   "Type": "Informational",
   "Created": "2017-03-20",
   "License": "BSD-2-Clause",
-  "Replaces": "142"
+  "Replaces": "142",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Bech32",
+      "content": ""
+    },
+    {
+      "header": "Segwit address format {#segwit_address_format}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Reference implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Registered Human-readable Prefixes {#registered_human_readable_prefixes}",
+      "content": ""
+    },
+    {
+      "header": "Appendices",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Checksum design {#checksum_design}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

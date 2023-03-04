@@ -8,5 +8,91 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2017-05-24",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Filter Types {#filter_types}",
+      "content": ""
+    },
+    {
+      "header": "Filter Headers {#filter_headers}",
+      "content": ""
+    },
+    {
+      "header": "New Messages {#new_messages}",
+      "content": ""
+    },
+    {
+      "header": "getcfilters",
+      "content": ""
+    },
+    {
+      "header": "cfilter",
+      "content": ""
+    },
+    {
+      "header": "getcfheaders",
+      "content": ""
+    },
+    {
+      "header": "cfheaders",
+      "content": ""
+    },
+    {
+      "header": "getcfcheckpt",
+      "content": ""
+    },
+    {
+      "header": "cfcheckpt",
+      "content": ""
+    },
+    {
+      "header": "Node Operation {#node_operation}",
+      "content": ""
+    },
+    {
+      "header": "Client Operation {#client_operation}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgments",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

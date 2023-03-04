@@ -7,5 +7,43 @@
   "Status": "Withdrawn",
   "Type": "Process",
   "Created": "2015-08-31",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Weaknesses",
+      "content": ""
+    },
+    {
+      "header": "Process",
+      "content": ""
+    },
+    {
+      "header": "Committees",
+      "content": ""
+    },
+    {
+      "header": "BIP Process Management Role {#bip_process_management_role}",
+      "content": ""
+    },
+    {
+      "header": "Conditions for activation {#conditions_for_activation}",
+      "content": ""
+    }
+  ]
 }

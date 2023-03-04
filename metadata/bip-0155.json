@@ -8,5 +8,59 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2019-02-27",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Signaling support and compatibility {#signaling_support_and_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Appendix A: Tor v2 address encoding {#appendix_a_tor_v2_address_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Appendix B: Tor v3 address encoding {#appendix_b_tor_v3_address_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Appendix C: I2P address encoding {#appendix_c_i2p_address_encoding}",
+      "content": ""
+    },
+    {
+      "header": "Appendix D: Cjdns address encoding {#appendix_d_cjdns_address_encoding}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

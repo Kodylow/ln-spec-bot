@@ -7,5 +7,79 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2017-02-01",
-  "License": "BSD-3-Clause"
+  "License": "BSD-3-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Parameters",
+      "content": ""
+    },
+    {
+      "header": "Selection guidelines {#selection_guidelines}",
+      "content": ""
+    },
+    {
+      "header": "States",
+      "content": ""
+    },
+    {
+      "header": "Bit flags {#bit_flags}",
+      "content": ""
+    },
+    {
+      "header": "New consensus rules {#new_consensus_rules}",
+      "content": ""
+    },
+    {
+      "header": "State transitions {#state_transitions}",
+      "content": ""
+    },
+    {
+      "header": "Mandatory signalling {#mandatory_signalling}",
+      "content": ""
+    },
+    {
+      "header": "Warning mechanism {#warning_mechanism}",
+      "content": ""
+    },
+    {
+      "header": "getblocktemplate changes {#getblocktemplate_changes}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Contrasted with BIP 9 {#contrasted_with_bip_9}",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Deployments",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

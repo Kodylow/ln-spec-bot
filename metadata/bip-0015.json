@@ -7,5 +7,59 @@
   "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0015",
   "Status": "Deferred",
   "Type": "Standards Track",
-  "Created": "2011-12-10"
+  "Created": "2011-12-10",
+  "sections": [
+    {
+      "header": "Schemes",
+      "content": ""
+    },
+    {
+      "header": "FirstBits",
+      "content": ""
+    },
+    {
+      "header": "DNS TXT Records {#dns_txt_records}",
+      "content": ""
+    },
+    {
+      "header": "Server Service {#server_service}",
+      "content": ""
+    },
+    {
+      "header": "HTTPS Web Service {#https_web_service}",
+      "content": ""
+    },
+    {
+      "header": "ifndef NOMRESOLV_H__",
+      "content": "#define NOMRESOLV_H__"
+    },
+    {
+      "header": "include <string>",
+      "content": "#include \"curl/curl.h\""
+    },
+    {
+      "header": "endif",
+      "content": ""
+    },
+    {
+      "header": "include \"resolv.h\"",
+      "content": ""
+    },
+    {
+      "header": "include <boost/lexical_cast.hpp>",
+      "content": ""
+    },
+    {
+      "header": "include \"access.h\"",
+      "content": ""
+    },
+    {
+      "header": "IP Transactions {#ip_transactions}",
+      "content": ""
+    },
+    {
+      "header": "Namecoin ID {#namecoin_id}",
+      "content": ""
+    }
+  ]
 }

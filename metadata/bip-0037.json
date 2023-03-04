@@ -8,5 +8,55 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2012-10-24",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Design rationale {#design_rationale}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "New messages {#new_messages}",
+      "content": ""
+    },
+    {
+      "header": "Extensions to existing messages {#extensions_to_existing_messages}",
+      "content": ""
+    },
+    {
+      "header": "Filter matching algorithm {#filter_matching_algorithm}",
+      "content": ""
+    },
+    {
+      "header": "Partial Merkle branch format {#partial_merkle_branch_format}",
+      "content": ""
+    },
+    {
+      "header": "Constructing a partial merkle tree object {#constructing_a_partial_merkle_tree_object}",
+      "content": ""
+    },
+    {
+      "header": "Parsing a partial merkle tree object {#parsing_a_partial_merkle_tree_object}",
+      "content": ""
+    },
+    {
+      "header": "Bloom filter format {#bloom_filter_format}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

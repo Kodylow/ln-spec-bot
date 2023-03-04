@@ -9,5 +9,67 @@
   "Type": "Informational",
   "Created": "2015-11-20",
   "License": "PD",
-  "Post-History": "http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011795.html"
+  "Post-History": "http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011795.html",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Keys",
+      "content": ""
+    },
+    {
+      "header": "Key Groups {#key_groups}",
+      "content": ""
+    },
+    {
+      "header": "Sorting",
+      "content": ""
+    },
+    {
+      "header": "Script Templates {#script_templates}",
+      "content": ""
+    },
+    {
+      "header": "Operations on Keys {#operations_on_keys}",
+      "content": ""
+    },
+    {
+      "header": "Encoding",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "2-of-3 Multisig {#of_3_multisig}",
+      "content": ""
+    },
+    {
+      "header": "1-of-1 or 2-of-3 {#of_1_or_2_of_3}",
+      "content": ""
+    },
+    {
+      "header": "Timelocked Contract {#timelocked_contract}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

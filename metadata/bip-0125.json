@@ -8,5 +8,47 @@
   "Status": "Proposed",
   "Type": "Standards Track",
   "Created": "2015-12-04",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Implementation Details {#implementation_details}",
+      "content": ""
+    },
+    {
+      "header": "Receiving wallet policy {#receiving_wallet_policy}",
+      "content": ""
+    },
+    {
+      "header": "Spending wallet policy {#spending_wallet_policy}",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "See also {#see_also}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

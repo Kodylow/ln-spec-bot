@@ -9,5 +9,123 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2019-05-01",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Relation to BIP79 (Bustapay) {#relation_to_bip79_bustapay}",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Protocol",
+      "content": ""
+    },
+    {
+      "header": "BIP21 payjoin parameters {#bip21_payjoin_parameters}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"optional-params\">`{=html}`</span>`{=html}Optional parameters {#optional_parameters}",
+      "content": ""
+    },
+    {
+      "header": "Receiver\\'s well known errors {#receivers_well_known_errors}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"fee-output\">`{=html}`</span>`{=html}Fee output {#fee_output}",
+      "content": ""
+    },
+    {
+      "header": "Receiver\\'s original PSBT checklist {#receivers_original_psbt_checklist}",
+      "content": ""
+    },
+    {
+      "header": "Sender\\'s payjoin proposal checklist {#senders_payjoin_proposal_checklist}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Respecting the minimum relay fee policy {#respecting_the_minimum_relay_fee_policy}",
+      "content": ""
+    },
+    {
+      "header": "Defeating heuristics based on the fee calculation {#defeating_heuristics_based_on_the_fee_calculation}",
+      "content": ""
+    },
+    {
+      "header": "Receiver does not need to be a full node {#receiver_does_not_need_to_be_a_full_node}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"spare-change\">`{=html}`</span>`{=html}Spare change donation {#spare_change_donation}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"output-substitution\">`{=html}`</span>`{=html}Payment output substitution {#payment_output_substitution}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"unsecured-payjoin\">`{=html}`</span>`{=html}Unsecured payjoin server {#unsecured_payjoin_server}",
+      "content": ""
+    },
+    {
+      "header": "Impacted heuristics {#impacted_heuristics}",
+      "content": ""
+    },
+    {
+      "header": "Attack vectors {#attack_vectors}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"probing-attack\">`{=html}`</span>`{=html}On the receiver side: UTXO probing attack {#on_the_receiver_side_utxo_probing_attack}",
+      "content": ""
+    },
+    {
+      "header": "On the sender side: Double payment risk for hardware wallets {#on_the_sender_side_double_payment_risk_for_hardware_wallets}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"reference-impl\">`{=html}`</span>`{=html}Reference sender\\'s implementation {#reference_senders_implementation}",
+      "content": ""
+    },
+    {
+      "header": "`<span id=\"test-vectors\">`{=html}`</span>`{=html}Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Implementations",
+      "content": ""
+    },
+    {
+      "header": "Backward compatibility {#backward_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Special thanks {#special_thanks}",
+      "content": ""
+    }
+  ]
 }

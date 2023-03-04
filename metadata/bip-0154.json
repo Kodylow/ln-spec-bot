@@ -8,5 +8,131 @@
   "Status": "Withdrawn",
   "Type": "Standards Track",
   "Created": "2017-04-12",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "POW Identifiers {#pow_identifiers}",
+      "content": ""
+    },
+    {
+      "header": "sha256",
+      "content": ""
+    },
+    {
+      "header": "cuckoo-cycle {#cuckoo_cycle}",
+      "content": ""
+    },
+    {
+      "header": "Purpose Identifiers {#purpose_identifiers}",
+      "content": ""
+    },
+    {
+      "header": "Challenges",
+      "content": ""
+    },
+    {
+      "header": "The `challenge` message type {#the_challenge_message_type}",
+      "content": ""
+    },
+    {
+      "header": "The `solution` message type {#the_solution_message_type}",
+      "content": ""
+    },
+    {
+      "header": "Signing and Verifying Challenges {#signing_and_verifying_challenges}",
+      "content": ""
+    },
+    {
+      "header": "Signing a Challenge {#signing_a_challenge}",
+      "content": ""
+    },
+    {
+      "header": "Verifying a Challenge {#verifying_a_challenge}",
+      "content": ""
+    },
+    {
+      "header": "Difficulty and Cost {#difficulty_and_cost}",
+      "content": ""
+    },
+    {
+      "header": "Estimating Challenge Cost {#estimating_challenge_cost}",
+      "content": ""
+    },
+    {
+      "header": "Establishing Difficulty Parameters {#establishing_difficulty_parameters}",
+      "content": ""
+    },
+    {
+      "header": "Cuckoo Cycle {#cuckoo_cycle_1}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Cuckoo-Cycle {#cuckoo_cycle_2}",
+      "content": ""
+    },
+    {
+      "header": "SHA256(Cuckoo-Cycle) {#sha256cuckoo_cycle}",
+      "content": ""
+    },
+    {
+      "header": "Serialized challenge example {#serialized_challenge_example}",
+      "content": ""
+    },
+    {
+      "header": "Serialized solution example {#serialized_solution_example}",
+      "content": ""
+    },
+    {
+      "header": "Cuckoo-Cycle Example 2 {#cuckoo_cycle_example_2}",
+      "content": ""
+    },
+    {
+      "header": "SHA256(Cuckoo-Cycle) {#sha256cuckoo_cycle_1}",
+      "content": ""
+    },
+    {
+      "header": "Serialized challenge example {#serialized_challenge_example_1}",
+      "content": ""
+    },
+    {
+      "header": "Serialized solution example {#serialized_solution_example_1}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

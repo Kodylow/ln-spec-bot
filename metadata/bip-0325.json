@@ -8,5 +8,47 @@
   "Status": "Proposed",
   "Type": "Standards Track",
   "Created": "2019-03-20",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Genesis Block and Message Start {#genesis_block_and_message_start}",
+      "content": ""
+    },
+    {
+      "header": "Genesis Block {#genesis_block}",
+      "content": ""
+    },
+    {
+      "header": "Message Start {#message_start}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

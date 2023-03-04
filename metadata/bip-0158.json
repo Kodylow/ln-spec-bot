@@ -8,5 +8,107 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2017-05-24",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Golomb-Coded Sets {#golomb_coded_sets}",
+      "content": ""
+    },
+    {
+      "header": "Hashing Data Objects {#hashing_data_objects}",
+      "content": ""
+    },
+    {
+      "header": "Golomb-Rice Coding {#golomb_rice_coding}",
+      "content": ""
+    },
+    {
+      "header": "Set Construction {#set_construction}",
+      "content": ""
+    },
+    {
+      "header": "Set Querying/Decompression {#set_queryingdecompression}",
+      "content": ""
+    },
+    {
+      "header": "Block Filters {#block_filters}",
+      "content": ""
+    },
+    {
+      "header": "Contents",
+      "content": ""
+    },
+    {
+      "header": "Construction",
+      "content": ""
+    },
+    {
+      "header": "Signaling",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgments",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Appendix A: Alternatives {#appendix_a_alternatives}",
+      "content": ""
+    },
+    {
+      "header": "Bloom Filters {#bloom_filters}",
+      "content": ""
+    },
+    {
+      "header": "Cryptographic Accumulators {#cryptographic_accumulators}",
+      "content": ""
+    },
+    {
+      "header": "Matrix Based Probabilistic Set Data Structures {#matrix_based_probabilistic_set_data_structures}",
+      "content": ""
+    },
+    {
+      "header": "Appendix B: Pseudocode {#appendix_b_pseudocode}",
+      "content": ""
+    },
+    {
+      "header": "Golomb-Coded Set Multi-Match {#golomb_coded_set_multi_match}",
+      "content": ""
+    },
+    {
+      "header": "Appendix C: Test Vectors {#appendix_c_test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

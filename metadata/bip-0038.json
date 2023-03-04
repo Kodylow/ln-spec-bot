@@ -8,5 +8,91 @@
   "Status": "Draft (Some confusion applies: The announcements for this never made it to the list, so it hasn't had public discussion)",
   "Type": "Standards Track",
   "Created": "2012-11-20",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Prefix",
+      "content": ""
+    },
+    {
+      "header": "Proposed specification {#proposed_specification}",
+      "content": ""
+    },
+    {
+      "header": "Encryption when EC multiply flag is not used {#encryption_when_ec_multiply_flag_is_not_used}",
+      "content": ""
+    },
+    {
+      "header": "Encryption when EC multiply mode is used {#encryption_when_ec_multiply_mode_is_used}",
+      "content": ""
+    },
+    {
+      "header": "Confirmation code {#confirmation_code}",
+      "content": ""
+    },
+    {
+      "header": "Decryption",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Suggestions for implementers of proposal with alt-chains {#suggestions_for_implementers_of_proposal_with_alt_chains}",
+      "content": ""
+    },
+    {
+      "header": "Discussion item: scrypt parameters {#discussion_item_scrypt_parameters}",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Other implementations {#other_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "No compression, no EC multiply {#no_compression_no_ec_multiply}",
+      "content": ""
+    },
+    {
+      "header": "Compression, no EC multiply {#compression_no_ec_multiply}",
+      "content": ""
+    },
+    {
+      "header": "EC multiply, no compression, no lot/sequence numbers {#ec_multiply_no_compression_no_lotsequence_numbers}",
+      "content": ""
+    },
+    {
+      "header": "EC multiply, no compression, lot/sequence numbers {#ec_multiply_no_compression_lotsequence_numbers}",
+      "content": ""
+    }
+  ]
 }

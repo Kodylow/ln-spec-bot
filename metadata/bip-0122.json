@@ -9,5 +9,47 @@
   "Type": "Standards Track",
   "Created": "2015-08-29",
   "License": "PD",
-  "Post-History": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-August/010712.html"
+  "Post-History": "https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-August/010712.html",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "ABNF grammar {#abnf_grammar}",
+      "content": ""
+    },
+    {
+      "header": "Definition of chain ID {#definition_of_chain_id}",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Sample implementation {#sample_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

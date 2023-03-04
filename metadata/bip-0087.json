@@ -8,5 +8,83 @@
   "Status": "Proposed",
   "Type": "Standards Track",
   "Created": "2020-03-11",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Key sorting {#key_sorting}",
+      "content": ""
+    },
+    {
+      "header": "Path levels {#path_levels}",
+      "content": ""
+    },
+    {
+      "header": "Purpose",
+      "content": ""
+    },
+    {
+      "header": "Coin type {#coin_type}",
+      "content": ""
+    },
+    {
+      "header": "Account",
+      "content": ""
+    },
+    {
+      "header": "Change",
+      "content": ""
+    },
+    {
+      "header": "Index",
+      "content": ""
+    },
+    {
+      "header": "Address Discovery {#address_discovery}",
+      "content": ""
+    },
+    {
+      "header": "Address Gap Limit {#address_gap_limit}",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgement",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

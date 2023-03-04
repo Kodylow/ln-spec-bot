@@ -8,5 +8,39 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2012-08-03",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Service identifier {#service_identifier}",
+      "content": ""
+    },
+    {
+      "header": "Optional: Custom commands {#optional_custom_commands}",
+      "content": ""
+    },
+    {
+      "header": "Standardization",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

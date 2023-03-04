@@ -8,5 +8,39 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2017-03-27",
-  "License": "BSD-3-Clause"
+  "License": "BSD-3-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Interaction",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Lightning network {#lightning_network}",
+      "content": ""
+    },
+    {
+      "header": "Zero-knowledge contingent payments {#zero_knowledge_contingent_payments}",
+      "content": ""
+    },
+    {
+      "header": "Implementation",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

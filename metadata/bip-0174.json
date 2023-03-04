@@ -8,5 +8,131 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2017-07-12",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Handling Duplicated Keys {#handling_duplicated_keys}",
+      "content": ""
+    },
+    {
+      "header": "Proprietary Use Type {#proprietary_use_type}",
+      "content": ""
+    },
+    {
+      "header": "Version 0 {#version_0}",
+      "content": ""
+    },
+    {
+      "header": "Roles",
+      "content": ""
+    },
+    {
+      "header": "Creator",
+      "content": ""
+    },
+    {
+      "header": "Updater",
+      "content": ""
+    },
+    {
+      "header": "Signer",
+      "content": ""
+    },
+    {
+      "header": "Data Signers Check For {#data_signers_check_for}",
+      "content": ""
+    },
+    {
+      "header": "Simple Signer Algorithm {#simple_signer_algorithm}",
+      "content": ""
+    },
+    {
+      "header": "Change Detection {#change_detection}",
+      "content": ""
+    },
+    {
+      "header": "Combiner",
+      "content": ""
+    },
+    {
+      "header": "Input Finalizer {#input_finalizer}",
+      "content": ""
+    },
+    {
+      "header": "Transaction Extractor {#transaction_extractor}",
+      "content": ""
+    },
+    {
+      "header": "Encoding",
+      "content": ""
+    },
+    {
+      "header": "Extensibility",
+      "content": ""
+    },
+    {
+      "header": "Version Numbers {#version_numbers}",
+      "content": ""
+    },
+    {
+      "header": "Procedure For New Fields {#procedure_for_new_fields}",
+      "content": ""
+    },
+    {
+      "header": "Procedure For New Versions {#procedure_for_new_versions}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Manual CoinJoin Workflow {#manual_coinjoin_workflow}",
+      "content": ""
+    },
+    {
+      "header": "2-of-3 Multisig Workflow {#of_3_multisig_workflow}",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

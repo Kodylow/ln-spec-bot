@@ -1,3 +1,137 @@
 {
-  "RECENT CHANGES": ""
+  "RECENT CHANGES": "",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification: Key derivation {#specification_key_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Conventions",
+      "content": ""
+    },
+    {
+      "header": "Extended keys {#extended_keys}",
+      "content": ""
+    },
+    {
+      "header": "Child key derivation (CKD) functions {#child_key_derivation_ckd_functions}",
+      "content": ""
+    },
+    {
+      "header": "Private parent key \u2192 private child key {#private_parent_key_private_child_key}",
+      "content": ""
+    },
+    {
+      "header": "Public parent key \u2192 public child key {#public_parent_key_public_child_key}",
+      "content": ""
+    },
+    {
+      "header": "Private parent key \u2192 public child key {#private_parent_key_public_child_key}",
+      "content": ""
+    },
+    {
+      "header": "Public parent key \u2192 private child key {#public_parent_key_private_child_key}",
+      "content": ""
+    },
+    {
+      "header": "The key tree {#the_key_tree}",
+      "content": ""
+    },
+    {
+      "header": "Key identifiers {#key_identifiers}",
+      "content": ""
+    },
+    {
+      "header": "Serialization format {#serialization_format}",
+      "content": ""
+    },
+    {
+      "header": "Master key generation {#master_key_generation}",
+      "content": ""
+    },
+    {
+      "header": "Specification: Wallet structure {#specification_wallet_structure}",
+      "content": ""
+    },
+    {
+      "header": "The default wallet layout {#the_default_wallet_layout}",
+      "content": ""
+    },
+    {
+      "header": "Use cases {#use_cases}",
+      "content": ""
+    },
+    {
+      "header": "Full wallet sharing: m {#full_wallet_sharing_m}",
+      "content": ""
+    },
+    {
+      "header": "Audits: N(m/\\*) {#audits_nm}",
+      "content": ""
+    },
+    {
+      "header": "Per-office balances: m/i~H~ {#per_office_balances_mih}",
+      "content": ""
+    },
+    {
+      "header": "Recurrent business-to-business transactions: N(m/i~H~/0) {#recurrent_business_to_business_transactions_nmih0}",
+      "content": ""
+    },
+    {
+      "header": "Unsecure money receiver: N(m/i~H~/0) {#unsecure_money_receiver_nmih0}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Security",
+      "content": ""
+    },
+    {
+      "header": "Implications",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Test vector 1 {#test_vector_1}",
+      "content": ""
+    },
+    {
+      "header": "Test vector 2 {#test_vector_2}",
+      "content": ""
+    },
+    {
+      "header": "Test vector 3 {#test_vector_3}",
+      "content": ""
+    },
+    {
+      "header": "Test vector 4 {#test_vector_4}",
+      "content": ""
+    },
+    {
+      "header": "Test vector 5 {#test_vector_5}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

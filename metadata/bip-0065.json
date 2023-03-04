@@ -8,5 +8,79 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2014-10-01",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Escrow",
+      "content": ""
+    },
+    {
+      "header": "Non-interactive time-locked refunds {#non_interactive_time_locked_refunds}",
+      "content": ""
+    },
+    {
+      "header": "Two-factor wallets {#two_factor_wallets}",
+      "content": ""
+    },
+    {
+      "header": "Payment Channels {#payment_channels}",
+      "content": ""
+    },
+    {
+      "header": "Trustless Payments for Publishing Data {#trustless_payments_for_publishing_data}",
+      "content": ""
+    },
+    {
+      "header": "Proving sacrifice to miners\\' fees {#proving_sacrifice_to_miners_fees}",
+      "content": ""
+    },
+    {
+      "header": "Freezing Funds {#freezing_funds}",
+      "content": ""
+    },
+    {
+      "header": "Replacing the nLockTime field entirely {#replacing_the_nlocktime_field_entirely}",
+      "content": ""
+    },
+    {
+      "header": "Detailed Specification {#detailed_specification}",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "SPV Clients {#spv_clients}",
+      "content": ""
+    },
+    {
+      "header": "Credits",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Implementations",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

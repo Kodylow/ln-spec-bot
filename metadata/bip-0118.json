@@ -9,5 +9,75 @@
   "Type": "Standards Track",
   "Created": "2017-02-28",
   "License": "BSD-3-Clause",
-  "Requires": "340, 341, 342"
+  "Requires": "340, 341, 342",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Rules for signature opcodes {#rules_for_signature_opcodes}",
+      "content": ""
+    },
+    {
+      "header": "Public key {#public_key}",
+      "content": ""
+    },
+    {
+      "header": "Signature message {#signature_message}",
+      "content": ""
+    },
+    {
+      "header": "Security",
+      "content": ""
+    },
+    {
+      "header": "Signature replay {#signature_replay}",
+      "content": ""
+    },
+    {
+      "header": "Malleability",
+      "content": ""
+    },
+    {
+      "header": "Privacy considerations {#privacy_considerations}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Backwards compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "Revisions",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

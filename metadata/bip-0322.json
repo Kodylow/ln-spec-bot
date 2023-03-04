@@ -8,5 +8,87 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2018-09-10",
-  "License": "CC0-1.0"
+  "License": "CC0-1.0",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Types of Signatures {#types_of_signatures}",
+      "content": ""
+    },
+    {
+      "header": "Legacy",
+      "content": ""
+    },
+    {
+      "header": "Simple",
+      "content": ""
+    },
+    {
+      "header": "Full",
+      "content": ""
+    },
+    {
+      "header": "Full (Proof of Funds) {#full_proof_of_funds}",
+      "content": ""
+    },
+    {
+      "header": "Detailed Specification {#detailed_specification}",
+      "content": ""
+    },
+    {
+      "header": "Verification",
+      "content": ""
+    },
+    {
+      "header": "Verification Process {#verification_process}",
+      "content": ""
+    },
+    {
+      "header": "Signing",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Test vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Message hashing {#message_hashing}",
+      "content": ""
+    },
+    {
+      "header": "Message signing {#message_signing}",
+      "content": ""
+    },
+    {
+      "header": "Transaction Hashes {#transaction_hashes}",
+      "content": ""
+    }
+  ]
 }

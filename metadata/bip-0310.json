@@ -8,5 +8,63 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2018-03-10",
-  "License": "BSD-3-Clause"
+  "License": "BSD-3-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Additional data types {#additional_data_types}",
+      "content": ""
+    },
+    {
+      "header": "Request \\\"mining.configure\\\" {#request_mining.configure}",
+      "content": ""
+    },
+    {
+      "header": "Defined extensions {#defined_extensions}",
+      "content": ""
+    },
+    {
+      "header": "Extension \\\"version-rolling\\\" {#extension_version_rolling}",
+      "content": ""
+    },
+    {
+      "header": "Notification **\\\"mining.set_version_mask\\\"** {#notification_mining.set_version_mask}",
+      "content": ""
+    },
+    {
+      "header": "Changes in request **\\\"mining.submit\\\"** {#changes_in_request_mining.submit}",
+      "content": ""
+    },
+    {
+      "header": "Extension \\\"minimum-difficulty\\\" {#extension_minimum_difficulty}",
+      "content": ""
+    },
+    {
+      "header": "Extension \\\"subscribe-extranonce\\\" {#extension_subscribe_extranonce}",
+      "content": ""
+    },
+    {
+      "header": "Extension \\\"info\\\" {#extension_info}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

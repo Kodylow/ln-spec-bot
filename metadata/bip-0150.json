@@ -8,5 +8,79 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2016-03-23",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Known-peers and authorized-peers database {#known_peers_and_authorized_peers_database}",
+      "content": ""
+    },
+    {
+      "header": "Local identity key management {#local_identity_key_management}",
+      "content": ""
+    },
+    {
+      "header": "Authentication procedure {#authentication_procedure}",
+      "content": ""
+    },
+    {
+      "header": "`AUTHCHALLENGE` message {#authchallenge_message}",
+      "content": ""
+    },
+    {
+      "header": "`AUTHREPLY` message {#authreply_message}",
+      "content": ""
+    },
+    {
+      "header": "`AUTHPROPOSE` message {#authpropose_message}",
+      "content": ""
+    },
+    {
+      "header": "Post-Authentication Re-Keying {#post_authentication_re_keying}",
+      "content": ""
+    },
+    {
+      "header": "Identity-Addresses {#identity_addresses}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Example of an auth interaction {#example_of_an_auth_interaction}",
+      "content": ""
+    },
+    {
+      "header": "Disadvantages",
+      "content": ""
+    },
+    {
+      "header": "Reference implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

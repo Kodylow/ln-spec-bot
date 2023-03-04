@@ -8,5 +8,119 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2017-07-09",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Examples",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "TxRef Considerations {#txref_considerations}",
+      "content": ""
+    },
+    {
+      "header": "TxRef Format {#txref_format}",
+      "content": ""
+    },
+    {
+      "header": "Human-Readable Part {#human_readable_part}",
+      "content": ""
+    },
+    {
+      "header": "Separator",
+      "content": ""
+    },
+    {
+      "header": "Data Part {#data_part}",
+      "content": ""
+    },
+    {
+      "header": "Readability",
+      "content": ""
+    },
+    {
+      "header": "Encoding",
+      "content": ""
+    },
+    {
+      "header": "Magic Notes {#magic_notes}",
+      "content": ""
+    },
+    {
+      "header": "Encoding Example {#encoding_example}",
+      "content": ""
+    },
+    {
+      "header": "456789 on the Mainnet chain. We use this data in preparation for the",
+      "content": "Bech32 encoding algorithm:"
+    },
+    {
+      "header": "Outpoint Index {#outpoint_index}",
+      "content": ""
+    },
+    {
+      "header": "Decoding",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Reference implementations {#reference_implementations}",
+      "content": ""
+    },
+    {
+      "header": "Appendices",
+      "content": ""
+    },
+    {
+      "header": "Test Examples {#test_examples}",
+      "content": ""
+    },
+    {
+      "header": "TxRef",
+      "content": ""
+    },
+    {
+      "header": "TxRef with Outpoints {#txref_with_outpoints}",
+      "content": ""
+    },
+    {
+      "header": "TxRef Payload Value Choices: {#txref_payload_value_choices}",
+      "content": ""
+    },
+    {
+      "header": "Block Height Value: {#block_height_value}",
+      "content": ""
+    },
+    {
+      "header": "Tx Position Value: {#tx_position_value}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgements",
+      "content": ""
+    }
+  ]
 }

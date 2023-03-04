@@ -8,5 +8,39 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2015-11-30",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Redefinition of Transaction version {#redefinition_of_transaction_version}",
+      "content": ""
+    },
+    {
+      "header": "Wildcard inputs {#wildcard_inputs}",
+      "content": ""
+    },
+    {
+      "header": "Changes needed to implement {#changes_needed_to_implement}",
+      "content": ""
+    },
+    {
+      "header": "Isn\\'t this BIP bad because it encourage address re-use? {#isnt_this_bip_bad_because_it_encourage_address_re_use}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

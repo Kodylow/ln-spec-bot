@@ -8,5 +8,171 @@
   "Status": "Proposed",
   "Type": "Standards Track",
   "Created": "2020-11-10",
-  "License": "BSD-2-Clause"
+  "License": "BSD-2-Clause",
+  "sections": [
+    {
+      "header": "Introduction",
+      "content": ""
+    },
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Prerequisites",
+      "content": ""
+    },
+    {
+      "header": "File Extensions {#file_extensions}",
+      "content": ""
+    },
+    {
+      "header": "Roles",
+      "content": ""
+    },
+    {
+      "header": "Coordinator",
+      "content": ""
+    },
+    {
+      "header": "Signer",
+      "content": ""
+    },
+    {
+      "header": "Setup Process {#setup_process}",
+      "content": ""
+    },
+    {
+      "header": "Round 1 {#round_1}",
+      "content": ""
+    },
+    {
+      "header": "Coordinator {#coordinator_1}",
+      "content": ""
+    },
+    {
+      "header": "Signer {#signer_1}",
+      "content": ""
+    },
+    {
+      "header": "Round 2 {#round_2}",
+      "content": ""
+    },
+    {
+      "header": "Coordinator {#coordinator_2}",
+      "content": ""
+    },
+    {
+      "header": "Signer {#signer_2}",
+      "content": ""
+    },
+    {
+      "header": "Encryption",
+      "content": ""
+    },
+    {
+      "header": "The Token {#the_token}",
+      "content": ""
+    },
+    {
+      "header": "Key Derivation {#key_derivation}",
+      "content": ""
+    },
+    {
+      "header": "Encryption Scheme {#encryption_scheme}",
+      "content": ""
+    },
+    {
+      "header": "Descriptor Template {#descriptor_template}",
+      "content": ""
+    },
+    {
+      "header": "QR Codes {#qr_codes}",
+      "content": ""
+    },
+    {
+      "header": "Compatibility",
+      "content": ""
+    },
+    {
+      "header": "Security",
+      "content": ""
+    },
+    {
+      "header": "Privacy",
+      "content": ""
+    },
+    {
+      "header": "Test Vectors {#test_vectors}",
+      "content": ""
+    },
+    {
+      "header": "Mode: `NO_ENCRYPTION` with Public Keys {#mode_no_encryption_with_public_keys}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 1 {#round_1_1}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 2 {#round_2_1}",
+      "content": ""
+    },
+    {
+      "header": "Mode: `NO_ENCRYPTION` {#mode_no_encryption}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 1 {#round_1_2}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 2 {#round_2_2}",
+      "content": ""
+    },
+    {
+      "header": "Mode: `STANDARD` Encryption {#mode_standard_encryption}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 1 {#round_1_3}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 2 {#round_2_3}",
+      "content": ""
+    },
+    {
+      "header": "Mode: `EXTENDED` Encryption {#mode_extended_encryption}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 1 {#round_1_4}",
+      "content": ""
+    },
+    {
+      "header": "ROUND 2 {#round_2_4}",
+      "content": ""
+    },
+    {
+      "header": "Acknowledgement",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    }
+  ]
 }

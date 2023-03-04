@@ -8,5 +8,63 @@
   "Status": "Rejected",
   "Type": "Standards Track",
   "Created": "2015-10-14",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Specification",
+      "content": ""
+    },
+    {
+      "header": "Normalized Transaction ID computation {#normalized_transaction_id_computation}",
+      "content": ""
+    },
+    {
+      "header": "OP_CHECKSIGEX",
+      "content": ""
+    },
+    {
+      "header": "Version 1 {#version_1}",
+      "content": ""
+    },
+    {
+      "header": "Tracking Normalized Transaction IDs {#tracking_normalized_transaction_ids}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Normalization",
+      "content": ""
+    },
+    {
+      "header": "OP_CHECKSIGEX {#op_checksigex_1}",
+      "content": ""
+    },
+    {
+      "header": "Impact",
+      "content": ""
+    },
+    {
+      "header": "See also {#see_also}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

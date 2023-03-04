@@ -8,5 +8,27 @@
   "Status": "Final",
   "Type": "Standards Track",
   "Created": "2011-11-10",
-  "Post-History": "2011-11-02"
+  "Post-History": "2011-11-02",
+  "sections": [
+    {
+      "header": "Past Situation {#past_situation}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Browser User-Agents {#browser_user_agents}",
+      "content": ""
+    },
+    {
+      "header": "Proposal",
+      "content": ""
+    },
+    {
+      "header": "Timeline",
+      "content": ""
+    }
+  ]
 }

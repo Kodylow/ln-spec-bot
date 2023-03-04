@@ -7,5 +7,183 @@
   "Status": "Draft",
   "Type": "Standards Track",
   "Created": "2020-01-06",
-  "License": "BSD-3-Clause"
+  "License": "BSD-3-Clause",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Summary",
+      "content": ""
+    },
+    {
+      "header": "Motivation",
+      "content": ""
+    },
+    {
+      "header": "Detailed Specification {#detailed_specification}",
+      "content": ""
+    },
+    {
+      "header": "Before soft-fork activation / failed activation",
+      "content": "# continue to treat as NOP4\nif not self.flags.script_verify_default_check_template_verify_hash:\n# Potentially set for node-local policy to discourage premature use\nif self.flags.script_verify_discourage_upgradable_nops:\nreturn self.errors_with(errors.script_err_discourage_upgradable_nops)\nreturn self.return_as_nop()"
+    },
+    {
+      "header": "CTV always requires at least one stack argument",
+      "content": "if len(self.stack) < 1:\nreturn self.errors_with(errors.script_err_invalid_stack_operation)"
+    },
+    {
+      "header": "CTV only verifies the hash against a 32 byte argument",
+      "content": "if len(self.stack[-1]) == 32:\n# Ensure the precomputed data required for anti-DoS is available,\n# or cache it on first use\nif self.context.precomputed_ctv_data == None:\nself.context.precomputed_ctv_data = self.context.tx.get_default_check_template_precomputed_data()"
+    },
+    {
+      "header": "If the hashes do not match, return error",
+      "content": "if stack[-1] != self.context.tx.get_default_check_template_hash(self.context.nIn, self.context.precomputed_ctv_data)\nreturn self.errors_with(errors.script_err_template_mismatch)"
+    },
+    {
+      "header": "future upgrade can add semantics for this opcode with different length args",
+      "content": "# so discourage use when applicable\nif self.flags.script_verify_discourage_upgradable_nops:\nreturn self.errors_with(errors.script_err_discourage_upgradable_nops)\nelse:\nreturn self.return_as_nop()\n```"
+    },
+    {
+      "header": "Serialize as unsigned char",
+      "content": "r = struct.pack(\"B\", l)\nelif l < 0x10000:\n# Serialize as unsigned char 253 followed by unsigned 2 byte integer (little endian)\nr = struct.pack(\"<BH\", 253, l)\nelif l < 0x100000000:\n# Serialize as unsigned char 254 followed by unsigned 4 byte integer (little endian)\nr = struct.pack(\"<BI\", 254, l)\nelse:\n# Serialize as unsigned char 255 followed by unsigned 8 byte integer (little endian)\nr = struct.pack(\"<BQ\", 255, l)\nreturn r"
+    },
+    {
+      "header": "serialize as signed 8 byte integer (little endian)",
+      "content": "r += struct.pack(\"<q\", self.nValue)\nr += ser_string(self.scriptPubKey)\nreturn r"
+    },
+    {
+      "header": "If there are no scriptSigs we do not need to precompute a hash",
+      "content": "if any(inp.scriptSig for inp in self.vin):\nresult[\"scriptSigs\"] = sha256(b\"\".join(ser_string(inp.scriptSig) for inp in self.vin))\n# The same value is also pre-computed for and defined in BIP-341 and can be shared.\n# each nSequence is packed as 4 byte unsigned integer (little endian)\nresult[\"sequences\"] = sha256(b\"\".join(struct.pack(\"<I\", inp.nSequence) for inp in self.vin))\n# The same value is also pre-computed for and defined in BIP-341 and can be shared\n# See class CTxOut above for details.\nresult[\"outputs\"] = sha256(b\"\".join(out.serialize() for out in self.vout))\nreturn result"
+    },
+    {
+      "header": "parameter precomputed must be passed in for DoS resistance",
+      "content": "def get_default_check_template_hash(self, nIn, precomputed = None):\nif precomputed == None:\nprecomputed = self.get_default_check_template_precomputed_data()\nr = b\"\"\n# Serialize as 4 byte signed integer (little endian)\nr += struct.pack(\"<i\", self.nVersion)\n# Serialize as 4 byte unsigned integer (little endian)\nr += struct.pack(\"<I\", self.nLockTime)\n# we do not include the hash in the case where there is no\n# scriptSigs\nif \"scriptSigs\" in precomputed:\nr += precomputed[\"scriptSigs\"]\n# Serialize as 4 byte unsigned integer (little endian)\nr += struct.pack(\"<I\", len(self.vin))\nr += precomputed[\"sequences\"]\n# Serialize as 4 byte unsigned integer (little endian)\nr += struct.pack(\"<I\", len(self.vout))\nr += precomputed[\"outputs\"]\n# Serialize as 4 byte unsigned integer (little endian)\nr += struct.pack(\"<I\", nIn)\nreturn sha256(r)\n```"
+    },
+    {
+      "header": "Extra-fast test for pay-to-basic-standard-template CScripts:",
+      "content": "def is_pay_to_bare_default_check_template_verify_hash(self):\nreturn len(self) == 34 and self[0] == 0x20 and self[-1] == OP_CHECKTEMPLATEVERIFY\n```"
+    },
+    {
+      "header": "Deployment",
+      "content": ""
+    },
+    {
+      "header": "Reference Implementation {#reference_implementation}",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "The DefaultCheckTemplateVerifyHash of the transaction at the current input index matches the top of the stack {#the_defaultchecktemplateverifyhash_of_the_transaction_at_the_current_input_index_matches_the_top_of_the_stack}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the version and locktime {#committing_to_the_version_and_locktime}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the ScriptSigs Hash {#committing_to_the_scriptsigs_hash}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the number of inputs {#committing_to_the_number_of_inputs}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the Sequences Hash {#committing_to_the_sequences_hash}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the Number of Outputs {#committing_to_the_number_of_outputs}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the outputs hash {#committing_to_the_outputs_hash}",
+      "content": ""
+    },
+    {
+      "header": "Committing to the current input\\'s index {#committing_to_the_current_inputs_index}",
+      "content": ""
+    },
+    {
+      "header": "Committing to Values by Hash {#committing_to_values_by_hash}",
+      "content": ""
+    },
+    {
+      "header": "Using SHA256 {#using_sha256}",
+      "content": ""
+    },
+    {
+      "header": "Using Non-Tagged Hashes {#using_non_tagged_hashes}",
+      "content": ""
+    },
+    {
+      "header": "The Ordering of Fields {#the_ordering_of_fields}",
+      "content": ""
+    },
+    {
+      "header": "Design Tradeoffs and Risks {#design_tradeoffs_and_risks}",
+      "content": ""
+    },
+    {
+      "header": "Denial of Service and Validation Costs {#denial_of_service_and_validation_costs}",
+      "content": ""
+    },
+    {
+      "header": "Permanently Unspendable Outputs {#permanently_unspendable_outputs}",
+      "content": ""
+    },
+    {
+      "header": "Forwarding Addresses {#forwarding_addresses}",
+      "content": ""
+    },
+    {
+      "header": "NOP-Default and Recommended Standardness Rules {#nop_default_and_recommended_standardness_rules}",
+      "content": ""
+    },
+    {
+      "header": "Feature Redundancy {#feature_redundancy}",
+      "content": ""
+    },
+    {
+      "header": "Future Upgrades {#future_upgrades}",
+      "content": ""
+    },
+    {
+      "header": "CHECKTEMPLATEVERIFY Versions {#checktemplateverify_versions}",
+      "content": ""
+    },
+    {
+      "header": "Eltoo with OP_CHECKSIGFROMSTACKVERIFY {#eltoo_with_op_checksigfromstackverify}",
+      "content": ""
+    },
+    {
+      "header": "OP_AMOUNTVERIFY",
+      "content": ""
+    },
+    {
+      "header": "OP_CAT/OP_SHA256STREAM",
+      "content": ""
+    },
+    {
+      "header": "Backwards Compatibility {#backwards_compatibility}",
+      "content": ""
+    },
+    {
+      "header": "References",
+      "content": ""
+    },
+    {
+      "header": "Note on Similar Alternatives {#note_on_similar_alternatives}",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    }
+  ]
 }

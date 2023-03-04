@@ -7,5 +7,59 @@
   "Status": "Draft",
   "Type": "Informational",
   "Created": "2016-02-10",
-  "License": "PD"
+  "License": "PD",
+  "sections": [
+    {
+      "header": "Abstract",
+      "content": ""
+    },
+    {
+      "header": "Copyright",
+      "content": ""
+    },
+    {
+      "header": "Definitions",
+      "content": ""
+    },
+    {
+      "header": "Motivations",
+      "content": ""
+    },
+    {
+      "header": "Interaction with Other Procedures {#interaction_with_other_procedures}",
+      "content": ""
+    },
+    {
+      "header": "Standard form heterogenous input script transaction {#standard_form_heterogenous_input_script_transaction}",
+      "content": ""
+    },
+    {
+      "header": "Rules",
+      "content": ""
+    },
+    {
+      "header": "Rationale",
+      "content": ""
+    },
+    {
+      "header": "Alternate form heterogenous input script transactions {#alternate_form_heterogenous_input_script_transactions}",
+      "content": ""
+    },
+    {
+      "header": "Procedure",
+      "content": ""
+    },
+    {
+      "header": "Rules {#rules_1}",
+      "content": ""
+    },
+    {
+      "header": "Non-compliant heterogenous input script transactions {#non_compliant_heterogenous_input_script_transactions}",
+      "content": ""
+    },
+    {
+      "header": "Reference",
+      "content": ""
+    }
+  ]
 }
