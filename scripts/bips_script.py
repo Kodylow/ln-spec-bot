@@ -1,7 +1,7 @@
-import os
 import glob
-import re
 import json
+import os
+import re
 
 folder_path = "../bips"
 metadata_dir = "../metadata"
@@ -30,17 +30,18 @@ for filename in glob.iglob(folder_path + "/**/*.md", recursive=True):
 
     # Extract the sections from the contents
     sections = []
-    for section in re.findall("(?ms)^#{1,6}.*?\n\n", contents):
+    for match in re.finditer(r"#+\s*(.+?)\n(.+?)(?=\n#+|$)", contents, re.DOTALL):
         section_dict = {}
-        section_dict["header"] = section.strip().split("\n")[0].strip("# ")
-        section_dict["content"] = "\n".join(section.strip().split("\n")[1:])
+        section_dict["header"] = match.group(1).strip()
+        section_dict["content"] = match.group(2).strip()
         sections.append(section_dict)
 
     # Add the sections to the metadata dictionary
     metadata_dict["sections"] = sections
 
     # Create a new filename with the same name as the markdown file, but with a .json extension
-    json_filename = os.path.join(metadata_dir, os.path.basename(os.path.splitext(filename)[0] + ".json"))
+    json_filename = os.path.join(metadata_dir, os.path.basename(
+        os.path.splitext(filename)[0] + ".json"))
 
     # Serialize the metadata to a JSON string
     metadata_json = json.dumps(metadata_dict, indent=2)

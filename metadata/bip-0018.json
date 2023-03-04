@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP modifies the basic format of transaction inputs and outputs,\nreplacing the current scriptSig and scriptPubKey (scripts executed to\nvalidate a transaction) with new contents: dataSig, scriptCheck, and\nhashScriptCheck."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The purpose of pay-to-script-hash is to move the responsibility for\nsupplying the conditions to redeem a transaction from the sender of the\nfunds to the redeemer.\n\nThe benefit is allowing a sender to fund any arbitrary transaction, no\nmatter how complicated, using a fixed-length 20-byte hash that is short\nenough to scan from a QR code or easily copied and pasted."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "scriptSig and scriptPubKey are hereby deemed to be deprecated.\nBitcoin-compatible clients MUST still continue to support them for\ncompatibility, but it should not be used for any new transaction types.\nServices and people which send Bitcoins SHOULD continue to support old\npubkey-based addresses for the time being. Services and people which\nreceive Bitcoins MAY continue to generate and use old pubkey-based\naddresses.\n\nTo replace these, there are 3 new elements:\n\n-   dataSig is included in place of scriptSig in transaction inputs, and\ncontains multiple serialized data elements\n-   scriptCheck is the final element of dataSig, and is executed with\nthe preceding dataSig elements preloaded onto the stack (the element\nimmediately before scriptCheck is the top of the stack)\n-   hashScriptCheck is included in place of scriptPubKey in transaction\noutputs, to specify the hash of the scriptCheck allowed to redeem it\n\ndataSig is to be encoded the same as a push-only script.\n\nhashScriptCheck must be encoded exactly so:\n\n`\u00a0\u00a0\u00a00xa9\u00a00x14\u00a0(20-byte-hash-value)\u00a00x87`\n\nThis can be interpreted by legacy (pre-BIP 18) clients as the following\nscript:\n\n`\u00a0\u00a0\u00a0OP_HASH160\u00a0[20-byte-hash-value]\u00a0OP_EQUAL`\n\nIf this template is not matched exactly OR the transaction is in a block\nwith a timestamp before the hashScriptCheck activation date, validation\nMUST proceed in backward-compatibility mode, using\nscriptSig+scriptPubKey rather than dataSig+scriptCheck+hashScriptCheck.\n\nA hashScriptCheck-compliant input is valid only if:\n\n-   dataSig MUST NOT contain any operations other than \\\"push data\\\" (it\nis data, not a script; no mixing scriptSig with hashScriptCheck)\n-   scriptCheck MUST hash (using Bitcoin\\'s Hash160 algorithm) to the\noutput\\'s hashScriptCheck.\n-   scriptCheck MUST be executed with the dataSig-based stack specified\nabove (ie, not including scriptCheck itself) to perform validation\n(this does not imply clients are required to validate transactions).\n-   scriptCheck must not abort, and must leave a true value on the top\nof the stack. This is the current behaviour for\nscriptSig+scriptPubKey.\n\nThe new scriptCheck SHOULD be checked against \\\"standard transaction\\\"\ntemplates by miners.\n\nFor example, the hashScriptCheck and corresponding dataSig for a\none-signature-required transaction is:\n\n`\u00a0\u00a0\u00a0scriptCheck:\u00a0[pubkey]\u00a0OP_CHECKSIG`\\\n`\u00a0\u00a0\u00a0dataSig:\u00a0[signature]\u00a0{[pubkey]\u00a0OP_CHECKSIG}`\\\n`\u00a0\u00a0\u00a0hashScriptCheck:\u00a0[20-byte-hash\u00a0of\u00a0{[pubkey]\u00a0OP_CHECKSIG}]`"
     },
     {
       "header": "Signature operation limits for scriptCheck {#signature_operation_limits_for_scriptcheck}",
-      "content": ""
+      "content": "Signature operations in scriptCheck do not follow the same rules\npreviously applied to scriptSig and scriptPubKey. Instead, they shall\ncontribute to the maximum number allowed per block (20,000) as follows:\n\n1.  OP_CHECKSIG and OP_CHECKSIGVERIFY count as 1 signature operation,\nwhether or not they are evaluated.\n2.  OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY immediately preceded by\nOP_1 through OP_16 are counted as 1 to 16 signature operation,\nwhether or not they are evaluated.\n3.  All other OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY are counted as\n20 signature operations.\n\nExamples:\n\n+3 signature operations:\n\n`\u00a0\u00a0\u00a02\u00a0[pubkey1]\u00a0[pubkey2]\u00a0[pubkey3]\u00a03\u00a0OP_CHECKMULTISIG`\n\n+22 signature operations\n\n`\u00a0\u00a0\u00a0OP_CHECKSIG\u00a0OP_IF\u00a0OP_CHECKSIGVERIFY\u00a0OP_ELSE\u00a0OP_CHECKMULTISIGVERIFY\u00a0OP_ENDIF`"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "This BIP replaces BIPs 12 and 17, which propose extensions to the Script\nsystem to allow scriptPubKey to outsource its verification. It also\nreplaces BIP 16, which is identical in terms of protocol, but suggests a\nspecific implementation and does not deprecate scriptPubKey to maintain\nprotocol consistency.\n\nThe Motivation for this BIP (and BIP 13, the pay-to-script-hash address\ntype) is somewhat controversial; several people feel that it is\nunnecessary, and complex/multisignature transaction types should be\nsupported by simply giving the sender the complete {serialized script}.\nThe author believes that this BIP will minimize the changes needed to\nall of the supporting infrastructure that has already been created to\nsend funds to a base58-encoded-20-byte bitcoin addresses, allowing\nmerchants and exchanges and other software to start supporting\nmultisignature transactions sooner.\n\nThe signature operation counting rules are intended to be easy and quick\nto implement by statically scanning scriptCheck. Bitcoin imposes a\nmaximum-number-of-signature-operations per block to prevent\ndenial-of-service attacks on miners. If there was no limit, a rogue\nminer might broadcast a block that required hundreds of thousands of\nECDSA signature operations to validate, and it might be able to get a\nhead start computing the next block while the rest of the network worked\nto validate the current one.\n\nThere is a 1-confirmation attack on old implementations, but it is\nexpensive and difficult in practice. The attack is:\n\n1.  Attacker creates a pay-to-script-hash transaction that is valid when\ninterpreted as scriptPubKey, but contains an invalid scriptCheck,\nand sends themselves some coins using it.\n2.  Attacker also creates a standard transaction that spends the\npay-to-script transaction, and pays the victim who is running old\nsoftware.\n3.  Attacker mines a block that contains both transactions.\n\nIf the victim accepts the 1-confirmation payment, then the attacker wins\nbecause both transactions will be invalidated when the rest of the\nnetwork overwrites the attacker\\'s invalid block.\n\nThe attack is expensive because it requires the attacker create a block\nthat they know will be invalidated by the rest of the network. It is\ndifficult because creating blocks is difficult and users should not\naccept 1-confirmation transactions for higher-value transactions."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "hashScriptCheck transactions are non-standard to old implementations,\nwhich will (typically) not relay them nor include them in blocks.\n\nOld implementations will validate that scriptCheck\\'s hash value matches\nwhen they validate blocks created by software that fully support this\nBIP, but will do no other validation.\n\nAvoiding a block-chain split by malicious pay-to-script transactions\nrequires careful handling of one case:\n\n-   A pay-to-script-hash transaction that is invalid for new\nclients/miners but valid for old clients/miners.\n\nTo gracefully upgrade and ensure no long-lasting block-chain split\noccurs, more than 50% of miners must support full validation of the new\ntransaction type and must switch from the old validation rules to the\nnew rules at the same time.\n\nTo judge whether or not more than 50% of hashing power supports this\nBIP, miners are asked to upgrade their software and put the string\n\\\"/P2SH/\\\" in the input of the coinbase transaction for blocks that they\ncreate.\n\nAt 00:00:00 UTC on 15 Mar 2012, the block-chain will be examined to\ndetermine the number of blocks supporting pay-to-script-hash for the\nprevious 7 days. If 550 or more contain \\\"/P2SH/\\\" in their coinbase,\nthen all blocks with timestamps after 00:00:00 UTC on 1 Apr 2012 shall\nhave their pay-to-script-hash transactions fully validated.\nApproximately 1,000 blocks are created in a week; 550 should, therefore,\nbe approximately 55% of the network supporting the new feature.\n\nIf a majority of hashing power does not support the new validation\nrules, then rollout will be postponed (or rejected if it becomes clear\nthat a majority will never be achieved)."
     },
     {
       "header": "Forwards Compatibility {#forwards_compatibility}",
-      "content": ""
+      "content": "The first two bytes of hashScriptCheck specify the hash algorithm and\nlength used to verify scriptCheck. This BIP only allows Bitcoin\\'s\nHash160 algorithm, but leaves open the possibility of a future BIP\nimplementing others."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "<https://github.com/gavinandresen/bitcoin-git/tree/pay_to_script_hash>"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   The [Address format for Pay to Script Hash\nBIP](bip-0013.mediawiki \"wikilink\")\n-   [BIP 16 - Pay to Script Hash (aka\n\\\"/P2SH/\\\")](bip-0016.mediawiki \"wikilink\")\n-   M-of-N Multisignature Transactions [BIP\n11](bip-0011.mediawiki \"wikilink\")"
     }
   ]
 }

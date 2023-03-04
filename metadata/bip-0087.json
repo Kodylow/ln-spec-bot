@@ -12,79 +12,75 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a sane hierarchy for deterministic multisig wallets\nbased on an algorithm described in BIP-0032 (BIP32 from now on), purpose\nscheme described in BIP-0043 (BIP43 from now on), and multi-account\nhierarchy described in BIP-0044 (BIP44 from now on).\n\nThis BIP is a particular application of BIP43."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "With the increase of more user friendly (offline) multisignature\nwallets, and adoption of new technologies such as [the descriptor\nlanguage](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md)\nand [BIP-0174 (Partially Signed Bitcoin\nTransactions)](https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki),\nit is necessary to create a common derivation scheme that makes use of\nall new technologies.\n\nAs background, BIP 44/49/84 specifies:\n\nm / purpose' / coin_type' / account' / change / address_index\n\nwhere the BIP43 `purpose'` path is separate for each script (P2PKH,\nP2WPKH-in-P2SH, and P2WPKH respectively). Having a script-per-derivation\nfor single sig wallets allows for easy backup and restore, with just the\nprivate key information.\n\nMultisignature wallets need more information to backup and restore (such\nas all cosigner public keys), and these per-script derivations are made\nredundant with descriptors, which provide that information (while also\nspecifying a collection of output scripts). A modern standardization is\nneeded for multisig derivation paths. There are some in existence, but\nall have issues. For example, BIP45 specifies:\n\nm / purpose' / cosigner_index / change / address_index\n\nBIP45 unecessarily demands a single script type (here, P2SH). In\naddition, BIP45 sets `cosigner_index` in order to sort the `purpose'`\npublic keys of each cosigner. This too is redundant, as descriptors can\nset the order of the public keys with `multi` or have them sorted\nlexicographically (as described in\n[BIP67](https://github.com/bitcoin/bips/blob/master/bip-0067.mediawiki))\nwith `sortedmulti`. Sorting public keys between cosigners in order to\ncreate the full derivation path, prior to sending the key record to the\ncoordinator to create the descriptor, merely adds additional unnecessary\ncommunication rounds.\n\nThe second multisignature \\\"standard\\\" in use is m/48\\', which\nspecifies:\n\nm / purpose' / coin_type' / account' / script_type' / change / address_index\n\nRather than following in BIP 44/49/84\\'s path and having a separate BIP\nper script after P2SH (BIP45), vendors decided to insert `script_type'`\ninto the derivation path (where P2SH-P2WSH=1, P2WSH=2, Future_Script=3,\netc). As described previously, this is unnecessary, as the descriptor\nsets the script. While it attempts to reduce maintainence work by\ngetting rid of new BIPs-per-script, it still requires maintaining an\nupdated, redundant, `script_type` list.\n\nThe structure proposed later in this paper solves these issues and is\nquite comprehensive. It allows for the handling of multiple accounts,\nexternal and internal chains per account, and millions of addresses per\nchain, in a multi-party, multisignature, hierarchical deterministic\nwallet regardless of the script type [^1].\n\nThis paper was inspired from BIP44."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Key sorting {#key_sorting}",
-      "content": ""
+      "content": "### Key sorting {#key_sorting}\n\nAny wallet that supports descriptors inherently supports deterministic\nkey sorting as per BIP67 (through the `sortedmulti` function) so that\nall possible multisignature addresses/scripts are derived from\ndeterministically sorted public keys."
     },
     {
       "header": "Path levels {#path_levels}",
-      "content": ""
+      "content": "We should not be mixing keys and scripts in the same layer. The wallet\nshould create extended private/public keys independent of the script\ntype, whereas the descriptor language tells wallets to watch the\nmultisig outputs with the specified public keys.\n\nWe define the following 5 levels in the BIP32 path:\n\nm / purpose' / coin_type' / account' / change / address_index\n\n`h` or `'` in the path indicates that BIP32 hardened derivation is used.\n\nEach level has a special meaning, described in the chapters below."
     },
     {
       "header": "Purpose",
-      "content": ""
+      "content": "Purpose is a constant set to `87'` following the BIP43 recommendation.\nIt indicates that the subtree of this node is used according to this\nspecification.\n\nHardened derivation is used at this level."
     },
     {
       "header": "Coin type {#coin_type}",
-      "content": ""
+      "content": "One master node (seed) can be used for multiple Bitcoin networks.\nSharing the same space for various networks has some disadvantages.\n\nThis level creates a separate subtree for every network, avoiding\nreusing addresses across networks and improving privacy issues.\n\nCoin type `0` for mainnet and `1` for testnets (testnet, regtest, and\nsignet).\n\nHardened derivation is used at this level."
     },
     {
       "header": "Account",
-      "content": ""
+      "content": "This level splits the key space into independent user identities,\nfollowing the BIP44 pattern, so the wallet never mixes the coins across\ndifferent accounts.\n\nUsers can use these accounts to organize the funds in the same fashion\nas bank accounts; for donation purposes (where all addresses are\nconsidered public), for saving purposes, for common expenses, etc.\n\nAccounts are numbered from index `0` in sequentially increasing manner.\nThis number is used as child index in BIP32 derivation.\n\nHardened derivation is used at this level.\n\nIt is crucial that this level is increased for each new wallet joined or\nprivate/public keys created; for both privacy and cryptographic\npurposes. For example, before sending a new key record to a coordinator,\nthe wallet must increment the `account'` level. This prevents key\nreuse - across ECDSA and Schnorr signatures, across different script\ntypes, and inbetween the same wallet types."
     },
     {
       "header": "Change",
-      "content": ""
+      "content": "Constant `0` is used for external chain and constant `1` for internal\nchain (also known as change addresses). External chain is used for\naddresses that are meant to be visible outside of the wallet (e.g. for\nreceiving payments). Internal chain is used for addresses which are not\nmeant to be visible outside of the wallet and is used for return\ntransaction change.\n\nPublic derivation is used at this level."
     },
     {
       "header": "Index",
-      "content": ""
+      "content": "Addresses are numbered from index `0` in sequentially increasing manner.\nThis number is used as child index in BIP32 derivation.\n\nPublic derivation is used at this level."
     },
     {
       "header": "Address Discovery {#address_discovery}",
-      "content": ""
+      "content": "The multisig descriptors or descriptor template that is generated from\nthe cosigners\\' combined key records should be used to generate and\ndiscover addresses.\n\nPlease see [BIP-0129 (Bitcoin Secure Multisig\nSetup)](https://github.com/bitcoin/bips/blob/master/bip-0129.mediawiki)\nfor an introduction on descriptor templates. The descriptor or\ndescriptor template should contain the key origin information for\nmaximum compatibility with BIP-0174.\n\nFor example:\n\nThe following descriptor template and derivation path restrictions:\n\n`wsh(sortedmulti(2,[xfpForA/87'/0'/0']XpubA/**,[xfpForB/87'/0'/0']XpubB/**))`\n\n`/0/*,/1/*`\n\nExpands to the two concrete descriptors:\n\n`wsh(sortedmulti(2,[xfpForA/87'/0'/0']XpubA/0/*,[xfpForB/87'/0'/0']XpubB/0/*))`\n\n`wsh(sortedmulti(2,[xfpForA/87'/0'/0']XpubA/1/*,[xfpForB/87'/0'/0']XpubB/1/*))`\n\nTo discover addresses, import both the receiving and change descriptors;\nrespect the gap limit described below."
     },
     {
       "header": "Address Gap Limit {#address_gap_limit}",
-      "content": ""
+      "content": "Address gap limit is currently set to 20. If the software hits 20 unused\naddresses in a row, it expects there are no used addresses beyond this\npoint and stops searching the address chain.\n\nWallet software should warn when the user is trying to exceed the gap\nlimit on an external descriptor by generating multiple unused addresses."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "Any script that is supported by descriptors (and the specific wallet\nimplementation) is compatible with this BIP.\n\nAs wallets complying with this BIP are descriptor wallets, this\ntherefore necessitates that the cosigners backup their private key\ninformation and the descriptor, in order to properly restore at a later\ntime. This shouldn\\'t be a user burden, since (to much user surprise),\nall cosigner public keys need to be supplied in addition to `M` seeds in\nany `M` of `N` multisig restore operation. The descriptor provides this\ninformation in a standardized format, with key origin information and\nerror detection."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "```{=html}\n<references/>\n```"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "--------- --------- ---------- --------- ------------------------------\nnetwork   account   chain      address   path\nmainnet   first     external   first     m / 87\\' / 0\\' / 0\\' / 0 / 0\nmainnet   first     external   second    m / 87\\' / 0\\' / 0\\' / 0 / 1\nmainnet   first     change     first     m / 87\\' / 0\\' / 0\\' / 1 / 0\nmainnet   first     change     second    m / 87\\' / 0\\' / 0\\' / 1 / 1\nmainnet   second    external   first     m / 87\\' / 0\\' / 1\\' / 0 / 0\nmainnet   second    external   second    m / 87\\' / 0\\' / 1\\' / 0 / 1\ntestnet   first     external   first     m / 87\\' / 1\\' / 0\\' / 0 / 0\ntestnet   first     external   second    m / 87\\' / 1\\' / 0\\' / 0 / 1\ntestnet   first     change     first     m / 87\\' / 1\\' / 0\\' / 1 / 0\ntestnet   first     change     second    m / 87\\' / 1\\' / 0\\' / 1 / 1\ntestnet   second    external   first     m / 87\\' / 1\\' / 1\\' / 0 / 0\ntestnet   second    external   second    m / 87\\' / 1\\' / 1\\' / 0 / 1\ntestnet   second    change     first     m / 87\\' / 1\\' / 1\\' / 1 / 0\ntestnet   second    change     second    m / 87\\' / 1\\' / 1\\' / 1 / 1\n--------- --------- ---------- --------- ------------------------------"
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "None at the moment."
     },
     {
       "header": "Acknowledgement",
-      "content": ""
+      "content": "Special thanks to SomberNight, Craig Raw, David Harding, Jochen\nHoenicke, Sjors Provoost, and others for their feedback on the\nspecification."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "Original mailing list thread:\n<https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-March/018630.html>\n\n-   [BIP-0032 (Hierarchical Deterministic\nWallets)](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)\n-   [BIP-0043 (Purpose Field for Deterministic\nWallets)](https://github.com/bitcoin/bips/blob/master/bip-0043.mediawiki)\n-   [BIP-0044 (Multi-Account Hierarchy for Deterministic\nWallets)](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)\n-   [Output\nDescriptors](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md)\n-   [BIP-0174 (Partially Signed Bitcoin Transaction\nFormat)](https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki)\n-   [BIP-0067 (Deterministic Pay-to-script-hash multi-signature\naddresses through public key\nsorting)](https://github.com/bitcoin/bips/blob/master/bip-0067.mediawiki)\n-   [BIP-0129 (Bitcoin Secure Multisig\nSetup)](https://github.com/bitcoin/bips/blob/master/bip-0129.mediawiki)\n\n[^1]: **Why propose this structure only for multisignature wallets?**\nCurrently, single-sig wallets are able to restore funds using just\nthe master private key data (in the format of BIP39 usually). Even\nif the user doesn\\'t recall the derivation used, the wallet\nimplementation can iterate through common schemes (BIP44/49/84).\nWith this proposed hierarchy, the user would either have to now\nbackup additional data (the descriptor), or the wallet would have to\nattempt all script types for every account level when restoring.\nBecause of this, even though the descriptor language handles the\nsignature type just like it does the script type, it is best to\nrestrict this script-agnostic hierarchy to multisignature wallets\nonly."
     }
   ]
 }

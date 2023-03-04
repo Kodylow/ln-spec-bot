@@ -12,43 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a scheme for key derivation that allows for dynamic\ncreation of key hierarchies based on the algorithm described in BIP32."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Several proposals have been made to try to standardize a structure for\nhierarchical deterministic wallets for the sake of interoperability\n(reference BIP32, BIP44, BIP45). However, all proposals to date have\ntried to impose a specific structure upfront without providing any\nflexibility for dynamic creation of new hierarchical levels with\ndifferent semantics or mapping between different applications that use\ndistinct structures.\n\nInstead of attempting to impose a specific structure upfront, this BIP\nproposes that we design the derivation in such a way that we can\ncontinue extending hierarchies arbitrarily and indefinitely."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "BIP32 provides a hierarchical derivation scheme where every node in the\ntree can be either used to derive child nodes or used as a signing key\nfor ECDSA. This means that as soon as we choose to use a node as a\nsigning key, we can no longer derive children from that node. To draw an\nanalogy to file systems, each node is either a file or a directory but\nnever both. However, given the need to predictably know the location of\nnew children, it is generally not a good idea to mix both signing keys\nand parent nodes at the same level in the hierarchy. This means that as\nsoon as we\\'ve decided that a particular level in the hierarchy is to be\nused for signing keys, we\\'ve lost the ability to nest deeper levels\ninto the tree.\n\nAt every level of the hierarchy, we reserve the child with index 0 to\nallow further nesting, and for signing key parent nodes use child\nindices 1 to MAX_INDEX (2^31^ - 1) for signing keys. We can use either\nhardened or nonhardened derivation.\n\nLet p denote a specific signing key parent node and k be an index\ngreater than 0. The children signing keys are then:\n\np / k\n\nwith k \\> 0.\n\nTo create sublevels, we derive the nested nodes:\n\np / 0 / n\n\nwith n \u2265 0.\n\nEach of these nodes can now contain signing key children of their own,\nand again we reserve index 0 to allow deeper nesting."
     },
     {
       "header": "Notation",
-      "content": ""
+      "content": "We propose the following shorthand for writing nested node derivations:\n\np // n instead of p / 0 / n\n\np //\\' n instead of p / 0\\' / n"
     },
     {
       "header": "Mappings",
-      "content": ""
+      "content": "Rather than specifying upfront which path is to be used for a specific\npurpose (i.e. external invoicing vs. internal change), different\napplications can specify arbitrary parent nodes and derivation paths.\nThis allows for nesting of sublevels to arbitrary depth with\napplication-specified semantics. Rather than trying to specify use cases\nupfront, we leave the design completely open-ended. Different\napplications can exchange these mappings for interoperability.\nEventually, if certain mappings become popular, application user\ninterfaces can provide convenient shortcuts or use them as defaults.\n\nNote that BIP32 suggests reserving child 0 for the derivation of signing\nkeys rather than sublevels. It is not really necessary to reserve\nsigning key parents, however, as each key\\'s parent\\'s path can be\nexplicitly stated. But unless we reserve a child for sublevel\nderivation, we lose the ability to nest deeper levels into the\nhierarchy. While we could reserve any arbitrary index for nesting\nsublevels, reserving child 0 seems simplest to implement, leaving all\nindices \\> 0 for contiguously indexed signing keys. We could also use\nMAX_INDEX (2^31^ - 1) for this purpose. However, we believe doing so\nintroduces more ideosyncracies into the semantics and will present a\nproblem if we ever decide to extend the scheme to use indices larger\nthan 31 bits."
     },
     {
       "header": "Use Cases {#use_cases}",
-      "content": ""
-    },
-    {
-      "header": "Account Hierarchies {#account_hierarchies}",
-      "content": ""
+      "content": "### Account Hierarchies {#account_hierarchies}\n\nFor all that follows, we assume that key indices k \\> 0 and parent node\nindices n \u2265 0.\n\nFrom a master seed m, we can construct a default account using the\nfollowing derivations for nonhardened signing keys:\n\nm / 1 / k (for change/internal outputs)\n\nm / 2 / k (for invoice/external outputs)\n\nTo create subaccount a~n~, we use:\n\na~n~ = m // n\n\nTo generate keys for subaccount a~n~, we use:\n\na~n~ / 1 / k (for change/internal outputs)\n\na~n~ / 2 / k (for invoice/external outputs)\n\nWe can continue creating subaccounts indefinitely using this scheme."
     },
     {
       "header": "Bidirectional Payment Channels {#bidirectional_payment_channels}",
-      "content": ""
+      "content": "In order to create a bidirectional payment channel, it is necessary that\nprevious commitments be revokable. In order to revoke previous\ncommitments, each party reveals a secret to the other that would allow\nthem to steal the funds in the channel if a transaction for a previous\ncommitment is inserted into the blockchain.\n\nBy allowing for arbitrary nesting of sublevels, we can construct\ndecision trees of arbitrary depth and revoke an entire branch by\nrevealing a parent node used to derive all the children."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [Lightning Network\nWhitepaper](https://lightning.network/lightning-network-paper.pdf \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

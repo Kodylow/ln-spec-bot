@@ -11,23 +11,23 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes an enhancement to the payment protocol ([BIP\n70](bip-0070.mediawiki \"wikilink\")) that addresses the need for short\nURLs when scanning from QR codes. It generalizes the specification for\nthe behavior of a payment request URL in a way that allows the client\nand server to negotiate the content of the response using the HTTP\nAccept: header field. Specifically, the client can indicate to the\nserver whether it prefers to receive a bitcoin URI or a payment request.\n\nImplementation of this BIP does not require full payment request ([BIP\n70](bip-0070.mediawiki \"wikilink\")) support."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The payment protocol augments the bitcoin: uri scheme with an additional\n\\\"payment\\\" parameter that specifies a URL where a payment request can\nbe downloaded. This creates long URIs that, when rendered as a QR code,\nhave a high information density. Dense QR codes can be difficult to scan\nresulting in a more frustrating user experience. The goal is to create a\nstandard that would allow QR scanning wallets to use less dense QR\ncodes. It also makes general purpose QR code scanners more usable with\nbitcoin accepting websites."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "QR scanning wallets will consider a non bitcoin URI scanned from a QR\ncode to be an end point where either a bitcoin URI or a payment request\ncan be obtained.\n\nA wallet client uses the Accept: HTTP header to specify whether it can\naccept a payment request, a URI, or both. A media type of text/uri-list\nspecifies that the client accepts a bitcoin URI. A media type of\napplication/bitcoin-paymentrequest specifies that the client can process\na payment request. In the absence of an Accept: header, the server is\nexpected to respond with text/html suitable for rendering in a browser.\nAn HTML response will ensure that QR codes scanned by non Bitcoin wallet\nQR scanners are useful (they could render an HTML page with a payment\nlink that when clicked would open a wallet on the device).\n\nIt is not required that the client and server support the full semantics\nof an HTTP Accept header. If application/bitcoin-paymentrequest is\nspecified in the header, the server should send a payment request\nregardless of anything else specified in the Accept header. If\ntext/uri-list is specified (but not application/bitcoin-paymentrequest),\na valid Bitcoin URI should be returned. If neither is specified, the\nserver can return an HTML page. When a uri-list is returned only the\nfirst item in the list is used (and expected to be a bitcoin URI), any\nadditional URIs should be ignored."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Only QR scanning wallets that implement this BIP will be able to process\nQR codes containing payment request URLs. There are two possible\nworkarounds for QR scanning wallets that do not implement this BIP: 1)\nthe server gives the user an option to change the QR code to a bitcoin:\nURI or 2) the user scans the code with a generic QR code scanner.\n\nIn the second scenario, if the server responds with a webpage containing\na link to a bitcoin URI, the user can complete the payment by clicking\nthat link provided the user has a wallet installed on their device and\nit supports bitcoin URIs. If the wallet/device does not have support for\nbitcoin URIs, the user can fall back on address copy/paste.\n\nThis BIP should be fully compatible with BIP 70 assuming it is required\nthat wallets implementing BIP 70 make use of the Accept: HTTP header\nwhen retrieving a payment request."
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "The first image below is of a bitcoin URI with an amount and payment\nrequest specified (note, this is a fairly minimal URI as it does not\ncontain a label and the request URL is of moderate size). The second\nimage is a QR code with only the payment request url specified.\n\n`<img src=bip-0073/a.png>`{=html}`</img>`{=html}`<img src=bip-0073/b.png>`{=html}`</img>`{=html}"
     }
   ]
 }

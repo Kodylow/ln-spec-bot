@@ -12,27 +12,23 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "[BIP 0037](BIP_0037 \"wikilink\") introduced a new flag to version\nmessages which says whether to relay new transaction messages to that\nnode.\n\nThe protocol version was upgraded to 70001, and the (now accepted) BIP\n0037 became implemented.\n\nThe implementation is problematic because the RelayTransactions flag is\nan optional part of the version message stream."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "One property of Bitcoin messages is their fixed number of fields. This\nkeeps the format simple and easily understood. Adding optional fields to\nmessages will cause deserialisation issues when other fields come after\nthe optional one.\n\nAs an example, the length of version messages might be checked to ensure\nthe byte stream is consistent. With optional fields, this checking is no\nlonger possible. This is desirable to check for consistency inside\ninternal deserialization code, and proper formatting of version messages\noriginating from other nodes. In the future with diversification of the\nBitcoin network, it will become desirable to enforce this kind of strict\nadherance to standard messages with field length compliance with every\nprotocol version.\n\nAnother property of fixed-length field messages is the ability to pass\nstream operators around for deserialization. This property is also lost,\nas now the deserialisation code must know the remaining length of bytes\nto parse. The parser now requires an additional piece of information\n(remaining size of the stream) for parsing instead of being a dumb\nreader."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "version",
-      "content": ""
+      "content": "### version\n\nWhen a node creates an outgoing connection, it will immediately\nadvertise its version. The remote node will respond with its version. No\nfuther communication is possible until both peers have exchanged their\nversion.\n\nPayload:\n\nField Size        Description    Data type   Comments\n----------------- -------------- ----------- ---------------------------------------------------------------------------------------------------------------------------------------------\n4                 version        int32_t     Identifies protocol version being used by the node\n8                 services       uint64_t    bitfield of features to be enabled for this connection\n8                 timestamp      int64_t     standard UNIX timestamp in seconds\n26                addr_recv      net_addr    The network address of the node receiving this message\nversion \\>= 106                              \n26                addr_from      net_addr    The network address of the node emitting this message\n8                 nonce          uint64_t    Node random nonce, randomly generated every time a version packet is sent. This nonce is used to detect connections to self.\n?                 user_agent     var_str     [User Agent](bip-0014.mediawiki \"wikilink\") (0x00 if string is 0 bytes long)\n4                 start_height   int32_t     The last block received by the emitting node\n1                 relay          bool        Whether the remote peer should announce relayed transactions or not, see [BIP 0037](bip-0037.mediawiki \"wikilink\"), since version \\>= 70001\n\nA \\\"verack\\\" packet shall be sent if the version packet was accepted.\n\nThe following services are currently assigned:\n\nValue   Name           Description\n------- -------------- -----------------------------------------------------------------\n1       NODE_NETWORK   This node can be asked for full blocks instead of just headers."
     },
     {
       "header": "Code Updates {#code_updates}",
-      "content": ""
+      "content": "fRelayTx is added to the PushMessage() call inside PushVersion()\n(net.cpp)\n\nvoid CNode::PushVersion()\n{\n/// when NTP implemented, change to just nTime = GetAdjustedTime()\nint64 nTime = (fInbound ? GetAdjustedTime() : GetTime());\nCAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService(\"0.0.0.0\",0)));\nCAddress addrMe = GetLocalAddress(&addr);\nRAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));\nprintf(\"send version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\\n\", PROTOCOL_VERSION, nBestHeight, addrMe.ToString().c_str(), addrYou.ToString().c_str(), addr.ToString().c_str());\nPushMessage(\"version\", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,\nnLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()),\nnBestHeight, true);\n}\n\nAdditionally the protocol version is increased from 70001 to 70002."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

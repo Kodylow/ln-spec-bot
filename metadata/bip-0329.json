@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies a format for the export of labels that may be\nattached to various common types of records in a wallet."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The export and import of funds across different Bitcoin wallet\napplications is well defined through standards such as BIP39, BIP32,\nBIP44 etc. These standards are well supported and allow users to move\neasily between different wallets. There is, however, no defined standard\nto transfer any labels the user may have applied to the transactions,\naddresses, public keys, inputs, outputs or xpubs in their wallet. The\nUTXO model that Bitcoin uses makes these labels particularly valuable as\nthey may indicate the source of funds, whether received externally or as\na result of change from a prior transaction. In both cases, care must be\ntaken when spending to avoid undesirable leaks of private information.\nLabels provide valuable guidance in this regard, and have even become\nmandatory when spending in several Bitcoin wallets. Allowing users to\nimport and export their labels in a standardized way ensures that they\ndo not experience lock-in to a particular wallet application."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "While there is currently no widely accepted format for exporting and\nimporting labels, there are existing formats in use. SLIP-0015[^1]\ndefines a format for exporting address and output labels, but requires\nencryption using a private key associated with the wallet seed, and thus\ncannot be used independently by coordinator wallets which cannot access\nprivate keys. The Electrum wallet imports and exports address and\ntransaction labels in a JSON format which could be used with other\nrecord types, but the format used is not self describing making record\ntype identification difficult."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "In order to be lightweight, human readable and well structured, this BIP\nuses a JSON format. Further, the JSON Lines format is used (also called\nnewline-delimited JSON)[^2]. This allows a document to be split,\nstreamed, or incrementally added to, and limits the potential for\nformatting errors to invalidate an entire import. It is also a\nconvenient format for command-line processing, which is often\nline-oriented.\n\nFurther to the JSON Lines specification, an export of labels from a\nwallet must be a UTF-8 encoded text file, containing one record per line\nconsisting of a valid JSON object. Lines are separated by `\\n`.\nMultiline values are not permitted. Each JSON object must contain 3\nkey/value pairs, defined as follows:\n\nKey       Description\n--------- -----------------------------------------------------------------------------------------\n`type`    One of `tx`, `addr`, `pubkey`, `input`, `output` or `xpub`\n`ref`     Reference to the transaction, address, public key, input, output or extended public key\n`label`   The label applied to the reference\n\nThe reference is defined for each `type` as follows:\n\nType       Description                                            Example\n---------- ------------------------------------------------------ ----------------------------------------------------------------------\n`tx`       Transaction id in hexadecimal format                   `f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd`\n`addr`     Address in base58 or bech32 format                     `bc1q34aq5drpuwy3wgl9lhup9892qp6svr8ldzyy7c`\n`pubkey`   32, 33 or 65 byte public key in hexadecimal format     `0283409659355b6d1cc3c32decd5d561abaac86c37a353b52895a5e6c196d6f448`\n`input`    Transaction id and input index separated by a colon    `f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd:0`\n`output`   Transaction id and output index separated by a colon   `f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd:1`\n`xpub`     Extended public key as defined by BIP32                `xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8Nq...`\n\nCare should be taken when exporting due to the privacy sensitive nature\nof the data. Encryption in transit over untrusted networks is highly\nrecommended, and encryption at rest should also be considered.\nUnencrypted exports should be deleted as soon as possible. For security\nreasons no private key types are defined."
     },
     {
       "header": "Importing",
-      "content": ""
+      "content": "-   An importing wallet may ignore records it does not store, and\ntruncate labels if necessary.\n-   Wallets importing public key records may derive addresses from them\nto match against known wallet addresses.\n-   Wallets importing extended public keys may match them against\nsigners, for example in a multisig setup."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "The nature of this format makes it naturally extensible to handle other\nrecord types. However, importing wallets complying to this specification\nmay ignore types not defined here."
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "The following fragment represents a wallet label export:\n\n{ \"type\": \"tx\", \"ref\": \"f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd\", \"label\": \"Transaction\" }\n{ \"type\": \"addr\", \"ref\": \"bc1q34aq5drpuwy3wgl9lhup9892qp6svr8ldzyy7c\", \"label\": \"Address\" }\n{ \"type\": \"pubkey\", \"ref\": \"0283409659355b6d1cc3c32decd5d561abaac86c37a353b52895a5e6c196d6f448\", \"label\": \"Public Key\" }\n{ \"type\": \"input\", \"ref\": \"f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd:0\", \"label\": \"Input\" }\n{ \"type\": \"output\", \"ref\": \"f91d0a8a78462bc59398f2c5d7a84fcff491c26ba54c4833478b202796c8aafd:1\", \"label\": \"Output\" }\n{ \"type\": \"xpub\", \"ref\": \"xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8\", \"label\": \"Extended Public Key\" }"
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "```{=html}\n<references />\n```\n\n[^1]: [SLIP-0015](https://github.com/satoshilabs/slips/blob/master/slip-0015.md)\n\n[^2]: [jsonlines.org](https://jsonlines.org/)"
     }
   ]
 }

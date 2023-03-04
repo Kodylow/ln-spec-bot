@@ -12,47 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Replace the static 1M block size hard limit with a hard limit set by\ncoinbase vote, conducted on the same schedule as difficulty retargeting."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Miners directly feel the effects, both positive and negative, of any\nmaximum block size change imposed by their peers. Larger blocks allow\nmore growth in the on-chain ecosystem, while smaller blocks reduce\nresource requirements network-wide. Miners also act as an efficient\nproxy for the rest of the ecosystem, since they are paid in the tokens\ncollected for the blocks they create.\n\nA simple deterministic system is specified, whereby a 75% mining\nsupermajority may activate a change to the maximum block size each 2016\nblocks. Each change is limited to a 5% increase from the previous block\nsize hard limit, or a decrease of similar magnitude. Among adopting\nnodes, there will be no disagreement on the evolution of the maximum\nblock size.\n\nThe system is compatible with emergent consensus, but whereas under that\nsystem a miner may choose to accept any size block, a miner following\nBIP100 observes the 75% supermajority rule, and the 5% change limit\nrule. Excessive-block values signaled by emergent consensus blocks are\nconsidered in the calculation of the BIP100 block size hard limit, and\nthe BIP100 calculated maximum block size is signaled as an\nexcessive-block value for the benefit of all observers."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Dynamic Maximum Block Size {#dynamic_maximum_block_size}",
-      "content": ""
+      "content": "### Dynamic Maximum Block Size {#dynamic_maximum_block_size}\n\n1.  Initial value of `hardLimit` is 1000000 bytes, preserving current\nsystem.\n2.  Changing `hardLimit` is accomplished by encoding a proposed value, a\nvote, within a block\\'s coinbase scriptSig, and by processing the\nvotes contained in the previous retargeting period.\\\n\\\n\\# Vote encoding\n1.  1.  A vote is represented as a megabyte value using the BIP100\npattern\\\n\\\n`/BIP100/B[0-9]+/`\\\n\\\nExample: `/BIP100/B8/` is a vote for a 8000000-byte\n`hardLimit`.\\\n\\\n2.  If the block height is encoded at the start of the coinbase\nscriptSig, as per BIP34, it is ignored.\n3.  Only the first BIP100 pattern match is processed in\n\\\"Maximum block size recalculation\\\" below.\n4.  A megabyte value is represented by consecutive base-ten\ndigits.\n5.  If no BIP100 pattern is matched, the first matching emergent\nconsensus pattern `/EB[0-9]+/`, if any, is accepted as the\nmegabyte vote.\\\n\\\n\n2.  Maximum block size recalculation\n1.  A `new hardLimit` is calculated after each difficulty\nadjustment period of 2016 blocks, and applies to the next\n2016 blocks.\n2.  Absent/zero-valued votes are counted as votes for the\n`current hardLimit`.\n3.  The votes of the previous 2016 blocks are sorted by megabyte\nvote.\n4.  Raising `hardLimit`\\\n\\\n\\# The `raise value` is defined as the vote of the 1512th\nhighest block, converted to bytes.\n1.  If the resultant `raise value` is greater than\n(`current hardLimit` \\* 1.05) rounded down, it is set to\nthat value.\n2.  If the resultant `raise value` is greater than\n`current hardLimit`, the `raise value` becomes the\n`new hardLimit` and the recalculation is complete.\\\n\\\n5.  Lowering `hardLimit`\\\n\\\n\\# The `lower value` is defined as the vote of the 1512th\nlowest block, converted to bytes.\n1.  If the resultant `lower value` is less than\n(`current hardLimit` / 1.05) rounded down, it is set to\nthat value.\n2.  If the resultant `lower value` is less than\n`current hardLimit`, the `lower value` becomes the\n`new hardLimit` and the recalculation is complete.\\\n\\\n6.  Otherwise, `new hardLimit` remains the same as\n`current hardLimit`."
     },
     {
       "header": "Signature Hashing Operations Limits {#signature_hashing_operations_limits}",
-      "content": ""
+      "content": "1.  The per-block signature hashing operations limit is scaled to\n(actual block size, fractional megabyte rounded to next higher\nmegabyte) / 50.\n2.  A maximum serialized transaction size of 1000000 bytes is imposed."
     },
     {
       "header": "Recommendations",
-      "content": ""
-    },
-    {
-      "header": "Publication of `hardLimit` {#publication_of_hardlimit}",
-      "content": ""
+      "content": "### Publication of `hardLimit` {#publication_of_hardlimit}\n\n1.  For the benefit of all observers, it is recommended that `hardLimit`\nbe published. Example: a complete coinbase string might read\\\n\\\n`/BIP100/B8/EB2.123456/`\\\n\\\nwhich indicates a vote for 8M maximum block size, and an enforced\n`hardLimit` of 2.123456 megabytes for the block containing the\ncoinbase string."
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP is presumed deployed and activated as of block height 449568 by\nimplementing nodes on the bitcoin mainnet. It has no effect until a\nraise value different from 1M is observed, which requires at least 1512\nof 2016 blocks to vote differently from 1M."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "The first block larger than 1M will create a network partition, as nodes\nwith a fixed 1M hard limit reject that block."
     },
     {
       "header": "Implementations",
-      "content": ""
+      "content": "<https://github.com/bitcoinxt/bitcoinxt/pull/188>`</br>`{=html}\n<https://github.com/bitcoinxt/bitcoin/pull/1>`</br>`{=html}\n<https://github.com/BitcoinUnlimited/BitcoinUnlimited/pull/398>`</br>`{=html}"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is licensed under the BSD 2-clause license."
     }
   ]
 }

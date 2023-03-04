@@ -11,47 +11,43 @@
   "sections": [
     {
       "header": "What went wrong {#what_went_wrong}",
-      "content": ""
+      "content": "A block that had a larger number of total transaction inputs than\npreviously seen was mined and broadcasted. Bitcoin 0.8 nodes were able\nto handle this, but some pre-0.8 Bitcoin nodes rejected it, causing an\nunexpected fork of the blockchain. The pre-0.8-incompatible chain (from\nhere on, the 0.8 chain) at that point had around 60% of the mining hash\npower ensuring the split did not automatically resolve (as would have\noccurred if the pre-0.8 chain outpaced the 0.8 chain in total work,\nforcing 0.8 nodes to reorganise to the pre-0.8 chain).\n\nIn order to restore a canonical chain as soon as possible, BTCGuild and\nSlush downgraded their Bitcoin 0.8 nodes to 0.7 so their pools would\nalso reject the larger block. This placed majority hashpower on the\nchain without the larger block, thus eventually causing the 0.8 nodes to\nreorganise to the pre-0.8 chain.\n\nDuring this time there was at least [one large double\nspend](https://bitcointalk.org/index.php?topic=152348.0). However, it\nwas done by someone experimenting to see if it was possible and was not\nintended to be malicious."
     },
     {
       "header": "What went right {#what_went_right}",
-      "content": ""
+      "content": "-   The split was detected very quickly.\n-   The right people were online and available in IRC or could be\ncontacted directly.\n-   Marek Palatinus (Slush) and Michael Marsee (Eleuthria of BTCGuild)\nquickly downgraded their nodes to restore a pre-0.8 chain as\ncanonical, despite the fact that this caused them to sacrifice\nsignificant amounts of money.\n-   Deposits to the major exchanges and payments via BitPay were also\nsuspended (and then un-suspended) very quickly.\n-   Fortunately, the only attack on a merchant was done by someone who\nwas not intending to actually steal money."
     },
     {
       "header": "Root cause {#root_cause}",
-      "content": ""
+      "content": "Bitcoin versions prior to 0.8 configure an insufficient number of\nBerkeley DB locks to process large but otherwise valid blocks. Berkeley\nDB locks have to be manually configured by API users depending on\nanticipated load. The manual says this:\n\n:   The recommended algorithm for selecting the maximum number of locks,\nlockers, and lock objects is to run the application under stressful\nconditions and then review the lock system\\'s statistics to\ndetermine the maximum number of locks, lockers, and lock objects\nthat were used. Then, double these values for safety.\n\nWith the insufficiently high BDB lock configuration, it implicitly had\nbecome a network consensus rule determining block validity (albeit an\ninconsistent and unsafe rule, since the lock usage could vary from node\nto node).\n\nBecause max-sized blocks had been successfully processed on the testnet,\nit did not occur to anyone that there could be blocks that were smaller\nbut require more locks than were available. Prior to 0.7 unmodified\nmining nodes self-imposed a maximum block size of 500,000 bytes, which\nfurther prevented this case from being triggered. 0.7 made the target\nsize configurable and miners had been encouraged to increase this target\nin the week prior to the incident.\n\nBitcoin 0.8 did not use Berkeley DB. It switched to LevelDB instead,\nwhich did not implement the same locking limits as BDB. Therefore it was\nable to process the forking block successfully.\n\nNote that BDB locks are also required during processing of\nre-organizations. Versions prior to 0.8 may be unable to process some\nvalid re-orgs.\n\nThis would be an issue even if the entire network was running version\n0.7.2. It is theoretically possible for one 0.7.2 node to create a block\nthat others are unable to validate, or for 0.7.2 nodes to create block\nre-orgs that peers cannot validate, because the contents of each node\\'s\nblkindex.dat database is not identical, and the number of locks required\ndepends on the exact arrangement of the blkindex.dat on disk (locks are\nacquired per-page)."
     },
     {
       "header": "Action items {#action_items}",
-      "content": ""
-    },
-    {
-      "header": "Immediately",
-      "content": ""
+      "content": "### Immediately\n\n**Done**: Release a version 0.8.1, forked directly from 0.8.0, that, for\nthe next two months has the following new rules:\n\n1.  Reject blocks that would probably cause more than 10,000 locks to be\ntaken.\n2.  Limit the maximum block-size created to 500,000 bytes\n3.  Release a patch for older versions that implements the same rules,\nbut also increases the maximum number of locks to 537,000\n4.  Create a web page on bitcoin.org that will urge users to upgrade to\n0.8.1, but will tell them how to set DB_CONFIG to 537,000 locks if\nthey absolutely cannot.\n5.  Over the next 2 months, send a series of alerts to users of older\nversions, pointing to the web page."
     },
     {
       "header": "Alert system {#alert_system}",
-      "content": ""
+      "content": "**Done**: Review who has access to the alert system keys, make sure they\nall have contact information for each other, and get good timezone\noverlap by people with access to the keys.\n\n**Done**: Implement a new bitcoind feature so services can get timely\nnotification of alerts: -alertnotify=`<command>`{=html} Run command when\nan AppliesToMe() alert is received.\n\n**Done**: Pre-generate 52 test alerts, and set a time every week when\nthey are broadcast on -testnet (so -alertnotify scripts can be tested in\nas-close-to-real-world conditions as possible).\n\nIdea from Michael Gronager: encourage merchants/exchanges (and maybe\npools) to run new code behind a bitcoind running the network-majority\nversion."
     },
     {
       "header": "Safe mode {#safe_mode}",
-      "content": ""
+      "content": "**Done**: Perhaps trigger an alert if there is a long enough side chain\ndetected, even if it is not the main chain. Pools could use this to\nautomatically suspend payouts if a long side-chain suddenly appeared out\nof nowhere (it's hard for an attacker to mine such a thing)."
     },
     {
       "header": "Testing",
-      "content": ""
+      "content": "Start running bots on the testnet that grab some coins from a testnet\nfaucet, generate large numbers of random transactions that\nsplit/recombine them and then send them back to the faucet. Randomized\nonline testing on the testnet might have revealed the pathological block\ntype earlier."
     },
     {
       "header": "Double spending {#double_spending}",
-      "content": ""
+      "content": "A double spend attack was successful, despite that both sides of the\nchain heard about the transactions in the same order. The reason is most\nlikely that the memory pools were cleared when the mining pool nodes\nwere downgraded. A solution is for nodes to sync their mempools to each\nother at startup, however, this requires a memory pool expiry policy to\nbe implemented as currently node restarts are the only way for\nunconfirmed transactions to be evicted from the system."
     },
     {
       "header": "Resolution",
-      "content": ""
+      "content": "On 16 August, 2013 block 252,451\n(0x0000000000000024b58eeb1134432f00497a6a860412996e7a260f47126eed07) was\naccepted by the main network, forking unpatched nodes off the network."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

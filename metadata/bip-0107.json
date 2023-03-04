@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes a dynamic limit to the block size based on transaction\nvolume."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Over the next few years, large infrastructure investments will be made\ninto:\n\n1.  Improving global network connectivity\n2.  Improving block propagation across the Bitcoin network\n3.  Layer 2 services and networks for off-chain transactions\n4.  General efficiency improvements to transactions and the blockchain\n\n-   While there is a consensus between Bitcoin developers, miners,\nbusinesses and users that the block size needs to be increased,\nthere is a lingering concern over the potential unintended\nconsequences that may augment the trend towards network and mining\ncentralization (largely driven by mining hardware such as ASICs) and\nthereby threaten the security of the network.\n-   In contrast, failing to respond to elevated on-chain transaction\nvolume may lead to a consumer-failure of Bitcoin, where ordinary\nusers - having enjoyed over 6 years of submitting transactions\non-chain at relatively low cost - will be priced out of blockchain\nwith the emergence of a prohibitive \\'fee market\\'.\n-   These two concerns must be delicately balanced so that all users can\nbenefit from a robust, scalable, and neutral network."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "-   Increases in the block size will occur in 2 phases\n-   **Phase 1**\n-   The block size will be increased similar to [Adam Back\\'s\nproposal](https://twitter.com/adam3us/status/636410827969421312 \"wikilink\"),\nas a safe runway prior to switching to Phase 2, while network\nand protocol infrastructure is improved\n-   The schedule:\n-   *2016-2017:* 2 MB\n-   *2018-2019:* 4 MB\n-   *2020:* 6 MB\n-   **Phase 2**\n-   In 2020, the maximum block size will be increased dynamically\naccording to sustained increases in transaction volume\n-   Every 4032 blocks (\\~4 weeks), a CHECK will be performed to\ndetermine if a raise in the maximum block size should occur\n-   This calculates to a theoretical maximum of 13 increases per\nyear\n-   IF of the last \\>= 3025 blocks were \\>=60% full, the maximum\nblock size will be increased by 10%\n-   The maximum block size can only ever be increased, not decreased\n-   The default `limitfreerelay` will also be raised in proportion to\nmaximum block size increases\n-   Transactions without fees can continue to be submitted and\nrelayed on the network as per normal\n-   `limitfreerelay` also helps counter attempts to trigger a block\nsize increase by \\'penny-flooding\\'\n\nFor example:\n\n-   When the dynamic rules for increasing the block size go live on\nJanuary 1st 2020, the starting maximum block size will be 6 MB\n-   IF \\>=3025 blocks are \\>= 3.6 MB, the new maximum block size become\n6.6 MB.\n-   The theoretical maximum block size at the end of 2020 would be\n\\~20.7 MB, assuming all 13 increases are triggered every 4 weeks by\nthe end of the year."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "-   **Phase 1**\n-   This runway has a schedule for conservative increases to the\nblock size in order to relieve transaction volume pressure while\nallowing network and protocol infrastructure improvements to be\nmade, as well as layer 2 services to emerge\n-   **Phase 2**\n-   Why 60% full blocks?\n-   IF blocks are 60% full, they count as a *vote* towards\nincreasing the block size\n-   If this parameter is too low, the trigger sensitivity may be\ntoo high and vulnerable to spam attacks or miner collusion\n-   Setting the parameter too high may set the trigger\nsensitivity too low, causing transaction delays that are\ntrying to be avoided in the first place\n-   Between September 2013-2015, the standard deviation measured\nfrom average block size (n=730 data points from\nblockchain.info) was \\~ 0.13 MB or 13% of the maximum block\nsize\n-   If blocks needed to be 90% full before an increase were\ntriggered, normal variance in the average block size\nwould mean some blocks would be full before an increase\ncould be triggered\n-   Therefore, we need a *safe distance* away from the maximum\nblock size to avoid normal block size variance hitting the\nlimit. The 60% level represents a 3 standard deviation\ndistance from the limit.\n-   Why 3025 blocks?\n-   The assessment period is 4032 blocks or \\~ 4 weeks, with the\nthreshold set as 4032 blocks/0.75 + 1\n-   Increases in the maximum block size should only occur after\na sustained trend can be observed in order to:\n1.  Demonstrate a market-driven secular elevation in the\ntransaction volume\n2.  Increase the cost to trigger an increase by spam attacks\nor miner collusion with zero fee transactions\n-   In other words, increases to the maximum block size must be\nconservative but meaningful to relieve transaction volume\npressure in response to true market demand\n-   Why 10% increase in the block size?\n-   Increases in the block size are designed to be conservative\nand in balance with the number of theoretical opportunities\nto increase the block size per year\n-   Makes any resources spent for spam attacks or miner\ncollusion relatively expensive to achieve a minor increase\nin the block size. A sustained attack would need to be\nlaunched that may be too costly, and ideally detectable by\nthe community"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "Similar deployment model to BIP101:\n\n> Activation is achieved when 750 of 1,000 consecutive blocks in the\n> best chain have a version number with the first, second, third, and\n> thirtieth bits set (0x20000007 in hex). The activation time will be\n> the timestamp of the 750\\'th block plus a two week (1,209,600 second)\n> grace period to give any remaining miners or services time to upgrade\n> to support larger blocks."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Austin Williams, Brian Hoffman, Angel Leon, Bulukani Mlalazi,\nChris Pacia, and Ryan Shea for their comments."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies `pk()`, `pkh()`, and `sh()` output script\ndescriptors. `pk()` descriptors take a key and produces a P2PK output\nscript. `pkh()` descriptors take a key and produces a P2PKH output\nscript. `sh()` descriptors take a script and produces a P2SH output\nscript."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Prior to the activation of Segregated Witness, there were 3 main\nstandard output script formats: P2PK, P2PKH, and P2SH. These expressions\nallow specifying those formats as a descriptor."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Three new script expressions are defined: `pk()`, `pkh()`, and `sh()`."
     },
     {
       "header": "`pk()`",
-      "content": ""
+      "content": "The `pk(KEY)` expression can be used in any context or level of a\ndescriptor. It takes a single key expression as an argument and produces\na P2PK output script. Depending on the higher level descriptors, there\nmay be restrictions on the type of public keys that can be included.\nSuch restrictions will be specified by those descriptors.\n\nThe output script produced is:\n\n<KEY> OP_CHECKSIG"
     },
     {
       "header": "`pkh()`",
-      "content": ""
+      "content": "The `pkh(KEY)` expression can be used as a top level expression, or\ninside of either a `sh()` or `wsh()` descriptor. It takes a single key\nexpression as an argument and produces a P2PKH output script. Depending\non the higher level descriptors, there may be restrictions on the type\nof public keys that can be included. Such restrictions will be specified\nby those descriptors.\n\nThe output script produced is:\n\nOP_DUP OP_HASH160 <KEY_hash160> OP_EQUALVERIFY OP_CHECKSIG"
     },
     {
       "header": "`sh()`",
-      "content": ""
+      "content": "The `sh(SCRIPT)` expression can only be used as a top level expression.\nIt takes a single script expression as an argument and produces a P2SH\noutput script. `sh()` expressions also create a redeemScript which is\nrequired in order to spend outputs which use its output script. This\nredeemScript is the output script produced by the `SCRIPT` argument to\n`sh()`.\n\nThe output script produced is:\n\nOP_HASH160 <SCRIPT_hash160> OP_EQUAL"
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`pk()`, `pkh()`, and `sh()` descriptors use the format and general\noperation specified in [380](bip-0380.mediawiki \"wikilink\"). As these\nare a wholly new descriptors, they are not compatible with any\nimplementation. However the scripts produced are standard scripts so\nexisting software are likely to be familiar with them."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "`pk()`, `pkh()`, and `sh()` descriptors have been implemented in Bitcoin\nCore since version 0.17."
     }
   ]
 }

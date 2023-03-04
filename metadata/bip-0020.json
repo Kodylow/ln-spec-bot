@@ -12,95 +12,75 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes a URI scheme for making Bitcoin payments."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The purpose of this URI scheme is to enable users to easily make\npayments by simply clicking links on webpages or scanning QR Codes."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "General rules for handling (important!) {#general_rules_for_handling_important}",
-      "content": ""
+      "content": "### General rules for handling (important!) {#general_rules_for_handling_important}\n\nBitcoin clients MUST NOT act on URIs without getting the user\\'s\nauthorization. They SHOULD require the user to manually approve each\npayment individually, though in some cases they MAY allow the user to\nautomatically make this decision."
     },
     {
       "header": "Operating system integration {#operating_system_integration}",
-      "content": ""
+      "content": "Graphical bitcoin clients SHOULD register themselves as the handler for\nthe \\\"bitcoin:\\\" URI scheme by default, if no other handler is already\nregistered. If there is already a registered handler, they MAY prompt\nthe user to change it once when they first run the client."
     },
     {
       "header": "BNF grammar {#bnf_grammar}",
-      "content": ""
+      "content": "(See also [a simpler representation of\nsyntax](#Simpler_syntax \"wikilink\"))\n\n`bitcoinurn\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0\"bitcoin:\"\u00a0bitcoinaddress\u00a0[\u00a0\";version=\"\u00a0bitcoinversion\u00a0]\u00a0[\u00a0\"?\"\u00a0bitcoinparams\u00a0]`\\\n`bitcoinaddress\u00a0\u00a0=\u00a0base58\u00a0*base58`\\\n`bitcoinversion\u00a0\u00a0=\u00a0\"1.0\"`\\\n`bitcoinparams\u00a0\u00a0\u00a0=\u00a0*bitcoinparam`\\\n`bitcoinparam\u00a0\u00a0\u00a0\u00a0=\u00a0amountparam\u00a0|\u00a0labelparam\u00a0|\u00a0messageparam\u00a0|\u00a0sendparam\u00a0|\u00a0otherparam`\\\n`amountparam\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0\"amount=\"\u00a0amount`\\\n`amount\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0amountdecimal\u00a0|\u00a0amounthex`\\\n`amountdecimal\u00a0\u00a0\u00a0=\u00a0*digit\u00a0[\u00a0\".\"\u00a0*digit\u00a0]\u00a0[\u00a0\"X\"\u00a0*digit\u00a0]`\\\n`amounthex\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0\"x\"\u00a0*hexdigit\u00a0[\u00a0\".\"\u00a0*hexdigit\u00a0]\u00a0[\u00a0\"X\"\u00a0*hexdigit\u00a0]`\\\n`labelparam\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0\"label=\"\u00a0*pchar`\\\n`messageparam\u00a0\u00a0\u00a0\u00a0=\u00a0\"message=\"\u00a0*pchar`\\\n`sendparam\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0\"send=\"\u00a0*pchar`\\\n`otherparam\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0=\u00a0pchar\u00a0*pchar\u00a0\"=\"\u00a0*pchar`"
     },
     {
       "header": "Query Keys {#query_keys}",
-      "content": ""
+      "content": "-   label: Label for that address (e.g. name of receiver)\n-   address: bitcoin address\n-   message: message that shown to the user after scanning the QR code\n-   size: amount of base bitcoin units ([see\nbelow](#Transfer_amount/size \"wikilink\"))\n-   send: used to send bitcoin, rather than to request them\n-   (others): optional, for future extensions"
     },
     {
       "header": "Transfer amount/size {#transfer_amountsize}",
-      "content": ""
+      "content": "If an amount is provided, it may be specified either in decimal or, when\nprefixed with a single \\\"x\\\" character, hexadecimal. The number SHOULD\nbe followed by \\\"X\\\" \\<digits\\> to signify an exponent to the base\nmultiplier. Thus, \\\"X8\\\" multiplies your number by 100,000,000. For\ndecimal values, this means the standard BTC unit. For hexadecimal\nvalues, this means \u1d47TBC units (which are equivalent to 42.94967296 BTC).\nIf exponent is omitted, implementations SHOULD assume X8 for decimal\nnumbers, and X4 for hexadecimal numbers. I.e. amount=50.00 is treated as\n50 BTC, and amount=x40 is treated as 40 TBC. When specifying bitcoin\nbase units, \\\"X0\\\" SHOULD be used.\n\nBitcoin clients MAY display the amount in any format that is not\nintended to deceive the user. They SHOULD choose a format that is\nforemost least confusing, and only after that most reasonable given the\namount requested. For example, so long as the majority of users work in\nBTC units, values should always be displayed in BTC by default, even if\nmBTC or TBC would otherwise be a more logical interpretation of the\namount."
     },
     {
       "header": "Rationale",
-      "content": ""
-    },
-    {
-      "header": "Payment identifiers, not person identifiers {#payment_identifiers_not_person_identifiers}",
-      "content": ""
+      "content": "### Payment identifiers, not person identifiers {#payment_identifiers_not_person_identifiers}\n\nCurrent best practices are that a unique address should be used for\nevery transaction. Therefore, a URI scheme should not represent an\nexchange of personal information, but a one-time payment."
     },
     {
       "header": "Accessibility (URI scheme name) {#accessibility_uri_scheme_name}",
-      "content": ""
+      "content": "Should someone from the outside happen to see such a URI, the URI scheme\nname already gives a description. A quick search should then do the rest\nto help them find the resources needed to make their payment. Other\nproposed names sound much more cryptic; the chance that someone googles\nthat out of curiosity are much slimmer. Also, very likely, what he will\nfind are mostly technical specifications - not the best introduction to\nbitcoin."
     },
     {
       "header": "Forward compatibility {#forward_compatibility}",
-      "content": ""
+      "content": "We want URIs generated in 2011 to still work in 2036: think about\nextensibility. Of course we can make only educated guesses about the\nfuture, but don\\'t act as if there is none. This should be the best we\ncan do, but it should not be seen as set in stone. Make it possible for\nlater generations to improve our work, to mend our errors, without\nbreaking the URIs created now."
     },
     {
       "header": "Appendix",
-      "content": ""
-    },
-    {
-      "header": "Simpler syntax {#simpler_syntax}",
-      "content": ""
+      "content": "### Simpler syntax {#simpler_syntax}\n\nThis section is non-normative and does not cover all possible syntax.\nPlease see the [BNF grammar](#BNF_grammar \"wikilink\") above for the\nnormative syntax.\n\n\\[foo\\] means optional, \\<bar\\> are placeholders\n\nbitcoin:<address>[;version=1.0][?amount=<amount>][?label=<label>][?message=<message>][?send=<private key>]"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "Just the address:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L)\n\nAddress with name:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?label=Luke-Jr`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?label=Luke-Jr)\n\nRequest 20.30 BTC to \\\"Luke-Jr\\\":\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=20.3X8&label=Luke-Jr`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=20.3X8&label=Luke-Jr)\n\nRequest 400 TBC:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=x400X4`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=x400X4)\n\nRequest 4000 TBC:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=x4X7`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=x4X7)\n\nRequest 5 uBTC:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=5X2`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=5X2)\n\nRequest 50 BTC with message:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=50X8&label=Luke-Jr&message=Donation%20for%20project%20xyz`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=50X8&label=Luke-Jr&message=Donation%20for%20project%20xyz)\n\nSend 1 BTC:\n\n[`bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=1X8&send=S4b3N3oGqDqR5jNuxEvDwf`](bitcoin:1NS17iag9jJgTHD1VXjvLCEnZuQ3rJED9L?amount=1X8&send=S4b3N3oGqDqR5jNuxEvDwf)\n\nCharacters must be URI encoded properly."
     },
     {
       "header": "Sending money via private key {#sending_money_via_private_key}",
-      "content": ""
+      "content": "To send a payment to someone else first construct a new keypair. You may\nwant to use a [mini private key\nformat](mini_private_key_format \"wikilink\"), or you may also use a full\nprivate key for more security depending on the amount being sent and how\nlong you expect to pass before a claim. Now create and publish a\ntransaction with an output of the amount you wish to send. Use this\nscript in that output:\n\n<pubkey> OP_CHECKSIG\n\nConstruct an address from the public key. Encode the URI as below:\n\nbitcoin:<address>?send=<base 58 encoded private key>\n\nYou may optionally include amount or message fields as well. In a wallet\nto claim money sent this way search for an incoming transaction with the\noutput script form above, where \\<address\\> matches the public key in\nthe script. When you find the transaction create a claim transaction\nwith an input script of this form:\n\n<sig>\n\nThis claims the money you were sent. Until your claim transaction has\nconfirmed the sender may take their money back."
     },
     {
       "header": "Reference Implementations {#reference_implementations}",
-      "content": ""
-    },
-    {
-      "header": "Bitcoin clients {#bitcoin_clients}",
-      "content": ""
+      "content": "### Bitcoin clients {#bitcoin_clients}\n\n-   [Spesmilo](Spesmilo \"wikilink\") supports all valid Bitcoin URIs,\nwith Windows and KDE integration"
     },
     {
       "header": "Parsing amount {#parsing_amount}",
-      "content": ""
-    },
-    {
-      "header": "ECMAScript",
-      "content": ""
+      "content": "#### ECMAScript\n\nreAmount = /^(([\\d.]+)(X(\\d+))?|x([\\da-f]*)(\\.([\\da-f]*))?(X([\\da-f]+))?)$/i;\nfunction parseAmount(txt) {\nvar m = txt.match(reAmount);\nreturn m[5] ? (\n(\nparseInt(m[5], 16) +\n(m[7] ? (parseInt(m[7], 16) * Math.pow(16, -(m[7].length))) : 0)\n) * (\nm[9] ? Math.pow(16, parseInt(m[9], 16)) : 0x10000\n)\n) : (\nm[2]\n*\n(m[4] ? Math.pow(10, m[4]) : 1e8)\n);\n}"
     },
     {
       "header": "Python",
-      "content": ""
+      "content": "m = re.match(r'^(([\\d.]+)(X(\\d+))?|x([\\da-f]*)(\\.([\\da-f]*))?(X([\\da-f]+))?)$', amount, re.IGNORECASE)\nif m.group(5):\namount = float(int(m.group(5), 16))\nif m.group(7):\namount += float(int(m.group(7), 16)) * pow(16, -(len(m.group(7))))\nif m.group(9):\namount *= pow(16, int(m.group(9), 16))\nelse:\namount *= 0x10000\nelse:\namount = Decimal(m.group(2))\nif m.group(4):\namount *= 10 ** int(m.group(4))\nelse:\namount *= 100000000"
     },
     {
-      "header": "C",
-      "content": ""
+      "header": "C#",
+      "content": "Regex amountExpression = new Regex(@\"^(([\\d.]+)(X(\\d+))?|x([\\da-f]*)(\\.([\\da-f]*))?(X([\\da-f]+))?)$\", RegexOptions.IgnoreCase);\nMatch match = amountExpression.Match(value);\nif (match.Success)\n{\nif (match.Groups[5].Success)\n{\nlong hexDecimal = 0;\nif (match.Groups[7].Success)\nhexDecimal = Convert.ToInt64(match.Groups[7].Value, 16) * (long)Math.Pow(16, -match.Groups[7].Length);\n\nlong hexExponent = 0x10000;\nif (match.Groups[9].Success)\nhexExponent = (long)Math.Pow(16, Convert.ToInt32(match.Groups[9].Value, 16));\n\nAmount = (Convert.ToInt64(match.Groups[5].Value, 16) + hexDecimal) * hexExponent;\n}\nelse\n{\nlong decimalExponent = 100000000;\nif (match.Groups[4].Success)\ndecimalExponent = (long)Math.Pow(10, int.Parse(match.Groups[4].Value));\nAmount = (long)(decimal.Parse(match.Groups[2].Value) * decimalExponent);\n}\n}"
     }
   ]
 }

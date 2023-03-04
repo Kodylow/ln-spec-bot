@@ -12,59 +12,55 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP provides a generic mechanism for specifying stratum protocol\nextensions. At the same time, one of the important extensions that is\nspecified by this BIP is configuration of bits for \\\"version rolling\\\"\nin nVersion field of bitcoin block header.\n\nThe key words \\\"MUST\\\", \\\"MUST NOT\\\", \\\"REQUIRED\\\", \\\"SHALL\\\", \\\"SHALL\nNOT\\\", \\\"SHOULD\\\", \\\"SHOULD NOT\\\", \\\"RECOMMENDED\\\", \\\"MAY\\\", and\n\\\"OPTIONAL\\\" in this document are to be interpreted as described in RFC\n2119."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The initial motivation for specifying some general support for stratum\nprotocol extensions was a need to allow miners to do so called \\\"version\nrolling\\\", changing value in the first field of the Bitcoin block\nheader.\n\nVersion rolling is backwards incompatible change to the stratum protocol\nbecause the miner couldn\\'t communicate different block version value to\nthe server in the original version of the stratum protocol. Similarly, a\nserver couldn\\'t communicate safe bits for rolling to a miner. So both\nminers and pools need to implement some protocol extension to support\nversion rolling.\n\nTypically, if a miner sends an unknown message to a server, the server\ncloses the connection (not all implementations do that but some do). So\nit is not very safe to try to send unknown messages to servers.\n\nWe can use this opportunity to make one backwards incompatible change to\nthe protocol to support multiple extensions in the future. In a way that\na miner can advertise its capabilities and at the same time it can\nrequest some needed features from the server.\n\nIt is preferable that the same mechanism for feature negotiation can be\nused for not yet known features. It SHOULD be easy to implement in the\nmining software too.\n\nWe introduce one new message to the stratum protocol\n(**\\\"mining.configure\\\"**) which handles the initial\nconfiguration/negotiation of features in a generic way. So that adding\nfeatures in the future can be done without a necessity to add new\nmessages to stratum protocol.\n\nEach extension has its unique string name, so called **extension code**."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Currently, the following extensions are defined:\n\n-   **\\\"version-rolling\\\"**\n-   **\\\"minimum-difficulty\\\"**\n-   **\\\"subscribe-extranonce\\\"**"
     },
     {
       "header": "Additional data types {#additional_data_types}",
-      "content": ""
+      "content": "The following names are used as type aliases, making the message\ndescription easier.\n\n-   **TMask** - case independent hexadecimal string of length 8,\nencoding an unsigned 32-bit integer (\\~`[0-9a-fA-F]{8}`)\n\n```{=html}\n<!-- -->\n```\n-   **TExtensionCode** - non-empty string with a value equal to the name\nof some protocol extension.\n\n```{=html}\n<!-- -->\n```\n-   **TExtensionResult** - `true` / `false` / *String*.\n-   `true` = The requested feature is supported and its\nconfiguration understood and applied.\n-   `false` = The feature is not supported or unknown.\n-   *String* = Error message containing information about what went\nwrong."
     },
     {
       "header": "Request \\\"mining.configure\\\" {#request_mining.configure}",
-      "content": ""
+      "content": "This message (JSON RPC Request) SHOULD be the **first message** sent by\nthe miner after the connection with the server is established. The\nclient uses the message to advertise its features and to request/allow\nsome protocol extensions.\n\nThe reason for it being the first is that we want the implementation and\npossible interactions to be as easy and simple as possible. An extension\ncan define explicitly what does a repeated configuration of that\nextension mean.\n\nEach extension code provides a namespace for its extension parameters\nand extension return values. By convention, the names are formed from\nextension codes by adding \\\".\\\" and a parameter name. The same applies\nfor the return values, which are transferred in a result map too. E.g.\n\\\"version-rolling.mask\\\" is the name of the parameter \\\"mask\\\" of\nextension \\\"version-rolling\\\".\n\n**Parameters**:\n\n-   **extensions** (REQUIRED, List of *TExtensionCode*)\n\n:   \n\n:   \\- Each string in the list MUST be a valid extension code. The\nmeaning of each code is described independently as part of the\nextension definition. A miner SHOULD advertise all its available\nfeatures.\n\n-   **extension-parameters** (REQUIRED, *Map of (String -\\> Any)*)\n\n:   \n\n:   \\- Parameters of the requested/allowed extensions from the first\nparameter.\n\n**Return value**:\n\n-   *Map of (String -\\> Any)*\n\n:   \n\n:   \\- Each code from the **extensions** list MUST have a defined\nreturn value (*TExtensionCode* -\\> *TExtensionResult*). This way\nthe miner knows if the extension is activated or not. E.g.\n`{\"version-rolling\":false}` for unsupported version rolling.\n:   \\- Some extensions need additional information to be delivered\nto the miner. The return value map is used for this purpose.\n\nExample request (new-lines added):\n\n{\"method\": \"mining.configure\",\n\"id\": 1,\n\"params\": [[\"minimum-difficulty\", \"version-rolling\"],\n{\"minimum-difficulty.value\": 2048,\n\"version-rolling.mask\": \"1fffe000\", \"version-rolling.min-bit-count\": 2}]}\n\n(The miner requests extensions `\"version-rolling\"` and\n`\"minimum-difficulty\"`. It sets the parameters according to the\nextensions\\' definitions.)\n\nExample result (new-lines added):\n\n{\"error\": null,\n\"id\": 1,\n\"result\": {\"version-rolling\": true,\n\"version-rolling.mask\": \"18000000\",\n\"minimum-difficulty\": true}}"
     },
     {
       "header": "Defined extensions {#defined_extensions}",
-      "content": ""
-    },
-    {
-      "header": "Extension \\\"version-rolling\\\" {#extension_version_rolling}",
-      "content": ""
+      "content": "## Extension \\\"version-rolling\\\" {#extension_version_rolling}\n\nThis extension allows the miner to change the value of some bits in the\nversion field in the block header. Currently there are no standard bits\nused for version rolling so they need to be negotiated between a miner\nand a server.\n\nA miner sends the server a mask describing bits which the miner is\ncapable of changing. 1 = changeable bit, 0 = not changeable\n(`miner_mask`) and a minimum number of bits that it needs for efficient\nversion rolling.\n\nA server typically allows you to change only some of the version bits\n(`server_mask`) and the rest of the version bits are fixed. E.g. because\nthe block needs to be valid or some signaling is in place.\n\nThe server responds to the configuration message by sending a mask with\ncommon bits intersection of the miner\\'s mask and its a mask\n(`response = server_mask & miner_mask`)\n\nExample request (a miner capable of changing any 2 bits from a 16-bit\nmask):\n\n`{\"method\":\u00a0\"mining.configure\",\u00a0\"id\":\u00a01,\u00a0\"params\":\u00a0[[\"version-rolling\"],\u00a0{\"version-rolling.mask\":\u00a0\"1fffe000\",\u00a0\"version-rolling.min-bit-count\":\u00a02}]}`\n\nExample result (success):\n\n`{\"error\":\u00a0null,\u00a0\"id\":\u00a01,\u00a0\"result\":\u00a0{\"version-rolling\":\u00a0true,\u00a0\"version-rolling.mask\":\u00a0\"18000000\"}}`\n\nExample result (unknown extension):\n\n`{\"error\":\u00a0null,\u00a0\"id\":\u00a01,\u00a0\"result\":\u00a0{\"version-rolling\":\u00a0false}}`\n\n**Extension parameters**:\n\n-   **\\\"version-rolling.mask\\\"** (OPTIONAL, *TMask*, default value\n`\"ffffffff\"`)\n\n:   \n\n:   \\- Bits set to 1 can be changed by the miner. This value is\nexpected\n\nto be stable for the whole mining session. A miner doesn\\'t have to send\nthe mask, in this case a default full mask is used.\n\n**Extension return values**:\n\n-   **\\\"version-rolling\\\"** (REQUIRED, *TExtensionResult*)\n\n:   \n\n:   \\- When responded with `true`, the server will accept new\nparameter of **\\\"mining.submit\\\"**, see later.\n\n-   **\\\"version-rolling.mask\\\"** (REQUIRED, *TMask*)\n\n:   \n\n:   \\- Bits set to 1 are allowed to be changed by the miner. If a\nminer changes bits with mask value 0, the server will reject the\nsubmit.\n:   \\- The server SHOULD return the largest mask possible (as many\nbits set to 1 as possible). This can be useful in a mining proxy\nsetup when a proxy needs to negotiate the best mask for its\nfuture clients. There is a \\[Draft\nBIP\\](https://github.com/bitcoin/bips/pull/661/files) describing\navailable nVersion bits. The server SHOULD pick a mask that\npreferably covers all bits specified in the BIP.\n\n-   **\\\"version-rolling.min-bit-count\\\"** (REQUIRED, *TMask*)\n\n:   \n\n:   \\- The miner also provides a minimum number of bits that it\nneeds for efficient version rolling in hardware. Note that this\nparameter provides important diagnostic information to the pool\nserver. If the requested bit count exceeds the limit of the pool\nserver, the miner always has the chance to operate in a degraded\nmode without using full hashing power. The pool server SHOULD\nNOT terminate miner connection if this rare mismatch case\noccurs."
     },
     {
       "header": "Notification **\\\"mining.set_version_mask\\\"** {#notification_mining.set_version_mask}",
-      "content": ""
+      "content": "Server notifies the miner about a new mask valid for the connection.\nThis message can be sent at any time after the successful setup of the\nversion rolling extension by the \\\"mining.configure\\\" message. The new\nmask is valid **immediately**, so that the server doesn\\'t wait for the\nnext job.\n\n**Parameters**:\n\n-   *mask* (REQUIRED, *TMask*): The meaning is the same as the\n**\\\"version-rolling.mask\\\"** return parameter.\n\nExample:\n\n`{\"params\":[\"00003000\"],\u00a0\"id\":null,\u00a0\"method\":\u00a0\"mining.set_version_mask\"}`"
     },
     {
       "header": "Changes in request **\\\"mining.submit\\\"** {#changes_in_request_mining.submit}",
-      "content": ""
+      "content": "Immediately after successful activation of the version-rolling extension\n(result to **\\\"mining.configure\\\"** sent by server), the server MUST\naccept an additional parameter of the message **\\\"mining.submit\\\"**. The\nclient MUST send one additional parameter, **version_bits** (6th\nparameter, after *worker_name*, *job_id*, *extranonce2*, *ntime* and\n*nonce*).\n\n**Additional parameters**:\n\n-   *version_bits* (REQUIRED, *TMask*) - Version bits set by miner.\n\n:   \n\n:   \\- Miner can set only bits corresponding to the set bits in the\nlast received mask from the server either as response to\n\\\"mining.configure\\\" or \\\"mining.set_version_mask\\\" notification\n(`last_mask`). This must hold:\n\n`version_bits\u00a0&\u00a0~last_mask\u00a0==\u00a0\u00a00`\n\n:   \n\n:   \\- The server computes *nVersion* for the submit as follows:\n\n`nVersion\u00a0=\u00a0(job_version\u00a0&\u00a0~last_mask)\u00a0|\u00a0(version_bits\u00a0&\u00a0last_mask)`\n\nwhere `job_version` is the block version sent to miner as part of job\nwith id `job_id`."
     },
     {
       "header": "Extension \\\"minimum-difficulty\\\" {#extension_minimum_difficulty}",
-      "content": ""
+      "content": "This extension allows miner to request a minimum difficulty for the\nconnected machine. It solves a problem in the original stratum protocol\nwhere there is no way how to communicate hard limit of the connected\ndevice.\n\n**Extension parameters**:\n\n-   **\\\"minimum-difficulty.value\\\"** (REQUIRED, *Integer/Float*, \\>= 0)\n\n:   \n\n:   \\- The minimum difficulty value acceptable for the\nminer/connection. The value can be 0 for essentially disabling\nthe feature.\n\n**Extension return values**:\n\n-   **\\\"minimum-difficulty\\\"** (REQUIRED, *TExtensionResult*)\n\n:   \n\n:   \\- Whether the minimum difficulty was accepted or not.\n:   \\- This extension can be configured multiple times by calling\n\\\"mining.configure\\\" with \\\"minimum-difficulty\\\" code again."
     },
     {
       "header": "Extension \\\"subscribe-extranonce\\\" {#extension_subscribe_extranonce}",
-      "content": ""
+      "content": "Parameter-less extension. Miner advertises its capability of receiving\nmessage **\\\"mining.set_extranonce\\\"** message (useful for hash rate\nrouting scenarios)."
     },
     {
       "header": "Extension \\\"info\\\" {#extension_info}",
-      "content": ""
+      "content": "Miner provides additional text-based information.\n\n**Extension parameters**:\n\n-   **\\\"info.connection-url\\\"** (OPTIONAL, *String*)\n\n:   \n\n:   \\- Exact URL used by the mining software to connect to the\nstratum server.\n\n-   **\\\"info.hw-version\\\"** (OPTIONAL, *String*)\n\n:   \n\n:   \\- Manufacturer specific hardware revision string.\n\n-   **\\\"info.sw-version\\\"** (OPTIONAL, *String*)\n\n:   \n\n:   \\- Manufacturer specific software version\n\n-   **\\\"info.hw-id\\\"** (OPTIONAL, *String*)\n\n:   \n\n:   \\- Unique identifier of the mining device"
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Currently, there is a similar protocol feature **mining.capabilities**\nthat was intended for various protocol extensions. However,\n**mining.configure** is incompatible with this feature as it requires a\nserver response confirming all accepted/negotatied extensions. The\nreason why we made it incompatible is that **mining.capabilities**\nrequest has no associated response."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is dual licensed as BSD 3-clause, and Creative Commons CC0\n1.0 Universal."
     }
   ]
 }

@@ -12,35 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This specification defines a new type of transaction that supplements\n(not replaces) normal \\\"non coalescing\\\" bitcoin transactions."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Normal \\\"non-coalescing\\\" Bitcoin Transactions have one large\ninefficiency: When you want to spend from multiple inputs with the exact\nsame scriptPubKey, you have to list each input separately, along with\nthe same signature multiple times, even though the signature expresses\nthe same information. This bloats the transaction size and makes it\nexpensive to spend from small value inputs.\n\nBecause small value inputs are expensive to send, they remain in the\nUTXO pool which full nodes have to keep around. It is believed that long\nterm increase of the UTXO set can have negative scaling consequences on\nthe network.\n\nIf maximum blocksize is made to increase \\*slower\\* than the actual\nnumber of transactions bitcoin users are sending to the network, this\nproblem is projected to get worse. In other words, as transaction fees\nincrease, the minimum economical value of a spending a UTXO will\nincrease."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Redefinition of Transaction version {#redefinition_of_transaction_version}",
-      "content": ""
+      "content": "### Redefinition of Transaction version {#redefinition_of_transaction_version}\n\nFirst, this BIP redefines the version field on transactions. The first\nfour bytes are defined as the version number, while the last four bytes\nare defined as the transaction type. Type \\\"0000\\\" denotes normal\ntransactions, and \\\"0001\\\" defines coalescing transaction.\n\nExamples:\n\nversion 1 transaction with normal inputs:\n\n`\u00a0\u00a0\u00a0version:\u00a010000000`\n\nversion 2 transaction with normal inputs:\n\n`\u00a0\u00a0\u00a0version:\u00a020000000`\n\nversion 2 transaction with coalescing inputs:\n\n`\u00a0\u00a0\u00a0version:\u00a020000001`\n\nEssentially the last bit in the version field is set to 1 to enable\nwildcard inputs for all inputs present in the transaction."
     },
     {
       "header": "Wildcard inputs {#wildcard_inputs}",
-      "content": ""
+      "content": "A coalescing transaction is formulated the exact same way as a version 1\ntransaction with one exception: each input is treated as a \\\"wildcard\ninput\\\".\n\nA wildcard input beings the value of all inputs with the exact same\nscriptPubKey in a block lower or equal to the block the wildcard input\nis confirmed into."
     },
     {
       "header": "Changes needed to implement {#changes_needed_to_implement}",
-      "content": ""
+      "content": "The bitcoin code needs to be modified in three places in order to handle\nCoalescing Transactions.\n\n1\\. `<b>`{=html}Full Node Coalescing validation`</b>`{=html} - When a\nfull node receives a coalescing transaction, it has to aggregate the\nvalue of all the UTXOs in the blockchain older than the input with the\nsame scriptPubKey. If this value is greater than or equal to the amount\nof all outputs, then that coalescing transaction is valid and can be\npropagated.\n\n2\\. `<b>`{=html}Full Node Non-Coalescing validation`</b>`{=html} - When\na non-coalescing transaction comes in, the code needs to be modified to\ncheck if each input has not been spent by a coalescing transaction. If\nthere exist any coalescing transaction in the blockchain with the same\nscriptPubKey found in a block \\*after\\* that input, then the UTXO has\nbeen spent and the transaction is invalid.\n\n3\\. `<b>`{=html}Wallet`</b>`{=html} - The user facing wallet portion of\nthe reference client should notify the user when their wallet contains\nmany UTXOs that qualify it to benefit from a coalescing transaction.\nWallets should not simply replace non-coalescing transactions with\ncoalescing transactions in all instances."
     },
     {
       "header": "Isn\\'t this BIP bad because it encourage address re-use? {#isnt_this_bip_bad_because_it_encourage_address_re_use}",
-      "content": ""
+      "content": "Address re-use comes in two forms: re-use by the *sender*, and re-use by\nthe *receiver*.\n\nRe-use by the sender is basically using the same address for the change\noutput. This is generally considered bad since people looking through\nyour transaction history can determine who you do business with. When\nyou generate a new address for every change, your privacy is conserved\nas it is impossible to know which output is a recipient, and which\noutput is the change output. This BIP has **no effect** on re-use by the\nsender.\n\nOn the other hand, address re-use by the *receiver* occurs under\ncompletely different circumstances. When you publish an address and have\nmultiple people send to that address, you are engaging in address re-use\nfrom the receiver. This activity has historically been considered bad\nbecause it leads to re-using a private key. When you re-use a private\nkey too many times, you run the risk of an attacker performing\nstatistical analysis on the multiple signatures, which can lead to an\nattacker finding out your private key.\n\nThis BIP introduces a way to spend multiple inputs *without* re-using\nthe private key. In a sense, this BIP fixes the problem that makes\naddress re-use bad for the receiver. After this BIP becomes implemented\nand deployed, address re-use by the receiver will no longer be\nconsidered bad form."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

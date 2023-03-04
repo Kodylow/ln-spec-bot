@@ -12,43 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Although it is widely believed that Satoshi was an inflation-hating\ngoldbug he never said this, and in fact programmed Bitcoin\\'s money\nsupply to grow indefinitely, forever. He modeled the monetary supply as\n4 gold mines being discovered per mibillenium (1024 years), with equal\nintervals between them, each one being depleted over the course of 140\nyears.\n\nThis poses obvious problems, however. Prominent among them is the\ndiscussion on what to call 1 billion Bitcoin, which symbol color to use\nfor it, and when wallet clients should switch to it by default.\n\nTo combat this, this document proposes a controversial change: making\nBitcoin\\'s monetary supply finite."
     },
     {
       "header": "Details",
-      "content": ""
+      "content": "As is well known, Satoshi was a master programmer whose knowledge of C++\nwas surpassed only by his knowledge of Japanese culture. The code below:\n\n`\u00a0\u00a0\u00a0int64_t\u00a0nSubsidy\u00a0=\u00a050\u00a0*\u00a0COIN;`\\\n`\u00a0\u00a0\u00a0//\u00a0Subsidy\u00a0is\u00a0cut\u00a0in\u00a0half\u00a0every\u00a0210,000\u00a0blocks`\\\n`\u00a0\u00a0\u00a0//\u00a0which\u00a0will\u00a0occur\u00a0approximately\u00a0every\u00a04\u00a0years.`\\\n`\u00a0\u00a0\u00a0nSubsidy\u00a0>>=\u00a0(nHeight\u00a0/\u00a0210000);`\n\nis carefully written to rely on undefined behaviour in the C++\nspecification - perhaps so it can be hardware accelerated in future.\n\nThe block number is divided by 210000 (the \\\"apparent\\\" subsidy halving\ninterval in blocks), and the result is used as input for a binary shift,\napplied to the original payout (50 BTC), expressed in base units. Thanks\nto the new-goldmine interval being exactly 64 times the halving\ninterval, and 64 being the size in bits of the currency datatype, the\ncycle repeats itself every 64 halvings on all currently supported\nplatforms.\n\nDespite the nice showoff of underhanded programming skills - we want\nBitcoin to be well-specified. Otherwise, we\\'re clearly in for a bumpy\nride:\n\n`<img src=\"bip-0042/inflation.png\">`{=html}`</img>`{=html}\n\nNote that several other programming languages do not exhibit this\nbehaviour, making new implementations likely to be slower and generally\nmore bogus than Bitcoin Core. For example, Python unexpectedly returns 0\nwhen shifting an integer beyond its size."
     },
     {
       "header": "Other solutions {#other_solutions}",
-      "content": ""
-    },
-    {
-      "header": "Floating-point approximation {#floating_point_approximation}",
-      "content": ""
+      "content": "### Floating-point approximation {#floating_point_approximation}\n\nAn obvious solution would be to reimplement the shape of the subsidy\ncurve using floating-point approximations, such as simulated annealing\nor quantitative easing, which have already proven their worth in\nconsensus systems. Unfortunately, since the financial crisis everyone\nconsiders numbers with decimal points in them fishy, and integers are\nnot well supported by Javascript."
     },
     {
       "header": "Truncation",
-      "content": ""
+      "content": "An alternative solution would be to represent the total number of\nbitcoins as a string:\n\n`\u00a0\u00a0\u00a0\"21000000000000000000000\"`\n\nand then use string manipulation to remove the rightmost zero every 4\nyears, give or take a leap-year:\n\n`\u00a0\u00a0\u00a0strSubsidy\u00a0=\u00a0strSubsidy.substr(0,\u00a0strSubsidy.size()\u00a0-\u00a02);`\n\nThis style relies less heavily on clever C++ and is more familiar to the\nCore Dev Team who are primarily PHP programmers."
     },
     {
       "header": "Proposal",
-      "content": ""
+      "content": "Instead, how about we stop thinking about long term issues when we\\'ll\nall be dead (barring near lightspeed travel, cryogenic revival, or other\ntechnology--- like cryptocurrency--- which only exists in science\nfiction).\n\nA softfork (see BIP16, BIP34, BIP62) will take place on april 1st 2214,\npermanently setting the subsidy to zero. The result of this will be that\nthe total currency supply will be limited to 42 halfmillion (including\nthe genesis coinbase output, which is not actually spendable)."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "An implementation for the reference client can be found on\n<https://github.com/bitcoin/bitcoin/pull/3842> ."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Given the moderate time frame over which this change is to be\nimplemented, we expect all miners to choose to screw themselves and\ndeploy this change before 2214.\n\nIf they don\\'t, and a minority remains on the old code base, a fork may\noccur. Essentially, they\\'ll be mining fool\\'s gold after that time."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Gregory Maxwell for proposing this solution, and to Mike Hearn\nfor insights into web development. Also thanks to \\\"ditto-b\\\" on github\nto implement a prototype ahead of time."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

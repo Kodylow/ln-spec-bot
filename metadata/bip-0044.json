@@ -11,55 +11,55 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a logical hierarchy for deterministic wallets based on\nan algorithm described in BIP-0032 (BIP32 from now on) and purpose\nscheme described in BIP-0043 (BIP43 from now on).\n\nThis BIP is a particular application of BIP43."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The hierarchy proposed in this paper is quite comprehensive. It allows\nthe handling of multiple coins, multiple accounts, external and internal\nchains per account and millions of addresses per chain."
     },
     {
       "header": "Path levels {#path_levels}",
-      "content": ""
+      "content": "We define the following 5 levels in BIP32 path:\n\nm / purpose' / coin_type' / account' / change / address_index\n\nApostrophe in the path indicates that BIP32 hardened derivation is used.\n\nEach level has a special meaning, described in the chapters below."
     },
     {
       "header": "Purpose",
-      "content": ""
+      "content": "Purpose is a constant set to 44\\' (or 0x8000002C) following the BIP43\nrecommendation. It indicates that the subtree of this node is used\naccording to this specification.\n\nHardened derivation is used at this level."
     },
     {
       "header": "Coin type {#coin_type}",
-      "content": ""
+      "content": "One master node (seed) can be used for unlimited number of independent\ncryptocoins such as Bitcoin, Litecoin or Namecoin. However, sharing the\nsame space for various cryptocoins has some disadvantages.\n\nThis level creates a separate subtree for every cryptocoin, avoiding\nreusing addresses across cryptocoins and improving privacy issues.\n\nCoin type is a constant, set for each cryptocoin. Cryptocoin developers\nmay ask for registering unused number for their project.\n\nThe list of already allocated coin types is in the chapter \\\"Registered\ncoin types\\\" below.\n\nHardened derivation is used at this level."
     },
     {
       "header": "Account",
-      "content": ""
+      "content": "This level splits the key space into independent user identities, so the\nwallet never mixes the coins across different accounts.\n\nUsers can use these accounts to organize the funds in the same fashion\nas bank accounts; for donation purposes (where all addresses are\nconsidered public), for saving purposes, for common expenses etc.\n\nAccounts are numbered from index 0 in sequentially increasing manner.\nThis number is used as child index in BIP32 derivation.\n\nHardened derivation is used at this level.\n\nSoftware should prevent a creation of an account if a previous account\ndoes not have a transaction history (meaning none of its addresses have\nbeen used before).\n\nSoftware needs to discover all used accounts after importing the seed\nfrom an external source. Such an algorithm is described in \\\"Account\ndiscovery\\\" chapter."
     },
     {
       "header": "Change",
-      "content": ""
+      "content": "Constant 0 is used for external chain and constant 1 for internal chain\n(also known as change addresses). External chain is used for addresses\nthat are meant to be visible outside of the wallet (e.g. for receiving\npayments). Internal chain is used for addresses which are not meant to\nbe visible outside of the wallet and is used for return transaction\nchange.\n\nPublic derivation is used at this level."
     },
     {
       "header": "Index",
-      "content": ""
+      "content": "Addresses are numbered from index 0 in sequentially increasing manner.\nThis number is used as child index in BIP32 derivation.\n\nPublic derivation is used at this level."
     },
     {
       "header": "Account discovery {#account_discovery}",
-      "content": ""
+      "content": "When the master seed is imported from an external source the software\nshould start to discover the accounts in the following manner:\n\n1.  derive the first account\\'s node (index = 0)\n2.  derive the external chain node of this account\n3.  scan addresses of the external chain; respect the gap limit\ndescribed below\n4.  if no transactions are found on the external chain, stop discovery\n5.  if there are some transactions, increase the account index and go to\nstep 1\n\nThis algorithm is successful because software should disallow creation\nof new accounts if previous one has no transaction history, as described\nin chapter \\\"Account\\\" above.\n\nPlease note that the algorithm works with the transaction history, not\naccount balances, so you can have an account with 0 total coins and the\nalgorithm will still continue with discovery."
     },
     {
       "header": "Address gap limit {#address_gap_limit}",
-      "content": ""
+      "content": "Address gap limit is currently set to 20. If the software hits 20 unused\naddresses in a row, it expects there are no used addresses beyond this\npoint and stops searching the address chain. We scan just the external\nchains, because internal chains receive only coins that come from the\nassociated external chains.\n\nWallet software should warn when the user is trying to exceed the gap\nlimit on an external chain by generating a new address."
     },
     {
       "header": "Registered coin types {#registered_coin_types}",
-      "content": ""
+      "content": "These are the default registered coin types for usage in level 2 of\nBIP44 described in chapter \\\"Coin type\\\" above.\n\nAll these constants are used as hardened derivation.\n\nindex   hexa         coin\n------- ------------ -----------------\n0       0x80000000   Bitcoin\n1       0x80000001   Bitcoin Testnet\n\nThis BIP is not a central directory for the registered coin types,\nplease visit SatoshiLabs that maintains the full list:\n\n[SLIP-0044 : Registered coin types for\nBIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md \"wikilink\")\n\nTo register a new coin type, an existing wallet that implements the\nstandard is required and a pull request to the above file should be\ncreated."
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "coin              account   chain      address   path\n----------------- --------- ---------- --------- ------------------------------\nBitcoin           first     external   first     m / 44\\' / 0\\' / 0\\' / 0 / 0\nBitcoin           first     external   second    m / 44\\' / 0\\' / 0\\' / 0 / 1\nBitcoin           first     change     first     m / 44\\' / 0\\' / 0\\' / 1 / 0\nBitcoin           first     change     second    m / 44\\' / 0\\' / 0\\' / 1 / 1\nBitcoin           second    external   first     m / 44\\' / 0\\' / 1\\' / 0 / 0\nBitcoin           second    external   second    m / 44\\' / 0\\' / 1\\' / 0 / 1\nBitcoin           second    change     first     m / 44\\' / 0\\' / 1\\' / 1 / 0\nBitcoin           second    change     second    m / 44\\' / 0\\' / 1\\' / 1 / 1\nBitcoin Testnet   first     external   first     m / 44\\' / 1\\' / 0\\' / 0 / 0\nBitcoin Testnet   first     external   second    m / 44\\' / 1\\' / 0\\' / 0 / 1\nBitcoin Testnet   first     change     first     m / 44\\' / 1\\' / 0\\' / 1 / 0\nBitcoin Testnet   first     change     second    m / 44\\' / 1\\' / 0\\' / 1 / 1\nBitcoin Testnet   second    external   first     m / 44\\' / 1\\' / 1\\' / 0 / 0\nBitcoin Testnet   second    external   second    m / 44\\' / 1\\' / 1\\' / 0 / 1\nBitcoin Testnet   second    change     first     m / 44\\' / 1\\' / 1\\' / 1 / 0\nBitcoin Testnet   second    change     second    m / 44\\' / 1\\' / 1\\' / 1 / 1"
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP43 - Purpose Field for Deterministic\nWallets](bip-0043.mediawiki \"wikilink\")"
     }
   ]
 }

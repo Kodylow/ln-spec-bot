@@ -12,43 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Define a service bit that allow pruned peers to signal their limited\nservices"
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Pruned peers can offer the same services as traditional peer except of\nserving all historical blocks. Bitcoin right now only offers the\nNODE_NETWORK service bit which indicates that a peer can serve all\nhistorical blocks.\n\n1.  Pruned peers can relay blocks, headers, transactions, addresses and\ncan serve a limited number of historical blocks, thus they should\nhave a way how to announce their service(s)\n2.  Peers no longer in initial block download should consider connecting\nsome of its outbound connections to pruned peers to allow other\npeers to bootstrap from non-pruned peers"
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "New service bit {#new_service_bit}",
-      "content": ""
+      "content": "### New service bit {#new_service_bit}\n\nThis BIP proposes a new service bit\n\n---------------------- ---------------- --------------------------------------------------------------------------------------------------------------------\nNODE_NETWORK_LIMITED   bit 10 (0x400)   If signaled, the peer `<I>`{=html}MUST`</I>`{=html} be capable of serving at least the last 288 blocks (\\~2 days).\n---------------------- ---------------- --------------------------------------------------------------------------------------------------------------------\n\nA safety buffer of 144 blocks to handle chain reorganizations\n`<I>`{=html}SHOULD`</I>`{=html} be taken into account when connecting to\na peer signaling the `NODE_NETWORK_LIMITED` service bit."
     },
     {
       "header": "Address relay {#address_relay}",
-      "content": ""
+      "content": "Full nodes following this BIP `<I>`{=html}SHOULD`</I>`{=html} relay\naddress/services (`addr` message) from peers they would connect to\n(including peers signaling `NODE_NETWORK_LIMITED`)."
     },
     {
       "header": "Counter-measures for peer fingerprinting {#counter_measures_for_peer_fingerprinting}",
-      "content": ""
+      "content": "Peers may have different prune depths (depending on the peers\nconfiguration, disk space, etc.) which can result in a fingerprinting\nweakness (finding the prune depth through getdata requests).\nNODE_NETWORK_LIMITED supporting peers `<I>`{=html}SHOULD`</I>`{=html}\navoid leaking the prune depth and therefore not serve blocks deeper than\nthe signaled `NODE_NETWORK_LIMITED` threshold (288 blocks)."
     },
     {
       "header": "Risks",
-      "content": ""
+      "content": "Pruned peers following this BIP may consume more outbound bandwidth.\n\nLight clients (and such) who are not checking the `nServiceFlags`\n(service bits) from a relayed `addr`-message may unwillingly connect to\na pruned peer and ask for (filtered) blocks at a depth below their\npruned depth. Light clients should therefore check the service bits (and\neventually connect to peers signaling `NODE_NETWORK_LIMITED` if they\nrequire \\[filtered\\] blocks around the tip). Light clients obtaining\npeer IPs though DNS seed should use the DNS filtering option."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This proposal is backward compatible."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   <https://github.com/bitcoin/bitcoin/pull/11740> (signaling)\n-   <https://github.com/bitcoin/bitcoin/pull/10387> (connection and\nrelay)"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     }
   ]
 }

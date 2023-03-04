@@ -11,19 +11,19 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a MIME (RFC 2046) Media Type for Bitcoin payment\nrequest messages."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Wallet or server software that sends payment protocol messages over\nemail or http should follow Internet standards for properly\nencapsulating the messages."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The Media Type (Content-Type in HTML/email headers) for bitcoin protocol\nmessages shall be:\n\n---------------- ------------------------------------\nMessage          Type/Subtype\nPaymentRequest   application/bitcoin-paymentrequest\nPayment          application/bitcoin-payment\nPaymentACK       application/bitcoin-paymentack\n---------------- ------------------------------------\n\nPayment protocol messages are encoded in binary."
     },
     {
       "header": "Example",
-      "content": ""
+      "content": "A web server generating a PaymentRequest message to initiate the payment\nprotocol would precede the binary message data with the following\nheaders:\n\nContent-Type: application/bitcoin-paymentrequest\nContent-Transfer-Encoding: binary"
     }
   ]
 }

@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Add a new message, \\\"sendheaders\\\", which indicates that a node prefers\nto receive new block announcements via a \\\"headers\\\" message rather than\nan \\\"inv\\\"."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Since the introduction of \\\"headers-first\\\" downloading of blocks in\n0.10, blocks will not be processed unless they are able to connect to a\n(valid) headers chain. Consequently, block relay generally works as\nfollows:\n\n1.  A node (N) announces the new tip with an \\\"inv\\\" message, containing\nthe block hash\n2.  A peer (P) responds to the \\\"inv\\\" with a \\\"getheaders\\\" message (to\nrequest headers up to the new tip) and a \\\"getdata\\\" message for the\nnew tip itself\n3.  N responds with a \\\"headers\\\" message (with the header for the new\nblock along with any preceding headers unknown to P) and a \\\"block\\\"\nmessage containing the new block\n\nHowever, in the case where a new block is being announced that builds on\nthe tip, it would be generally more efficient if the node N just\nannounced the block header for the new block, rather than just the block\nhash, and saved the peer from generating and transmitting the getheaders\nmessage (and the required block locator).\n\nIn the case of a reorg, where 1 or more blocks are disconnected, nodes\ncurrently just send an \\\"inv\\\" for the new tip. Peers currently are able\nto request the new tip immediately, but wait until the headers for the\nintermediate blocks are delivered before requesting those blocks. By\nannouncing headers from the last fork point leading up to the new tip in\nthe block announcement, peers are able to request all the intermediate\nblocks immediately."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  The sendheaders message is defined as an empty message where\npchCommand == \\\"sendheaders\\\"\n2.  Upon receipt of a \\\"sendheaders\\\" message, the node will be\npermitted, but not required, to announce new blocks by sending the\nheader of the new block (along with any other blocks that a node\nbelieves a peer might need in order for the block to connect).\n3.  Feature discovery is enabled by checking protocol version \\>= 70012"
     },
     {
       "header": "Additional constraints {#additional_constraints}",
-      "content": ""
+      "content": "As support for sendheaders is optional, software that implements this\nmay also optionally impose additional constraints, such as only honoring\nsendheaders messages shortly after a connection is established."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Older clients remain fully compatible and interoperable after this\nchange."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/6494>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

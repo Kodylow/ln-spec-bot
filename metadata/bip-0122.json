@@ -13,43 +13,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes a URI scheme for looking up blocks, transactions and\naddresses on a Blockchain explorer, or in general to make proper\nBlockchain references."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The purpose of this URI scheme is to enable users to handle all the\nrequests for details about blocks, transactions, etc. with their\npreferred tool (being that a web service or a local application).\nCurrently a Bitcoin client usually points to an arbitrary blockchain\nexplorer when the user looks for the details of a transaction or allows\nthe user to choose from a set of alternatives. Resorting to copy + paste\ninto a browser is often required. The same happens with posts and\nmessages that reference some particular txs or blocks, if they provide\nlinks at all."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The URI follow this form:\n\n`blockchain:[//<chain>]/<tx|block|address>/<hash>`\n\nWhere:\n\nElement   Description                                                                                                                                    \n--------- ---------------------------------------------------------------------------------------------------------------------------------------------- --------------------------------------------\nchain     **chain ID** (see below) of the desired chain, leading 0s included. If omitted (which would be the usual case), Bitcoin main net is assumed.   \ntype      tx                                                                                                                                             for transactions.\nblock                                                                                                                                          for blocks (supports both hash or height).\naddress                                                                                                                                        for addresses.\nhash      the relevant hash to refer to (leading zeros included), or block height."
     },
     {
       "header": "ABNF grammar {#abnf_grammar}",
-      "content": ""
+      "content": "blockchainuri = \"blockchain:\" [\"//\" chain] \"/\" object\nobject = (\"tx\" \"/\" hash) / (\"block\" \"/\" (hash / blockheight)) /\n(\"address\" \"/\" address)\nchain = hash\nhash = 64HEXDIG\nblockheight = 1*15DIGIT ; 15 is somehow arbitrary, i.e. a \"small\" int.\naddress = base58 ; https://en.wikipedia.org/wiki/Base58\n\n------------------------------------------------------------------------"
     },
     {
       "header": "Definition of chain ID {#definition_of_chain_id}",
-      "content": ""
+      "content": "The **chain ID** of a chain is the block hash of the corresponding\ngenesis block. For forked chains, it\\'s the block hash of the first\nblock after fork.\n\nSo, for example:\n\nBitcoin main   : 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f \nBitcoin test   : 000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943\nBitcoin regtest: 0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206 \n\nAn example of forked chain (Feathercoin, that forked Litecoin):\n\n`<img src=bip-0122/chainid.png>`{=html}`</img>`{=html}\n\nLitecoin   : 12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2\nFeathercoin: fdbe99b90c90bae7505796461471d89ae8388ab953997aa06a355bbda8d915cb"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "A transaction on Bitcoin main net:\n\n`blockchain:/tx/b462ae6eb8bdae2e060239a2a3ea5d9c3e0f9ef34d9717beb2dcf0ed42cee7da`\n\nA block on Bitcoin main net:\n\n`blockchain:/block/00000000000000000119af5bcae2926df54ae262e9071a94a99c913cc217cc72`\n\nor\n\n`blockchain:/block/372338`\n\nAn address on Bitcoin main net:\n\n`blockchain:/address/16EW6Rv9P9AxFDBrZV816dD4sj1EAYUX3f`\n\nA transaction on Bitcoin test net:\n\n`blockchain://000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943/tx/3b95a766d7a99b87188d6875c8484cb2b310b78459b7816d4dfc3f0f7e04281a`"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "From the point of view of a wallet (or other Blockchain related tool)\ndevelopers which need to reference Blockchain data, using this scheme\nmean that he can simply make it a \\`blockchain:\\` link without having to\nworry about any specific Blockchain explorer or provide a means for the\nuser to select one.\n\nBlockchain explorers in turn will simply offer to handle the\n\\`blockchain:\\` URI schema, the first time the user visit their website,\nor launch/install the application, or even set themselves if there\nisn\\'t already one.\n\nUsers can link directly to their preferred block explorer (avoiding\ncopy + paste which can be awkward on mobile devices)."
     },
     {
       "header": "Sample implementation {#sample_implementation}",
-      "content": ""
+      "content": "[Demo Blockchain: URI handler on\nGitHub](https://github.com/MarcoPon/blockchain-exploration)"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Btc Drak for suggesting support for different networks and\nJorge Timon for the suggestion that we could identify each network by\nits genesis block hash. Thanks to Richard Moore, Matt Whitlock, Andreas\nSchildbach for help with the structure and hierarchy of the URI scheme."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

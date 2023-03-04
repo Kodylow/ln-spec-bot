@@ -12,35 +12,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies proposed changes to the Bitcoin transaction\nvalidity rules to fix a malleability vector in the extra stack element\nconsumed by `OP_CHECKMULTISIG` and `OP_CHECKMULTISIGVERIFY`."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Signature malleability refers to the ability of any relay node on the\nnetwork to transform the signature in transactions, with no access to\nthe relevant private keys required. For non-segregated witness\ntransactions, signature malleability will change the `txid` and\ninvalidate any unconfirmed child transactions. Although the `txid` of\nsegregated witness\n([BIP141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki))\ntransactions is not third party malleable, this malleability vector will\nchange the `wtxid` and may reduce the efficiency of compact block relay\n([BIP152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki)).\n\nA design flaw in `OP_CHECKMULTISIG` and `OP_CHECKMULTISIGVERIFY` causes\nthem to consume an extra stack element (\\\"dummy element\\\") after\nsignature validation. The dummy element is not inspected in any manner,\nand could be replaced by any value without invalidating the script. This\ndocument specifies a new rule to fix this signature malleability."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "To fix the dummy element malleability, a new consensus rule\n(\\\"`NULLDUMMY`\\\") is deployed to require that the dummy element MUST be\nthe empty byte array. Anything else makes the script evaluate to false\nimmediately. The `NULLDUMMY` rule applies to `OP_CHECKMULTISIG` and\n`OP_CHECKMULTISIGVERIFY` in pre-segregated scripts, and also\npay-to-witness-script-hash scripts described in BIP141."
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP will be deployed by \\\"version bits\\\"\n[BIP9](https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki)\nusing the same parameters for BIP141 and BIP143, with the name\n\\\"segwit\\\" and using bit 1.\n\nFor Bitcoin mainnet, the BIP9 starttime is midnight 15 November 2016 UTC\n(Epoch timestamp 1479168000) and BIP9 timeout is midnight 15 November\n2017 UTC (Epoch timestamp 1510704000).\n\nFor Bitcoin testnet, the BIP9 starttime is midnight 1 May 2016 UTC\n(Epoch timestamp 1462060800) and BIP9 timeout is midnight 1 May 2017 UTC\n(Epoch timestamp 1493596800)."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "The reference client has produced compatible signatures from the\nbeginning, and the `NULLDUMMY` rule has been enforced as relay policy by\nthe reference client since v0.10.0. There has been no transactions\nviolating the requirement being added to the chain since at least August\n2015.\n\nFor all scriptPubKey types in actual use, non-compliant signatures can\ntrivially be converted into compliant ones, so there is no loss of\nfunctionality by this requirement. Users MUST pay extra attention to\nthis new rule when designing exotic scripts."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "An implementation for the reference client is available at\n<https://github.com/bitcoin/bitcoin/pull/8636>"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Peter Todd is the original author of NULLDUMMY. This document is\nextracted from the previous\n[BIP62](https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki)\nproposal, which was composed by Pieter Wuille and had input from various\npeople."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

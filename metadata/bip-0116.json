@@ -13,51 +13,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "A general approach to bitcoin contracts is to fully enumerate the\npossible spending conditions and then program verification of these\nconditions into a single script. At redemption, the spending condition\nused is explicitly selected, e.g. by pushing a value on the witness\nstack which cascades through a series if if/else constructs.\n\nThis approach has significant downsides, such as requiring all program\npathways to be visible in the scriptPubKey or redeem script, even those\nwhich are not used at validation. This wastes space on the block chain,\nrestricts the size of possible scripts due to push limits, and impacts\nboth privacy and fungibility as details of the contract can often be\nspecific to the user.\n\nThis BIP proposes a new soft-fork upgradeable opcode,\nMERKLEBRANCHVERIFY, which allows script writers to commit to a set of\ndata elements and have one or more of these elements be provided at\nredemption without having to reveal the entire set. As these data\nelements can be used to encode policy, such as public keys or validation\nsubscripts, the MERKLEBRANCHVERIFY opcode can be used to overcome these\nlimitations of existing bitcoin script."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under a Creative Commons Attribution-ShareAlike\nlicense. All provided source code is licensed under the MIT license."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "MERKLEBRANCHVERIFY redefines the existing NOP4 opcode. When executed, if\nany of the following conditions are true, the script interpreter will\nterminate with an error:\n\n1.  the stack contains less than three (3) items;\n2.  the first item on the stack is more than 2 bytes;\n3.  the first item on the stack, interpreted as an integer, N, is\nnegative or not minimally encoded;\n4.  the second item on the stack is not exactly 32 bytes;\n5.  the third item on the stack is not a serialized Merkle tree\ninclusion proof as specified by BIP98\\[1\\] and requiring exactly\n`floor(N/2)` VERIFY hashes; or\n6.  the remainder of the stack contains less than `floor(N/2)`\nadditional items, together referred to as the input stack elements.\n\nIf the low-order bit of N is clear, `N&1 == 0`, each input stack element\nis hashed using double-SHA256. Otherwise, each element must be exactly\n32 bytes in length and are interpreted as serialized hashes. These are\nthe VERIFY hashes.\n\nIf the fast Merkle root computed from the Merkle tree inclusion proof,\nthe third item on the stack, with the VERIFY hashes in the order as\npresented on the stack, from top to bottom, does not exactly match the\nsecond item on the stack, the script interpreter will terminate with an\nerror.\n\nOtherwise, script execution will continue as if a NOP had been executed."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Although BIP16 (Pay to Script Hash)\\[2\\] and BIP141 (Segregated\nWitness)\\[3\\] both allow the redeem script to be kept out of the\nscriptPubKey and therefore out of the UTXO set, the entire spending\nconditions for a coin must nevertheless be revealed when that coin is\nspent. This includes execution pathways or policy conditions which end\nup not being needed by the redemption. Not only is it inefficient to\nrequire this unnecessary information to be present on the blockchain,\nalbeit in the witness, it also impacts privacy and fungibility as some\nunused script policies may be identifying. Using a Merkle hash tree to\ncommit to the policy options, and then only forcing revelation of the\npolicy used at redemption minimizes this information leakage.\n\nUsing Merkle hash trees to commit to policy allows for considerably more\ncomplex contracts than would would otherwise be possible, due to various\nbuilt-in script size and runtime limitations. With Merkle commitments to\npolicy these size and runtime limitations constrain the complexity of\nany one policy that can be used rather than the sum of all possible\npolicies."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The MERKLEBRANCHVERIFY opcode uses fast Merkle hash trees as specified\nby BIP98\\[1\\] rather than the construct used by Satoshi for committing\ntransactions to the block header as the later has a known vulnerability\nrelating to duplicate entries that introduces a source of malleability\nto downstream protocols\\[4\\]. A source of malleability in Merkle proofs\ncould potentially lead to spend vulnerabilities in protocols that use\nMERKLEBRANCHVERIFY. For example, a compact 2-of-N policy could be\nwritten by using MERKLEBRANCHVERIFY to prove that two keys are extracted\nfrom the same tree, one at a time, then checking the proofs for bitwise\nequality to make sure the same entry wasn\\'t used twice. With the\nvulnerable Merkle tree implementation there are privledged positions in\nunbalanced Merkle trees that allow multiple proofs to be constructed for\nthe same, single entry.\n\nBIP141 (Segregated Witness)\\[3\\] provides support for a powerful form of\nscript upgrades called script versioning, which is able to achieve the\nsort of upgrades which would previously have been hard-forks. If script\nversioning were used for deployment then MERKLEBRANCHVERIFY could be\nwritten to consume its inputs, which would provide a small 2-byte\nsavings for many anticipated use cases. However the more familiar\nNOP-expansion soft-fork mechanism used by BIP65\n(CHECKLOCKTIMEVERIFY)\\[5\\] and BIP112 (CHECKSEQUENCEVERIFY)\\[6\\] was\nchosen over script versioning for the following two reasons:\n\n1.  **Infrastructure compatibility.** Using soft-fork NOP extensions\nallows MERKLEBRANCHVERIFY to be used by any existing software able\nto consume custom scripts, and results in standard P2SH or\nP2WSH-nested-in-P2SH addresses without the need for BIP143\\[7\\]\nsigning code. This allows MERKLEBRANCHVERIFY to be used immediately\nby services that need it rather than wait on support for script\nversioning and/or BIP-143\\[7\\] signatures in tools and libraries.\n2.  **Delayed decision on script upgrade protocol.** There are\nunresolved issues with respect to how script versioning should be\nused for future script upgrades. There are only 16 available script\nversions reserved for future use, and so they should be treated as a\nscarce resource. Additionally, script feature versioning should\narguably be specified in the witness and the BIP141 script\nversioning only be used to specify the structure of the witness,\nhowever no such protocol exists as of yet. Using the NOP-expansion\nspace prevents MERKLEBRANCHVERIFY from being stalled due to waiting\non script upgrade procedure to be worked out, while making use of\nexpansion space that is already available.\n\nThe MERKLEBRANCHVERIFY opcode allows for VERIFY hashes to be presented\ndirectly, or calculated from the leaf values using double-SHA256. In\nmost cases the latter approach is expected to be used so that the leaf\nvalue(s) can be used for both branch validation and other purposes\nwithout any explicit preprocessing. However allowing already-calculated\nhash values as inputs enables using chained MERKLEBRANCHVERIFY opcodes\nto verify branches of trees with proofs large enough that they would not\nfit in the 520 byte script push limitation. As specified, a 30-branch\npath can be verified by proving the path from the leaf to the 15th\ninterior node as the \\'root\\', then proving that node\\'s hash to be a\nchild of the actual Merkle tree root hash. Validation of a 256-branch\npath (e.g. a binary prefix tree with a hash value as key) would require\n18 chained validations, which would fit within current script\nlimitations."
     },
     {
       "header": "Applications",
-      "content": ""
-    },
-    {
-      "header": "1-of-N for large N {#of_n_for_large_n}",
-      "content": ""
+      "content": "### 1-of-N for large N {#of_n_for_large_n}\n\nHere is a redeem script that allows a coin to be spent by any key from a\nlarge set, without linear scaling in script size:\n\n`\u00a0redeemScript:\u00a0``<root>`{=html}`\u00a02\u00a0MERKLEBRANCHVERIFY\u00a02DROP\u00a0DROP\u00a0CHECKSIG`\\\n`\u00a0witness:\u00a0``<sig>`{=html}`\u00a0``<pubkey>`{=html}`\u00a0``<proof>`{=html}\n\nThe redeem script looks very similar to the standard pay-to-pubkey-hash,\nexcept instead of showing that the pubkey\\'s hash is the same as the\ncommitment given, we demonstrate that the pubkey is one of potentially\nmany pubkeys included in the Merkle tree committed to in the redeem\nscript. The low-order bit of the first parameter, 2, is clear, meaning\nthat there is one input (`(2>>1) == 1`), the serialized pubkey, and its\nVERIFY hash needs to be calculated by MERKLEBRANCHVERIFY using\ndouble-SHA256."
     },
     {
       "header": "Honeypots",
-      "content": ""
+      "content": "As described by Pieter Wuille\\[8\\] the 1-of-N scheme is particularly\nuseful for constructing honeypots. The desire is to put a large bounty\non a server, larger than the value of the server itself so that if the\nserver is compromised it is highly likely that the hacker will claim the\nbitcoin, thereby revealing the intrusion. However if there are many\nservers, e.g. 1,000, it becomes excessively expensive to lock up\nseparate bounties for each server. It would be desirable if the same\nbounty was shared across multiple servers in such a way that the spend\nwould reveal which server was compromised.\n\nThis is accomplished by generating 1,000 different keys, building a hash\ntree of these public keys, and placing each key and associated Merkle\npath on separate servers. When the honeypot is claimed, the (previous)\nowner of the coins can tell which server was compromised from the key\nand path used to claim the funds."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "An implementation of this BIP, including both consensus code updates and\ntests is available at the following Github repository:\n\n[1](https://github.com/maaku/bitcoin/tree/merkle-branch-verify)"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP will be deployed by BIP8 (Version bits with lock-in by\nheight)\\[9\\] with the name \\\"merklebranchverify\\\" and using bit 2.\n\nFor Bitcoin mainnet, the BIP8 startheight will be at height M to be\ndetermined and BIP8 timeout activation will occur on height M + 50,400\nblocks.\n\nFor Bitcoin testnet, the BIP8 startheight will be at height T to be\ndetermined and BIP8 timeout activation will occur on height T + 50,400\nblocks.\n\nWe note that DISCOURAGE_UPGRADABLE_NOPS means that transactions which\nuse this feature are already considered non-standard by the rules of the\nnetwork, making deployment easier than was the case with, for example,\nwith BIP68 (Relative lock-time using consensus-enforced sequence\nnumbers)\\[9\\]."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Old clients will consider the OP_MERKLEBRANCHVERIFY as a NOP and ignore\nit. Proof will not be verified, but the transaction will be accepted."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "\\[1\\] [BIP98: Fast Merkle Trees (Consensus\nlayer)](https://github.com/bitcoin/bips/blob/master/bip-0098.mediawiki)\n\n\\[2\\] [BIP16: Pay to Script\nHash](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki)\n\n\\[3\\] [BIP141: Segregated Witness (Consensus\nlayer)](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki)\n\n\\[4\\] [National Vulnerability Database:\nCVE-2012-2459](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-2459)\n\n\\[5\\] [BIP65:\nOP_CHECKLOCKTIMEVERIFY](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki)\n\n\\[6\\] [BIP112:\nCHECKSEQUENCEVERIFY](https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki)\n\n\\[7\\] [BIP143: Transaction Signature Verification for Version 0 Witness\nProgram](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki)\n\n\\[8\\] [Multisig on steroids using tree\nsignatures](https://blockstream.com/2015/08/24/treesignatures.html)\n\n\\[9\\] [BIP68: Relative lock-time using consensus-enforced sequence\nnumbers](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki)"
     }
   ]
 }

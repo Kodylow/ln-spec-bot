@@ -12,75 +12,71 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a way for peers to authenticate to other peers to\nguarantee node ownership and/or allow peers to access additional or\nlimited node services, without the possibility of fingerprinting."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "We assume peer operators want to limit the access of different node\nservices or increase datastream priorities to a selective subset of\npeers. Also we assume that peers want to connect to specific peers to\nbroadcast or filter transactions (or similar actions that reveal\nsensitive information) and therefore operators want to authenticate the\nremote peer and ensure that they have not connected to a MITM\n(man-in-the-middle) attacker.\n\nBenefits of peer authentication:\n\n-   Peers can detect MITM attacks when connecting to known peers\n-   Peers can allow resource hungry transaction filtering only to\nspecific peers\n-   Peers can allow access to sensitive information that can lead to\nnode fingerprinting (fee estimation)\n-   Peers can allow custom message types (private extensions) to\nauthenticated peers\n\nA simple authentication scheme based on elliptic cryptography will allow\npeers to identify each other and selectively allow access to restricted\nservices or reject the connection if the peer identity cannot be\nverified."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The authentication scheme proposed in this BIP uses ECDSA, **secrets\nwill never be transmitted**.\n\n**Authentication initialization must only happen if encrypted channels\nhave been established (according to BIP-151 \\[1\\]).**\n\nThe **encryption-session-ID** is available once channels are encrypted\n(according to BIP-151 \\[1\\]).\n\nThe identity-public-keys used for the authentication must be pre-shared\nover a different channel (mail/PGP, physical paper exchange, etc.). This\nBIP does not cover a \\\"trust on first use\\\" (TOFU) concept.\n\nThe authentication state must be kept until the encryption/connection\nterminates.\n\nOnly one authentication process is allowed per connection.\nRe-authentication require re-establishing the connection."
     },
     {
       "header": "Known-peers and authorized-peers database {#known_peers_and_authorized_peers_database}",
-      "content": ""
+      "content": "Each peer that supports p2p authentication must provide two\nuser-editable \\\"databases\\\".\n\n1.  **known-peers** contains known identity-public-keys together with a\nnetwork identifier (IP & port), similar to the \\\"known-host\\\" file\nsupported by openssh.\n2.  **authorized-peers** contains authorized identity-public-keys"
     },
     {
       "header": "Local identity key management {#local_identity_key_management}",
-      "content": ""
+      "content": "Each peer can configure multiple identity-keys (ECC, 32 bytes). Peers\nshould make sure that each network interface (IPv4, IPv6, tor) has its\nown identity-key (otherwise it would be possible to link a tor address\nto a IPvX address). The identity-public-key(s) can be shared over a\ndifferent channel with other node-operators (or non-validating clients)\nto grant authorized access."
     },
     {
       "header": "Authentication procedure {#authentication_procedure}",
-      "content": ""
+      "content": "Authentication based on this BIP will require both sides to\nauthenticate. Signatures/public-keys will only be revealed if the remote\npeer can prove that they already know the remote identity-public-key.\n\n1.  -\\> Requesting peer sends `AUTHCHALLENGE` (hash)\n2.  \\<- Responding peer sends `AUTHREPLY` (signature)\n3.  -\\> Requesting peer sends `AUTHPROPOSE` (hash)\n4.  \\<- Responding peer sends `AUTHCHALLENGE` (hash)\n5.  -\\> Requesting peer sends `AUTHREPLY` (signature)\n\nFor privacy reasons, dropping the connection or aborting during the\nauthentication process must not be allowed."
     },
     {
       "header": "`AUTHCHALLENGE` message {#authchallenge_message}",
-      "content": ""
+      "content": "A peer can send an authentication challenge to see if the responding\npeer can produce a valid signature with the expected responding peer\\'s\nidentity-public-key by sending an `AUTHCHALLENGE`-message to the remote\npeer.\n\nThe responding peer needs to check if the hash matches the hash\ncalculated with his own local identity-public-key. Fingerprinting the\nrequesting peer is not possible.\n\nField Size   Description      Data type   Comments\n------------ ---------------- ----------- -------------------------------------------\n32bytes      challenge-hash   hash        `<code>`{=html}hash(encryption-session-ID\n\n`challenge_type` is a single character. `i` if the\n`AUTHCHALLENGE`-message is the first, requesting challenge or `r` if\nit\\'s the second, remote peers challenge message."
     },
     {
       "header": "`AUTHREPLY` message {#authreply_message}",
-      "content": ""
+      "content": "A peer must reply an `AUTHCHALLENGE`-message with an\n`AUTHREPLY`-message.\n\nField Size   Description   Data type                    Comments\n------------ ------------- ---------------------------- ---------------------------------------------------------------------\n64bytes      signature     normalized comp.-signature   A signature of the encryption-session-ID done with the identity-key\n\nIf the challenge-hash from the `AUTHCHALLENGE`-message did not match the\nlocal authentication public-key, the signature must contain 64 bytes of\nzeros.\n\nThe requesting peer can check the responding peer\\'s identity by\nchecking the validity of the sent signature against with the pre-shared\nremote peers identity-public-key.\n\nIf the signature was invalid, the requesting peer must still proceed\nwith the authentication by sending an `AUTHPROPOSE`-message with 32\nrandom bytes."
     },
     {
       "header": "`AUTHPROPOSE` message {#authpropose_message}",
-      "content": ""
+      "content": "A peer can propose authentication of the channel by sending an\n`AUTHPROPOSE`-message to the remote peer.\n\nIf the signature sent in `AUTHREPLY` was invalid, the peer must still\nsend an `AUTHPROPOSE`-message containing 32 random bytes.\n\nThe `AUTHPROPOSE` message must be answered with an\n`AUTHCHALLENGE`-message - even if the proposed requesting-peers\nidentity-public-key has not been found in the authorized-peers database.\nIn case of no match, the responding `AUTHCHALLENGE`-message must\ncontains 32 bytes of zeros.\n\nField Size   Description         Data type   Comments\n------------ ------------------- ----------- -------------------------------------------\n32bytes      auth-propose-hash   hash        `<code>`{=html}hash(encryption-session-ID"
     },
     {
       "header": "Post-Authentication Re-Keying {#post_authentication_re_keying}",
-      "content": ""
+      "content": "After the second `AUTHREPLY` message (requesting peer\\'s signature -\\>\nresponding peer), both clients must re-key the symmetric encryption\naccording to BIP151 while using **a slightly different re-key key\nderivation hash**.\n\nBoth peers re-key with\n`hash(encryption-session-ID || old_symmetric_cipher_key || requesting-peer-identity-public-key || responding-peer-identity-public-key)`"
     },
     {
       "header": "Identity-Addresses {#identity_addresses}",
-      "content": ""
+      "content": "The peers should display/log the identity-public-key as an\nidentity-address to the users, which is a base58-check encoded\nripemd160(sha256) hash. The purpose of this is for better visual\ncomparison (logs, accept-dialogs). The base58check identity byte is\n`0x0F` followed by an identity-address version number (=`0xFF01`).\n\nAn identity address would look like\n`TfG4ScDgysrSpodWD4Re5UtXmcLbY5CiUHA` and can be interpreted as a remote\npeer\\'s fingerprint."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This proposal is backward compatible. Non-supporting peers will ignore\nthe new `AUTH*` messages."
     },
     {
       "header": "Example of an auth interaction {#example_of_an_auth_interaction}",
-      "content": ""
+      "content": "Before authentication (once during peer setup or upgrade)\n\n1.  Requesting peer and responding peer create each an identity-keypair\n(standard ECC priv/pubkey)\n2.  Requesting and responding peer share the identity-public-key over a\ndifferent channel (mail/PGP, physical paper exchange, etc.)\n3.  Responding peer stores requesting peers identity-public-key in its\nauthorized-peers database (A)\n4.  Requesting peer stores responding peers identity-public-key in its\nknown-peers database together with its IP and port (B)\n\nEncryption\n\n1.  Encrypted channels must be established (according to BIP-151 \\[1\\])\n\nAuthentication\n\n1.  Requesting peer sends an `AUTHCHALLENGE` message\n\n`\u00a0AUTHCHALLENGE:`\\\n`\u00a0\u00a0\u00a0[32\u00a0bytes,\u00a0hash(encryption-session-ID\u00a0||\u00a0\"i\"\u00a0||\u00a0``<remote-peers-expected-identity-public-key>`{=html}`)]`\n\n1.  Responding peer does create the same hash\n`(encryption-session-ID || \"i\" || ``<remote-peers-expected-identity-public-key>`{=html}`)`\nwith its local identity-public-key\n2.  If the hash does not match, response with an `AUTHREPLY` message\ncontaining 64bytes of zeros.\n3.  In case of a match, response with an `AUTHREPLY` message\n\n`\u00a0AUTHREPLY:`\\\n`\u00a0\u00a0\u00a0[64\u00a0bytes\u00a0normalized\u00a0compact\u00a0ECDSA\u00a0signature\u00a0(H)]\u00a0(sig\u00a0of\u00a0the\u00a0encryption-session-ID\u00a0done\u00a0with\u00a0the\u00a0identity-key)`\n\n1.  Requesting peer does verify the signature with the\n`remote-peers-identity-public-key`\n2.  If the signature is invalid, requesting peer answers with an\n`AUTHREPLY` message containing 32 random bytes\n3.  In case of a valid signature, requesting peer sends an `AUTHPROPOSE`\nmessage\n\n`\u00a0AUTHPROPOSE:`\\\n`\u00a0\u00a0\u00a0[32\u00a0bytes,\u00a0hash(encryption-session-ID\u00a0||\u00a0\"p\"\u00a0||\u00a0``<client-identity-public-key>`{=html}`)]`\n\n1.  Responding peer iterates over authorized-peers database (A), hashes\nthe identical data and looks for a match.\n2.  If the hash does not match, responding peer answer with an\n`AUTHCHALLENGE` message containing 32 bytes of zeros.\n3.  In case of a match, responding peer sends an `AUTHCHALLENGE` message\nwith the hashed client public-key\n\n`\u00a0AUTHCHALLENGE:`\\\n`\u00a0\u00a0\u00a0[32\u00a0bytes,\u00a0hash(encryption-session-ID\u00a0||\u00a0\"r\"\u00a0||\u00a0``<client-identity-public-key>`{=html}`)]`\n\n1.  Requesting peer sends an `AUTHREPLY` message containing 64 bytes of\nzeros if server failed to authenticate\n2.  Otherwise, response with signature in the `AUTHREPLY` message\n\n`\u00a0AUTHREPLY:`\\\n`\u00a0\u00a0\u00a0[64\u00a0bytes\u00a0normalized\u00a0compact\u00a0ECDSA\u00a0signature\u00a0(H)]\u00a0(sig\u00a0of\u00a0the\u00a0encryption-session-ID\u00a0done\u00a0with\u00a0the\u00a0identity-key)`\n\n1.  Responding peer must verify the signature and can grant access to\nrestricted services.\n2.  Both peers re-key the encryption after BIP151 including the\nrequesting-peer-identity-public-key and\nresponding-peer-identity-public-key"
     },
     {
       "header": "Disadvantages",
-      "content": ""
+      "content": "The protocol may be slow if a peer has a large authorized-peers database\ndue to the requirement of iterating and hashing over all available\nauthorized peer identity-public-keys."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
-    },
-    {
-      "header": "References",
-      "content": ""
+      "content": "## References\n\n-   \\[1\\] [BIP 151: Peer-to-Peer Communication\nEncryption](bip-0151.mediawiki \"wikilink\")"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "-   Gregory Maxwell and Pieter Wuille for most of the ideas in this BIP.\n-   Bryan Bishop for editing."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

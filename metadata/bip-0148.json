@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies a BIP16 like soft fork flag day activation of\nthe segregated witness BIP9 deployment known as \\\"segwit\\\"."
     },
     {
       "header": "Definitions",
-      "content": ""
+      "content": "\\\"existing segwit deployment\\\" refer to the BIP9 \\\"segwit\\\" deployment\nusing bit 1, between November 15th 2016 and November 15th 2017 to\nactivate BIP141, BIP143 and BIP147."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Segwit increases the blocksize, fixes transaction malleability, and\nmakes scripting easier to upgrade as well as bringing many other\n[benefits](https://bitcoincore.org/en/2016/01/26/segwit-benefits/).\n\nIt is hoped that miners will respond to this BIP by activating segwit\nearly, before this BIP takes effect. Otherwise this BIP will cause the\nmandatory activation of the existing segwit deployment before the end of\nmidnight November 15th 2017."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "All times are specified according to median past time.\n\nThis BIP will be active between midnight August 1st 2017 (epoch time\n1501545600) and midnight November 15th 2017 (epoch time 1510704000) if\nthe existing segwit deployment is not locked-in or activated before\nepoch time 1501545600. This BIP will cease to be active when segwit is\nlocked-in.\n\nWhile this BIP is active, all blocks must set the nVersion header top 3\nbits to 001 together with bit field (1\\<\\<1) (according to the existing\nsegwit deployment). Blocks that do not signal as required will be\nrejected."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "// Check if Segregated Witness is Locked In\nbool IsWitnessLockedIn(const CBlockIndex* pindexPrev, const Consensus::Params& params)\n{\nLOCK(cs_main);\nreturn (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_LOCKED_IN);\n}\n\n// BIP148 mandatory segwit signalling.\nint64_t nMedianTimePast = pindex->GetMedianTimePast();\nif ( (nMedianTimePast >= 1501545600) &&  // Tue 01 Aug 2017 00:00:00 UTC\n(nMedianTimePast <= 1510704000) &&  // Wed 15 Nov 2017 00:00:00 UTC\n(!IsWitnessLockedIn(pindex->pprev, chainparams.GetConsensus()) &&  // Segwit is not locked in\n!IsWitnessEnabled(pindex->pprev, chainparams.GetConsensus())) )   // and is not active.\n{\nbool fVersionBits = (pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;\nbool fSegbit = (pindex->nVersion & VersionBitsMask(chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT)) != 0;\nif (!(fVersionBits && fSegbit)) {\nreturn state.DoS(0, error(\"ConnectBlock(): relayed block must signal for segwit, please upgrade\"), REJECT_INVALID, \"bad-no-segwit\");\n}\n}\n\n<https://github.com/bitcoin/bitcoin/compare/master>\\...shaolinfry:bip-segwit-flagday"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "This deployment is compatible with the existing \\\"segwit\\\" bit 1\ndeployment scheduled between midnight November 15th, 2016 and midnight\nNovember 15th, 2017."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Historically, the P2SH soft fork (BIP16) was activated using a\npredetermined flag day where nodes began enforcing the new rules. P2SH\nwas successfully activated with relatively few issues\n\nBy orphaning non-signalling blocks during the last month of the BIP9 bit\n1 \\\"segwit\\\" deployment, this BIP can cause the existing \\\"segwit\\\"\ndeployment to activate without needing to release a new deployment."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [Mailing list\ndiscussion](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-March/013714.html)\n-   [P2SH flag day\nactivation](https://github.com/bitcoin/bitcoin/blob/v0.6.0/src/main.cpp#L1281-L1283)\n-   [BIP9 Version bits with timeout and\ndelay](bip-0009.mediawiki \"wikilink\")\n-   [BIP16 Pay to Script Hash](bip-0016.mediawiki \"wikilink\")\n-   [BIP141 Segregated Witness (Consensus\nlayer)](bip-0141.mediawiki \"wikilink\")\n-   [BIP143 Transaction Signature Verification for Version 0 Witness\nProgram](bip-0143.mediawiki \"wikilink\")\n-   [BIP147 Dealing with dummy stack element\nmalleability](bip-0147.mediawiki \"wikilink\")\n-   [Segwit\nbenefits](https://bitcoincore.org/en/2016/01/26/segwit-benefits/)"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is dual licensed as BSD 3-clause, and Creative Commons CC0\n1.0 Universal."
     }
   ]
 }

@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes a block size growth intended to accommodate for\nhardware and other technological improvements for the foreseeable\nfuture."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Many people want to see Bitcoin scale over time, allowing an increasing\nnumber of transactions on the block chain. It would come at an increased\ncost for the ecosystem (bandwidth, processing, and storage for relay\nnodes, as well as an impact on propagation speed of blocks on the\nnetwork), but technology also improves over time. When all technologies\ndepended on have improved as well as their availability on the market,\nthere is no reason why Bitcoin\\'s fundamental transaction rate cannot\nimprove proportionally.\n\nCurrently, there is a consensus rule in place that limits the size of\nblocks to 1000000 bytes. Changing this requires a hard-forking change:\none that will require every full node in the network to implement the\nnew rules. The new chain created by those changed nodes will be rejected\nby old nodes, so this would effectively be a request to the ecosystem to\nmigrate to a new and incompatible network. Doing this while controversy\nexists is dangerous to the network and the ecosystem.\n\nFurthermore, the effective space available is always constrained by a\nhash rate majority and its ability to process transactions. No hard\nforking change that relaxes the block size limit can be guaranteed to\nprovide enough space for every possible demand - or even any particular\ndemand - unless strong centralization of the mining ecosystem is\nexpected. Because of that, the development of a fee market and the\nevolution towards an ecosystem that is able to cope with block space\ncompetition should be considered healthy. This does not mean the block\nsize or its limitation needs to be constant forever. However, the\npurpose of such a change should be evolution with technological growth,\nand not kicking the can down the road because of a fear of change in\neconomics.\n\nBitcoin\\'s advantage over other systems does not lie in scalability.\nWell-designed centralized systems can trivially compete with Bitcoin\\'s\non-chain transactions in terms of cost, speed, reliability, convenience,\nand scale. Its power lies in transparency, lack of need for trust in\nnetwork peers, miners, and those who influence or control the system.\nWanting to increase the scale of the system is in conflict with all of\nthose. Attempting to buy time with a fast increase is not wanting to\nface that reality, and treating the system as something whose scale\ntrumps all other concerns. A long term scalability plan should aim on\ndecreasing the need for trust required in off-chain systems, rather than\nincreasing the need for trust in Bitcoin.\n\nIn summary, hard forks are extremely powerful, and we need to use them\nvery responsibly as a community. They have the ability to fundamentally\nchange the technology or economics of the system, and can be used to\ndisadvantage those who expected certain rules to be immutable. They\nshould be restricted to uncontroversial changes, or risk eroding the\nexpectation of low trust needed in the system in the longer term. As the\nblock size debate has been controversial so far - for good or bad\nreasons - this BIP aims for gradual change and its effects start far\nenough in the future."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The block size limitation is replaced by the function below, applied to\nthe median of the timestamps of the previous 11 blocks, or in code\nterms: the block size limit for pindexBlock is\nGetMaxBlockSize(pindexBlock-\\>pprev-\\>GetMedianTimePast()).\n\nThe sigop limit scales proportionally.\n\nIt implements a series of block size steps, one every \\~97 days, between\nJanuary 2017 and July 2063, each increasing the maximum block size by\n4.4%. This allows an overall growth of 17.7% per year.\n\nuint32_t GetMaxBlockSize(int64_t nMedianTimePast) {\n// The first step is on January 1st 2017.\nif (nMedianTimePast < 1483246800) {\nreturn 1000000;\n}\n// After that, one step happens every 2^23 seconds.\nint64_t step = (nMedianTimePast - 1483246800) >> 23;\n// Don't do more than 11 doublings for now.\nstep = std::min<int64_t>(step, 175);\n// Every step is a 2^(1/16) factor.\nstatic const uint32_t bases[16] = {\n// bases[i] == round(1000000 * pow(2.0, (i + 1) / 16.0))\n1044274, 1090508, 1138789, 1189207,\n1241858, 1296840, 1354256, 1414214,\n1476826, 1542211, 1610490, 1681793,\n1756252, 1834008, 1915207, 2000000\n};\nreturn bases[step & 15] << (step / 16);\n}"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Waiting 1.5 years before the hard fork takes place should provide ample\ntime to minimize the risk of a hard fork, if found uncontroversial.\n\nBecause every increase (including the first) is only 4.4%, risk from\nlarge market or technological changes is minimized.\n\nThe growth rate of 17.7% growth per year is consistent with the average\ngrowth rate of bandwidth the last years, which seems to be the\nbottleneck. If over time, this growth factor is beyond what the actual\ntechnology offers, the intention should be to soft fork a tighter limit.\n\nUsing a time-based check is very simple to implement, needs little\ncontext, is efficient, and is trivially reviewable. Using the \\\"median\ntime past\\\" guarantees monotonic behaviour, as this median is required\nto be increasing, according to Bitcoin\\'s existing consensus rules.\nUsing the \\\"median time past\\\" of the block before means we know in\nadvance what the limit of each block will be, without depending on the\nactual block\\'s timestamp."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This is a hard forking change, thus breaks compatibility with old\nfully-validating node. It should not be deployed without widespread\nconsensus."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Gregory Maxwell and Wladimir J. van der Laan for their\nsuggestions."
     }
   ]
 }

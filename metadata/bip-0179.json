@@ -11,31 +11,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes a new term for \\'address\\'"
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The new term is: *Bitcoin* **Invoice** *Address*\n\nThe *Bitcoin* and *Address* parts are optional. The address suffix\nshould only be used as a transitional step.\n\nA *Bitcoin* Invoice *Address* is a string of characters that can be used\nto indicate the intended recipient and purpose of a transaction."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Bitcoin addresses are intended to be only used **once** and you should\ngenerate a new one for every new incoming payment. The term \\'address\\'\nhowever indicates consistency because nearly everything on the internet\nor the offline world with the term \\'address\\' is something that rarely\nor even never changes (postal address, email address, IP addresses\n(depends heavily on the provider), etc.) The motivation for this BIP is\nto change the term address to something that indicates that the address\nis connected to a single transaction."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The reason why we use *Bitcoin Invoice Address* or just *Invoice* is to\nemphasize that it is single-use. The terms *Bitcoin* and *Address* are\noptional for the following reasons: For *Bitcoin*:\n\n-   Useful for multicoin wallets to indicate that it belongs to Bitcoin\n-   Indicates a difference between a lightning and an on-chain invoice\n\nFor *Address*:\n\n-   To not confuse users with a completely new term\n-   To show that it is where you send something to\n-   To not break backwards compatibility\n\nThis gives us the four following possibilities:\n\n-   Bitcoin Invoice Address\n-   Bitcoin Invoice\n-   Invoice Address\n-   Invoice"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "To avoid issues, the \\'Address\\' suffix is permitted, but not\nrecommended. The suffix \\'Address\\' remains so users should be\nimmediately able to recognize it until the new term is widely known."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Chris Belcher for the suggestion of the term \\'Bitcoin Invoice\nAddress\\'"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is released under CC0-1.0 and therefore Public Domain."
     }
   ]
 }

@@ -12,55 +12,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "A fraud proof that enables light clients to detect oversized (or\noverweight) blocks."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Definitions",
-      "content": ""
+      "content": "full tx size proof : SHA2 midstate and tail data proving the size of the full transaction data being hashed.\\\nsize component : Either a merkle link and height in the merkle tree thereof, or a full tx size proof.\\\nfull-size proof : The set of size components proving the lower-bound size of the block.\\\nstripped-size proof : The set of size components proving the lower-bound size of the block when stripped of segwit witness data."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Proof format {#proof_format}",
-      "content": ""
+      "content": "### Proof format {#proof_format}\n\n-   varint: ceil(log2(number of transactions in block))\n-   varint: number of size components in stripped-size proof\n-   foreach:\n-   varint: ceil(log2(number of transactions represented by this\nsize-component)) + 1\n-   if zero:\n-   (this indicates a full tx size proof)\n-   256-bit: SHA2 midstate up until just before the final SHA2\nchunk\n-   varint: total size of tx\n-   uint8: size of final SHA2 chunk (0-55)\n-   0-55 bytes: final SHA2 chunk\n-   if one or more:\n-   (this indicates default tx size counting)\n-   256-bit: SHA2 hash of merkle link\n-   varint: number of size components in full-size proof (zero in case\nof a size-exceeded proof; non-zero for a weight-exceeded proof)\n-   foreach: (same as with stripped-size proof)"
     },
     {
       "header": "Proof verification {#proof_verification}",
-      "content": ""
+      "content": "To verify an individual size proof:\n\n1.  Check that at least one size component is a full tx size proof. (At\nleast one size component MUST be a full tx size proof.)\n2.  Determine the lower-bound number of transactions in the block\n(lowTxCount). It is either `pow(ceil(log2(txcount)) - 1, 2)`, or the\nposition of the last full tx proof (plus one, if using 0-based\npositions). Note that the last full tx proof from \\*either\\* of the\nsize proofs (stripped-size and full-size) should be used here.\n3.  Calculate the lower-bound transaction-data size as the default size\n\\* lowTxCount.\n4.  For each full tx size proof:\n1.  Subtract the default size it was presumed to consume, and add\nthe claimed total size of tx.\n2.  Take the SHA2 midstate, and update it with the final SHA2 chunk\n(which needs to be padded, including with the total tx size).\nThe final SHA2 hash is the transaction id (stripped-size proof)\nor hash (full-size proof).\n5.  For the full-size proof, replace the 60 byte default with any larger\nsizes proven from the stripped-size proof.\n6.  Build the merkle root, and compare it to the block header\n(stripped-size proof) or witness commitment (full-size proof).\nEnsure when building the merkle root, that there are no duplicate\nmerkle links, and each merkle link claims to represent the correct\nnumber of represented transactions.\n7.  Add 80 bytes, plus the size of the tx-count varint, to the\ncalculated lower-bound size.\n8.  The calculated size is returned as the lower-bound possible size of\nthe block.\n\nFor the stripped-size proof, the default size of transactions is 60\nbytes. For the full-size proof, it is the size established by the\nstripped-size proof.\n\nTo verify the complete weight proof:\n\n1.  Verify the stripped-size proof. Save the resulting lower-bound size\n(call it lowStrippedSize).\n2.  Verify the full-size proof. Save the resulting lower-bound size\n(call it lowFullSize).\n3.  Calculate minFullSize + (minStrippedSize \\* 3). This is the\nlower-bound block weight.\n4.  Compare the lower-bound block weight to the applicable block weight\nlimit."
     },
     {
       "header": "Network protocol {#network_protocol}",
-      "content": ""
+      "content": "If a light client detects that one or more of its peers do not consider\nthe block it knows to have the most work as their best block, it should\ninquire with all those peers for a fraud proof by sending a new message\n`getfraud`, with a block locator (between the last common block, and the\npresumed best tip) as the sole parameter (extra parameters should be\nignored).\n\nCompatible nodes will respond with a (new) `fraud` message, which has\n2-3 parameters:\n\n-   uint256: The hash of the most recent block in the locator (or a\nparent thereof) that it has checked. In the event of an invalid\nblock, this should be the exact invalid block\\'s hash (post-invalid\nblocks should be treated as unchecked, even if the node has\nindependently checked them for some reason).\n-   varint: Fraud proof type code\n-   0 = Block is valid\n-   1 = No fraud proof available\n-   2 = Size/weight exceeded\n-   (For type 2) the fraud proof\n\nIf none of the blocks in the locator are recognised, compatible nodes\nshould send a `fraud` message with no parameters. (To avoid this\noutcome, clients may include a known-common block in the locator.)\n\nIn the event that the peer claims a block earlier than the client\\'s tip\nis valid, the light client should prepare a new locator between that\nblock and its tip, and rerequest `getfraud` until it has determined\nwhich block the peer rejects and why.\n\nOnce a block is proven to be invalid, the light client should never\nconsider any blockchain including it as a candidate for the best chain.\nIt should not recheck blocks known to be invalid, nor continue proving\nit from other nodes. (To avoid doubt: the user MAY be given the\nopportunity to override any rejections, but should be warned of the\nimplications of doing so.)\n\nIf an invalid fraud proof is provided, the client SHOULD CONSIDER\ndisconnecting and possibly banning the node providing it. However, if\nany change has been made to the size/weight limits, that should be taken\ninto consideration (eg, if the limit increases, an innocent node may\nprove a size smaller than the limit)."
     },
     {
       "header": "Information",
-      "content": ""
-    },
-    {
-      "header": "Creation of proofs {#creation_of_proofs}",
-      "content": ""
+      "content": "### Creation of proofs {#creation_of_proofs}\n\nProofs should ideally use the smallest amount of data required to prove\nexcess of the limit. The most obvious mechanism in doing so, would be to\ninclude full tx size proofs for the largest transactions until the limit\nis exceeded. However, in some cases, a smaller size may be accomplished\nby collapsing more merkle links.\n\nBecause optimisation of proof size may be complicated, nodes are not\nrequired to implement it in any particular manner, so long as the proofs\nmeet the requirements given above in [Proof\nverification](#proof-verification \"wikilink\")."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Recently, there have been proposals for hardforks to increase the block\nsize limit. While no consensus has been reached, proponents of these\nideas often threaten and attempt to have miners force them through\nanyway. As things presently are, light clients cannot detect invalid\nblocks at all, and could be fooled into accepting an invalid chain\ncreated in such a manner. By supporting block size fraud proofs, light\nclients can protect their users from this form of unconsensual\n\\\"hardfork\\\" attempt."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Why must a full tx size proof be included?\n\n-   This is necessary to establish that the claimed block transaction\ncount is not inflated. Otherwise, a prover could claim any number of\nrepresented transactions for merkle links, and rely on the default\nsize alone to exceed the limit.\n\nHow does the full tx size proof actually prove the size?\n\n-   The first step of SHA2 hashing is to transform the input data into\nchunks (per [RFC\n4634](https://tools.ietf.org/html/rfc4634#section-4.1)). The final\nchunk is required to include the absolute length of the input data\nat the end of the final chunk. Therefore, by committing to the\nmidstate prior to the final chunk, and replaying only the final\nchunk, we can confirm that the claimed size matches the full\ntransaction data being hashed.\n\nHow does this prove the block weight?\n\n-   The block weight defined by [BIP 141](bip-0141.mediawiki \"wikilink\")\nis the size of the block stripped of its segwit signatures times 3,\nplus the full size of the block. By proving lower-bound sizes of\nboth the stripped block and the full block, a lower-bound weight can\nalso be calculated.\n\nWhy is the number of transactions in the block represented as a log2?\n\n-   To avoid attacks that rely on fooling clients by claiming an amount\nthey cannot verify.\n\nWhy does it matter if a full tx size proof is on the right side of a\nduplicate merkle link?\n\n-   We assume full tx size proofs show the number of transactions in the\nblock. This assumption doesn\\'t hold if the proof is provided on the\nright-hand side of duplicate links.\n\nWhy a fraud proof only for oversized/overweight blocks?\n\n-   While it is currently believed to be impossible to prove all invalid\n(or rather, won\\'t-be-part-of-the-main-chain) blocks, there are\nregularly active proposals of miners attacking with simply oversized\nblocks in an attempt to force a hardfork. This specific attack can\nbe proven, and reliably so, since the proof cannot be broken without\nalso breaking the attempted hardfork at the same time."
     },
     {
       "header": "Backwards compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "These fraud proofs protect only clients which use them. In non-attack\nscenarios, they are unnecessary and clients supporting them will\notherwise behave as any other."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "TODO"
     }
   ]
 }

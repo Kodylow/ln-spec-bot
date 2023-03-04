@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies `raw()` and `addr()` output script descriptors.\n`raw()` encapsulates a raw script as a descriptor. `addr()` encapsulates\nan address as a descriptor."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "In order to make descriptors maximally compatible with scripts in use\ntoday, it is useful to be able to wrap any arbitrary output script or an\naddress into a descriptor."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Two new script expressions are defined: `raw()` and `addr()`."
     },
     {
       "header": "`raw()`",
-      "content": ""
+      "content": "The `raw(HEX)` expression can only be used as a top level descriptor. As\nthe argument, it takes a hex string representing a Bitcoin script. The\noutput script produced by this descriptor is the script represented by\n`HEX`."
     },
     {
       "header": "`addr()`",
-      "content": ""
+      "content": "The `addr(ADDR)` expression can only be used as a top level descriptor.\nIt takes an address as its single argument. The output script produced\nby this descriptor is the output script produced by the address `ADDR`."
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`raw()` and `addr()` descriptors use the format and general operation\nspecified in [380](bip-0380.mediawiki \"wikilink\"). As this is a wholly\nnew descriptor, it is not compatible with any implementation. The reuse\nof existing Bitcoin addresses allows for this to be more easily\nimplemented."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "`raw()` and `addr()` descriptors have been implemented in Bitcoin Core\nsince version 0.17."
     }
   ]
 }

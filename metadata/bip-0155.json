@@ -12,55 +12,51 @@
   "sections": [
     {
       "header": "Introduction",
-      "content": ""
-    },
-    {
-      "header": "Abstract",
-      "content": ""
+      "content": "### Abstract\n\nThis document proposes a new P2P message to gossip longer node addresses\nover the P2P network. This is required to support new-generation Onion\naddresses, I2P, and potentially other networks that have longer endpoint\naddresses than fit in the 128 bits of the current `addr` message."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Tor v3 hidden services are part of the stable release of Tor since\nversion 0.3.2.9. They have various advantages compared to the old hidden\nservices, among which better encryption and privacy [^1]. These services\nhave 256 bit addresses and thus do not fit in the existing `addr`\nmessage, which encapsulates onion addresses in OnionCat IPv6 addresses.\n\nOther transport-layer protocols such as I2P have always used longer\naddresses. This change would make it possible to gossip such addresses\nover the P2P network, so that other peers can connect to them."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "> The key words \\\"MUST\\\", \\\"MUST NOT\\\", \\\"REQUIRED\\\", \\\"SHALL\\\", \\\"SHALL\n> NOT\\\", \\\"SHOULD\\\", \\\"SHOULD NOT\\\", \\\"RECOMMENDED\\\", \\\"MAY\\\", and\n> \\\"OPTIONAL\\\" in this document are to be interpreted as described in\n> RFC 2119[^2].\n\nThe `addrv2` message is defined as a message where\n`pchCommand == \"addrv2\"`. It is serialized in the standard encoding for\nP2P messages. Its format is similar to the current `addr` message\nformat, with the difference that the fixed 16-byte IP address is\nreplaced by a network ID and a variable-length address, and the services\nformat has been changed to\n[CompactSize](https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer).\n\nThis means that the message contains a serialized `std::vector` of the\nfollowing structure:\n\nType                              Name          Description\n--------------------------------- ------------- ------------------------------------------------------------------------------------------------------------------------------------------------------\n`uint32_t`                        `time`        Time that this node was last seen as connected to the network. A time in Unix epoch time format.\n`CompactSize`                     `services`    Service bits. A bit field that is 64 bits wide, encoded in [CompactSize](https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer).\n`uint8_t`                         `networkID`   Network identifier. An 8-bit value that specifies which network is addressed.\n`std::vector``<uint8_t>`{=html}   `addr`        Network address. The interpretation depends on networkID.\n`uint16_t`                        `port`        Network port. If not relevant for the network this MUST be 0.\n\nOne message can contain up to 1,000 addresses. Clients SHOULD reject\nmessages with more addresses.\n\nField `addr` has a variable length, with a maximum of 512 bytes (4096\nbits). Clients SHOULD reject messages with longer addresses,\nirrespective of the network ID.\n\nThe list of reserved network IDs is as follows:\n\nNetwork ID   Enumeration   Address length (bytes)   Description\n------------ ------------- ------------------------ -----------------------------------------\n`0x01`       `IPV4`        4                        IPv4 address (globally routed internet)\n`0x02`       `IPV6`        16                       IPv6 address (globally routed internet)\n`0x03`       `TORV2`       10                       Tor v2 hidden service address\n`0x04`       `TORV3`       32                       Tor v3 hidden service address\n`0x05`       `I2P`         32                       I2P overlay network address\n`0x06`       `CJDNS`       16                       Cjdns overlay network address\n\nClients are RECOMMENDED to gossip addresses from all known networks even\nif they are currently not connected to some of them. That could help\nmulti-homed nodes and make it more difficult for an observer to tell\nwhich networks a node is connected to.\n\nClients SHOULD NOT gossip addresses from unknown networks because they\nhave no means to validate those addresses and so can be tricked to\ngossip invalid addresses.\n\nFurther network ID numbers MUST be reserved in a new BIP document.\n\nClients SHOULD reject messages that contain addresses that have a\ndifferent length than specified in this table for a specific network ID,\nas these are meaningless.\n\nSee the appendices for the address encodings to be used for the various\nnetworks."
     },
     {
       "header": "Signaling support and compatibility {#signaling_support_and_compatibility}",
-      "content": ""
+      "content": "Introduce a new message type `sendaddrv2`. Sending such a message\nindicates that a node can understand and prefers to receive `addrv2`\nmessages instead of `addr` messages. I.e. \\\"Send me addrv2\\\". Sending or\nnot sending this message does not imply any preference with respect to\nreceiving unrequested address messages.\n\nThe `sendaddrv2` message MUST only be sent in response to the `version`\nmessage from a peer and prior to sending the `verack` message.\n\nFor older peers, that did not emit `sendaddrv2`, keep sending the legacy\n`addr` message, ignoring addresses with the newly introduced address\ntypes."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "The reference implementation is available at (to be done)"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "\\- Jonas Schnelli: change `services` field to\n[CompactSize](https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer),\nto make the message more compact in the likely case instead of always\nusing 8 bytes.\n\n\\- Gregory Maxwell: various suggestions regarding extensibility"
     },
     {
       "header": "Appendix A: Tor v2 address encoding {#appendix_a_tor_v2_address_encoding}",
-      "content": ""
+      "content": "The new message introduces a separate network ID for `TORV2`.\n\nClients MUST send Tor hidden service addresses with this network ID,\nwith the 80-bit hidden service ID in the address field. This is the same\nas the representation in the legacy `addr` message, minus the 6 byte\nprefix of the OnionCat wrapping.\n\nClients SHOULD ignore OnionCat (`fd87:d87e:eb43::/48`) addresses on\nreceive if they come with the `IPV6` network ID."
     },
     {
       "header": "Appendix B: Tor v3 address encoding {#appendix_b_tor_v3_address_encoding}",
-      "content": ""
+      "content": "According to the spec [^3], next-gen `.onion` addresses are encoded as\nfollows:\n\nonion_address = base32(PUBKEY | CHECKSUM | VERSION) + \".onion\"\nCHECKSUM = H(\".onion checksum\" | PUBKEY | VERSION)[:2]\n\nwhere:\n- PUBKEY is the 32 bytes ed25519 master pubkey of the hidden service\n- VERSION is a one byte version field (default value '\\x03')\n- \".onion checksum\" is a constant string\n- CHECKSUM is truncated to two bytes before inserting it in onion_address\n- H() is the SHA3-256 cryptographic hash function\n\nTor v3 addresses MUST be sent with the `TORV3` network ID, with the\n32-byte PUBKEY part in the address field. As VERSION will always be\n\\'\\\\x03\\' in the case of v3 addresses, this is enough to reconstruct the\nonion address."
     },
     {
       "header": "Appendix C: I2P address encoding {#appendix_c_i2p_address_encoding}",
-      "content": ""
+      "content": "Like Tor, I2P naming uses a base32-encoded address format[^4].\n\nI2P uses 52 characters (256 bits) to represent the full SHA-256 hash,\nfollowed by `.b32.i2p`.\n\nI2P addresses MUST be sent with the `I2P` network ID, with the decoded\nSHA-256 hash as address field."
     },
     {
       "header": "Appendix D: Cjdns address encoding {#appendix_d_cjdns_address_encoding}",
-      "content": ""
+      "content": "Cjdns addresses are simply IPv6 addresses in the `fc00::/8` range[^5].\nThey MUST be sent with the `CJDNS` network ID."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "```{=html}\n<references/>\n```\n\n[^1]: [Tor Rendezvous Specification - Version\n3](https://gitweb.torproject.org/torspec.git/tree/rend-spec-v3.txt)\n\n[^2]: [RFC 2119](https://tools.ietf.org/html/rfc2119)\n\n[^3]: [Tor Rendezvous Specification - Version 3: Encoding onion\naddresses](https://gitweb.torproject.org/torspec.git/tree/rend-spec-v3.txt)\n\n[^4]: [I2P: Naming and address\nbook](https://geti2p.net/en/docs/naming#base32)\n\n[^5]: [Cjdns whitepaper: Pulling It All\nTogether](https://github.com/cjdelisle/cjdns/blob/6e46fa41f5647d6b414612d9d63626b0b952746b/doc/Whitepaper.md#pulling-it-all-together)"
     }
   ]
 }

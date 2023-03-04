@@ -12,27 +12,23 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP is an extension to BIP 70 that provides two enhancements to the\nexisting Payment Protocol.\n\n1.  It allows the requester (Sender) of a PaymentRequest to voluntarily\nsign the original request and provide a certificate to allow the\npayee to know the identity of who they are transacting with.\n\n```{=html}\n<!-- -->\n```\n1.  It encrypts the PaymentRequest that is returned, before handing it\noff to the SSL/TLS layer to prevent man in the middle viewing of the\nPayment Request details.\n\nThe key words \\\"MUST\\\", \\\"MUST NOT\\\", \\\"REQUIRED\\\", \\\"SHALL\\\", \\\"SHALL\nNOT\\\", \\\"SHOULD\\\", \\\"SHOULD NOT\\\", \\\"RECOMMENDED\\\", \\\"MAY\\\", and\n\\\"OPTIONAL\\\" in this document are to be interpreted as described in RFC\n2119."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "`<img src=\"https://licensebuttons.net/l/by/4.0/88x31.png\">`{=html}\n\nThis work is licensed under a [Creative Commons Attribution 4.0\nInternational\nLicense](http://creativecommons.org/licenses/by/4.0/ \"wikilink\")."
     },
     {
       "header": "Definitions",
-      "content": ""
+      "content": "---------- ----------------------------------------------------\nSender     Entity wishing to transfer value that they control\nReceiver   Entity receiving a value transfer\n---------- ----------------------------------------------------"
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The motivation for defining this extension to the\n[BIP70](bip-0070.mediawiki \"wikilink\") Payment Protocol is to allow two\nparties to exchange payment information in a permissioned and encrypted\nway, such that wallet address communication can become a more automated\nprocess. This extension also expands the types of PKI (public-key\ninfrastructure) data that is supported, and allows it to be shared by\nboth parties (with [BIP70](bip-0070.mediawiki \"wikilink\"), only the\nreceiver could provide PKI information). This allows for automated\ncreation of off-blockchain transaction logs that are human readable, now\nincluding information about the sender and not just the recipient.\n\nThe motivation for this extension to\n[BIP70](bip-0070.mediawiki \"wikilink\") is threefold:\n\n1.  Ensure that the payment details can only be seen by the participants\nin the transaction, and not by any third party.\n\n```{=html}\n<!-- -->\n```\n1.  Enhance the Payment Protocol to allow for store and forward servers\nin order to allow, for example, mobile wallets to sign and serve\nPayment Requests.\n\n```{=html}\n<!-- -->\n```\n1.  Allow a sender of funds the option of sharing their identity with\nthe receiver. This information could then be used to:"
     },
     {
       "header": "\\* Make Bitcoin logs (wallet transaction history) more human readable",
-      "content": ""
-    },
-    {
-      "header": "\\* Give the user the ability to decide whether or not they share their",
-      "content": "Bitcoin address and other payment details when requested"
+      "content": "#\\* Give the user the ability to decide whether or not they share their\nBitcoin address and other payment details when requested"
     },
     {
       "header": "\\* Allow for an open standards based way for businesses to keep",
@@ -40,131 +36,123 @@
     },
     {
       "header": "\\* Automate the active exchange of payment addresses, so static",
-      "content": "addresses and BIP32 X-Pubs can be avoided to maintain privacy and\nconvenience"
+      "content": "addresses and BIP32 X-Pubs can be avoided to maintain privacy and\nconvenience\n\nIn short we wanted to make Bitcoin more human, while at the same time\nimproving transaction privacy."
     },
     {
       "header": "Example Use Cases {#example_use_cases}",
-      "content": ""
+      "content": "1\\. Address Book\n\nA Bitcoin wallet developer would like to offer the ability to store an\n\\\"address book\\\" of payees, so users could send multiple payments to\nknown entities without having to request an address every time. Static\naddresses compromise privacy, and address reuse is considered a security\nrisk. BIP32 X-Pubs allow the generation of unique addresses, but\nwatching an X-Pub chain for each person you wish to receive funds from\nis too resource-intensive for mobile applications, and there is always a\nrisk of unknowingly sending funds to an X-Pub address after the owner\nhas lost access to the corresponding private key.\n\nWith this BIP, Bitcoin wallets could maintain an \\\"address book\\\" that\nonly needs to store each payee\\'s public key. Adding an entry to one\\'s\naddress book could be done by using a Wallet Name, scanning a QR code,\nsending a URI through a text message or e-mail, or searching a public\nrepository. When the user wishes to make a payment, their wallet would\ndo all the work in the background to communicate with the payee\\'s\nwallet to receive a unique payment address. If the payee\\'s wallet has\nbeen lost, replaced, or destroyed, no communication will be possible,\nand the sending of funds to a \\\"dead\\\" address is prevented.\n\n2\\. Individual Permissioned Address Release\n\nA Bitcoin wallet developer would like to allow users to view a potential\nsending party\\'s identifying information before deciding whether or not\nto share payment information with them. Currently,\n[BIP70](bip-0070.mediawiki \"wikilink\") shares the receiver's payment\naddress and identity information with anyone who requests it.\n\nWith this BIP, Bitcoin wallets could use the sender's identifying\ninformation to make a determination of whether or not to share their own\ninformation. This gives the receiving party more control over who\nreceives their payment and identity information. Additionally, this\ncould be used to automatically provide new payment addresses to\nwhitelisted senders, or to protect users' privacy from unsolicited\npayment requests.\n\n3\\. Using Store & Forward Servers\n\nA Bitcoin wallet developer would like to use a public Store & Forward\nservice for an asynchronous address exchange. This is a common case for\nmobile and offline wallets.\n\nWith this BIP, returned payment information is encrypted with an\nECDH-computed shared key before sending to a Store & Forward service. In\nthis case, a successful attack against a Store & Forward service would\nnot be able to read or modify wallet address or payment information,\nonly delete encrypted messages."
     },
     {
       "header": "Modifying BIP70 pki_type {#modifying_bip70_pki_type}",
-      "content": ""
+      "content": "This BIP adds additional possible values for the pki_type variable in\nthe PaymentRequest message. The complete list is now as follows:\n\npki_type       Description\n-------------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------\nx509+sha256    A x.509 certificate, as described in BIP70\npgp+sha256     An [OpenPGP](https://en.wikipedia.org/wiki/Pretty_Good_Privacy#OpenPGP \"wikilink\") certificate\necdsa+sha256   A [secp256k1](https://en.bitcoin.it/wiki/Secp256k1 \"wikilink\") [ECDSA](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm \"wikilink\") public key\n\n**NOTE**: Although SHA1 was supported in BIP70, it has been deprecated\nand BIP75 only supports SHA256. The hashing algorithm is still specified\nin the values listed above for forward and backwards compatibility."
     },
     {
       "header": "New Messages {#new_messages}",
-      "content": ""
+      "content": "Updated \\[/bip-0075/paymentrequest.proto paymentrequest.proto\\] contains\nthe existing PaymentRequest Protocol Buffer messages as well as the\nmessages newly defined in this BIP.\n\n**NOTE**: Public keys from both parties must be known to each other in\norder to facilitate encrypted communication. Although including both\npublic keys in every message may get redundant, it provides the most\nflexibility as each message is completely self-contained."
     },
     {
       "header": "InvoiceRequest",
-      "content": ""
+      "content": "The **InvoiceRequest** message allows a Sender to send information to\nthe Receiver such that the Receiver can create and return a\nPaymentRequest.\n\nmessage InvoiceRequest {\nrequired bytes  sender_public_key = 1;\noptional uint64 amount = 2 [default = 0];\noptional string pki_type = 3 [default = \"none\"];\noptional bytes  pki_data = 4;\noptional string memo = 5;\noptional string notification_url = 6;\noptional bytes  signature = 7;\n}\n\nField Name          Description\n------------------- --------------------------------------------------------------------------------------------------------------------------------------------------\nsender_public_key   Sender\\'s SEC-encoded EC public key\namount              amount is integer-number-of-satoshis (default: 0)\npki_type            none / x509+sha256 / pgp+sha256 / ecdsa+sha256 (default: \\\"none\\\")\npki_data            Depends on pki_type\nmemo                Human-readable description of invoice request for the receiver\nnotification_url    Secure (usually TLS-protected HTTP) location where an [EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") SHOULD be sent when ready\nsignature           PKI-dependent signature"
     },
     {
       "header": "ProtocolMessageType Enum {#protocolmessagetype_enum}",
-      "content": ""
+      "content": "This enum is used in the newly defined\n[ProtocolMessage](#ProtocolMessage \"wikilink\") and\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nmessages to define the serialized message type. The\n**ProtocolMessageType** enum is defined in an extensible way to allow\nfor new message type additions to the Payment Protocol.\n\nenum ProtocolMessageType {\nUNKNOWN_MESSAGE_TYPE = 0;\nINVOICE_REQUEST = 1;\nPAYMENT_REQUEST = 2;\nPAYMENT = 3;\nPAYMENT_ACK = 4;\n}"
     },
     {
       "header": "ProtocolMessage",
-      "content": ""
+      "content": "The **ProtocolMessage** message is an encapsulating wrapper for any\nPayment Protocol message. It allows two-way, non-encrypted communication\nof Payment Protocol messages. The message also includes a status code\nand a status message that is used for error communication such that the\nprotocol does not rely on transport-layer error handling.\n\nmessage ProtocolMessage {\nrequired uint64 version = 1\nrequired uint64 status_code = 2;\nrequired ProtocolMessageType message_type = 3;\nrequired bytes serialized_message = 4;\noptional string status_message = 5;\nrequired bytes identifier = 6;\n}\n\nField Name           Description\n-------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------\nversion              Protocol version number (Currently 1)\nstatus_code          Payment Protocol Status Code\nmessage_type         Message Type of serialized_message\nserialized_message   Serialized Payment Protocol Message\nstatus_message       Human-readable Payment Protocol status message\nidentifier           Unique key to identify this entire exchange on the server. Default value SHOULD be SHA256(Serialized Initial InvoiceRequest + Current Epoch Time in Seconds as a String)"
     },
     {
       "header": "Versioning",
-      "content": ""
+      "content": "This BIP introduces version 1 of this protocol. All messages sent using\nthese base requirements MUST use a value of 1 for the version number.\nAny future BIPs that modify this protocol (encryption schemes, etc) MUST\neach increment the version number by 1.\n\nWhen initiating communication, the version field of the first message\nSHOULD be set to the highest version number the sender understands. All\nclients MUST be able to understand all version numbers less than the\nhighest number they support. If a client receives a message with a\nversion number higher than they understand, they MUST send the message\nback to the sender with a status code of 101 (\\\"version too high\\\") and\nthe version field set to the highest version number the recipient\nunderstands. The sender must then resend the original message using the\nsame version number returned by the recipient or abort."
     },
     {
       "header": "EncryptedProtocolMessage",
-      "content": ""
+      "content": "The **EncryptedProtocolMessage** message is an encapsualting wrapper for\nany Payment Protocol message. It allows two-way, authenticated and\nencrypted communication of Payment Protocol messages in order to keep\ntheir contents secret. The message also includes a status code and\nstatus message that is used for error communication such that the\nprotocol does not rely on transport-layer error handling.\n\nmessage EncryptedProtocolMessage {\nrequired uint64 version = 1 [default = 1];\nrequired uint64 status_code = 2 [default = 1];\nrequired ProtocolMessageType message_type = 3;\nrequired bytes encrypted_message = 4;\nrequired bytes receiver_public_key = 5;\nrequired bytes sender_public_key = 6;\nrequired uint64 nonce = 7;\nrequired bytes identifier = 8;\noptional string status_message = 9;\noptional bytes signature = 10;\n}\n\nField Name            Description\n--------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------\nversion               Protocol version number\nstatus_code           Payment Protocol Status Code\nmessage_type          Message Type of Decrypted encrypted_message\nencrypted_message     AES-256-GCM Encrypted (as defined in BIP75) Payment Protocol Message\nreceiver_public_key   Receiver\\'s SEC-encoded EC Public Key\nsender_public_key     Sender\\'s SEC-encoded EC Public Key\nnonce                 Microseconds since epoch\nidentifier            Unique key to identify this entire exchange on the server. Default value SHOULD be SHA256(Serialized Initial InvoiceRequest + Current Epoch Time in Seconds as a String)\nstatus_message        Human-readable Payment Protocol status message\nsignature             DER-encoded Signature over the full EncryptedProtocolMessage with EC Key Belonging to Sender / Receiver, respectively"
     },
     {
       "header": "Payment Protocol Process with InvoiceRequests {#payment_protocol_process_with_invoicerequests}",
-      "content": ""
+      "content": "The full process overview for using **InvoiceRequests** in the Payment\nProtocol is defined below.\\\n\\\nAll Payment Protocol messages MUST be encapsulated in either a\n[ProtocolMessage](#ProtocolMessage \"wikilink\") or\n[EncryptedProtocolMessage](#EncryptedProcotolMessage \"wikilink\"). Once\nthe process begins using\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nmessages, all subsequent communications MUST use\n[EncryptedProtocolMessages](#EncryptedProtocolMessage \"wikilink\").\\\n\\\nAll Payment Protocol messages SHOULD be communicated using\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nencapsulating messages with the exception that an\n[InvoiceRequest](#InvoiceRequest \"wikilink\") MAY be communicated using\nthe [ProtocolMessage](#ProtocolMessage \"wikilink\") if the receiver\\'s\npublic key is unknown.\\\n\\\nThe process of creating encrypted Payment Protocol messages is\nenumerated in [Sending Encrypted Payment Protocol Messages using\nEncryptedProtocolMessages](#Sending_Encrypted_Payment_Protocol_Messages_using_EncryptedProtocolMessages \"wikilink\"),\nand the process of decrypting encrypted messages can be found under\n[Validating and Decrypting Payment Protocol Messages using\nEncryptedProtocolMessages](#Validating_and_Decrypting_Payment_Protocol_Messages_using_EncryptedProtocolMessages \"wikilink\").\n\nA standard exchange from start to finish would look like the following:\n\n1.  Sender creates InvoiceRequest\n2.  Sender encapsulates InvoiceRequest in (Encrypted)ProtocolMessage\n3.  Sender sends (Encrypted)ProtocolMessage to Receiver\n4.  Receiver retrieves InvoiceRequest in (Encrypted)ProtocolMessage from\nSender\n5.  Receiver creates PaymentRequest\n6.  Receiver encapsulates PaymentRequest in EncryptedProtocolMessage\n7.  Receiver transmits EncryptedProtocolMessage to Sender\n8.  Sender validates PaymentRequest retrieved from the\nEncryptedProtocolMessage\n9.  The PaymentRequest is processed according to\n[BIP70](bip-0070.mediawiki \"wikilink\"), including optional Payment\nand PaymentACK messages encapsulated in EncryptedProtocolMessage\nmessages.\n\n**NOTE:** See [Initial Public Key Retrieval for InvoiceRequest\nEncryption](#Initial_Public_Key_Retrieval_for_InvoiceRequest_Encryption \"wikilink\")\nfor possible options to retrieve Receiver\\'s public key.\n\n`<img src=\"bip-0075/encrypted-invoice-request-process.png\" alt=\"Flow diagram of Encrypted InvoiceRequest\">`{=html}"
     },
     {
       "header": "Message Interaction Details {#message_interaction_details}",
-      "content": ""
-    },
-    {
-      "header": "HTTP Content Types for New Message Types {#http_content_types_for_new_message_types}",
-      "content": ""
+      "content": "### HTTP Content Types for New Message Types {#http_content_types_for_new_message_types}\n\nWhen communicated via **HTTP**, the listed messages MUST be transmitted\nvia TLS-protected HTTP using the appropriate Content-Type header as\ndefined here per message:\\\n{\\| class=\\\"wikitable\\\" ! Message Type !! Content Type \\|- \\|\nProtocolMessage \\|\\| application/bitcoin-paymentprotocol-message \\|- \\|\nEncryptedProtocolMessage \\|\\|\napplication/bitcoin-encrypted-paymentprotocol-message \\|}"
     },
     {
       "header": "Payment Protocol Status Communication {#payment_protocol_status_communication}",
-      "content": ""
+      "content": "Every [ProtocolMessage](#ProtocolMessage \"wikilink\") or\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") MUST\ninclude a status code which conveys information about the last message\nreceived, if any (for the first message sent, use a status of 1 \\\"OK\\\"\neven though there was no previous message). In the case of an error that\ncauses the Payment Protocol process to be stopped or requires that\nmessage be retried, a ProtocolMessage or EncryptedProtocolMessage SHOULD\nbe returned by the party generating the error. The content of the\nmessage MUST contain the same **serialized_message** or\n**encrypted_message** and identifier (if present) and MUST have the\nstatus_code set appropriately.\\\n\\\nThe status_message value SHOULD be set with a human readable explanation\nof the status code."
     },
     {
       "header": "Payment Protocol Status Codes {#payment_protocol_status_codes}",
-      "content": ""
+      "content": "Status Code   Description\n------------- ---------------------------------------------------\n1             OK\n2             Cancel\n100           General / Unknown Error\n101           Version Too High\n102           Authentication Failed\n103           Encrypted Message Required\n200           Amount Too High\n201           Amount Too Low\n202           Amount Invalid\n203           Payment Does Not Meet PaymentRequest Requirements\n300           Certificate Required\n301           Certificate Expired\n302           Certificate Invalid for Transaction\n303           Certificate Revoked\n304           Certificate Not Well Rooted\n\n\n+==Canceling A Message==+ If a participant to a transaction would like\nto inform the other party that a previous message should be canceled,\nthey can send the same message with a status code of 2 (\\\"Cancel\\\") and,\nwhere applicable, an updated nonce. How recipients make use of the\n\\\"Cancel\\\" message is up to developers. For example, wallet developers\nmay want to offer users the ability to cancel payment requests they have\nsent to other users, and have that change reflected in the recipient\\'s\nUI. Developers using the non-encrypted ProtocolMessage may want to\nignore \\\"Cancel\\\" messages, as it may be difficult to authenticate that\nthe message originated from the same user."
     },
     {
       "header": "Transport Layer Communication Errors {#transport_layer_communication_errors}",
-      "content": ""
+      "content": "Communication errors MUST be communicated to the party that initiated\nthe communication via the communication layer\\'s existing error\nmessaging faciltiies. In the case of TLS-protected HTTP, this SHOULD be\ndone through standard HTTP Status Code messaging ([RFC 7231 Section\n6](https://tools.ietf.org/html/rfc7231))."
     },
     {
       "header": "Extended Payment Protocol Process Details {#extended_payment_protocol_process_details}",
-      "content": ""
+      "content": "This BIP extends the Payment Protocol as defined in\n[BIP70](bip-0070.mediawiki \"wikilink\").\n\nFor the following we assume the Sender already knows the Receiver\\'s\npublic key, and the exchange is being facilitated by a Store & Forward\nserver which requires valid signatures for authentication.\n\n**nonce** MUST be set to a non-repeating number **and** MUST be chosen\nby the encryptor. The current epoch time in microseconds SHOULD be used,\nunless the creating device doesn\\'t have access to a RTC (in the case of\na smart card, for example). The service receiving the message containing\nthe **nonce** MAY use whatever method to make sure that the **nonce** is\nnever repeated."
     },
     {
       "header": "InvoiceRequest Message Creation {#invoicerequest_message_creation}",
-      "content": ""
+      "content": "-   Create an [InvoiceRequest](#InvoiceRequest \"wikilink\") message\n-   **sender_public_key** MUST be set to the public key of an EC keypair\n-   **amount** is optional. If the amount is not specified by the\n[InvoiceRequest](#InvoiceRequest \"wikilink\"), the Receiver MAY\nspecify the amount in the returned PaymentRequest. If an amount is\nspecified by the [InvoiceRequest](#InvoiceRequest \"wikilink\") and a\nPaymentRequest cannot be generated for that amount, the\n[InvoiceRequest](#InvoiceRequest \"wikilink\") SHOULD return the same\n[InvoiceRequest](#InvoiceRequest \"wikilink\") in a\n[ProtocolMessage](#ProtocolMessage \"wikilink\") or\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nwith the status_code and status_message fields set appropriately.\n-   **memo** is optional. This MAY be set to a human readable\ndescription of the InvoiceRequest\n-   Set **notification_url** to URL that the Receiver will submit\ncompleted PaymentRequest (encapsulated in an\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")) to\n-   If NOT including certificate, set **pki_type** to \\\"none\\\"\n-   If including certificate:\n-   Set **pki_type** to \\\"x509+sha256\\\"\n-   Set **pki_data** as it would be set in BIP-0070\n([Certificates](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki#Certificates))\n-   Sign [InvoiceRequest](#InvoiceRequest \"wikilink\") with signature\n= \\\"\\\" using the X509 Certificate\\'s private key\n-   Set **signature** value to the computed signature"
     },
     {
       "header": "InvoiceRequest Validation {#invoicerequest_validation}",
-      "content": ""
+      "content": "-   Validate **sender_public_key** is a valid EC public key\n-   Validate **notification_url**, if set, contains characters deemed\nvalid for a URL (avoiding XSS related characters, etc).\n-   If **pki_type** is None,\n[InvoiceRequest](#InvoiceRequest \"wikilink\") is VALID\n-   If **pki_type** is x509+sha256 and **signature** is valid for the\nserialized [InvoiceRequest](#InvoiceRequest \"wikilink\") where\nsignature is set to \\\"\\\",\n[InvoiceRequest](#InvoiceRequest \"wikilink\") is VALID"
     },
     {
       "header": "Sending Encrypted Payment Protocol Messages using EncryptedProtocolMessages {#sending_encrypted_payment_protocol_messages_using_encryptedprotocolmessages}",
-      "content": ""
+      "content": "-   Encrypt the serialized Payment Protocol message using AES-256-GCM\nsetup as described in [ECDH Point Generation and AES-256 (GCM Mode)\nSetup](#ECDH_Point_Generation_and_AES256_GCM_Mode_Setup \"wikilink\")\n-   Create\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nmessage\n-   Set **encrypted_message** to be the encrypted value of the Payment\nProtocol message\n-   **version** SHOULD be set to the highest version number the client\nunderstands (currently 1)\n-   **sender_public_key** MUST be set to the public key of the Sender\\'s\nEC keypair\n-   **receiver_public_key** MUST be set to the public key of the\nReceiver\\'s EC keypair\n-   **nonce** MUST be set to the nonce used in the AES-256-GCM\nencryption operation\n-   Set **identifier** to the identifier value received in the\noriginating InvoiceRequest\\'s ProtocolMessage or\nEncryptedProtocolMessage wrapper message\n-   Set **signature** to \\\"\\\"\n-   Sign the serialized\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nmessage with the communicating party\\'s EC public key\n-   Set **signature** to the result of the signature operation above\n\n**SIGNATURE NOTE:**\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nmessages are signed with the public keys of the party transmitting the\nmessage. This allows a Store & Forward server or other transmission\nsystem to prevent spam or other abuses. For those who are privacy\nconscious and don\\'t want the server to track the interactions between\ntwo public keys, the Sender can generate a new public key for each\ninteraction to keep their identity anonymous."
     },
     {
       "header": "Validating and Decrypting Payment Protocol Messages using EncryptedProtocolMessages {#validating_and_decrypting_payment_protocol_messages_using_encryptedprotocolmessages}",
-      "content": ""
+      "content": "-   The **nonce** MUST not be repeated. The service receiving the\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") MAY\nuse whatever method to make sure that the nonce is never repeated.\n-   Decrypt the serialized Payment Protocol message using AES-256-GCM\nsetup as described in [ECDH Point Generation and AES-256 (GCM Mode)\nSetup](#ECDH_Point_Generation_and_AES256_GCM_Mode_Setup \"wikilink\")\n-   Deserialize the serialized Payment Protocol message"
     },
     {
       "header": "ECDH Point Generation and AES-256 (GCM Mode) Setup {#ecdh_point_generation_and_aes_256_gcm_mode_setup}",
-      "content": ""
+      "content": "**NOTE**: AES-256-GCM is used because it provides authenticated\nencryption facilities, thus negating the need for a separate message\nhash for authentication.\n\n-   Generate the **secret point** using\n[ECDH](https://en.wikipedia.org/wiki/Elliptic_curve_Diffie\u2013Hellman)\nusing the local entity\\'s private key and the remote entity\\'s\npublic key as inputs\n-   Initialize\n[HMAC_DRBG](http://csrc.nist.gov/publications/nistpubs/800-90A/SP800-90A.pdf)\n-   Use **SHA512(secret point\\'s X value in Big-Endian bytes)** for\nEntropy\n-   Use the given message\\'s **nonce** field for Nonce, converted to\nbyte string (Big Endian)\n\n```{=html}\n<!-- -->\n```\n-   Initialize AES-256 in GCM Mode\n-   Initialize HMAC_DRBG with Security Strength of 256 bits\n-   Use HMAC_DRBG.GENERATE(32) as the Encryption Key (256 bits)\n-   Use HMAC_DRBG.GENERATE(12) as the Initialization Vector (IV) (96\nbits)"
     },
     {
       "header": "AES-256 GCM Authentication Tag Use {#aes_256_gcm_authentication_tag_use}",
-      "content": ""
+      "content": "The 16 byte authentication tag resulting from the AES-GCM encrypt\noperation MUST be prefixed to the returned ciphertext. The decrypt\noperation will use the first 16 bytes of the ciphertext as the GCM\nauthentication tag and the remainder of the ciphertext as the ciphertext\nin the decrypt operation."
     },
     {
       "header": "AES-256 GCM Additional Authenticated Data {#aes_256_gcm_additional_authenticated_data}",
-      "content": ""
+      "content": "When either **status_code** OR **status_message** are present, the\nAES-256 GCM authenticated data used in both the encrypt and decrypt\noperations MUST be: STRING(status_code) \\|\\| status_message. Otherwise,\nthere is no additional authenticated data. This provides that, while not\nencrypted, the status_code and status_message are authenticated."
     },
     {
       "header": "Initial Public Key Retrieval for InvoiceRequest Encryption {#initial_public_key_retrieval_for_invoicerequest_encryption}",
-      "content": ""
+      "content": "Initial public key retrieval for\n[InvoiceRequest](#InvoiceRequest \"wikilink\") encryption via\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\")\nencapsulation can be done in a number of ways including, but not limited\nto, the following:\n\n1.  Wallet Name public key asset type resolution - DNSSEC-validated name\nresolution returns Base64 encoded DER-formatted EC public key via\nTXT Record [RFC 5480](https://www.ietf.org/rfc/rfc5480.txt)\n2.  Key Server lookup - Key Server lookup (similar to PGP\\'s\npgp.mit.edu) based on key server identifier (i.e., e-mail address)\nreturns Base64 encoded DER-formatted EC public key [RFC\n5480](https://www.ietf.org/rfc/rfc5480.txt)\n3.  QR Code - Use of QR-code to encode SEC-formatted EC public key [RFC\n5480](https://www.ietf.org/rfc/rfc5480.txt)\n4.  Address Service Public Key Exposure"
     },
     {
       "header": "Payment / PaymentACK Messages with a HTTP Store & Forward Server {#payment_paymentack_messages_with_a_http_store_forward_server}",
-      "content": ""
+      "content": "If a Store & Forward server wishes to protect themselves from spam or\nabuse, they MAY enact whatever rules they deem fit, such as the\nfollowing:\n\n-   Once an InvoiceRequest or PaymentRequest is received, all subsequent\nmessages using the same identifier must use the same Sender and\nReceiver public keys.\n-   For each unique identifier, only one message each of type\nInvoiceRequest, PaymentRequest, and PaymentACK may be submitted.\nPayment messages may be submitted/overwritten multiple times. All\nmessages submitted after a PaymentACK is received will be rejected.\n-   Specific messages are only saved until they have been verifiably\nreceived by the intended recipient or a certain amount of time has\npassed, whichever comes first.\n\n\\\n\\\nClients SHOULD keep in mind Receivers can broadcast a transaction\nwithout returning an ACK. If a Payment message needs to be updated, it\nSHOULD include at least one input referenced in the original transaction\nto prevent the Receiver from broadcasting both transactions and getting\npaid twice."
     },
     {
       "header": "Public Key & Signature Encoding {#public_key_signature_encoding}",
-      "content": ""
+      "content": "-   All x.509 certificates included in any message defined in this BIP\nMUST be DER \\[ITU.X690.1994\\] encoded.\n-   All EC public keys (**sender_public_key**, **receiver_public_key**)\nin any message defined in this BIP MUST be\n[<http://www.secg.org/sec2-v2.pdf>](SECP256k1 \"wikilink\") ECDSA\nPublic Key ECPoints encoded using\n[<http://www.secg.org/sec1-v2.pdf>](SEC_2.3.3_Encoding \"wikilink\").\nEncoding MAY be compressed.\n-   All ECC signatures included in any message defined in this BIP MUST\nuse the SHA-256 hashing algorithm and MUST be DER \\[ITU.X690.1994\\]\nencoded.\n-   All OpenPGP certificates must follow\n[RFC4880](https://tools.ietf.org/html/rfc4880 \"wikilink\"), sections\n5.5 and 12.1."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "A reference implementation for a Store & Forward server supporting this\nproposal can be found here:\n\n[Addressimo](https://github.com/netkicorp/addressimo)\n\nA reference client implementation can be found in the InvoiceRequest\nfunctional testing for Addressimo here:\n\n[BIP75 Client Reference\nImplementation](https://github.com/netkicorp/addressimo/blob/master/functest/functest_bip75.py)"
     },
     {
       "header": "BIP70 Extension {#bip70_extension}",
-      "content": ""
+      "content": "The following flowchart is borrowed from\n[BIP70](bip-0070.mediawiki \"wikilink\") and expanded upon in order to\nvisually describe how this BIP is an extension to\n[BIP70](bip-0070.mediawiki \"wikilink\").\n\n`<img src=\"bip-0075/bip70-extension.png\" alt=\"Flowchart explaining how this BIP extends BIP 70\">`{=html}"
     },
     {
       "header": "Mobile to Mobile Examples {#mobile_to_mobile_examples}",
-      "content": ""
-    },
-    {
-      "header": "Full Payment Protocol {#full_payment_protocol}",
-      "content": ""
+      "content": "### Full Payment Protocol {#full_payment_protocol}\n\nThe following diagram shows a sample flow in which one mobile client is\nsending value to a second mobile client with the use of an\nInvoiceRequest, a Store & Forward server, PaymentRequest, Payment and\nPaymentACK. In this case, the PaymentRequest, Payment and PaymentACK\nmessages are encrypted using\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") **and**\nthe Receiver submits the transaction to the Bitcoin network.\n\n`<img src=\"bip-0075/mobile-sf-ir-with-payment.png\" alt=\"Payment Required flow diagram\">`{=html}"
     },
     {
       "header": "Encrypting Initial InvoiceRequest via EncryptedProtocolMessage {#encrypting_initial_invoicerequest_via_encryptedprotocolmessage}",
-      "content": ""
+      "content": "The following diagram shows a sample flow in which one mobile client is\nsending value to a second mobile client using an\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") to\ntransmit the InvoiceRequest using encryption, Store & Forward server,\nand PaymentRequest. In this case, all Payment Protocol messages are\nencrypting using\n[EncryptedProtocolMessage](#EncryptedProtocolMessage \"wikilink\") **and**\nthe Sender submits the transaction to the Bitcoin network.\n\n`<img src=\"bip-0075/mobile-sf-encrypted-ir-without-payment.png\" alt=\"Encrypted InvoiceRequest without payment\">`{=html}"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [BIP70 - Payment Protocol](bip-0070.mediawiki \"wikilink\")\n-   [ECDH](https://en.wikipedia.org/wiki/Elliptic_curve_Diffie\u2013Hellman)\n-   [HMAC_DRBG](http://csrc.nist.gov/publications/nistpubs/800-90A/SP800-90A.pdf)\n-   [NIST Special Publication 800-38D - Recommendation for Block Cipher\nModes of Operation: Galois/Counter Mode (GCM) and\nGMAC](http://csrc.nist.gov/publications/nistpubs/800-38D/SP-800-38D.pdf)\n-   [RFC6979](https://tools.ietf.org/html/rfc6979)\n-   [Address Reuse](https://en.bitcoin.it/wiki/Address_reuse)\n-   [FIPS 180-4 (Secure Hash\nStandard)](http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf)"
     }
   ]
 }

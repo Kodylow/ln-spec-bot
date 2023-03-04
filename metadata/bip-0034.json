@@ -11,27 +11,27 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Bitcoin blocks and transactions are versioned binary structures. Both\ncurrently use version 1. This BIP introduces an upgrade path for\nversioned transactions and blocks. A unique value is added to newly\nproduced coinbase transactions, and blocks are updated to version 2."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "1.  Clarify and exercise the mechanism whereby the bitcoin network\ncollectively consents to upgrade transaction or block binary\nstructures, rules and behaviors.\n2.  Enforce block and transaction uniqueness, and assist unconnected\nblock validation."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  Treat transactions with a version greater than 1 as non-standard\n(official Satoshi client will not mine or relay them).\n2.  Add height as the first item in the coinbase transaction\\'s\nscriptSig, and increase block version to 2. The format of the height\nis \\\"minimally encoded serialized CScript\\\" \\-- first byte is number\nof bytes in the number (will be 0x03 on main net for the next 150 or\nso years with 2^23^-1 blocks), following bytes are little-endian\nrepresentation of the number (including a sign bit). Height is the\nheight of the mined block in the block chain, where the genesis\nblock is height zero (0).\n3.  75% rule: If 750 of the last 1,000 blocks are version 2 or greater,\nreject invalid version 2 blocks. (testnet3: 51 of last 100)\n4.  95% rule (\\\"Point of no return\\\"): If 950 of the last 1,000 blocks\nare version 2 or greater, reject all version 1 blocks. (testnet3: 75\nof last 100)"
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "All older clients are compatible with this change. Users and merchants\nshould not be impacted. Miners are strongly recommended to upgrade to\nversion 2 blocks. Once 95% of the miners have upgraded to version 2, the\nremainder will be orphaned if they fail to upgrade."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/1526>"
     },
     {
       "header": "Result",
-      "content": ""
+      "content": "Block number 227,835 (timestamp 2013-03-24 15:49:13 GMT) was the last\nversion 1 block."
     }
   ]
 }

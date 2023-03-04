@@ -12,35 +12,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a script for generalized off-chain contract\nnegotiation."
     },
     {
       "header": "Summary",
-      "content": ""
+      "content": "A Hashed Time-Locked Contract (HTLC) is a script that permits a\ndesignated party (the \\\"seller\\\") to spend funds by disclosing the\npreimage of a hash. It also permits a second party (the \\\"buyer\\\") to\nspend the funds after a timeout is reached, in a refund situation.\n\nThe script takes the following form:\n\n`\u00a0\u00a0\u00a0OP_IF`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0[HASHOP]\u00a0``<digest>`{=html}`\u00a0OP_EQUALVERIFY\u00a0OP_DUP\u00a0OP_HASH160\u00a0``<seller pubkey hash>`{=html}`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0`\\\n`\u00a0\u00a0\u00a0OP_ELSE`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0``<num>`{=html}`\u00a0[TIMEOUTOP]\u00a0OP_DROP\u00a0OP_DUP\u00a0OP_HASH160\u00a0``<buyer pubkey hash>`{=html}\\\n`\u00a0\u00a0\u00a0OP_ENDIF`\\\n`\u00a0\u00a0\u00a0OP_EQUALVERIFY`\\\n`\u00a0\u00a0\u00a0OP_CHECKSIG`\n\n\\[HASHOP\\] is either OP_SHA256 or OP_HASH160.\n\n\\[TIMEOUTOP\\] is either OP_CHECKSEQUENCEVERIFY or\nOP_CHECKLOCKTIMEVERIFY."
     },
     {
       "header": "Interaction",
-      "content": ""
+      "content": "-   Victor (the \\\"buyer\\\") and Peggy (the \\\"seller\\\") exchange public\nkeys and mutually agree upon a timeout threshold. Peggy provides a\nhash digest. Both parties can now construct the script and P2SH\naddress for the HTLC.\n-   Victor sends funds to the P2SH address.\n-   Either:\n-   Peggy spends the funds, and in doing so, reveals the preimage to\nVictor in the transaction; OR\n-   Victor recovers the funds after the timeout threshold.\n\nVictor is interested in a lower timeout to reduce the amount of time\nthat his funds are encumbered in the event that Peggy does not reveal\nthe preimage. Peggy is interested in a higher timeout to reduce the risk\nthat she is unable to spend the funds before the threshold, or worse,\nthat her transaction spending the funds does not enter the blockchain\nbefore Victor\\'s but does reveal the preimage to Victor anyway."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "In many off-chain protocols, secret disclosure is used as part of a\nsettlement mechanism. In some others, the secrets themselves are\nvaluable. HTLC transactions are a safe and cheap method of exchanging\nsecrets for money over the blockchain, due to the ability to recover\nfunds from an uncooperative counterparty, and the opportunity that the\npossessor of a secret has to receive the funds before such a refund can\noccur."
     },
     {
       "header": "Lightning network {#lightning_network}",
-      "content": ""
+      "content": "In the lightning network, HTLC scripts are used to perform atomic swaps\nbetween payment channels.\n\nAlice constructs K and hashes it to produce L. She sends an HTLC payment\nto Bob for the preimage of L. Bob sends an HTLC payment to Carol for the\nsame preimage and amount. Only when Alice releases the preimage K does\nany exchange of value occur, and because the secret is divulged for each\nhop, all parties are compensated. If at any point some parties become\nuncooperative, the process can be aborted via the refund conditions."
     },
     {
       "header": "Zero-knowledge contingent payments {#zero_knowledge_contingent_payments}",
-      "content": ""
+      "content": "Various practical zero-knowledge proving systems exist which can be used\nto guarantee that a hash preimage derives valuable information. As an\nexample, a zero-knowledge proof can be used to prove that a hash\npreimage acts as a decryption key for an encrypted sudoku puzzle\nsolution. (See [pay-to-sudoku](https://github.com/zcash/pay-to-sudoku)\nfor a concrete example of such a protocol.)\n\nHTLC transactions can be used to exchange such decryption keys for money\nwithout risk, and they do not require large or expensive-to-validate\ntransactions."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/7601>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is dual licensed as BSD 3-clause, and Creative Commons CC0\n1.0 Universal."
     }
   ]
 }

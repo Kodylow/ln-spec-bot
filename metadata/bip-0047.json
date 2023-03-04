@@ -3,135 +3,123 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a technique for creating a payment code which can be\npublicly advertised and associated with a real-life identity without\ncreating the loss of security or privacy inherent to P2PKH address\nreuse.\n\nThis BIP is a particular application of BIP43 and is intended to\nsupplement HD wallets which implement BIP44.\n\nThe key words \\\"MUST\\\", \\\"MUST NOT\\\", \\\"REQUIRED\\\", \\\"SHALL\\\", \\\"SHALL\nNOT\\\", \\\"SHOULD\\\", \\\"SHOULD NOT\\\", \\\"RECOMMENDED\\\", \\\"MAY\\\", and\n\\\"OPTIONAL\\\" in this document are to be interpreted as described in RFC\n2119."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Payment codes add identity information to transactions which is useful\nin a merchant-customer interaction while protecting the privacy of\nusers. Payment codes provide the privacy benefits of Darkwallet-style\nStealth Addresses to SPV clients without requiring the assistance of a\ntrusted full node and while greatly reducing reliance on blockchain\nstorage."
     },
     {
       "header": "Path levels {#path_levels}",
-      "content": ""
+      "content": "We define the following 3 levels in BIP32 path:\n\n`m / purpose' / coin_type' / identity'`\n\nThe child keys derived from an identity are used in different ways:\n\n`m / purpose' / coin_type' / identity' / 0`\n\nThe 0th (non-hardened) child is the notification key.\n\n`m / purpose' / coin_type' / identity' / 0 through 2147483647`\n\nThese (non-hardened) keypairs are used for ECDH to generate deposit\naddresses.\n\n`m / purpose' / coin_type' / identity' / 0' through 2147483647'`\n\nThese (hardened) keypairs are ephemeral payment codes.\n\nApostrophe in the path indicates that BIP32 hardened derivation is used.\n\nEach level has a special meaning, described in the chapters below."
     },
     {
       "header": "Purpose",
-      "content": ""
+      "content": "Purpose is a constant set to 47\\' (or 0x8000002F) following the BIP43\nrecommendation. It indicates that the subtree of this node is used\naccording to this specification."
     },
     {
       "header": "Coin type {#coin_type}",
-      "content": ""
+      "content": "The coin type field is identical to the same field in BIP44\n\nHardened derivation is used at this level."
     },
     {
       "header": "Identity",
-      "content": ""
+      "content": "The identity derivation level produces an extended public key and its\nassociated extended private key.\n\nWhen the extended public key at this level is combined with the metadata\nspecified in the Representation section below, the resulting entity is\ncalled a \\\"payment code.\\\"\n\nThis derivation level is equivalent to the Account level in BIP-44.\nWallets SHOULD treat payment codes as intrinsically part of the BIP-44\naccount at the same index and create payment codes and accounts as\npairs.\n\nFor example, the payment code created represented by (m / 47\\' / 0\\' /\n0\\') is part of the account represented by (m / 44\\' / 0\\' / 0\\').\n\nThe second account in a wallet consists of the new account/payment code\npair created by using an index of 1 in as the account/identity level of\nboth paths.\n\nIncoming payments received via this specification are equivalent to\npayments received to BIP-44 addresses, and unspent outputs from both\ntypes of addresses can be used as inputs in the same outgoing\ntransaction.\n\nHardened derivation is used at this level.\n\nExcept where noted, all keys derived from a payment code use the public\nderivation method."
     },
     {
       "header": "Versions",
-      "content": ""
+      "content": "Payment codes contain a version byte which identifies a specific set of\nbehavior.\n\nUnless otherwise specified, payment codes of different versions are\ninteroperable. If Alice uses a version x payment code, and Bob uses a\nversion y payment code, they can still send and receive transactions\nbetween each other.\n\nCurrently specified versions:\n\n-   Version 1\n-   Address type: P2PKH\n-   Notification type: address\n-   Version 2\n-   Address type: P2PKH\n-   Notification type: bloom-multisig"
     },
     {
       "header": "Recommended Versions {#recommended_versions}",
-      "content": ""
+      "content": "-   Wallets which have bloom filtering capabilities SHOULD create\nversion 2 payment codes instead of version 1 payment codes.\n-   Version 1 payment codes are only recommended for wallets which lack\naccess to bloom filtering capability."
     },
     {
       "header": "Version 1 {#version_1}",
-      "content": ""
-    },
-    {
-      "header": "Representation",
-      "content": ""
+      "content": "### Representation"
     },
     {
       "header": "Binary Serialization {#binary_serialization}",
-      "content": ""
+      "content": "A payment code contains the following elements:\n\n-   Byte 0: version. required value: 0x01\n-   Byte 1: features bit field. All bits must be zero except where\nspecified elsewhere in this specification\n-   Bit 0: Bitmessage notification\n-   Bits 1-7: reserved\n-   Byte 2: sign. required value: 0x02 or 0x03\n-   Bytes 3 - 34: x value, must be a member of the secp256k1 group\n-   Bytes 35 - 66: chain code\n-   Bytes 67 - 79: reserved for future expansion, zero-filled unless\notherwise noted"
     },
     {
       "header": "Base58 Serialization {#base58_serialization}",
-      "content": ""
+      "content": "When a payment code is presented to the user, it SHOULD be presented\nencoded in Base58Check form.\n\n-   The version byte is: 0x47 (produces a \\\"P\\\" as the first character\nof the serialized form)\n-   The payload is the binary serialization of the payment code"
     },
     {
       "header": "Protocol",
-      "content": ""
+      "content": "In the following examples, Alice and Bob are identities with a\ncorresponding payment codes. Alice initiates a Bitcoin transaction, and\nBob is the recipient of the transaction.\n\nIt is assumed that Alice can easily obtain Bob\\'s payment code via a\nsuitable method outside the scope of the payment code protocol."
     },
     {
       "header": "Definitions",
-      "content": ""
+      "content": "-   Payment code: an extended public key and associated metadata which\nis associated with a particular identity/account\n-   Notification address: the P2PKH address associated with the 0^th^\npublic key derived from a payment code\n-   Notification transaction: a transaction which sends an output to a\nnotification address which includes an embedded payment code\n-   Designated input: the first input in the notification transaction\nwhich exposes an secp256k1 pubkey in either its signature script, or\nin the redeem script or pubkey script of the output being spent\n-   Designated pubkey: the first secp256k1 pubkey pushed to the stack\nduring script execution for the designated input\n-   Outpoint: the specific output of a previous transaction which is\nbeing spent. See the Reference section for the binary serialization"
     },
     {
       "header": "Notification Transaction {#notification_transaction}",
-      "content": ""
+      "content": "Prior to the first time Alice initiates a transaction to Bob, Alice MUST\ninform Bob of her payment code via the following procedure:\n\nNote: this procedure is used if Bob uses a version 1 payment code\n(regardless of the the version of Alice\\'s payment code). If Bob\\'s\npayment code is not version 1, see the appropriate section in this\nspecification.\n\n1.  Alice constructs a transaction which sends a small quantity of\nbitcoins to Bob\\'s notification address (notification transaction)\n1.  The inputs selected for this transaction MUST NOT be easily\nassociated with Alice\\'s notification address\n2.  Alice derives a unique shared secret using ECDH:\n1.  Alice selects the private key corresponding to the designated\npubkey:\na\n2.  Alice selects the public key associated with Bob\\'s notification\naddress:\nB, where B = bG\n3.  Alice calculates a secret point:\nS = aB\n4.  Alice calculates a 64 byte blinding factor:\ns = HMAC-SHA512(x, o)\n\n1.  \\\"x\\\" is the x value of the secret point\n2.  \\\"o\\\" is the outpoint being spent by the designated input\n3.  Alice serializes her payment code in binary form.\n4.  Alice renders her payment code (P) unreadable to anyone except Bob:\n1.  Replace the x value with x\\':\nx' = x XOR (first 32 bytes of s)\n2.  Replace the chain code with c\\':\nc' = c XOR (last 32 bytes of s)\n5.  Alice adds an OP_RETURN output to her transaction which consists of\nP.\n\n`<img src=\"bip-0047/reusable_payment_codes-01.png\" />`{=html}\n\n1.  Bob watches for any transactions which create an output at his\nnotification address.\n2.  When a transaction is received, the client examines it to determine\nif it contains a standard OP_RETURN output with an 80 byte payload\n(notification transactions).\n3.  If the first byte of the payload in a notification transaction is\n0x01:\n1.  Bob selects the designated pubkey:\nA, where A = aG\n2.  Bob selects the private key associated with his notification\naddress:\nb\n3.  Bob calculates a secret point:\nS = bA\n4.  Bob calculates the blinding factor:\ns = HMAC-SHA512(x, o)\n\n1.  \\\"x\\\" is the x value of the secret point\n2.  \\\"o\\\" is the outpoint being spent by the designated input.\n5.  Bob interprets the 80 byte payload as a payment code, except:\n1.  Replace the x value with x\\':\nx' = x XOR (first 32 bytes of s)\n2.  Replace the chain code with c\\':\nc' = c XOR (last 32 bytes of s)\n6.  If the updated x value is a member of the secp256k1 group, the\npayment code is valid.\n7.  If the updated x value is not a member of the secp256k1 group,\nthe payment code is ignored.\n\nNow that Bob\\'s client has received Alice\\'s payment code, it is\npossible for Alice to send payments (up to 2^32^ payments) to Bob.\n\nAlice will never again need to send a notification transaction to Bob.\n\nBitcoins received via notification transactions require special handling\nin order to avoid privacy leaks:\n\n1.  The value of outputs received to notification addresses MUST NOT be\ndisplayed to the user as part of their spendable balance.\n2.  Outputs received to notification addresses MUST NOT be used as\ninputs for any transaction that involve ECDH calculations using any\nof the user\\'s payment codes.\n3.  Outputs received to notification addresses MAY be passed through a\nmixing service before being added to the user\\'s spendable balance.\n4.  Outputs received to notification addresses MAY be donated to miners\nusing dust-b-gone or an equivalent procedure."
     },
     {
       "header": "Standard Notification Transaction Scripts {#standard_notification_transaction_scripts}",
-      "content": ""
+      "content": "Alice SHOULD use an input script in one of the following standard forms\nto expose a public key, and compliant applications SHOULD recognize all\nof these forms.\n\n-   P2PK (pay to pubkey)\n-   P2PKH (pay to pubkey hash)\n-   Multisig (bare multisig, without P2SH)\n-   a script which spends any of the above script forms via P2SH (pay to\nscript hash)\n\nCompatible wallets MAY provide a method for a user to manually specify\nthe public key associated with a notification transaction in order to\nrecover payment codes sent via non-standard notification transactions."
     },
     {
       "header": "Post-Notification Privacy Considerations {#post_notification_privacy_considerations}",
-      "content": ""
+      "content": "Incautious handling of change outputs from notification transactions may\ncause unintended loss of privacy.\n\nThe recipient of a transaction which spends a change output from a prior\nnotification transaction will learn about the potential connection\nbetween the sender and the recipient of the notification transaction.\n\nThe following actions are recommended to reduce this risk:\n\n-   Wallets which support mixing SHOULD mix change outputs from\nnotification transactions prior to spending them\n-   Wallets which do not support mixing MAY simulate mixing by creating\na transaction which spends the change output to the next external\nBIP44 address"
     },
     {
       "header": "Sending",
-      "content": ""
+      "content": "1.  Each time Alice wants to initiate a transaction to Bob, Alice\nderives a unique P2PKH address for the transaction using ECDH as\nfollows:\n1.  Alice selects the 0th private key derived from her payment code:\na\n2.  Alice selects the next unused public key derived from Bob\\'s\npayment code, starting from zero:\nB, where B = bG\n\n1.  The \\\"next unused\\\" public key is based on an index specific\nto the Alice-Bob context, not global to either Alice or Bob\n3.  Alice calculates a secret point:\nS = aB\n4.  Alice calculates a scalar shared secret using the x value of S:\ns = SHA256(Sx)\n\n1.  If the value of s is not in the secp256k1 group, Alice MUST\nincrement the index used to derive Bob\\'s public key and try\nagain.\n5.  Alice uses the scalar shared secret to calculate the ephemeral\npublic key used to generate the P2PKH address for this\ntransaction:\nB' = B + sG\n\n`<img src=\"bip-0047/reusable_payment_codes-04.png\" />`{=html}\n`<img src=\"bip-0047/reusable_payment_codes-05.png\" />`{=html}\n\n1.  Bob is watching for incoming payments on B\\' ever since he received\nthe notification transaction from Alice.\n1.  Bob calculates n shared secrets with Alice, using the 0^th^\npublic key derived Alice\\'s payment code, and private keys 0 - n\nderived from Bob\\'s payment code, where n is his desired\nlookahead window.\n2.  Bob calculates the ephemeral deposit addresses using the same\nprocedure as Alice:\nB' = B + sG\n3.  Bob calculate the private key for each ephemeral address as:\nb' = b + s\n\n`<img src=\"bip-0047/reusable_payment_codes-02.png\" />`{=html}\n`<img src=\"bip-0047/reusable_payment_codes-03.png\" />`{=html}"
     },
     {
       "header": "Refunds",
-      "content": ""
+      "content": "Because Bob learns Alice\\'s payment code as part of the process of\nreceiving a payment, Bob has all the information he needs in order to\nsend a refund to Alice.\n\nA refund transaction is identical to a payment transactions, with only\nthe roles of the participants switches.\n\nBob MUST send a notification transaction to Alice prior to the first\ntime he sends funds to Alice, even if he has received transactions from\nher in the past.\n\n`<img src=\"bip-0047/reusable_payment_codes-06.png\" />`{=html}"
     },
     {
       "header": "Anonymous Payments {#anonymous_payments}",
-      "content": ""
+      "content": "If Alice does not want her payment to Bob to be associated with her\nidentity, she generates an ephemeral payment code to use for the\ntransaction.\n\n-   Ephemeral payment codes are the hardened children of a payment code,\nstarting from an index of zero.\n-   An ephemeral payment code SHOULD only be used for a single outgoing\npayment.\n-   The notification address of an ephemeral payment code MUST be\nmonitored for notification transactions in order to detect incoming\nrefund payments\n-   The correspondence between BIP44 accounts and ephemeral payment\ncodes is 1:many"
     },
     {
       "header": "Cold Storage {#cold_storage}",
-      "content": ""
+      "content": "-   Unlike traditional watching-only wallets, those associated with\npayment codes held in cold storage can not detect incoming payments\nimmediately.\n-   When the watching-only wallet detects an incoming notification\ntransaction, it packages the transaction in an\nimplementation-specific format suitable for transfer to the offline\ndevice.\n-   The offline device recovers the payment code, then pre-generates a\nlarge number of relevant keypairs (example: 10000) in order to\nminimize the need for air gap round trips.\n-   The offline device then packages the relevant public keys in an\nimplementation-specific format suitable for transfer to the online\ndevice.\n-   The online device can then watch for incoming payments using a\nsuitable lookahead window.\n-   If the lookahead window reaches the end of the pre-generated public\nkeys, the user must generate more keys on the offline device and\ntransfer them to the online device."
     },
     {
       "header": "Wallet Recovery {#wallet_recovery}",
-      "content": ""
+      "content": "Normal operation of a payment code-enabled wallet can be performed by an\nSPV client and does not require access to a complete copy of the\nblockchain.\n\nRecovering a wallet from a seed, however, does require access to a\nfully-indexed blockchain.\n\nThe required data may be obtained from copy of the blockchain under the\ncontrol of the user, or via a publicly-queriable blockchain explorer.\n\nWhen querying a public blockchain explorer, wallets SHOULD connect to\nthe explorer through Tor (or equivalent) and SHOULD avoid grouping\nqueries in a manner that associates ephemeral addresses with each other.\n\nPreviously-spendable funds will generally not be lost or become\ninaccessible after a recovery from a seed, but all information regarding\nprevious outgoing payments will be lost.\n\nIn order to recover received funds from a seed, the wallet must obtain\nevery notification it has ever received to its notification address,\nincluding all spent transactions. It then re-establishes its lookahead\nwindow for each subchain by scanning every derived address sequentially\nuntil it locates a contiguous block of unused addresses of a\nuser-specified length.\n\nThe metadata which a wallet must store to properly process outgoing\ntransactions consists of:\n\n1.  A list of every payment code to which the identity has sent a\nnotification transaction.\n1.  This list is lost if a wallet must be recovered from a seed.\n2.  The recovered wallet MUST send notification transactions as if\nit was a newly-created wallet\n2.  The index value corresponding to the next unused pubkey for each\npayment code on the previous list\n1.  This value can be recovered by checking each ephemeral deposit\naddress in sequence for transactions.\n2.  Wallets MAY use a lookahead window capable of detecting gaps in\nthe address sequence during this recovery operation.\n3.  The index value of the next unused ephemeral payment code.\n1.  Recovering all incoming funds associated with ephemeral payment\ncodes with 100% certainty requires exhausting the entire 2^32^\naddress space of potential ephemeral payment codes.\n1.  In most cases, less than 100% certainty is acceptable as\nlong as a fallback \\\"deep scan\\\" is available as an option\nto the user.\n2.  The wallet checks the notification address for each ephemeral\npayment code for notification transactions in order to recover\nassociated funds.\n3.  Since most ephemeral payment codes will not receive a refund\ntransaction wallets SHOULD use a large lookahead window for this\nrecovery operation.\n4.  The recovered value MUST be chosen as a number higher than any\nephemeral payment code which has received a notification\ntransaction."
     },
     {
       "header": "Wallet Sharing {#wallet_sharing}",
-      "content": ""
+      "content": "Wallets using payment codes generally should not be shared across\nmultiple devices, given the need to synchronize metadata between each\ninstance.\n\nIf wallets are shared between devices without a synchronization\nmechanism, undesirable address reuse can occur.\n\nWallets may perform an OPTIONAL check for existing transactions to an\nephemeral deposit addresses prior to sending a transaction by checking a\nlocal copy of the blockchain or querying a public blockchain explorer\nvia Tor or equivalent."
     },
     {
       "header": "Alternate Notification Methods {#alternate_notification_methods}",
-      "content": ""
+      "content": "In order to ensure that no funds will be lost in the event the recipient\nmust recover their wallet from a seed, the sender MUST send a\nnotification transaction the first time the sender interacts with a\nparticular recipient.\n\nA recipient MAY choose to designate alternate notification methods which\nthe sender may use in addition to a notification transaction.\n\nIf the recipient specifies an alternate notification method, a compliant\nimplementation MAY refrain from continually monitoring the notification\naddress and SHOULD check the notification address periodically to detect\npayments sent by users who can not employ the alternate method.\n\nA recipient specifies their preference for alternate notification by\nsetting the appropriate bits in the feature byte of their payment code."
     },
     {
       "header": "Bitmessage Notification {#bitmessage_notification}",
-      "content": ""
+      "content": "A recipient which prefers to receive notifications via Bitmessage\nindicates this preference by:\n\n-   Setting bit 0 of the features byte to 1\n-   Setting byte 67 of the serialized payment code to the desired\nBitmessage address version\n-   Setting byte 68 of the serialized payment code to the desired\nBitmessage stream number\n\nThe sender uses this information to construct a valid notification\nBitmessage address:\n\n1.  Derive a Bitmessage signing key as:\nB = payment code / 0 / 0\n2.  Initialize a counter at 1:\nn\n3.  Derive a candidate encryption key as:\nB' = payment code / 0 / n\n4.  If the combination of B and B\\` do not form a valid Bitmessage\naddress, increment n by one and try again\n5.  Use the address version, signing key, encryption key, and stream\nnumber to construct a Bitmessage address per the Bitmessage protocol\n\nThe sender transmits their payment code in base58 form to the calculated\nBitmessage address.\n\nIn order to use Bitmessage notification, the recipient must have a\nBitmessage client which listens at the address which the senders will\nderive and is capable of relaying received payment codes to the Bitcoin\nwallet."
     },
     {
       "header": "Version 2 {#version_2}",
-      "content": ""
+      "content": "Version 2 payment codes behave identifically to version 1 payment codes,\nexcept as modified below."
     },
     {
       "header": "Representation {#representation_1}",
-      "content": ""
-    },
-    {
-      "header": "Binary Serialization {#binary_serialization_1}",
-      "content": ""
+      "content": "#### Binary Serialization {#binary_serialization_1}\n\n-   Byte 0: version. required value: 0x02"
     },
     {
       "header": "Protocol {#protocol_1}",
-      "content": ""
-    },
-    {
-      "header": "Definitions {#definitions_1}",
-      "content": ""
+      "content": "#### Definitions {#definitions_1}\n\n-   Notification change output: the change output from a notification\ntransaction which which resides in the sender\\'s wallet, but can be\nautomatically located by the intended recipient\n-   Payment code identifier: a 33 byte representation of a payment code\nconstructed by prepending 0x02 to the SHA256 hash of the binary\nserialization of the payment code"
     },
     {
       "header": "Notification Transaction {#notification_transaction_1}",
-      "content": ""
+      "content": "Note: this procedure is used if Bob uses a version 2 payment code\n(regardless of the the version of Alice\\'s payment code). If Bob\\'s\npayment code is not version 2, see the appropriate section in this\nspecification.\n\n1.  Construct a notification transaction as per the version 1\ninstructions, except do not create the output to Bob\\'s notification\naddress\n2.  Create a notification change address as follows:\n1.  Obtain the pubkey corresponding to the next change address\n2.  Construct a multisig output in the form:\n\n```{=html}\n<!-- -->\n```\nOP_1 <Bob's payment code identifier> <change address pubkey> OP_2 OP_CHECKMULTISIG\n\nThe relative ordering of the payment code identifier and change address\npubkey in the above script MAY be randomized\n\nBob detects notification transactions by adding his payment code\nidentifier to his bloom filter.\n\n1.  When the filter returns a notification transaction, the sender\\'s\npayment code is unblinded using the same procedure as for version 1\nnotification transactions.\n\nAlice\\'s wallet should spend the notification change output at the next\nappropriate opportunity."
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "-   [BIP47 Reusable Payment Codes Test\nVectors](https://gist.github.com/SamouraiDev/6aad669604c5930864bd \"wikilink\")"
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP43 - Purpose Field for Deterministic\nWallets](bip-0043.mediawiki \"wikilink\")\n-   [BIP44 - Multi-Account Hierarchy for Deterministic\nWallets](bip-0044.mediawiki \"wikilink\")\n-   [Outpoint](https://bitcoin.org/en/developer-reference#outpoint \"wikilink\")\n-   [dust-b-gone](https://github.com/petertodd/dust-b-gone \"wikilink\")\n-   [Base58Check\nencoding](https://en.bitcoin.it/wiki/Base58Check_encoding \"wikilink\")\n-   [Bitmessage](https://bitmessage.org/bitmessage.pdf \"wikilink\")\n-   [Mailing list\ndiscussion](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-April/007812.html \"wikilink\")"
     }
   ]
 }

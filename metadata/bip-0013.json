@@ -11,31 +11,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a new type of Bitcoin address to support arbitrarily\ncomplex transactions. Complexity in this context is defined as what\ninformation is needed by the recipient to respend the received coins, in\ncontrast to needing a single ECDSA private key as in current\nimplementations of Bitcoin.\n\nIn essence, an address encoded under this proposal represents the\nencoded hash of a [script](https://en.bitcoin.it/wiki/Script), rather\nthan the encoded hash of an ECDSA public key."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Enable \\\"end-to-end\\\" secure wallets and payments to fund escrow\ntransactions or other complex transactions. Enable third-party wallet\nsecurity services."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The new bitcoin address type is constructed in the same manner as\nexisting bitcoin addresses (see [Base58Check\nencoding](https://en.bitcoin.it/Base58Check_encoding)):\n\n`\u00a0\u00a0\u00a0base58-encode:\u00a0[one-byte\u00a0version][20-byte\u00a0hash][4-byte\u00a0checksum]`\n\nVersion byte is 5 for a main-network address, 196 for a testnet address.\nThe 20-byte hash is the hash of the script that will be used to redeem\nthe coins. And the 4-byte checksum is the first four bytes of the double\nSHA256 hash of the version and hash."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "One criticism is that bitcoin addresses should be deprecated in favor of\na more user-friendly mechanism for payments, and that this will just\nencourage continued use of a poorly designed mechanism.\n\nAnother criticism is that bitcoin addresses are inherently insecure\nbecause there is no identity information tied to them; if you only have\na bitcoin address, how can you be certain that you\\'re paying who or\nwhat you think you\\'re paying?\n\nFurthermore, truncating SHA256 is not an optimal checksum; there are\nmuch better error-detecting algorithms. If we are introducing a new form\nof Bitcoin address, then perhaps a better algorithm should be used.\n\nThis is one piece of the simplest path to a more secure bitcoin\ninfrastructure. It is not intended to solve all of bitcoin\\'s usability\nor security issues, but to be an incremental improvement over what\nexists today. A future BIP or BIPs should propose more user-friendly\nmechanisms for making payments, or for verifying that you\\'re sending a\npayment to the Free Software Foundation and not Joe Random Hacker.\n\nAssuming that typing in bitcoin addresses manually will become\nincreasingly rare in the future, and given that the existing checksum\nmethod for bitcoin addresses seems to work \\\"well enough\\\" in practice\nand has already been implemented multiple times, the Author believes no\nchange to the checksum algorithm is necessary.\n\nThe leading version bytes are chosen so that, after base58 encoding, the\nleading character is consistent: for the main network, byte 5 becomes\nthe character \\'3\\'. For the testnet, byte 196 is encoded into \\'2\\'."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "This proposal is not backwards compatible, but it fails gracefully\\-- if\nan older implementation is given one of these new bitcoin addresses, it\nwill report the address as invalid and will refuse to create a\ntransaction."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "See base58.cpp/base58.h at\n<https://github.com/bitcoin/bitcoin/tree/master/src>"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   [BIP 12: OP_EVAL, the original P2SH\ndesign](bip-0012.mediawiki \"wikilink\")\n-   [BIP 16: Pay to Script Hash (aka\n\\\"/P2SH/\\\")](bip-0016.mediawiki \"wikilink\")\n-   [BIP 17: OP_CHECKHASHVERIFY, another P2SH\ndesign](bip-0017.mediawiki \"wikilink\")"
     }
   ]
 }

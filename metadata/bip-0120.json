@@ -11,43 +11,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a system called Proof of Payment, PoP. It is used to\nprove that a wallet has the credentials that were used to sign a\npreviously generated transaction. Or simply put, it lets you prove that\nyou have made a payment."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "There are several scenarios in which it would be useful to prove that\nyou have paid for something. For example:\n\n-   A pre-paid hotel room where your PoP functions as a key to the door.\n-   An online video rental service where you pay for a video and watch\nit on any device.\n-   An ad-sign where you pay in advance for e.g. 2 weeks exclusivity.\nDuring this period you can upload new content to the sign whenever\nyou like using PoP.\n-   Log in to a pay site using a PoP.\n-   A parking lot you pay for monthly and the car authenticates itself\nusing PoP.\n-   A lottery where all participants pay to the same address, and the\nwinner is selected among the transactions to that address. You\nexchange the prize for a PoP for the winning transaction.\n\nWith Proof of Payment, these use cases can be achieved without any\npersonal information (user name, password, e-mail address, etc) being\ninvolved."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Desirable properties:\n\n1.  A PoP should be generated on demand.\n2.  It should only be usable once to avoid issues due to theft.\n3.  It should be able to create a PoP for any payment, regardless of\nscript type (P2SH, P2PKH, etc.).\n4.  It should prove that you have enough credentials to unlock all the\ninputs of the proven transaction.\n5.  It should be easy to implement by wallets and servers to ease\nadoption.\n\nCurrent methods of proving a payment:\n\n-   In BIP0070, the PaymentRequest together with the transactions\nfulfilling the request makes some sort of proof. However, it does\nnot meet 1, 2 or 4 and it obviously only meets 3 if the payment is\nmade through BIP0070. Also, there\\'s no standard way to\nrequest/provide the proof. If standardized it would probably meet 5.\n-   Signing messages, chosen by the server, with the private keys used\nto sign the transaction. This could meet 1 and 2 but probably not 3.\nThis is not standardized either. 4 Could be met if designed so.\n\nIf an input script type is P2SH, any satisfying script should do, just\nas if it was a payment. For M-of-N multisig scripts, that would mean\nthat any set of M keys should be sufficient, not necessarily the same\nset of M keys that signed the transaction. This is important because\nstrictly demanding the same set of M keys would defeat the purpose of a\nmultisig address."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Data structure {#data_structure}",
-      "content": ""
+      "content": "### Data structure {#data_structure}\n\nA proof of payment for a transaction T, here called PoP(T), is used to\nprove that one has ownership of the credentials needed to unlock all the\ninputs of T. It has the exact same structure as a bitcoin transaction\nwith the same inputs as T and in the same order as in T, but with each\nsequence number set to 0. There is exactly one output, here called the\npop output, with value 0. The pop output must have the following format:\n\n`OP_RETURN\u00a0``<version>`{=html}`\u00a0``<txid>`{=html}`\u00a0``<nonce>`{=html}\n\nField         Size \\[B\\]   Description\n------------- ------------ ---------------------------------------------\n\\<version\\>   2            Version, little endian, currently 0x01 0x00\n\\<txid\\>      32           The transaction to prove\n\\<nonce\\>     6            Random data\n\nThe lock_time of the PoP must be set to 499999999 to prevent the PoP\nfrom being included in a block, should it appear on the bitcoin p2p\nnetwork. This is also the reason for setting the sequence numbers to 0,\nsince sequence number of ffffffff would make lock_time ineffective. This\nspecification demands that all input sequence numbers are 0, not just\none of them, which would be sufficient to make lock_time effective. This\nis for simplicity reasons.\n\nAn illustration of the PoP data structure and its original payment is\nshown below.\n\nT\n+------------------------------------------------+\n|inputs                | outputs                 |\n|       Value,Sequence | Value,Script            |\n+------------------------------------------------+\n|input0 1,ffffffff     | 0,pay to A              |\n|input1 3,ffffffff     | 2,OP_RETURN <some data> |\n|input2 4,ffffffff     | 1,pay to B              |\n|                      | 4,pay to C              |\n+------------------------------------------------+\n\nPoP(T)\n+-------------------------------------------------------------+\n| inputs               | outputs                              |\n|       Value,Sequence | Value,Script                         |\n+-------------------------------------------------------------+\n|input0 1,00000000     | 0,OP_RETURN <version> <txid> <nonce> |\n|input1 3,00000000     |                                      |\n|input2 4,00000000     |                                      |\n+-------------------------------------------------------------+\n| lock_time=499999999                                         |\n+-------------------------------------------------------------+\n\nThe PoP is signed using the same signing process that is used for\nbitcoin transactions.\n\nThe purpose of the nonce is to make it harder to use a stolen PoP; Once\nthe PoP has reached the server, that PoP is useless since the server\nwill generate a new nonce for every PoP request."
     },
     {
       "header": "Process",
-      "content": ""
+      "content": "1.  A proof of payment request is sent from the server to the wallet.\nThe PoP request contains:\n1.  a random nonce\n2.  a destination where to send the PoP, for example a https URL\n3.  data hinting the wallet which transaction to create a proof for.\nFor example:\n-   txid, if known by the server\n-   PaymentRequest.PaymentDetails.merchant_data (in case of a\nBIP0070 payment)\n-   amount, label, message or other information from a BIP0021\nURI\n2.  The wallet identifies a transaction T, if possible. Otherwise it\nasks the user to select among the ones that match the hints in\n1.iii.\n3.  The wallet creates an unsigned PoP (UPoP) for T, and asks the user\nto sign it.\n4.  The user confirms\n5.  The UPoP(T) is signed by the wallet, creating PoP(T).\n6.  The PoP is sent to the destination in 1.ii.\n7.  The server receiving the PoP validates it and responds with \"valid\"\nor \"invalid\".\n8.  The wallet displays the response in some way to the user.\n\n**Remarks:**\n\n-   The method of transferring the PoP request at step 1 is not\nspecified here. Instead that is specified in separate\nspecifications, see BIP0121.\n-   The nonce must be randomly generated by the server for every new PoP\nrequest."
     },
     {
       "header": "Validating a PoP {#validating_a_pop}",
-      "content": ""
+      "content": "The server needs to validate the PoP and reply with \\\"valid\\\" or\n\\\"invalid\\\". That process is outlined below. If any step fails, the\nvalidation is aborted and \\\"invalid\\\" is returned:\n\n1.  Check the format of the PoP. It must pass normal transaction checks,\nexcept that the inputs may already be spent.\n2.  Check that lock_time is 499999999.\n3.  Check that there is exactly one output. This output must have value\n0 and conform to the OP_RETURN output format outlined above.\n4.  Check that the nonce is the same as the one requested.\n5.  Check that the inputs of the PoP are exactly the same as in\ntransaction T, except that the sequence numbers must all be 0. The\nordering of the inputs must also be the same as in T.\n6.  Run the scripts of all the inputs. All scripts must return true.\n7.  Check that the txid in the PoP output is the transaction you\nactually want proof for. If you don't know exactly what transaction\nyou want proof for, check that the transaction actually pays for the\nproduct/service you deliver.\n8.  Return \\\"valid\\\"."
     },
     {
       "header": "Security considerations {#security_considerations}",
-      "content": ""
+      "content": "-   Someone can intercept the PoP-request and change any parameter in\nit. These can be mitigated by using secure connections. Examples of\ntampered parameters:\n-   Pop destination - Stealing your PoP.\n-   label - Trick you to sign an unintended pop or set a label that\nyour wallet doesn\\'t have any record for, resulting in a broken\nservice. Always check the PoP before signing.\n-   nonce - Your pop will not validate on server.\n-   Someone can steal a PoP, for example by tampering with the PoP\nrequest, and try to use the service hoping to get a matching nonce.\nProbability per try: 1/(2\\^48). The server should have a mechanism\nfor detecting a brute force attack of this kind, or at least slow\ndown the process by delaying the PoP request by some 100 ms or so.\n-   Even if a wallet has no funds it might still be valuable as a\ngenerator for PoPs. This makes it important to keep the security of\nthe wallet after it has been emptied.\n-   Transaction malleability may cause the server to have a different\ntransaction id for a payment than the client\\'s wallet. In that case\nthe wallet will not be able to prove the transaction to the server.\nWallets should not rely on the transaction id of the outgoing\ntransaction. Instead it should listen for the transaction on the\nnetwork and put that in its list of transactions."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "[PoP Demo server on GitHub](https://github.com/kallerosenbaum/poppoc)\n\n[PoP-enabled Mycelium fork on\nGitHub](https://github.com/kallerosenbaum/wallet)"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[BIP0021](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki):\nURI Scheme\n\n[BIP0070](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki):\nPayment Protocol\n\n[BIP0121](https://github.com/bitcoin/bips/blob/master/bip-0121.mediawiki):\nProof of Payment URI scheme"
     }
   ]
 }

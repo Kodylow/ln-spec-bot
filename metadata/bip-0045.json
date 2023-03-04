@@ -11,75 +11,75 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a structure for hierarchical deterministic P2SH\nmulti-party multi-signature wallets (HDPM wallets from now on) based on\nthe algorithm described in BIP-0032 (BIP32 from now on) and purpose\nscheme described in BIP-0043 (BIP43 from now on). This BIP is a\nparticular application of BIP43."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The structure proposed in this document allows for standard ways to\ncreate, use, import, and store HDPM wallets. It allows to handle\nmultiple parties sharing an m-of-n wallet, on the following assumptions:\n\n-   n parties share an m-of-n wallet.\n-   Each party generates their master private keys independently.\n-   Multisig P2SH is used for all addresses.\n-   BIP32 is used to derive public keys, then create a multisig script,\nand the corresponding P2SH address for that script.\n-   Address generation should not require communication between parties.\n(Thus, all parties must be able to generate all public keys)\n-   Transaction creation and signing requires communication between\nparties.\n\nThis BIP will allow interoperability between various HDPM wallet\nimplementations."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "We define the following levels in BIP32 path:\n\n`m / purpose' / cosigner_index / change / address_index`\n\nApostrophe in the path indicates that BIP32 hardened derivation is used.\n\nEach level has special meaning described in the chapters below."
     },
     {
       "header": "Purpose",
-      "content": ""
+      "content": "Purpose is a constant set to 45, following the BIP43 recommendation. It\nindicates that the subtree of this node is used according to this\nspecification.\n\n`m / 45' / *`\n\nHardened derivation is used at this level."
     },
     {
       "header": "Cosigner Index {#cosigner_index}",
-      "content": ""
+      "content": "The index of the party creating a P2SH multisig address. The indices can\nbe determined independently by lexicographically sorting the purpose\npublic keys of each cosigner. Each cosigner creates addresses on its own\nbranch, even though they have independent extended master public key, as\nexplained in the \\\"Address generation\\\" section.\n\nNote that the master public key is not shared amongst the cosigners.\nOnly the hardened purpose extended public key is shared, and this is\nwhat is used to derive child extended public keys.\n\nSoftware should only use indices corresponding to each of the N\ncosigners sequentially. For example, for a 2-of-3 HDPM wallet, having\nthe following purpose public keys:\n\n03a473275a750a20b7b71ebeadfec83130c014da4b53f1c4743fcf342af6589a38\n039863fb5f07b667d9b1ca68773c6e6cdbcac0088ffba9af46f6f6acd153d44463\n03f76588e06c0d688617ef365d1e58a7f1aa84daa3801380b1e7f12acc9a69cd13\n\nit should use `m / 45 ' / 0 / *` for\n`039863fb5f07b667d9b1ca68773c6e6cdbcac0088ffba9af46f6f6acd153d44463`,\n`m / 45 ' / 1 / *` for\n`03a473275a750a20b7b71ebeadfec83130c014da4b53f1c4743fcf342af6589a38`,\nand `m / 45 ' / 2 / *` for\n`03f76588e06c0d688617ef365d1e58a7f1aa84daa3801380b1e7f12acc9a69cd13`, as\ndictated by their lexicographical order.\n\nSoftware needs to discover all used indexes when importing the seed from\nan external source. Such algorithm is described in \\\"Address discovery\\\"\nchapter.\n\nNon-hardened derivation is used at this level."
     },
     {
       "header": "Change",
-      "content": ""
+      "content": "Constant 0 is used for external chain and constant 1 for internal chain\n(also known as change addresses). External chain is used for addresses\nthat are meant to be visible outside of the wallet (e.g. for receiving\npayments). Internal chain is used for addresses which are not meant to\nbe visible outside of the wallet and is used for return transaction\nchange.\n\nFor example, if cosigner 2 wants to generate a change address, he would\nuse `m / 45 ' / 2 / 1 / *`, and `m / 45 ' / 2 / 0 / *` for a receive\naddress.\n\nNon-hardened derivation is used at this level."
     },
     {
       "header": "Address Index {#address_index}",
-      "content": ""
+      "content": "Addresses are numbered from index 0 in sequentially increasing manner.\nThis number is used as child index in BIP32 derivation.\n\nNon-hardened derivation is used at this level."
     },
     {
       "header": "HDPM Wallet High-level Description {#hdpm_wallet_high_level_description}",
-      "content": ""
+      "content": "Each party generates their own extended master keypair and shares the\nextended purpose\\' public key with the others, which is stored\nencrypted. Each party can generate any of the other\\'s derived public\nkeys, but only his own private keys."
     },
     {
       "header": "Address Generation Procedure {#address_generation_procedure}",
-      "content": ""
+      "content": "When generating an address, each party can independently generate the N\nneeded public keys. They do this by deriving the public key in each of\nthe different trees, but using the same path. They can then generate the\nmultisig script (by lexicographically sorting the public keys) and the\ncorresponding p2sh address. In this way, each path corresponds to an\naddress, but the public keys for that address come from different trees."
     },
     {
       "header": "Receive address case {#receive_address_case}",
-      "content": ""
+      "content": "Each cosigner generates addresses only on his own branch. One of the n\ncosigners wants to receive a payment, and the others are offline. He\nknows the last used index in his own branch, because only he generates\naddresses there. Thus, he can generate the public keys for all of the\nothers using the next index, and calculate the needed script for the\naddress.\n\nExample: Cosigner #2 wants to receive a payment to the shared wallet.\nHis last used index on his own branch is 4. Then, the path for the next\nreceive address is `m/45'/2/0/5`. He uses this same path in all of the\ncosigners trees to generate a public key for each one, and from that he\ngets the new p2sh address."
     },
     {
       "header": "Change address case {#change_address_case}",
-      "content": ""
+      "content": "Again, each cosigner generates addresses only on his own branch. One of\nthe n cosigners wants to create an outgoing payment, for which he\\'ll\nneed a change address. He generates a new address using the same\nprocedure as above, but using a separate index to track the used change\naddresses.\n\nExample: Cosigner #5 wants to send a payment from the shared wallet, for\nwhich he\\'ll need a change address. His last used change index on his\nown branch is 11. Then, the path for the next change address is\n`m/45'/5/1/12`. He uses this same path in all of the cosigners trees to\ngenerate a public key for each one, and from that he gets the new p2sh\naddress."
     },
     {
       "header": "Transaction creation and signing {#transaction_creation_and_signing}",
-      "content": ""
+      "content": "When creating a transaction, first one of the parties creates a\nTransaction Proposal. This is a transaction that spends some output\nstored in any of the p2sh multisig addresses (corresponding to any of\nthe copayers\\' branches). This proposal is sent to the other parties,\nwho decide if they want to sign. If they approve the proposal, they can\ngenerate their needed private key for that specific address (using the\nsame path that generated the public key in that address, but deriving\nthe private key instead), and sign it. Once the proposal reaches m\nsignatures, any cosigner can broadcast it to the network, becoming\nfinal. The specifics of how this proposal is structured, and the\nprotocol to accept or reject it, belong to another BIP, in my opinion."
     },
     {
       "header": "Address discovery {#address_discovery}",
-      "content": ""
+      "content": "When the master seed is imported from an external source the software\nshould start to discover the addresses in the following manner:\n\n1.  for each cosigner:\n2.  derive the cosigner\\'s node (`m / 45' / cosigner_index`)\n3.  for both the external and internal chains on this node\n(`m / 45' / cosigner_index / 0` and `m / 45' / cosigner_index / 1`):\n4.  scan addresses of the chain; respect the gap limit described below\n\nPlease note that the algorithm uses the transaction history, not address\nbalances, so even if the address has 0 coins, the program should\ncontinue with discovery. Opposite to BIP44, each cosigner branch needs\nto be checked, even if the earlier ones don\\'t have transactions"
     },
     {
       "header": "Address gap limit {#address_gap_limit}",
-      "content": ""
+      "content": "Address gap limit is currently set to 20. If the software hits 20 unused\naddresses (no transactions associated with that address) in a row, it\nexpects there are no used addresses beyond this point and stops\nsearching the address chain.\n\nWallet software should warn when user is trying to exceed the gap limit\non an external chain by generating a new address."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "This structure provides a general way of doing HDPM wallets between\nm-of-n parties. Here are some explanations about the design decisions\nmade.\n\nThe reason for using separate branches for each cosigner is we don\\'t\nwant two of them generating the same address and receiving simultaneous\npayments to it. The ideal case is that each address receives at most one\npayment, requested by the corresponding cosigner."
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "cosigner_index   change    address_index   path\n---------------- --------- --------------- ----------------------\nfirst            receive   first           m / 45\\' / 0 / 0 / 0\nfirst            receive   second          m / 45\\' / 0 / 0 / 1\nfirst            receive   fifth           m / 45\\' / 0 / 0 / 4\nfirst            change    first           m / 45\\' / 0 / 1 / 0\nfirst            change    second          m / 45\\' / 0 / 1 / 1\nsecond           receive   first           m / 45\\' / 1 / 0 / 0\nthird            change    tenth           m / 45\\' / 2 / 1 / 9"
     },
     {
       "header": "Compatible wallets {#compatible_wallets}",
-      "content": ""
+      "content": "-   [Copay wallet](https://copay.io \"wikilink\")\n([source](https://github.com/bitpay/copay \"wikilink\"))"
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP43 - Purpose Field for Deterministic\nWallets](bip-0043.mediawiki \"wikilink\")\n-   [Original mailing list\ndiscussion](https://www.mail-archive.com/bitcoin-development@lists.sourceforge.net/msg05156.html \"wikilink\")"
     }
   ]
 }

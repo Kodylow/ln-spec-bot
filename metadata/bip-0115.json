@@ -12,47 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a new opcode (`OP_CHECKBLOCKATHEIGHT`) for the\nBitcoin scripting system that allows construction of transactions which\nare valid only on specific blockchains."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "`OP_CHECKBLOCKATHEIGHT` redefines the existing `OP_NOP5` opcode.\n\nWhen this opcode is executed:\n\n-   If the stack has fewer than 2 elements, the script fails.\n-   If the top item on the stack cannot be interpreted as a\nminimal-length 32-bit CScriptNum, the script fails.\n-   The top item on the stack is interpreted as a block height\n(ParamHeight).\n-   If the blockchain (in the context of the execution) does not have\nParamHeight blocks prior to the one including this transaction, the\nscript fails (this failure must not be cached across blocks; it is\nequivalent to non-final status).\n-   If ParamHeight specifies a block deeper than 52596 blocks in the\nchain (including negative values), the opcode completes successfully\nand script continues as normal.\n-   The second-to-top item on the stack is interpreted as a block hash\n(ParamBlockHash).\n-   If ParamBlockHash is longer than 28 bytes, the script fails.\n-   If ParamBlockHash does not match the equivalent ending bytes of the\nblock hash specified by ParamHeight, the script fails.\n\nOtherwise, script execution will continue as if a NOP had been executed."
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP will be deployed by \\\"version bits\\\"\n[BIP9](bip-0009.mediawiki \"wikilink\") with the **name** \\\"cbah\\\" and\nusing **bit** TBD.\n\nFor Bitcoin **mainnet**, the BIP9 **starttime** will be TBD (Epoch\ntimestamp TBD) and BIP9 **timeout** will be TBD (Epoch timestamp TBD).\n\nFor Bitcoin **mainnet**, the BIP9 **starttime** will be TBD (Epoch\ntimestamp TBD) and BIP9 **timeout** will be TBD (Epoch timestamp TBD)."
     },
     {
       "header": "Motivation",
-      "content": ""
-    },
-    {
-      "header": "Securely recovering from double spends {#securely_recovering_from_double_spends}",
-      "content": ""
+      "content": "### Securely recovering from double spends {#securely_recovering_from_double_spends}\n\nIn some circumstances, users may wish to spend received bitcoins before\nthey have confirmed on the blockchain (Tx B1). However, if the\ntransaction sending them those bitcoins (Tx A1) is double-spent, the\nwallet must re-issue their own transaction spending them (Tx B2). So\nlong as the double-spend of the incoming transaction (Tx A2) also pays\nthe wallet, this can be managed by simply updating the outgoing\ntransaction with the new outpoint and resigning. However, if the\ndouble-spend does not pay the wallet, the situation is presently\nirrecoverable: it must spend different, non-conflicting TXOs in Tx B2,\nwhich allows an attacker to then reorganise the chain (reversing the\nincoming transaction\\'s double-spend) and confirm both of his\ntransactions Tx B1 and Tx B2.\n\nBy adding `OP_CHECKBLOCKATHEIGHT`, the wallet can issue Tx B2 with a\ncondition that the block confirming Tx A2 is in the history, thus\neliminating this risk."
     },
     {
       "header": "Replay protection in the event of a persistent blockchain split {#replay_protection_in_the_event_of_a_persistent_blockchain_split}",
-      "content": ""
+      "content": "In the event of a persistent blockchain split, some mechanism is desired\nby which the UTXOs valid in either chain may be spent without the\ntransaction being validly replayable on the other chain.\n\nThis can be guaranteed by choosing a block which exists only on either\nside of the split, and pinning (using `OP_CHECKBLOCKATHEIGHT`) common\nUTXOs to be spent only on chains based on that block."
     },
     {
       "header": "Best practices for wallets {#best_practices_for_wallets}",
-      "content": ""
+      "content": "To avoid unnecessary conflicts when a chain is reorganized, wallets\nshould always avoid specifying the last 100 blocks when practical.\nWallets that use recent blocks when unavoidable SHOULD actively monitor\nthe network and re-create transactions that are reorganised out with\nupdated block hashes. Unless it conflicts with local/user security\npolicies, wallets SHOULD retain the private key in memory to re-sign\nsuch transactions until the pinned block is at least 100 blocks deep\ninto the chain.\n\nFor ordinary usage, wallets SHOULD specify the ParamBlockHash as 16\nbytes."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "How is this different from the transaction\\'s lock-time?\n\n-   The lock-time specifies a time or block height before a transaction\nbecomes valid. `OP_CHECKBLOCKATHEIGHT`, on the other hand, specifies\na specific block\\'s hash.\n\nWhy are block heights required to be absolute, rather than relative?\n\n-   A relative block height would allow for creation of transactions\nwhich are valid at block N, but not N+1. This is carefully avoided\nby Bitcoin to ensure that if any given block is reorganised out,\nnon-malicious transactions can be simply re-confirmed in a later\nblock.\n\nWhy are blocks older than 52596 deep in the chain not verified?\n\n-   This is to avoid creating an infinite storage requirement from all\nfull nodes which would be necessary to maintain all the block\nheaders indefinitely. 52596 block headers requires a fixed size of\napproximately 4 MB.\n-   In any case where you might want to specify a deeper block, you can\nalso just as well specify a more recent one that descends from it.\n-   It is assumed that 1 year is sufficient time to double-spend any\ncommon UTXOs on all blockchains of interest.\n-   If a deeper check is needed, it can be softforked in. Making the\ncheck more shallow, on the other hand, is a hardfork.\n\nWhy is ParamBlockHash allowed to match less than the full block hash?\n\n-   In a chain split, it is sufficient to check only a few bytes to\navoid replay.\n-   In all scenarios, it is likely sufficient to check only a minority\nof the full hash to avoid any realistic chance of replay.\n-   Allowing less than the full hash to be specified saves space in\ntransaction data.\n-   Using a single byte can be combined with other opcodes (such as\n`OP_LESSTHAN`) to enable on-chain gambling logic.\n\nWhat if ParamBlockHash has leading zeros? Should this be prevented?\n\n-   If leading zeros are included, they should be compared to the actual\nblock hash. (If they were truncated, fewer bytes would be compared.)\n-   It is unlikely that the leading zeros will ever be necessary for\nsufficient precision, so the additional space is not a concern.\n-   Since all block hashes are in principle shorter than than 29 bytes,\nParamBlockHash may not be larger than 28 bytes.\n\nWhy is it safe to allow checking blocks as recently as the immediate\nprevious block?\n\n-   This should only be used when necessary (ie, the deeper block is not\nsufficient), and when the wallet can actively issue updates should\nthe blockchain reorganise.\n-   While this allows intentionally creating a transaction which may be\ninvalid in a reorganization, the same can already be accomplished by\ncreating double spends."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`OP_NOP5` ought to be forbidden by policy by all miners for future\nextensions such as this, so old miners will under no circumstances\nproduce blocks which would now be considered invalid under the new\nrules. However, miners must still upgrade to avoid accepting and\nbuilding on top of such a possible invalid block as part of an attack.\n\nOld nodes will likely also not relay transactions using this opcode for\nthe same extensibility reasons, but this is not important since the rule\ncannot be verified deterministically outside the context of a block."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/compare/master>\\...luke-jr:cbah"
     }
   ]
 }

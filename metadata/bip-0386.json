@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies `tr()` output script descriptors. `tr()`\ndescriptors take a key and optionally a tree of scripts and produces a\nP2TR output script."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Taproot added one additional standard output script format: P2TR. These\nexpressions allow specifying those formats as a descriptor."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "A new script expression is defined: `tr()`. A new expression is defined:\nTree Expressions"
     },
     {
       "header": "Tree Expression {#tree_expression}",
-      "content": ""
+      "content": "A Tree Expression (denoted `TREE`) is an expression which represents a\ntree of scripts. The way the tree is represented in an output script is\ndependent on the higher level expressions.\n\nA Tree Expression is:\n\n-   Any Script Expression that is allowed at the level this Tree\nExpression is in.\n-   A pair of Tree Expressions consisting of:\n-   An open brace `{`\n-   A Tree Expression\n-   A comma `,`\n-   A Tree Expression\n-   A closing brace `}`"
     },
     {
       "header": "`tr()`",
-      "content": ""
+      "content": "The `tr(KEY)` or `tr(KEY, TREE)` expression can only be used as a top\nlevel expression. All key expressions under any `tr()` expression must\ncreate x-only public keys.\n\n`tr(KEY)` takes a single key expression as an argument and produces a\nP2TR output script which does not have a script path. Each key produced\nby the key expression is used as the internal key of a P2TR output as\nspecified by [BIP 341](bip-0341.mediawiki#cite_ref-22-0 \"wikilink\").\nSpecifically, \\\"If the spending conditions do not require a script path,\nthe output key should commit to an unspendable script path instead of\nhaving no script path. This can be achieved by computing the output key\npoint as *Q = P + int(hash~TapTweak~(bytes(P)))G*.\\\"\n\ninternal_key:       lift_x(KEY)\n32_byte_output_key: internal_key + int(HashTapTweak(bytes(internal_key)))G\nscriptPubKey:       OP_1 <32_byte_output_key>\n\n`tr(KEY, TREE)` takes a key expression as the first argument, and a tree\nexpression as the second argument and produces a P2TR output script\nwhich has a script path. The keys produced by the first key expression\nare used as the internal key as specified by [BIP\n341](bip-0341.mediawiki#Constructing_and_spending_Taproot_outputs \"wikilink\").\nThe Tree expression becomes the Taproot script tree as described in BIP\n341. A merkle root is computed from this tree and combined with the\ninternal key to create the Taproot output key.\n\ninternal_key:       lift_x(KEY)\nmerkle_root:        HashTapBranch(TREE)\n32_byte_output_key: internal_key + int(HashTapTweak(bytes(internal_key) || merkle_root))G\nscriptPubKey:       OP_1 <32_byte_output_key>"
     },
     {
       "header": "Modified Key Expression {#modified_key_expression}",
-      "content": ""
+      "content": "Key Expressions within a `tr()` expression must only create x-only\npublic keys. Uncompressed public keys are not allowed, but compressed\npublic keys would be implicitly converted to x-only public keys. The\nkeys derived from extended keys must be serialized as x-only public\nkeys. An additional key expression is defined only for use within a\n`tr()` descriptor:\n\n-   A 64 hex character string representing an x-only public key"
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`tr()` descriptors use the format and general operation specified in\n[380](bip-0380.mediawiki \"wikilink\"). As these are a set of wholly new\ndescriptors, they are not compatible with any implementation. However\nthe scripts produced are standard scripts so existing software are\nlikely to be familiar with them.\n\nTree Expressions are largely incompatible with existing script\nexpressions due to the restrictions in those expressions. As of\n2021-06-27, the only allowed script expression that can be used in a\ntree expression is `pk()`. However there will be future BIPs that\nspecify script expressions that can be used in tree expressions."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "`tr()` descriptors have been implemented in Bitcoin Core since version\n22.0."
     }
   ]
 }

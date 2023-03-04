@@ -13,63 +13,55 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines a script template format that can be used by wallets to\ndeterministically generate scripts with specific authorization policies\nusing the key derivation mechanism defined in BIP32."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Currently existing wallets typically issue scripts in only a tiny\nhandful of widely used formats. The most popular formats are\npay-to-pubkey-hash and m-of-n pay-to-script-hash (BIP16). However,\ndifferent wallets tend to use mutually incompatible derivation schemes\nto generate signing keys and construct scripts from them. Moreover, with\nthe advent of hashlocked and timelocked contracts (BIP65, BIP112), it is\nnecessary for different wallets to be able to cooperatively generate\neven more sophisticated scripts.\n\nIn addition, there\\'s a lot of ongoing work in the development of\nmultilayered protocols that use the blockchain as a settlement layer\n(i.e. the Lightning Network). These efforts require sufficiently\ngeneralized templates to allow for rapidly evolving script designs.\n\nThis BIP provides a generalized format for constructing a script\ntemplate that guarantees that different wallets will all produce the\nsame scripts for a given set of derivation paths according to BIP32."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Keys",
-      "content": ""
+      "content": "### Keys\n\nAn individual key is determined by a BIP32 derivation path and an index.\nFor convenience, we introduce the following notation:\n\n**A**~k~ = (derivation path for A)/k"
     },
     {
       "header": "Key Groups {#key_groups}",
-      "content": ""
+      "content": "Let **m**~i~ denote distinct BIP32 derivation paths. We define a key\ngroup of n keys as a set of key derivation paths with a free index k:\n\n{**K**~k~} = { **m**~1~/k, **m**~2~/k, **m**~3~/k, \\..., **m**~n~/k }\n\nKey groups are useful for constructing scripts that are symmetric in a\nset of keys. Scripts are symmetric in a set of keys if the semantics of\nthe script is unaffected by permutations of the keys. Key groups enforce\na canonical form and can improve privacy."
     },
     {
       "header": "Sorting",
-      "content": ""
+      "content": "We define a lexicographic sorting of the keys. (TODO: specification of\nsorting conventions - compressed pubkeys, encoding, etc\\...)\n\nDefine {**K**~k~}~j~ to be the jth element of the sorted keys for\nderivation index k."
     },
     {
       "header": "Script Templates {#script_templates}",
-      "content": ""
+      "content": "We construct script templates by inserting placeholders for data into a\nscript. To denote a placeholder, we use the following notation:\n\n*Script*(**A**) = opcodes \\[**A**\\] opcodes\n\nWe extend this notation to an arbitrary number of placeholders:\n\n*Script*(**X1**, **X2**, \\..., **Xn**) = opcodes \\[**X1**\\] opcodes\n\\[**X2**\\] opcodes \\... opcodes \\[**Xn**\\] opcodes\n\nWe introduce the following convenient notation for sorted key groups:\n\n\\[{**K**~k~}\\] = \\[{**K**~k~}~1~\\] \\[{**K**~k~}~2~\\] \\...\n\\[{**K**~k~}~n~\\]"
     },
     {
       "header": "Operations on Keys {#operations_on_keys}",
-      "content": ""
+      "content": "In some applications, we might want to insert the result of some\noperation performed on a key rather than the key itself into the script.\nFor example, we might want to insert a Hash160 of key **A**~k~. We can\nuse the following notation:\n\n\\[*Hash160*(**A**~k~)\\]"
     },
     {
       "header": "Encoding",
-      "content": ""
+      "content": "TODO"
     },
     {
       "header": "Examples",
-      "content": ""
-    },
-    {
-      "header": "2-of-3 Multisig {#of_3_multisig}",
-      "content": ""
+      "content": "### 2-of-3 Multisig {#of_3_multisig}\n\nThe script template is defined by:\n\n*Script*(**X**) = 2 \\[**X**\\] 3 OP_CHECKMULTISIG\n\nLetting **K**~k~ = { **m**~1~/k, **m**~2~/k, **m**~3~/k }, the *k*th\nscript for this key group is denoted by *Script*({**K**~k~})."
     },
     {
       "header": "1-of-1 or 2-of-3 {#of_1_or_2_of_3}",
-      "content": ""
+      "content": "The script template is defined by:\n\n*Script*(**A**, **B**) =\\\nOP_DUP \\[**A**\\] OP_CHECKSIG\\\nOP_NOTIF\\\n2 \\[**B**\\] 3 OP_CHECKMULTISIGVERIFY\\\nOP_NOTIF\\\nOP_ENDIF\\\nOP_TRUE\\\nLet **M**~k~ = **m**/k be a key of a superuser that can authorize all\ntransactions and {**K**~k~} be a key group of three users that can only\nauthorize transactions if at least two of them agree.\n\nThe *k*th script is given by *Script*(**M**~k~, {**K**~k~})."
     },
     {
       "header": "Timelocked Contract {#timelocked_contract}",
-      "content": ""
+      "content": "The output is payable to Alice immediately if she knows the private key\nfor **A**~k~. Bob must know the private key for **B**~k~ and also wait\nfor a timeout **t** before being able to spend the output.\n\nThe script template is defined by:\n\n*Script*(**A**, **B**, **T**) =\\\nOP_IF\\\nOP_DUP OP_HASH160 \\[*Hash160*(**A**)\\] OP_EQUALVERIFY\nOP_CHECKSIG\\\nOP_ELSE\\\n\\[**T**\\] OP_CHECKLOCKTIMEVERIFY OP_DROP\\\nOP_DUP OP_HASH160 \\[*Hash160*(**B**)\\] OP_EQUALVERIFY\nOP_CHECKSIG\\\nOP_ENDIF\n\nThe *k*th script with timeout **t** is given by *Script*(**A**~k~,\n**B**~k~, **t**)."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [BIP16 - Pay to Script Hash](bip-0016.mediawiki \"wikilink\")\n-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP65 - OP_CHECKLOCKTIMEVERIFY](bip-0065.mediawiki \"wikilink\")\n-   [BIP112 - CHECKSEQUENCEVERIFY](bip-0112.mediawiki \"wikilink\")\n-   [Lightning Network\nWhitepaper](https://lightning.network/lightning-network-paper.pdf \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

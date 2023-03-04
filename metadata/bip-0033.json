@@ -11,51 +11,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "As the Bitcoin network scales, roles are fast becoming specialised. In\nthe beginning, a single Bitcoin user would perform the synonymous roles\nof miner, merchant and end-user. With the growth however of this system,\nthese functions are being abstracted away to specialised services as a\nnatural part of Bitcoin\\'s growth.\n\nBitcoin\\'s blockchain becomes more unwieldy for end users over time,\nnegatively affecting the usability of Bitcoin clients. As it grows, it\nbecomes ever more impractical to deal with on portable devices or low\nend machines. Several proposals have been put forward to deal with this\nsuch as lightweight (headers-only) clients and skipping validation for\nblocks before the last checkpoint. However these measures are at best\nstop-gap workarounds to stave off a growing problem.\n\nThis document will examine a proposal which will be termed *stratized\nnodes*, a modification of an earlier concept termed *blockchain\nservice*."
     },
     {
       "header": "History",
-      "content": ""
+      "content": "Jan Moller created BCCAPI in 2011. BCCAPI allowed a user\\'s client to\ndelegate blockchain interaction to a remote server. This server would\nstore and manage the blockchain while the user client would run queries\nagainst that server.\n\nThomasV later created Electrum server. BCCAPI\\'s server backend was\nproprietary, and Electrum required a full Free Software stack.\nElectrum\\'s server was an adhoc temporary replacement. As it grew and\nbecame used, issues started to appear in its design.\n\nMarek Palatinus (slush) drafted a new standard called Stratum to replace\nElectrum\\'s server. Stratum has multiple transports and is usable as a\nblockchain server by merchants, miners and user-clients. Electrum moved\nto using a Stratum implementation first relying on ABE/bitcoind and more\nrecently libbitcoin.\n\nStratum is unmaintained by Marek Palatinus, suffers from easy resource\nstarvation and denial of service attacks, and is insecure. The proposal\nspecified here is intended to replace the Stratum\\'s role as a\nblockchain for user-clients. The proposal here is solely concerned with\nremoving the onus of blockchain validation and lookups from user-clients\nto specialised services in a secure manner. Any secondary benefits or\nuses are purely incidental."
     },
     {
       "header": "Overview",
-      "content": ""
+      "content": "During the initial handshake between Bitcoin nodes, a version packet is\nsent. version packets have a bitfield called services. Nodes can fill\nthis field to tell the network how they behave and which services they\nsupport. NODE_NETWORK (1) means a node can be asked for full blocks for\nexample.\n\nWe propose two more values of NODE_SERVICE (2) and NODE_STRATIZED (4)."
     },
     {
       "header": "NODE_SERVICE",
-      "content": ""
+      "content": "-   A blockchain service which supports the additional messages\n\\\"getoutputs\\\" and \\\"getspends\\\".\n-   Does not respond to \\\"getdata\\\" messages by itself (unless\nNODE_NETWORK is specified)\n-   If NODE_NETWORK is specified, then \\\"getdata\\\" for transactions will\nretrieve them not only from the memory pool but also check the\nblockchain if necessary."
     },
     {
       "header": "NODE_STRATIZED",
-      "content": ""
+      "content": "-   A node which uses the stratized strategy specified in this document.\n-   NODE_STRATIZED will relay inventories for accepted transactions.\n-   Does not support \\\"getblocks\\\" as stratized nodes do not contain the\nentire blockchain.\n\nApart from the differences noted above, the nodes are otherwise\nunchanged in their behaviour from NODE_NETWORK."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Initialisation",
-      "content": ""
+      "content": "### Initialisation\n\nFour new messages are defined which are represented below in C-like\npseudocode.\n\n\\\"getoutputs\\\"\n\nstruct decoded_address\n{\nuint8_t payment_type;\nuint8_t address_hash[16];\n};\n\nstruct get_outputs\n{\ndecoded_address dest;\n};\n\n\\\"outputs\\\"\n\nstruct point_t\n{\nuint8_t hash[32];\nuint32_t index;\n};\n\nstruct outputs\n{\ndecoded_address dest;\nuint64_t number_outputs;  // variable uint\npoint_t outpoints[];\n};\n\n\\\"getspend\\\"\n\nstruct get_spend\n{\npoint_t outpoint;\n};\n\n\\\"spend\\\"\n\nstruct spend\n{\npoint_t outpoint, inpoint;\n};\n\nThese four messages allow a node to discover the history of a Bitcoin\naddress without needing direct access to the blockchain.\n\nA typical use case might look like:\n\n1.  Send \\\"getoutputs\\\" for a decoded Bitcoin address.\n2.  Receive \\\"outputs\\\", and loop through each contained output point:\n1.  Send \\\"getdata\\\" to download the transaction for that point.\n2.  Send \\\"getspend\\\" for each output point.\n3.  Receive \\\"spend\\\":\n1.  Send \\\"getdata\\\" to download the transaction for that input\npoint.\n\nThis sequence allows the gradual but fast build up of history for an\naddress."
     },
     {
       "header": "Updates",
-      "content": ""
+      "content": "Nodes receive \\\"inv\\\" messages as normal from service nodes, issuing\n\\\"getdata\\\" to download the block or transaction data. From this they\ncheck for newly sent (in the input points) or received (in the output\npoints) payments in the transaction data.\n\nNote that blocks must at minimum have their merkle root validated and\ntransactions must be checked for uniqueness by stratized nodes."
     },
     {
       "header": "Security",
-      "content": ""
+      "content": "The concern here is that stratized nodes are at the mercy of blockchain\nservices. This proposal deals with that issue by designing this protocol\nin such a way that the implementation can resolve the common history\nbetween multiple services.\n\nA stratized node will typically connect to 8 blockchain services. It\nwill only accept an output, spend or inventory vector that has been sent\nby a common subset of all those services (6 in our example). This\nspreads the risk between all services, and does not make a node\nvulnerable to any one rogue blockchain service."
     },
     {
       "header": "Privacy",
-      "content": ""
+      "content": "The other strategy for thin clients termed *headers-only* or\n*Simplified. Payment. Verification.* have the same privacy issues as\nthis proposal. SPV resolves this problem by sending out fake requests\nfor transaction data which obfuscates the client data. By sending out a\nsufficient number of fake requests, privacy can be kept to a sufficient\nlevel."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "NODE_SERVICE does not respond to \\\"getdata\\\" requests by itself (unless\nused in conjunction with NODE_NETWORK) to prevent starvation attacks.\nThis allows a single trusted NODE_SERVICE architecture (possibly acting\nas a front-end to multiple backends) to service very many nodes while\nexternalising the costs to the Bitcoin network.\n\nNODE_STRATIZED tries its best to maintain the facade and help upkeep the\nBitcoin network (see relaying), but cannot support \\\"getblocks\\\" as it\ndoes not have the entire blockchain."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "This proposal is an addon to the current Bitcoin network, and is\ncompletely backwards compatible."
     }
   ]
 }

@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies a BIP8 (LOT=true) deployment to activate\ntaproot."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The Taproot soft fork upgrade has been assessed to have overwhelming\ncommunity consensus and hence should attempt to be activated. Lessons\nhave been learned from the BIP148 and BIP91 deployments in 2017 with\nregards to giving many months of advance warning before the mandatory\nsignaling is attempted. The mandatory signaling is only required if\nminers have failed to meet the signaling threshold during the BIP8\ndeployment. It is important that mandatory signaling is included as\nwithout it miners would effectively have the ability to indefinitely\nblock the activation of a soft fork with overwhelming consensus."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "This BIP will begin an activation signaling period using bit 2 at\nblockheight 681408 with a minimum activation height of 709632 and an\nactivation threshold of 90%. The signaling period will timeout at\nblockheight 760032 with a latest activation height of 762048.\nLockinontimeout (LOT) is set to true so mandatory signaling will be\nenforced in the last signaling period before the timeout height. Blocks\nwithout the signaling bit 2 set run the risk of being rejected during\nthis period if taproot is not locked in prior. This BIP will cease to be\nactive when taproot is locked in."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   <https://github.com/BitcoinActivation/bitcoin>"
     },
     {
       "header": "Backward Compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "As a soft fork, older software will continue to operate without\nmodification. Non-upgraded nodes, however, will consider all SegWit\nversion 1 witness programs as anyone-can-spend scripts. They are\nstrongly encouraged to upgrade in order to fully validate the new\nprograms."
     },
     {
       "header": "Compatibility with later alternative activations {#compatibility_with_later_alternative_activations}",
-      "content": ""
+      "content": "The activation mechanism \"Speedy Trial\" as proposed by Russell O'Connor\nand outlined in this bitcoin-dev mailing list\n[post](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2021-March/018583.html)\nby David Harding was released in Bitcoin Core. It is effectively a BIP8\nactivation mechanism with one exception: start height and timeout height\nwere defined using median time past (MTP) rather than block heights. It\nuses signaling bit 2, was deployed between midnight April 24th 2021 and\nmidnight August 11th 2021, has a minimum activation height of 709632 and\nintends to activate BIPs 340, 341, and 342. The BIP8(LOT=true)\ndeployment is compatible with the \"Speedy Trial\" deployment in Bitcoin\nCore as there was not a discrepancy between MTP and block height for the\ndefined start heights.\n\nThe BIP8 (LOT=true) deployment has also been deliberately designed to be\ncompatible with a future BIP8(LOT=false) or BIP8(LOT=true) deployment in\nBitcoin Core assuming Bitcoin Core releases one of these activation\nmechanisms in the event of the Speedy Trial deployment failing to\nactivate."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The deployment of BIP148 demonstrated that multiple implementations with\ndifferent activation mechanisms can incentivize the necessary actors to\nact so that the different deployments activate in sync. A BIP8 LOT=true\ndeployment can run in parallel with other BIP8 activation mechanisms\nthat have eventual mandatory signaling or no mandatory signaling.\nEventual mandatory signaling ensures that miners cannot prevent the\nactivation of a desired feature with community consensus indefinitely."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Shaolin Fry and Luke Dashjr for their work on BIP148 and BIP8\nwhich were important prerequisites for this proposal."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [BIP8 Version bits with lock-in by\nheight](bip-0008.mediawiki \"wikilink\")\n-   [BIP148 Mandatory activation of segwit\ndeployment](bip-0148.mediawiki \"wikilink\")\n-   [BIP340 Schnorr Signatures for\nsecp256k1](bip-0340.mediawiki \"wikilink\")\n-   [BIP341 Taproot: SegWit version 1 spending\nrules](bip-0341.mediawiki \"wikilink\")\n-   [BIP342 Validation of Taproot\nScripts](bip-0342.mediawiki \"wikilink\")\n-   [Taproot benefits](https://taproot.works/taproot-faq/)"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is dual licensed as BSD 3-clause, and Creative Commons CC0\n1.0 Universal."
     }
   ]
 }

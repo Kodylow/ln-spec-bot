@@ -12,35 +12,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "An extension to the Wallet Import Format (WIF) to specify what kind of\nbitcoin address the private key corresponds to."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "There are several types of bitcoin addresses which can all be associated\nwith a given private key: P2PKH (legacy `1...` format), P2SH-P2WPKH\n(SegWit public key inside P2SH), P2WPKH (bech32), etc.\n\nWhile private keys have a 1-byte suffix indicating whether the\ncorresponding public key is compressed (`0x01`) or not (through suffix\nabsence), there is no way of knowing what kind of bitcoin address were\nassociated with the private key. As a result, when importing a private\nkey, the wallet has to assume all kinds, and keep track of each possible\nalternative.\n\nBy extending the suffix, we can specify what kind of bitcoin address was\nassociated with a given private key."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Currently, private keys are stored as a uint256 (private key data)\nfollowed by an optional uint8 (compressed flag). The latter is extended\nto specify the address types:\n\nValue       Type                 Compr   Clarification\n----------- -------------------- ------- -----------------------------------------------------------------\nNo suffix   P2PKH_UNCOMPRESSED   No      Uncompressed legacy public key. Unknown public key format\n`0x01`      P2PKH_COMPRESSED     Yes     Compressed legacy public key. Unknown public key format\n`0x10`      P2PKH                Yes     Compressed legacy public key. Legacy public key format (`1...`)\n`0x11`      P2WPKH               Yes     Bech32 format (native Segwit)\n`0x12`      P2WPKH_P2SH          Yes     Segwit nested in BIP16 P2SH (`3...`)\n\nWhen a wallet imports a private key, it will have two outcomes:\n\n-   the key is using one of the legacy types, in which case all types\nmust be accounted for\n-   the key is using one of the extended types, in which case the wallet\nneed only track the specific corresponding address\n\nNote: the difference between \\`0x01\\` and \\`0x10\\` is that the former\ncan correspond to any of the types above, whereas the latter \\*only\\*\ncorresponds to a P2PKH (legacy non-segwit)."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This proposal is not backwards compatible, in that software that does\nnot recognize the new types will not understand the compressed flag. It\nwould be trivial to change this, by keeping the \\'uncompressed\\' state\nas it is (no suffix) and changing \\'compressed\\' to be \\'anything not\n0\\', as opposed to \\'the value 1\\'.\n\nThe proposal *is* backwards compatible in that new wallet software will\nalways understand the old WIF format, however. It will, as it does\ntoday, assume that any kind of bitcoin address is possible, and will\nhave to track all of them, as it has to today."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "This BIP is based on the initial proposal by Thomas Voegtlin (thomasv at\nelectrum dot org) on the Bitcoin Dev mailing list[^1] and the Electrum\n3.0 implementation[^2]"
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "There is a partial implementation which adds, but does not use, the\ntypes described in this BIP here:\n<https://github.com/bitcoin/bitcoin/pull/12869>"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "```{=html}\n<references/>\n```"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is licensed under the Creative Commons CC0 1.0 Universal\nlicense.\n\n[^1]: <https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-September/015007.html>\n\n[^2]: <https://github.com/spesmilo/electrum/blob/82e88cb89df35288b80dfdbe071da74247351251/RELEASE-NOTES#L95-L108>"
     }
   ]
 }

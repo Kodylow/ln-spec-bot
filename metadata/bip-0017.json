@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a new opcode (OP_CHECKHASHVERIFY) for the Bitcoin\nscripting system, and a new \\'standard\\' transaction type that uses it\nto enables the receiver of bitcoins to specify the transaction type\nneeded to re-spend them."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The purpose of pay-to-script-hash is to move the responsibility for\nsupplying the conditions to redeem a transaction from the sender of the\nfunds to the redeemer.\n\nThe benefit is allowing a sender to fund any arbitrary transaction, no\nmatter how complicated, using a fixed-length 20-byte hash that is short\nenough to scan from a QR code or easily copied and pasted."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "OP_CHECKHASHVERIFY will re-define the existing OP_NOP2 opcode, and will\nfunction as follows when executed:\n\n-   First, hash the end of the prior script (in the general case,\nscriptSig; if no prior script, a null string is hashed) beginning\nfrom the last evaluated OP_CODESEPARATOR onward (or from the\nbeginning of the script, if no OP_CODESEPARATOR was present)\n-   Then, compare this with the item on the top of the stack (if there\nis none, the script fails immediately)\n-   If the hashes match, do nothing, proceed as if an OP_NOP; if they do\nnot match, the script fails immediately.\n-   Note that in the case of a matched hash, the top stack item (the\nhash being compared with) is `<u>`{=html}not`</u>`{=html} popped off\nthe stack. This is for backward compatibility.\n\nThis opcode reassignment shall be applied when validating transactions\nin blocks only with timestamps after February 23, 2012 (see the\nBackwards Compatibility section for details).\n\nA new standard transaction type that is relayed and included in mined\nblocks is defined:\n\n`\u00a0\u00a0\u00a0[20-byte-hash-value]\u00a0OP_CHECKHASHVERIFY\u00a0OP_DROP`\n\n\\[20-byte-hash-value\\] shall be the push-20-bytes-onto-the-stack opcode\n(0x14) followed by exactly 20 bytes.\n\nThis new transaction type is redeemed by a standard scriptSig:\n\n`\u00a0\u00a0\u00a0...signatures...\u00a0OP_CODESEPARATOR\u00a0{script}`\n\nTransactions that redeem these pay-to-script outpoints are only\nconsidered standard if they contain exactly one OP_CODESEPARATOR and the\nappended *script* is, itself, one of the other standard transaction\ntypes."
     },
     {
       "header": "Example",
-      "content": ""
+      "content": "For example, the scriptPubKey and corresponding scriptSig for a\none-signature-required transaction is:\n\n`\u00a0\u00a0\u00a0scriptSig:\u00a0[signature]\u00a0OP_CODESEPARATOR\u00a0[pubkey]\u00a0OP_CHECKSIG`\\\n`\u00a0\u00a0\u00a0scriptPubKey:\u00a0[20-byte-hash\u00a0of\u00a0{[pubkey]\u00a0OP_CHECKSIG}\u00a0]\u00a0OP_CHECKHASHVERIFY\u00a0OP_DROP`\n\n2-of-3:\n\n`\u00a0\u00a0\u00a0scriptSig:\u00a0[signatures...]\u00a0OP_CODESEPARATOR\u00a02\u00a0[pubkey1]\u00a0[pubkey2]\u00a0[pubkey3]\u00a03\u00a0OP_CHECKMULTISIG`\\\n`\u00a0\u00a0\u00a0scriptPubKey:\u00a0[20-byte-hash\u00a0of\u00a0{2\u00a0[pubkey1]\u00a0[pubkey2]\u00a0[pubkey3]\u00a03\u00a0OP_CHECKMULTISIG}\u00a0]\u00a0OP_CHECKHASHVERIFY\u00a0OP_DROP`"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "This BIP replaces BIP 12 and BIP 16, which propose evaluating a Script\nfrom the stack after verifying its hash.\n\nThe Motivation for this BIP (and BIP 13, the pay-to-script-hash address\ntype) is somewhat controversial; several people feel that it is\nunnecessary, and complex/multisignature transaction types should be\nsupported by simply giving the sender the complete {serialized script}.\nThe author believes that this BIP will minimize the changes needed to\nall of the supporting infrastructure that has already been created to\nsend funds to a base58-encoded-20-byte bitcoin addresses, allowing\nmerchants and exchanges and other software to start supporting\nmultisignature transactions sooner.\n\nThere is a 1-confirmation attack on old implementations, but it is\nexpensive and difficult in practice. The attack is:\n\n1.  Attacker creates a pay-to-script-hash transaction that is valid as\nseen by old software, but invalid for new implementation, and sends\nthemselves some coins using it.\n2.  Attacker also creates a standard transaction that spends the\npay-to-script transaction, and pays the victim who is running old\nsoftware.\n3.  Attacker mines a block that contains both transactions.\n\nIf the victim accepts the 1-confirmation payment, then the attacker wins\nbecause both transactions will be invalidated when the rest of the\nnetwork overwrites the attacker\\'s invalid block.\n\nThe attack is expensive because it requires the attacker create a block\nthat they know will be invalidated by the rest of the network. It is\ndifficult because creating blocks is difficult and users should not\naccept 1-confirmation transactions for higher-value transactions."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "These transactions are non-standard to old implementations, which will\n(typically) not relay them nor include them in blocks.\n\nOld implementations will not validate that the {script}\\'s hash value\nmatches when they validate blocks created by software that fully support\nthis BIP.\n\nAvoiding a block-chain split by malicious pay-to-script transactions\nrequires careful handling of one case:\n\n-   A pay-to-script-hash transaction that is invalid for new\nclients/miners but valid for old clients/miners.\n\nTo gracefully upgrade and ensure no long-lasting block-chain split\noccurs, more than 50% of miners must support full validation of the new\ntransaction type and must switch from the old validation rules to the\nnew rules at the same time.\n\nTo judge whether or not more than 50% of hashing power supports this\nBIP, miners are asked to upgrade their software and put the string\n\\\"p2sh/CHV\\\" in the input of the coinbase transaction for blocks that\nthey create.\n\nOn February 8, 2012, the block-chain will be examined to determine the\nnumber of blocks supporting pay-to-script-hash for the previous 7 days.\nIf at least 60% contain \\\"p2sh/CHV\\\" in their coinbase, then all blocks\nwith timestamps after 23 Feb 2012, 00:00:00 GMT shall have their\npay-to-script-hash transactions validated.\n\nIf a majority of hashing power does not support the new validation\nrules, then rollout will be postponed (or rejected if it becomes clear\nthat a majority will never be achieved).\n\nOP_NOP2 is used, so existing OP_EVAL (BIP 12) transactions in the block\nchain can still be redeemed."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "[Validation, sending, and receiving for bitcoind git\nmaster](https://gitorious.org/~Luke-Jr/bitcoin/luke-jr-bitcoin/commits/checkhashverify)\n\n[Validation only for\n0.3.19+](https://gitorious.org/~Luke-Jr/bitcoin/luke-jr-bitcoin/commits/checkhashverify_backport)"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   The [Address format for Pay to Script Hash\nBIP](bip-0013.mediawiki \"wikilink\")\n-   [M-of-N Multisignature Transactions (BIP\n11)](bip-0011.mediawiki \"wikilink\")\n-   Example BIP 17 transaction chain:\n[a](http://blockexplorer.com/tx/b8fd633e7713a43d5ac87266adc78444669b987a56b3a65fb92d58c2c4b0e84d)\n[b](http://blockexplorer.com/tx/eb3b82c0884e3efa6d8b0be55b4915eb20be124c9766245bcc7f34fdac32bccb)\n[c](http://blockexplorer.com/tx/055707ce7fea7b9776fdc70413f65ceec413d46344424ab01acd5138767db137)\n[d](http://blockexplorer.com/tx/6d36bc17e947ce00bb6f12f8e7a56a1585c5a36188ffa2b05e10b4743273a74b)"
     }
   ]
 }

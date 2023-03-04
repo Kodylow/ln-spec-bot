@@ -14,91 +14,83 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "BIP9 introduced a mechanism for using the version bits to signal support\nfor backwards-compatible changes (soft-forks) using a tally over the\nprevious 2016 blocks computed at re-targeting intervals. It provided for\na fixed threshold and non-configurable lock-in interval applicable to\nall deployments on a chain.\n\nThis document describes a generalized signaling scheme which allows each\nsignaling bit to have its own configurable threshold, window size\n(number of blocks over which it is tallied) and a configurable lock-in\nperiod.\n\nIt extends the semantics of the signaling bits to cover arbitrary\nconsensus changes, referred to under the general term \\'forks\\'. The\nsame range of version bits is used for signaling.\n\nThe states of the BIP9 state machine and its original parameters (name,\nbit, starttime, timeout) are retained. Some state transition conditions\nare extended by additional parameters (\\'threshold\\', \\'windowsize\\',\n\\'minlockedblocks\\', \\'minlockedtime\\') to provide for fine-tuning of\nthreshold and grace period."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The Bitcoin protocol requires a flexible scheme for finding consensus on\nprotocol changes, to ensure that it can adapt to the needs of the market\nand remain competitive as an electronic payment system.\n\nWhile BIP9 has served the community well for previous deployments, there\nare some shortcomings in its approach:\n\n-   it specifically applies only to backward-compatible changes\n\n```{=html}\n<!-- -->\n```\n-   its fixed 95% threshold is not flexible enough to allow for a\n\\'spectrum of contentiousness\\' to be represented\n\n```{=html}\n<!-- -->\n```\n-   small minorities can veto proposed changes, which can lead to\nundesirable stagnation\n\nA generalized revision of the BIP9 specification can address these\nissues and satisfy the needs of the market for both soft and hard fork\nchanges as well as more flexible activation thresholds and upgrade\n(grace) periods.\n\nThe proposal should allow more freedom of choice in activation\nstrategies while remaining backward compatible with respect to existing\nBIP9-based deployments."
     },
     {
       "header": "Terms and conventions {#terms_and_conventions}",
-      "content": ""
+      "content": "The version bits used by this proposal for signaling deployment of forks\nare referred to as \\'signaling bits\\' or shortened to \\'bits\\' where\nunambiguous.\n\nAll times in this specification are in seconds since the epoch \\[1\\].\nDurations / time offsets are in seconds.\n\nThe term \\'MTP\\' refers to the \\'median time past\\' which is calculated\nas the median nTime of a block and its 10 predecessors. It is treated as\na monotonic clock defined by a chain, and evaluated on the ancestor of a\nblock, i.e.\n\nMTP := **GetMedianTimePast(block.parent)**\n\nThe key words \\\"MUST\\\", \\\"MUST NOT\\\", \\\"REQUIRED\\\", \\\"SHALL\\\", \\\"SHALL\nNOT\\\", \\\"SHOULD\\\", \\\"SHOULD NOT\\\", \\\"RECOMMENDED\\\", \\\"MAY\\\", and\n\\\"OPTIONAL\\\" in this document are to be interpreted as described in RFC\n2119."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "### Backward compatibility {#backward_compatibility}\n\nThis specification SHALL enable strict backward compatibility with\nexisting BIP9-based deployments through suitable parameter\nconfiguration. Any part of the specification preventing full backward\ncompatibility SHALL be considered as erroneous and amended.\n\nAs before, a set of configuration parameters SHALL exist for the version\nbits for each chain supported by an implementation. This permits each\nbit to be configured independently for each chain (mainnet, testnet,\netc.)"
     },
     {
       "header": "Signaling bits {#signaling_bits}",
-      "content": ""
+      "content": "The signaling bits SHALL comprise the 29 least significant bits of the\nnVersion block header field. nVersion is a 32-bit field which is treated\nas a little-endian integer.\n\nSignaling bits SHALL be assigned numbers from 0..28 ranging from the\nleast significant (bit 0) to the most significant (bit 28) in the range.\n\nThe top 3 bits of nVersion MUST be set to 001 , yielding a range of\npossible nVersion values between \\[0x20000000\\...0x3FFFFFFF\\],\ninclusive.\n\nIf a block\\'s nVersion does not have its top 3 bits set to 001, all its\nsignaling bits MUST be treated as if they are 0 (see also: \\'Tallying\\'\nsection below)."
     },
     {
       "header": "Deployment states {#deployment_states}",
-      "content": ""
+      "content": "With each block and fork, we associate a deployment state. The possible\nstates are:\n\n1.  **DEFINED** is the first state that each fork starts out as. The\ngenesis block for any chain SHALL by definition be in this state for\neach deployment.\n2.  **STARTED** for blocks past the starttime.\n3.  **LOCKED_IN** after STARTED, if at least threshold out of windowsize\nblocks have the associated bit set in nVersion, measured at next\nheight that is evenly divisible by the windowsize.\n4.  **ACTIVE** for all blocks after the grace period conditions have\nbeen met.\n5.  **FAILED** if past the timeout time and LOCKED_IN was not reached.\n\nIn accordance with BIP9, a block\\'s state SHALL never depend on its own\nnVersion; only on that of its ancestors."
     },
     {
       "header": "Fork deployment parameters {#fork_deployment_parameters}",
-      "content": ""
+      "content": "Each fork deployment is specified by the following per-chain parameters:\n\n1.  The **name** specifies a very brief description of the fork,\nreasonable for use as an identifier. For deployments described in a\nsingle BIP, it is recommended to use the name \\\"bipN\\\" where N is\nthe appropriate BIP number.\n2.  The **bit** determines which bit in the nVersion field of the block\nis to be used to signal the fork deployment. It is chosen from the\nset {0,1,2,\\...,28}.\n3.  The **starttime** specifies a minimum median time past (MTP) of a\nblock at which the bit gains its meaning.\n4.  The **timeout** specifies a time at which the deployment is\nconsidered failed. If the MTP of a block \\>= timeout and the fork\nhas not yet locked in (including this block\\'s bit state), the\ndeployment is considered failed on all descendants of the block.\n5.  The **windowsize** specifies the number of past blocks (including\nthe block under consideration) to be taken into account for locking\nin a fork.\n6.  The **threshold** specifies a number of blocks, in the range of\n1..windowsize, which must signal for a fork in order to lock it in.\nThe support is measured when the chain height is evenly divisible by\nthe windowsize. If the windowsize is set to 2016 (as in BIP9) this\ncoincides with the 2016-block re-targeting intervals.\n7.  The **minlockedblocks** specifies a minimum number of blocks which a\nfork must remain in locked-in state before it can become active.\nBoth minlockedblocks and minlockedtime (see below) must be satisfied\nbefore a fork can become active.\n8.  The **minlockedtime** specifies a minimum grace time, an earliest\ntime after lock-in at which the fork can become active. If the MTP\nof a block \\>= (minlockedtime + median time of the block that locked\nin the fork), then the fork becomes activated. Both minlockedtime\nand minlockedblocks (see above) must be satisfied before a fork can\nbecome active."
     },
     {
       "header": "Tallying",
-      "content": ""
+      "content": "If a block\\'s nVersion does not have its top 3 bits set to 001, all its\nsignaling bits MUST be treated as if they are \\'0\\'.\n\nA signaling bit value of \\'1\\' SHALL indicate support of a fork and\nSHALL count towards its tally on a chain.\n\nA signaling bit value of \\'0\\' SHALL indicate absence of support of a\nfork and SHALL NOT count towards its tally on a chain.\n\nThe signaling bits SHALL be tallied whenever the head of the active\nchain changes (including after reorganizations)."
     },
     {
       "header": "State transitions {#state_transitions}",
-      "content": ""
+      "content": "The following diagram illustrates the generalized state machine:\n\n`<img src=\"bip-0135/bip-0135-states-small.png\" align=\"middle\">`{=html}`</img>`{=html}\\\n**NOTES:**\n\nThe genesis block of any chain SHALL have the state DEFINED for each\ndeployment.\n\nA given deployment SHALL remain in the DEFINED state until it either\npasses the starttime (and becomes STARTED) or the timeout time (and\nbecomes FAILED).\n\nOnce a deployment has STARTED, the signal for that deployment SHALL be\ntallied over the the past windowsize blocks whenever a new block is\nreceived on that chain.\n\nA transition from the STARTED state to the LOCKED_IN state SHALL only\noccur when all of these are true:\n\n-   the height of the received block is an integer multiple of the\nwindow size\n-   the MTP is below the timeout time\n-   at least threshold out of windowsize blocks have signaled support\n\nA similar height synchronization precondition SHALL exist for the\ntransition from LOCKED_IN to ACTIVE. These synchronization conditions\nare expressed by the \\\"mod(height, windowsize) = 0\\\" clauses in the\ndiagram, and have been been added so that backward compatibility with\nBIP9\\'s use of the 2016-block re-targeting periods can be configured for\nexisting deployments (see above \\'Optional full backward compatibility\\'\nsection).\n\nA transition from LOCKED_IN to ACTIVE state SHALL only occur if the\nheight synchronization criterion is met and two configurable \\'grace\nperiod\\' conditions are fulfilled:\n\n1.  current height MUST be at least minlockedblocks above LOCKED_IN\nheight\n2.  MTP must exceed LOCKED_IN time by at least minlockedtime seconds\n\nNOTE: If minlockedtime and minlockedblocks are both set to 0, then the\nfork will proceed directly to ACTIVE state once the chain height reaches\na multiple of the windowsize.\n\nThe ACTIVE and FAILED states are terminal; a deployment stays in these\nstates once they are reached.\n\nDeployment states are maintained along block chain branches. They need\nre-computation when a reorganization happens."
     },
     {
       "header": "New consensus rules {#new_consensus_rules}",
-      "content": ""
+      "content": "New consensus rules deployed by a fork SHALL be enforced for each block\nthat has ACTIVE state."
     },
     {
       "header": "Optional operator notifications {#optional_operator_notifications}",
-      "content": ""
+      "content": "An implementation SHOULD notify the operator when a deployment\ntransitions to STARTED, LOCKED_IN, ACTIVE or FAILED states.\n\nIt is RECOMMENDED that an implementation provide finer-grained\nnotifications to the operator which allow him/her to track the measured\nsupport level for defined deployments.\n\nAn implementation SHOULD warn the operator if the configured (emitted)\nnVersion has been overridden to contain bits set to \\'1\\' in\ncontravention of the above non-signaling recommendations for DEFINED\nforks.\n\nIt is RECOMMENDED that an implementation warn the operator if no signal\nhas been received for a given deployment during a full windowsize period\nafter the deployment has STARTED. This could indicate that something may\nbe wrong with the operator\\'s configuration that is causing them not to\nreceive the signal correctly.\n\nFor undefined signals, it is RECOMMENDED that implementation track these\nand alert their operators with supportive upgrade notifications, e.g.\n\n-   \\\"warning: signaling started on unknown feature on version bit X\\\"\n-   \\\"warning: signaling on unknown feature reached X% (over last N\nblocks)\\\"\n-   \\\"info: signaling ceased on unknown feature (over last M blocks)\\\"\n\nSince parameters of these deployments are unknown, it is RECOMMENDED\nthat implementations allow the user to configure the emission of such\nnotifications (e.g. suitable N and M parameters in the messages above,\ne.g. a best-guess window of 100 blocks)."
     },
     {
       "header": "getblocktemplate changes {#getblocktemplate_changes}",
-      "content": ""
+      "content": "The getblocktemplate features introduced in BIP9 remain in effect\nunmodified."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The timeout into FAILED state allows eventual reuse of bits if a fork\nwas not successfully activated.\n\nA fallow period at the conclusion of a fork attempt allows some\ndetection of buggy clients, and allows time for warnings and software\nupgrades for successful forks. The duration of a fallow period is not\nspecified by this proposal, although a conventional fallow period of 3\nmonths is RECOMMENDED.\n\nDue to the constraints set by BIP 34, BIP 66 and BIP 65, there are only\n0x7FFFFFFB possible nVersion values available. This limits to at most 30\nindependent deployments. By restricting the top 3 bits to 001 we we are\nleft with 29 out of those for the purposes of this proposal, and support\ntwo future upgrades for different mechanisms (top bits 010 and 011)."
     },
     {
       "header": "Guidelines",
-      "content": ""
-    },
-    {
-      "header": "Parameter selection guidelines {#parameter_selection_guidelines}",
-      "content": ""
+      "content": "### Parameter selection guidelines {#parameter_selection_guidelines}\n\nThe following guidelines are suggested for selecting the parameters for\na fork:\n\n1.  **name** SHOULD be selected such that no two forks, concurrent or\notherwise, ever use the same name.\n2.  **bit** SHOULD be selected such that no two concurrent forks use the\nsame bit. Implementors should make an effort to consult resources\nsuch as \\[2\\] to establish whether the bit they wish to use can\nreasonably be assumed to be unclaimed by a concurrent fork, and to\nannounce their use (\\'claim\\') of a bit for a fork purpose on\nvarious project mailing lists, to reduce chance of collisions.\n3.  **starttime** SHOULD be set to some date in the future,\napproximately one month after a software release date which includes\nthe fork signaling. This allows for some release delays, while\npreventing triggers as a result of parties running pre-release\nsoftware.\n4.  **timeout** is RECOMMENDED to be 1 year (31536000 seconds) after\nstarttime.\n5.  **windowsize** SHOULD be set large enough to allow reception of an\nadequately precise signal. A good high-resolution value would be\n2016 blocks as used in BIP9. It is NOT RECOMMENDED to use a\nwindowsize less than 100 blocks.\n6.  **threshold** SHOULD be set as high as possible to ensure a smooth\nactivation based on the estimated support and the nature of the\nproposed changes. It is strongly RECOMMENDED that threshold \\>=\nwindowsize / 2 (rounded up) to ensure that a proposal is only\nactivated by majority support.\n7.  **minlockedblocks** is RECOMMENDED to be set \\>= windowsize, to\nensure that a full window passes in LOCKED_IN state. Lower values\nwill be ineffective as the transition from LOCKED_IN to ACTIVE is\nguarded by a synchronization based on the window size.\n8.  **minlockedtime** SHOULD only be set \\> 0 if a minimum LOCKED_IN\ntime period needs be strictly enforced. It is permissible to set\nminlockedblocks to 0 and only specify minlockedtime, however the\nsynchronization condition means the grace period can only expire\nonce the time has passed AND the chain height is a multiple of the\nwindowsize.\n\nNOTE: If minlockedtime and minlockedblocks are both set to 0, then the\nfork will proceed to ACTIVE state when the chain height reaches a\nmultiple of the windowsize.\n\nA later deployment using the same bit is possible as long as the\nstarttime is after the previous fork\\'s timeout or activation, but it is\ndiscouraged until necessary, and even then recommended to have a pause\nin between to detect buggy software."
     },
     {
       "header": "Signaling guidelines {#signaling_guidelines}",
-      "content": ""
+      "content": "An implementation SHOULD signal \\'0\\' on a bit if one of the following\nholds true:\n\n-   the deployment parameters are not DEFINED (not configured or\nexplicitly undefined)\n-   the deployment is DEFINED and has not yet reached the STARTED state\n-   the deployment has succeeded (it has become ACTIVE)\n-   the deployment has FAILED\n\nAn implementation SHOULD enable the operator to choose (override)\nwhether to signal \\'0\\' or \\'1\\' on a bit, once its deployment has at\nleast reached the STARTED state.\n\nAn implementation SHOULD warn the operator if the configured (emitted)\nnVersion has been overridden to contain bits set to \\'1\\' in\ncontravention of the above non-signaling recommendations.\n\nA supporting miner SHOULD signal \\'1\\' on a bit for which the deployment\nis LOCKED_IN state so that uptake is visible. However, this has no\neffect on consensus rules. Once LOCKED_IN, a deployment proceeds to\nACTIVE solely based on the configured grace period parameters (see\n\\'Fork deployment parameters\\' above).\n\nA miner SHOULD signal \\'0\\' on a bit if they wish to suspend signaling\nof support for a fork that is DEFINED in their software.\n\nIt is NOT RECOMMENDED to signal \\'1\\' for bits where the meaning is\nundefined (i.e. bits which are unclaimed by proposals)."
     },
     {
       "header": "Settings for BIP9 compatibility {#settings_for_bip9_compatibility}",
-      "content": ""
+      "content": "This section lists parameter values which can be used to effect\ncompatibility with the existing BIP9 versionbits state machine.\n\nThe following table describes mainnet compatibility options (95%, 2016\nblocks):\n\n-----------------\nParameter\nname\nbit\nstarttime\ntimeout\nwindowsize\nthreshold\nminlockedblocks\nminlockedtime\n-----------------\n\nThe following table describes testnet compatibility options (75%, 2016\nblocks):\n\n-----------------\nParameter\nname\nbit\nstarttime\ntimeout\nwindowsize\nthreshold\nminlockedblocks\nminlockedtime\n-----------------"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "As this BIP is not itself consensus-relevant (Information like BIP9), it\ncan be rolled out without the use of a BIP9 fork bit.\n\nBackward compatibility through judicious fork configuration parameters\nshould ensure that it does not interfere with existing known\ndeployments.\n\nBy way of design it does not interfere with unknown (undefined)\ndeployments."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "A working reference implementation, including tests, can be found in\nthese Pull Requests:\n\n-   <https://github.com/BitcoinUnlimited/BitcoinUnlimited/pull/458>\n\n```{=html}\n<!-- -->\n```\n-   <https://github.com/bitcoin/bitcoin/pull/10437>\n\nExisting unit tests and regression tests have been left active to\ndemonstrate backward compatibility of the default settings with BIP9."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "\\[1\\]\n<http://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xbd_chap04.html#tag_21_04_16>\n\n\\[2\\] [List of existing BIP9 deployment\nproposals](https://github.com/bitcoin/bips/blob/master/bip-0009/assignments.mediawiki \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is dual-licensed under the Creative Commons CC0 1.0 Universal\nand GNU All-Permissive licenses."
     }
   ]
 }

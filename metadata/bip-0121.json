@@ -11,47 +11,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This is a proposal for a URI scheme to be used in the Proof of Payment\nprocess."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "To make a Proof of Payment, the party that wants the proof needs to\ntransfer a Proof of Payment request to the wallet software of the other\nparty. To facilitate that transfer, a new URI scheme representing the\nPoP request is proposed. This URI can then be encoded in QR images or be\nsent over NFC in order to transfer it to the wallet."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The specification is the same as BIP0021, with the following\ndifferences:\n\n-   The URI scheme is `btcpop` instead of `bitcoin`\n-   The path component, i.e. the address part, is always empty.\n-   A mandatory `p` parameter whose value contains the destination for\nthe PoP. This could for example be a `https:` URL or a `mailto:`\nURI.\n-   A mandatory `n` parameter representing the nonce, base58 encoded.\n-   An optional `txid` parameter containing the Base58 encoded hash of\nthe transaction to prove.\n\nJust as in BIP0021, elements of the query component may contain\ncharacters outside the valid range. These must first be encoded\naccording to UTF-8, and then each octet of the corresponding UTF-8\nsequence must be percent-encoded as described in RFC 3986.\n\nAll parameters except `p` and `n` are hints to the wallet on which\ntransaction to create a PoP for.\n\nThe extensibility of BIP0021 applies to this scheme as well. For\nexample, a `date` parameter or a `toaddr` parameter might be useful.\n`req-*` parameters are also allowed and obey the same rules as in\nBIP0021, clients not supporting a `req-*` parameter must consider the\nURI invalid."
     },
     {
       "header": "Keep URIs short {#keep_uris_short}",
-      "content": ""
+      "content": "Implementations should keep the URIs as short as possible. This is\nbecause it makes QR decoding more stable. A camera with a scratched lens\nor low resolution may run into problems scanning huge QR codes. This is\nwhy the `txid` parameter is encoded in Base58 instead of the classic hex\nencoded string. We get away with 44 characters instead of 64. Also, the\n`nonce` parameter is Base58 encoded for the same reason."
     },
     {
       "header": "Interpretation",
-      "content": ""
-    },
-    {
-      "header": "Transaction hints {#transaction_hints}",
-      "content": ""
+      "content": "### Transaction hints {#transaction_hints}\n\nThe wallet processing the URI must use the hints in the PoP request to\nfilter its transaction set. The `label`, `amount` and `message`\nparameters must, if present in the URI, exactly match the data\nassociated with the original payment according to the following table:\n\n------------------------- -------------------------- ---------------------------\n`btcpop:` URI parameter   `bitcoin:` URI parameter   BIP70 PaymentDetails data\n`label`                   `label`                    `memo`\n`amount`                  `amount`                   `sum of outputs.amount`\n`message`                 `message`                  `-`\n------------------------- -------------------------- ---------------------------\n\nThe `txid` parameter value must match the transaction hash of the\npayment.\n\nAfter filtering, the resulting transaction set is displayed to the user\nwho selects one of them to prove. An implementation could also\nautomatically select a transaction in the filtered set, but there must\nstill be a way for the user to select freely among the matching\ntransactions. If the filtered set is empty, no transaction fits the\nhints and a message about that is presented to the user. If the filtered\nset contains exactly one transaction, which is preferable, that\ntransaction can be automatically selected.\n\nAs a fallback, there must also be a way for the user to select any\ntransaction from the wallet regardless of the transaction hints. This\ncan be useful if the metadata of the wallet is lost, possibly due to a\nrestore from backup."
     },
     {
       "header": "PoP destination `p` {#pop_destination_p}",
-      "content": ""
+      "content": "The `p` parameter value is the destination where to send the PoP to.\nThis destination is typically a `https:` URL or a `http:` URL, but it\ncould be any type of URI, for example `mailto:`. To keep `btcpop:` URIs\nshort, users should not make their `p` parameter unnecessarily long."
     },
     {
       "header": "`http:` and `https:` URLs {#http_and_https_urls}",
-      "content": ""
+      "content": "Wallet implementations must support the `http:` and `https:` schemes in\nwhich case `POST` method must be used. The PoP is sent as a binary\nserialized transaction. The content type of the POST request must be set\nto `application/bitcoin-pop`"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "Send PoP for a transaction with label \\\"video 42923\\\" to\nhttps://www.example.com/pop/352, using nonce\n`0x73 0xd5 0x1a 0xbb 0xd8 0x9c`:\n\nbtcpop:?p=https://www.example.com/pop/352&n=zgWTm8yH&label=video%2042923\n\nSend PoP through mail using mailto:pop@example.com?subject=pop444,\namount is 13370000 satoshis, nonce is `0x6f 0xe 0xfb 0x68 0x92 0xf9`.\nNote that the `?` before `subject` is OK according to RFC3986, since the\nquery part starts from the first `?`:\n\nbtcpop:?p=mailto:pop@example.com?subject%3Dpop444&n=xJdKmEbr&amount=0.1337\n\nSend PoP for transaction with id\n`cca7507897abc89628f450e8b1e0c6fca4ec3f7b34cccf55f3f531c659ff4d79` to\npizza place at http://pizza.example.com/pop/laszlo111 using nonce\n`0xfc 0xcc 0x2c 0x35 0xf0 0xb8`\n\nbtcpop:?p=http://pizza.example.com/pop/laszlo111&n=3AtNpVrPh&txid=Emt9MPvt1joznqHy5eEHkNtcuQuYWXzYJBQZN6BJm6NL"
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "[PoP Demo server on GitHub](https://github.com/kallerosenbaum/poppoc)\n\n[PoP-enabled Mycelium fork on\nGitHub](https://github.com/kallerosenbaum/wallet)"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[BIP0021](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki):\nURI Scheme\n\n[BIP0120](https://github.com/bitcoin/bips/blob/master/bip-0120.mediawiki):\nProof of Payment\n\n[RFC3986](https://www.ietf.org/rfc/rfc3986.txt): Uniform Resource\nIdentifier (URI): Generic Syntax"
     }
   ]
 }

@@ -13,95 +13,91 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "In Bip300, txns are not signed via cryptographic key. Instead, they are\n\\\"signed\\\" by hashpower, over time. Like a big multisig, 13150-of-26300,\nwhere each block is a new \\\"signature\\\".\n\nBip300 emphasizes slow, transparent, auditable transactions which are\neasy for honest users to get right and very hard for dishonest users to\nabuse. The chief design goal for Bip300 is *partitioning* \\-- users may\nsafely ignore Bip300 txns if they want to (or Bip300 entirely).\n\nSee [this site](http://www.drivechain.info/) for more information."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "As Reid Hoffman [wrote in\n2014](https://blockstream.com/2015/01/13/en-reid-hoffman-on-the-future-of-the-bitcoin-ecosystem/):\n\\\"Sidechains allow developers to add features and functionality to the\nBitcoin universe without actually modifying the Bitcoin Core\ncode\\...Consequently, innovation can occur faster, in more flexible and\ndistributed ways, without losing the synergies of a common platform with\na single currency.\\\"\n\nToday, coins such as Namecoin, Monero, ZCash, and Sia, offer features\nthat Bitcoiners cannot access \\-- not without selling their BTC to\ninvest in a rival monetary unit. According to\n[coinmarketcap.com](https://coinmarketcap.com/charts/#dominance-percentage),\nthere is now more value \\*outside\\* the BTC protocol than within it.\nAccording to [cryptofees.info](https://cryptofees.info/), 15x more txn\nfees are paid outside the BTC protocol, than within it.\n\nSoftware improvements to Bitcoin rely on developer consensus \\-- BTC\nwill pass on a good idea if it is even slightly controversial.\nDevelopment is slow: we are now averaging one major feature every 5\nyears.\n\nSidechains allow for competitive \\\"benevolent dictators\\\" to create a\nnew sidechain at any time. These dictators are accountable only to their\nusers, and (crucially) they are protected from rival dictators. Users\ncan move their BTC among these different pieces of software, as \\*they\\*\nsee fit.\n\nBTC can copy every useful technology, as soon as it is invented;\nscamcoins lose their justification and become obsolete; and the\ncommunity can be pro-creativity, knowing that Layer1 is protected from\nharmful changes."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Overview",
-      "content": ""
+      "content": "### Overview\n\nBip300 allows for six new blockchain messages (these have consensus\nsignificance):\n\n-   M1. \\\"Propose New Sidechain\\\"\n-   M2. \\\"ACK Proposal\\\"\n-   M3. \\\"Propose Bundle\\\"\n-   M4. \\\"ACK Bundle\\\"\n-   M5. Deposit \\-- a transfer of BTC from-main-to-side\n-   M6. Withdrawal \\-- a transfer of BTC from-side-to-main\n\nNodes organize those messages into two caches:\n\n-   D1. \\\"The Sidechain List\\\", which tracks the 256 Hashrate Escrows\n(Escrows are slots that a sidechain can live in).\n-   D2. \\\"The Withdrawal List\\\", which tracks the withdrawal-Bundles\n(coins leaving a Sidechain)."
     },
     {
       "header": "D1 (The Sidechain List) {#d1_the_sidechain_list}",
-      "content": ""
+      "content": "D1 is a list of active sidechains. D1 is updated via M1 and M2.\n\n+-----------+----------------------+---------+----------------------+\n| Field No. | Label                | Type    | Description /        |\n|           |                      |         | Purpose              |\n+===========+======================+=========+======================+\n| 1         | Escrow Number        | uint8_t | The escrow\\'s ID     |\n|           |                      |         | number. Used to      |\n|           |                      |         | uniquely refer to    |\n|           |                      |         | each sidechain.      |\n+-----------+----------------------+---------+----------------------+\n| 2         | Version              | int32_t | Version number.      |\n+-----------+----------------------+---------+----------------------+\n| 3         | String KeyID         | string  | Used to derive all   |\n|           |                      |         | sidechain deposit    |\n|           |                      |         | addresses.           |\n+-----------+----------------------+---------+----------------------+\n| 4\\        | Sidechain Private    | string  | The private key of   |\n|           | Key                  |         | the sidechain        |\n|           |                      |         | deposit script.      |\n+-----------+----------------------+---------+----------------------+\n| 5\\        | ScriptPubKey         | CScript | Where the sidechain  |\n|           |                      |         | coins go. This       |\n|           |                      |         | always stays the     |\n|           |                      |         | same, even though    |\n|           |                      |         | the CTIP (UTXO)      |\n|           |                      |         | containing the coins |\n|           |                      |         | is always changing.  |\n+-----------+----------------------+---------+----------------------+\n| 6         | Sidechain Name       | string  | A human-readable     |\n|           |                      |         | name of the          |\n|           |                      |         | sidechain.           |\n+-----------+----------------------+---------+----------------------+\n| 7         | Sidechain            | string  | A human-readable     |\n|           | Description          |         | name description of  |\n|           |                      |         | the sidechain.       |\n+-----------+----------------------+---------+----------------------+\n| 8         | Hash1 - tarball hash | uint256 | Intended as the      |\n|           |                      |         | sha256 hash of the   |\n|           |                      |         | tar.gz of the        |\n|           |                      |         | canonical sidechain  |\n|           |                      |         | software. (This is   |\n|           |                      |         | not enforced         |\n|           |                      |         | anywhere by Bip300,  |\n|           |                      |         | and is for human     |\n|           |                      |         | purposes only.)      |\n+-----------+----------------------+---------+----------------------+\n| 9         | Hash2 - git commit   | uint160 | Intended as the git  |\n|           | hash                 |         | commit hash of the   |\n|           |                      |         | canonical sidechain  |\n|           |                      |         | node software. (This |\n|           |                      |         | is not enforced      |\n|           |                      |         | anywhere by Bip300,  |\n|           |                      |         | and is for human     |\n|           |                      |         | purposes only.)      |\n+-----------+----------------------+---------+----------------------+\n| 10        | Active               | bool    | Does this sidechain  |\n|           |                      |         | slot contain an      |\n|           |                      |         | active sidechain?\\   |\n+-----------+----------------------+---------+----------------------+\n| 11        | \\\"CTIP\\\" \\-- Part 1  | uint256 | The CTIP, or         |\n|           | \\\"TxID\\\"             |         | \\\"Critical (TxID,    |\n|           |                      |         | Index) Pair\\\" is a   |\n|           |                      |         | variable for keeping |\n|           |                      |         | track of where the   |\n|           |                      |         | sidechain\\'s money   |\n|           |                      |         | is (ie, which member |\n|           |                      |         | of the UTXO set).    |\n+-----------+----------------------+---------+----------------------+\n| 12        | \\\"CTIP\\\" \\-- Part 2  | int32_t | Of the CTIP, the     |\n|           | \\\"Index\\\"            |         | second element of    |\n|           |                      |         | the pair: the Index. |\n|           |                      |         | See #11 above.       |\n+-----------+----------------------+---------+----------------------+"
     },
     {
       "header": "D2 (The Withdrawal List) {#d2_the_withdrawal_list}",
-      "content": ""
+      "content": "D2 lists withdrawal-attempts. If these attempts succeed, they will pay\ncoins \\\"from\\\" a Bip300-locked UTXO, to new UTXOs controlled by the\nwithdrawing-user. Each attempt pays out many users, so we call these\nwithdrawal-attempts \\\"Bundles\\\".\n\nD2 is driven by M3, M4, M5, and M6. Those messages enforce the following\nprinciples:\n\n1.  The Bundles have a canonical order (first come first serve).\n2.  From one block to the next, every \\\"Blocks Remaining\\\" field\ndecreases by 1.\n3.  When \\\"Blocks Remaining\\\" reaches zero the Bundle is removed.\n4.  From one block to the next, the value in \\\"ACKs\\\" may either\nincrease or decrease, by a maximum of 1 (see M4).\n5.  If a Bundle\\'s \\\"ACKs\\\" reach 13150 or greater, it \\\"succeeds\\\" and\nits corresponding M6 message can be included in a block.\n6.  If the M6 of a Bundle is paid out, it is also removed.\n7.  If a Bundle cannot possibly succeed ( 13500 - \\\"ACKs\\\" \\> \\\"Blocks\nRemaining\\\" ), it is removed immediately.\n\nField No.   Label                    Type       Description / Purpose\n----------- ------------------------ ---------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n1           Sidechain Number         uint8_t    Links the withdrawal-request to a specific hashrate escrow.\n2           Bundle Hash              uint256    A withdrawal attempt. Specifically, it is a \\\"blinded transaction id\\\" (ie, the double-Sha256 of a txn that has had two fields zeroed out, see M6) of a txn which could withdraw funds from a sidechain.\n3           ACKs (Work Score)        uint16_t   The current ACK-counter, which is the total number of ACKs (the PoW that has been used to validate the Bundle).\n4           Blocks Remaining (Age)   uint16_t   The number of blocks which this Bundle has remaining to accumulate ACKs"
     },
     {
       "header": "The Six New Bip300 Messages {#the_six_new_bip300_messages}",
-      "content": ""
+      "content": "First, how are new sidechains created?\n\nThey are first proposed (with M1), and later acked (with M2). This\nprocess resembles Bip9 soft fork activation."
     },
     {
       "header": "M1 \\-- Propose Sidechain {#m1____propose_sidechain}",
-      "content": ""
+      "content": "M1 is a coinbase OP Return output containing the following:\n\n`\u00a0\u00a0\u00a01-byte\u00a0-\u00a0OP_RETURN\u00a0(0x6a)`\\\n`\u00a0\u00a0\u00a04-byte\u00a0-\u00a0Message\u00a0header\u00a0(0xD5E0C4AF)`\\\n`\u00a0\u00a0\u00a0N-byte\u00a0-\u00a0The\u00a0serialization\u00a0of\u00a0the\u00a0sidechain.`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a01-byte\u00a0nSidechain`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a04-byte\u00a0nVersion`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0x-byte\u00a0strKeyID`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0x-byte\u00a0strPrivKey`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0x-byte\u00a0scriptPubKey`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0x-byte\u00a0title`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0x-byte\u00a0description`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a032-byte\u00a0hashID1`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a020-byte\u00a0hashID2`"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "`<img src=\"bip-0300/m1-gui.jpg?raw=true\" align=\"middle\">`{=html}`</img>`{=html}\n\n`<img src=\"bip-0300/m1-cli.png?raw=true\" align=\"middle\">`{=html}`</img>`{=html}"
     },
     {
       "header": "M2 \\-- ACK Sidechain Proposal {#m2____ack_sidechain_proposal}",
-      "content": ""
+      "content": "M2 is a coinbase OP Return output containing the following:\n\n`\u00a0\u00a0\u00a01-byte\u00a0-\u00a0OP_RETURN\u00a0(0x6a)`\\\n`\u00a0\u00a0\u00a04-byte\u00a0-\u00a0Message\u00a0header\u00a0(0xD6E1C5BF)`\\\n`\u00a0\u00a0\u00a032-byte\u00a0-\u00a0sha256D\u00a0hash\u00a0of\u00a0sidechain's\u00a0serialization`"
     },
     {
       "header": "Notes",
-      "content": ""
+      "content": "The new M1/M2 validation rules are:\n\n1.  Any miner can propose a new sidechain (M1) at any time. This\nprocedure resembles BIP 9 soft fork activation: the network must see\na properly-formatted M1, followed by \\\"acknowledgment\\\" of the\nsidechain (M2) in 90% of the following 2016 blocks.\n2.  Bip300 comes with only 256 sidechain-slots. If all are used, it is\npossible to \\\"overwrite\\\" a sidechain. This requires vastly more M2\nACKs \\-- 50% of the following 26300 blocks must contain an M2. The\npossibility of overwrite, does not change the Bip300 security\nassumptions (because we already assume that the sidechain is\nvulnerable to miners, at a rate of 1 catastrophe per 13150 blocks)."
     },
     {
       "header": "Notes on Withdrawing Coins {#notes_on_withdrawing_coins}",
-      "content": ""
+      "content": "Bip300 withdrawals (\\\"M6\\\") are very significant.\n\nFor an M6 to be valid, it must be first \\\"prepped\\\" by one M3 and then\n13,150+ M4s. M3 and M4 are about \\\"Bundles\\\"."
     },
     {
       "header": "What are Bundles? {#what_are_bundles}",
-      "content": ""
+      "content": "Sidechain withdrawals take the form of \"Bundles\" \\-- named because they\n\\\"bundle up\\\" many individual withdrawal-requests into a single rare\nlayer1 transaction.\n\nSidechain full nodes aggregate the withdrawal-requests into a big set.\nThe sidechain calculates what M6 would have to look like, to pay all of\nthese withdrawal-requests out. Finally, the sidechain calculates what\nthe hash of this M6 would be. This 32-byte hash identifies the Bundle.\n\nThis 32-byte hash is what miners will be slowly ACKing over 3-6 months,\nnot the M6 itself (nor any sidechain data, of course).\n\nA bundle either pays all its withdrawals out (via M6), or else it fails\n(and pays nothing out).\n\n===== Bundle Hash = Blinded TxID of M6 =====\n\nThe Bundle hash is static as it is being ACKed. Unfortunately, the M6\nTxID will be constantly changing \\-- as users deposit to the sidechain,\nthe input to M6 will change.\n\nTo solve this problem, we do something conceptually similar to\nAnyPrevOut (BIP 118). We define a \\\"blinded TxID\\\" as a way of hashing a\ntxn, in which some bytes are first overwritten with zeros. These are:\nthe first input and the first output. Via the former, a sidechain can\naccept deposits, even if we are acking a TxID that spends from it later.\nVia the latter, we can force all of the non-withdrawn coins to be\nreturned to the sidechain (even if we don\\'t yet know how many coins\nthis will be)."
     },
     {
       "header": "M3 \\-- Propose Bundle {#m3____propose_bundle}",
-      "content": ""
+      "content": "M3 is a coinbase OP Return output containing the following:\n\n`\u00a0\u00a0\u00a01-byte\u00a0-\u00a0OP_RETURN\u00a0(0x6a)`\\\n`\u00a0\u00a0\u00a04-byte\u00a0-\u00a0Commitment\u00a0header\u00a0(0xD45AA943)`\\\n`\u00a0\u00a0\u00a032-byte\u00a0-\u00a0The\u00a0Bundle\u00a0hash,\u00a0to\u00a0populate\u00a0a\u00a0new\u00a0D2\u00a0entry`\n\nThe new validation rules pertaining to M3 are:\n\n1.  If the network detects a properly-formatted M3, it must add an entry\nto D2 in the very next block. The starting \\\"Blocks Remaining\\\"\nvalue is 26,299. The starting ACKs count is 1.\n2.  Each block can only contain one M3 per sidechain.\n\nOnce a Bundle is in D2, how can we give it enough ACKs to make it valid?"
     },
     {
       "header": "M4 \\-- ACK Bundle(s) {#m4____ack_bundles}",
-      "content": ""
+      "content": "M4 is a coinbase OP Return output containing the following:\n\n`\u00a0\u00a0\u00a01-byte\u00a0-\u00a0OP_RETURN\u00a0(0x6a)`\\\n`\u00a0\u00a0\u00a04-byte\u00a0-\u00a0Commitment\u00a0header\u00a0(0xD77D1776)`\\\n`\u00a0\u00a0\u00a01-byte\u00a0-\u00a0Version`\\\n`\u00a0\u00a0\u00a0n-byte\u00a0-\u00a0The\u00a0vector\u00a0describing\u00a0the\u00a0\"upvoted\"\u00a0bundle-choice,\u00a0for\u00a0each\u00a0sidechain.`\n\nVersion 0x01 uses one byte per sidechain, and applies in most cases.\nVersion 0x02 uses two bytes per sidechain and applies in unusual\nsituations where at least one sidechain has more than 256 distinct\nwithdrawal-bundles in progress at one time. Other interesting versions\nare possible: 0x03 might say \\\"do exactly what was done in the previous\nblock\\\" (which could consume a fixed 6 bytes total, regardless of how\nmany sidechains). 0x04 might say \\\"upvote everyone who is clearly in the\nlead\\\" (which also would require a mere 6 bytes), and so forth.\n\nIf a sidechain has no pending bundles, then it is skipped over when M4\nis created and parsed.\n\nThe upvote vector will code \\\"abstain\\\" as 0xFF (or 0xFFFF); it will\ncode \\\"alarm\\\" as 0xFE (or 0xFFFE). Otherwise it simply indicates which\nwithdrawal-bundle in the list, is the one to be \\\"upvoted\\\". For\nexample, if there are two sidechains, and we wish to upvote the 7th\nbundle on sidechain #1 plus the 4th bundle on sidechain #2, then the\nvector would be 0x0704.\n\nThe M4 message will be invalid (and invalidate the block), if it tries\nto upvote a Bundle that doesn\\'t exist (for example, trying to upvote\nthe 7th bundle on sidechain #2, when sidechain #2 has only three\nbundles). If there are no Bundles at all (no one is trying to withdraw\nfrom any sidechain), then \\*any\\* M4 message present in the coinbase\nwill be invalid. If M4 is NOT present in a block, then it is treated as\n\\\"abstain\\\".\n\nThe ACKed withdrawal will gain one point for its ACK field. Therefore,\nthe ACK-counter of any Bundle can only change by (-1,0,+1).\n\nWithin a sidechain-group, upvoting one Bundle (\\\"+1\\\") requires you to\ndownvote all other Bundles in that group. However, the minimum\nACK-counter is zero. While only one Bundle can be upvoted at once; the\nwhole group can all be unchanged at once (\\\"abstain\\\"), and they can all\nbe downvoted at once (\\\"alarm\\\").\n\nFinally, we describe Deposits and Withdrawals."
     },
     {
       "header": "M5 \\-- Deposit BTC to Sidechain {#m5____deposit_btc_to_sidechain}",
-      "content": ""
+      "content": "Both M5 and M6 are regular Bitcoin txns. They are distinguished from\nregular txns (non-M5 non-M6 txns), when they select one of the special\nBip300 CTIP UTXOs as one of their inputs (see D1).\n\nAll of a sidechain's coins, are stored in one UTXO, called the \\\"CTIP\\\".\nEvery time a deposit or withdrawal is made, the CTIP changes. Each\ndeposit/withdrawal will select the sidechains CTIP, and generate a new\nCTIP. (Deposits/Withdrawals never cause UTXO bloat.) The current CTIP is\ncached in D1 (above).\n\nIf the **quantity of coins**, in the from-CTIP-to-CTIP transaction, goes\n**up**, (ie, if the user is adding coins), then the txn is treated as a\nDeposit (M5). Else it is treated as a Withdrawal (M6). See\n[here](https://github.com/drivechain-project/mainchain/blob/e37b008fafe0701b8313993c8b02ba41dc0f8a29/src/validation.cpp#L667-L780).\n\nAs far as mainchain consensus is concerned, all deposits to a sidechain\nare always valid."
     },
     {
       "header": "M6 \\-- Withdraw BTC from a Sidechain {#m6____withdraw_btc_from_a_sidechain}",
-      "content": ""
+      "content": "We come, finally, to the critical matter: where users can take their\nmoney \\*out\\* of the sidechain.\n\nFirst, M6 must obey the same CTIP rules of M5 (see immediately above).\n\nSecond, an M6 is only valid for inclusion in a block, if its blinded\nTxID matches an \\\"approved\\\" Bundle hash (ie, one with an ACK score of\n13150+). In other words, an M6 can only be included in a block, after\nthe 3+ month (13150 block) ceremony.\n\nThird, M6 must meet two accounting criteria, lest it be invalid:\n\n1.  \\\"Give change back to Escrow\\\" \\-- The first output, TxOut0, must be\npaid back to the sidechain\\'s Bip300 script. In other words, all\nnon-withdrawn coins must be paid back into the sidechain.\n2.  \\\"No traditional txn fee\\\" \\-- For this txn, the sum of all inputs\nmust equal the sum of all outputs. No traditional tx fee is\npossible. (Of course, there is still a txn fee for miners: it is\npaid via an OP TRUE output in the Bundle.) We want the withdraw-ers\nto set the fee \\\"inside\\\" the Bundle, and ACK it over 3 months like\neverything else."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "As a soft fork, older software will continue to operate without\nmodification. Non-upgraded nodes will see a number of phenomena that\nthey don\\'t understand \\-- coinbase txns with non-txn data, value\naccumulating in anyone-can-spend UTXOs for months at a time, and then\nrandom amounts leaving these UTXOs in single, infrequent bursts.\nHowever, these phenomena don\\'t affect them, or the validity of the\nmoney that they receive.\n\n( As a nice bonus, note that the sidechains themselves inherit a\nresistance to hard forks. The only way to guarantee that all different\nsidechain-nodes will always report the same Bundle, is to upgrade\nsidechains via soft forks of themselves. )"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP will be deployed via UASF-style block height activation. Block\nheight TBD."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "See: <https://github.com/drivechain-project/mainchain>\n\nAlso, for interest, see an example sidechain here:\n<https://github.com/drivechain-project/sidechains/tree/testchain>"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "<https://github.com/drivechain-project/mainchain>\n<https://github.com/drivechain-project/sidechains/tree/testchain> See\n<http://www.drivechain.info/literature/index.html>"
     },
     {
       "header": "Credits",
-      "content": ""
+      "content": "Thanks to everyone who contributed to the discussion, especially:\nZmnSCPxj, Adam Back, Peter Todd, Dan Anderson, Sergio Demian Lerner,\nChris Stewart, Matt Corallo, Sjors Provoost, Tier Nolan, Erik Aronesty,\nJason Dreyzehner, Joe Miyamoto, Ben Goldhaber."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     }
   ]
 }

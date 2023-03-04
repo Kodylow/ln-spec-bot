@@ -11,23 +11,23 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Make a network node\\'s transaction memory pool accessible via a new\n\\\"mempool\\\" message. Extend the existing \\\"getdata\\\" message behavior to\npermit accessing the transaction memory pool."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Several use cases make it desireable to expose a network node\\'s\ntransaction memory pool:\n\n1.  SPV clients, wishing to obtain zero-confirmation transactions sent\nor received.\n2.  Miners, to avoid missing lucrative fees, downloading existing\nnetwork transactions after a restart.\n3.  Remote network diagnostics."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  The mempool message is defined as an empty message where pchCommand\n== \\\"mempool\\\"\n2.  Upon receipt of a \\\"mempool\\\" message, the node will respond with an\n\\\"inv\\\" message containing MSG_TX hashes of all the transactions in\nthe node\\'s transaction memory pool, if any.\n3.  The typical node behavior in response to an \\\"inv\\\" is \\\"getdata\\\".\nHowever, the reference Satoshi implementation ignores requests for\ntransaction hashes outside that which is recently relayed. To\nsupport \\\"mempool\\\", an implementation must extend its \\\"getdata\\\"\nmessage support to querying the memory pool.\n4.  Feature discovery is enabled by checking two \\\"version\\\" message\nattributes:\n1.  Protocol version \\>= 60002\n2.  NODE_NETWORK bit set in nServices\n\nNote that existing implementations drop \\\"inv\\\" messages with a vector\nsize \\> 50000."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Older clients remain 100% compatible and interoperable after this\nchange."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/1641>"
     }
   ]
 }

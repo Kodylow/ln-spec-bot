@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies `combo()` output script descriptors. These take\na key and produce P2PK, P2PKH, P2WPKH, and P2SH-P2WPKH output scripts if\napplicable to the key."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "In order to make the transition from traditional key based wallets to\ndescriptor based wallets easier, it is useful to be able to take a key\nand produce the scripts which have traditionally been produced by wallet\nsoftware."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "A new top level script expression is defined: `combo(KEY)`. This\nexpression can only be used as a top level expression. It takes a single\nkey expression as an argument and produces either 2 or 4 output scripts,\ndepending on the key. A `combo()` expression always produces a P2PK and\nP2PKH script, the same as putting the key in both a `pk()` and a `pkh()`\nexpression. If the key is/has a compressed public key, then P2WPKH and\nP2SH-P2WPKH scripts are also produced, the same as putting the key in\nboth a `wpkh()` and `sh(wpkh())` expression."
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`combo()` descriptors use the format and general operation specified in\n[380](bip-0380.mediawiki \"wikilink\"). As this is a wholly new\ndescriptor, it is not compatible with any implementation. However the\nscripts produced are standard scripts so existing software are likely to\nbe familiar with them."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "`combo()` descriptors have been implemented in Bitcoin Core since\nversion 0.17."
     }
   ]
 }

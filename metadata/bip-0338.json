@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a change to the p2p protocol to allow a node to tell\na peer that a connection will not be used for transaction relay, to\nsupport block-relay-only connections that are currently in use on the\nnetwork."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "This proposal is part of an effort to increase the number of inbound\nconnections that a peer can service, by distinguishing peers which will\nnot relay transactions from those that do.\n\nSince 2019, software has been deployed\\[1\\] which initiates connections\non the Bitcoin network and sets the transaction relay field (introduced\nby BIP 37 and also defined in BIP 60) to false, to prevent transaction\nrelay from occurring on the connection. Additionally, addr messages\nreceived from the peer are ignored by this software.\n\nThe purpose of these connections is two-fold: by making additional\nlow-bandwidth connections on which blocks can propagate, the robustness\nof a node to network partitioning attacks is strengthened. Additionally,\nby not relaying transactions and ignoring received addresses, the\nability of an adversary to learn the complete network graph (or a\nsubgraph) is reduced\\[2\\], which in turn increases the cost or\ndifficulty to an attacker seeking to carry out a network partitioning\nattack (when compared with having such knowledge).\n\nThe low-bandwidth / minimal-resource nature of these connections is\ncurrently known only by the initiator of the connection; this is because\nthe transaction relay field in the version message is not a permanent\nsetting for the lifetime of the connection. Consequently, a node\nreceiving an inbound connection with transaction relay disabled cannot\ndistinguish between a peer that will never enable transaction relay (as\ndescribed in BIP 37) and one that will. Moreover, the node also cannot\ndetermine that the incoming connection will ignore relayed addresses;\nwith that knowledge a node would likely choose other peers to receive\nannounced addresses instead.\n\nThis proposal adds a new, optional message that a node can send a peer\nwhen initiating a connection to that peer, to indicate that connection\nshould not be used for transaction relay for the connection\\'s lifetime.\nIn addition, without a current mechanism to negotiate whether addresses\nshould be relayed on a connection, this BIP suggests that address\nmessages not be sent on links where transaction relay has been disabled.\n\nAfter this BIP is deployed, nodes could more easily implement inbound\nconnection limiting that differentiates low-resource nodes (such as\nthose sending disabletx) from full-relay peers, potentially allowing for\nan increase in the number of block-relay-only connections that can be\nmade on the network."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  A new disabletx message is added, which is defined as an empty\nmessage with message type set to \\\"disabletx\\\".\n2.  The protocol version of nodes implementing this BIP must be set to\n70017 or higher.\n3.  If a node sets the transaction relay field in the version message to\na peer to false, then the disabletx message MAY also be sent in\nresponse to a version message from that peer if the peer\\'s protocol\nversion is \\>= 70017. If sent, the disabletx message MUST be sent\nprior to sending a verack.\n4.  A node MUST NOT send the disabletx message if the transaction relay\nfield in the version message is omitted or set to true.\n5.  A node that has sent or received a disabletx message to/from a peer\nMUST NOT send any of these messages to the peer:\n1.  inv messages for transactions\n2.  notfound messages for transactions\n3.  getdata messages for transactions\n4.  getdata messages for merkleblock (BIP 37)\n5.  filteradd/filterload/filterclear (BIP 37)\n6.  feefilter (BIP 133)\n7.  mempool (BIP 35)\n8.  tx message\n6.  It is RECOMMENDED that a node that has sent or received a disabletx\nmessage to/from a peer not send any of these messages to the peer:\n1.  addr/getaddr\n2.  addrv2 (BIP 155)\n7.  The behavior regarding sending or processing other message types is\nnot specified by this BIP.\n8.  Nodes MAY decide to not remain connected to peers that send this\nmessage (for example, if trying to find a peer that will relay\ntransactions)."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Nodes with protocol version \\>= 70017 that do not implement this BIP,\nand nodes with protocol version \\< 70017, will continue to remain\ncompatible with implementing software: transactions would not be relayed\nto peers sending the disabletx message (provided that BIP 37 or BIP 60\nhas been implemented), and while periodic address relay may still take\nplace, software implementing this BIP should not be disconnecting such\npeers solely for that reason.\n\nDisabling address relay is suggested but not required by this BIP, to\nallow for future protocol extensions that might specify more carefully\nhow address relay is to be negotiated. This BIP\\'s recommendations for\nsoftware to not relay addresses is intended to be interpreted as\nguidance in the absence of any such future protocol extension, to\naccommodate existing software behavior.\n\nNote that all messages specified in BIP 152, including blocktxn and\ngetblocktxn, are permitted between peers that have sent/received a\ndisabletx message, subject to the feature negotiation of BIP 152.\n\nThis proposal is compatible with, but independent of, BIP 37."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/20726>"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "1.  Bitcoin Core has [implemented this\nfunctionality](https://github.com/bitcoin/bitcoin/pull/15759) since\nversion 0.19.0.1, released in November 2019.\n2.  For example, see\n<https://www.cs.umd.edu/projects/coinscope/coinscope.pdf> and\n<https://arxiv.org/pdf/1812.00942.pdf>."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     }
   ]
 }

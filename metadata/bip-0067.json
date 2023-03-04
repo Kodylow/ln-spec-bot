@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a method to deterministically generate\nmulti-signature pay-to-script-hash transaction scripts. It focuses on\ndefining how the public keys must be encoded and sorted so that the\nredeem script and corresponding P2SH address are always the same for a\ngiven set of keys and number of required signatures."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Pay-to-script-hash (BIP-0011[^1]) is a transaction type that allows\nfunding of arbitrary scripts, where the recipient carries the cost of\nfee\\'s associated with using longer, more complex scripts.\n\nMulti-signature pay-to-script-hash transactions are defined in\nBIP-0016[^2]. The redeem script does not require a particular ordering\nor encoding for public keys. This means that for a given set of keys and\nnumber of required signatures, there are as many as 2(n!) possible\nstandard redeem scripts, each with its separate P2SH address. Adhering\nto an ordering and key encoding would ensure that a multi-signature\n\"account\" (set of public keys and required signature count) has a\ncanonical P2SH address.\n\nBy adopting a sorting and encoding standard, compliant wallets will\nalways produce the same P2SH address for the same given set of keys and\nrequired signature count, making it easier to recognize transactions\ninvolving that multi-signature account. This is particularly attractive\nfor multisignature hierarchical-deterministic wallets, as less state is\nrequired to setup multi-signature accounts: only the number of required\nsignatures and master public keys of participants need to be shared, and\nall wallets will generate the same addresses.\n\nWhile most web wallets do not presently facilitate the setup of\nmultisignature accounts with users of a different service, conventions\nwhich ensure cross-compatibility should make it easier to achieve this.\n\nMany wallet as a service providers use a 2of3 multi-signature schema\nwhere the user stores 1 of the keys (offline) as backup while using the\nother key for daily use and letting the service cosign his transactions.\nThis standard will help in enabling a party other than the service\nprovider to recover the wallet without any help from the service\nprovider."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "For a set of public keys, ensure that they have been received in\ncompressed form:\n\n`\u00a0\u00a0\u00a0022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da`\\\n`\u00a0\u00a0\u00a003e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9\u00a0`\\\n`\u00a0\u00a0\u00a0021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18`\\\n\nSort them lexicographically according to their binary representation:\n\n`\u00a0\u00a0\u00a0021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18`\\\n`\u00a0\u00a0\u00a0022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da`\\\n`\u00a0\u00a0\u00a003e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9`\n\n..before using the resulting list of keys in a standard multisig redeem\nscript:\n\n`\u00a0\u00a0\u00a0OP_2\u00a0021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18\u00a0022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da\u00a003e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9\u00a0OP_3\u00a0OP_CHECKMULTISIG`\n\nHash the redeem script according to BIP-0016 to get the P2SH address.\n\n`\u00a0\u00a0\u00a03Q4sF6tv9wsdqu2NtARzNCpQgwifm2rAba`\\\n`\u00a0\u00a0\u00a0`"
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "-   Uncompressed keys are incompatible with this specificiation. A\ncompatible implementation should not automatically compress keys.\nReceiving an uncompressed key from a multisig participant should be\ninterpreted as a sign that the user has an incompatible\nimplementation.\n-   P2SH addressses do not reveal information about the script that is\nreceiving the funds. For this reason it is not technically possible\nto enforce this BIP as a rule on the network. Also, it would cause a\nhard fork.\n-   Implementations that do not conform with this BIP will have\ncompatibility issues with strictly-compliant wallets.\n-   Implementations which do adopt this standard will be\ncross-compatible when choosing multisig addressses.\n-   If a group of users were not entirely compliant, there is the\npossibility that a participant will derive an address that the\nothers will not recognize as part of the common multisig account."
     },
     {
       "header": "Test vectors {#test_vectors}",
-      "content": ""
+      "content": "Two signatures are required in each of these test vectors.\n\nVector 1\n\n-   List\n-   02ff12471208c14bd580709cb2358d98975247d8765f92bc25eab3b2763ed605f8\n-   02fe6f0a5a297eb38c391581c4413e084773ea23954d93f7753db7dc0adc188b2f\n-   Sorted\n-   02fe6f0a5a297eb38c391581c4413e084773ea23954d93f7753db7dc0adc188b2f\n-   02ff12471208c14bd580709cb2358d98975247d8765f92bc25eab3b2763ed605f8\n-   Script\n-   522102fe6f0a5a297eb38c391581c4413e084773ea23954d93f7753db7dc0adc188b2f2102ff12471208c14bd580709cb2358d98975247d8765f92bc25eab3b2763ed605f852ae\n-   Address\n-   39bgKC7RFbpoCRbtD5KEdkYKtNyhpsNa3Z\n\nVector 2 (Already sorted, no action required)\n\n-   List:\n-   02632b12f4ac5b1d1b72b2a3b508c19172de44f6f46bcee50ba33f3f9291e47ed0\n-   027735a29bae7780a9755fae7a1c4374c656ac6a69ea9f3697fda61bb99a4f3e77\n-   02e2cc6bd5f45edd43bebe7cb9b675f0ce9ed3efe613b177588290ad188d11b404\n-   Sorted:\n-   02632b12f4ac5b1d1b72b2a3b508c19172de44f6f46bcee50ba33f3f9291e47ed0\n-   027735a29bae7780a9755fae7a1c4374c656ac6a69ea9f3697fda61bb99a4f3e77\n-   02e2cc6bd5f45edd43bebe7cb9b675f0ce9ed3efe613b177588290ad188d11b404\n-   Script\n-   522102632b12f4ac5b1d1b72b2a3b508c19172de44f6f46bcee50ba33f3f9291e47ed021027735a29bae7780a9755fae7a1c4374c656ac6a69ea9f3697fda61bb99a4f3e772102e2cc6bd5f45edd43bebe7cb9b675f0ce9ed3efe613b177588290ad188d11b40453ae\n-   Address\n-   3CKHTjBKxCARLzwABMu9yD85kvtm7WnMfH\n\nVector 3:\n\n-   List:\n-   030000000000000000000000000000000000004141414141414141414141414141\n-   020000000000000000000000000000000000004141414141414141414141414141\n-   020000000000000000000000000000000000004141414141414141414141414140\n-   030000000000000000000000000000000000004141414141414141414141414140\n-   Sorted:\n-   020000000000000000000000000000000000004141414141414141414141414140\n-   020000000000000000000000000000000000004141414141414141414141414141\n-   030000000000000000000000000000000000004141414141414141414141414140\n-   030000000000000000000000000000000000004141414141414141414141414141\n-   Script\n-   522102000000000000000000000000000000000000414141414141414141414141414021020000000000000000000000000000000000004141414141414141414141414141210300000000000000000000000000000000000041414141414141414141414141402103000000000000000000000000000000000000414141414141414141414141414154ae\n-   Address\n-   32V85igBri9zcfBRVupVvwK18NFtS37FuD\n\nVector 4: (from bitcore)\n\n-   List:\n-   022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da\n-   03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9\n-   021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18\n-   Sorted:\n-   021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18\n-   022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da\n-   03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9\n-   Script\n-   5221021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc1821022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da2103e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e953ae\n-   Address\n-   3Q4sF6tv9wsdqu2NtARzNCpQgwifm2rAba"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "The authors wish to thank BtcDrak and Luke-Jr for their involvement &\ncontributions in the early discussions of this BIP."
     },
     {
       "header": "Usage & Implementations {#usage_implementations}",
-      "content": ""
+      "content": "-   [BIP-0045](https://github.com/bitcoin/bips/blob/master/bip-0045.mediawiki#address-generation-procedure \"wikilink\") -\nStructure for Deterministic P2SH Multisignature Wallets\n-   [Bitcore](https://github.com/bitpay/bitcore/blob/50a868cb8cdf2be04bb1c5bf4bcc064cc06f5888/lib/script/script.js#L541 \"wikilink\")\n-   [Haskoin](https://github.com/haskoin/haskoin-core/blob/b41b1deb0989334a7ead6fc993fb8b02f0c00810/haskoin-core/Network/Haskoin/Script/Parser.hs#L112-L122 \"wikilink\") -\nBitcoin implementation in Haskell\n-   [Armory](https://github.com/etotheipi/BitcoinArmory/blob/268db0f3fa20c989057bd43343a43b2edbe89aeb/armoryengine/ArmoryUtils.py#L1441 \"wikilink\")\n-   [BitcoinJ](https://github.com/bitcoinj/bitcoinj/blob/master/core/src/main/java/org/bitcoinj/script/ScriptBuilder.java#L331 \"wikilink\")"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "```{=html}\n<references>\n```"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain.\n\n[^1]: [BIP-0011](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki)\n\n[^2]: [BIP-0016](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki)"
     }
   ]
 }

@@ -12,59 +12,59 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes extensions to the getblocktemplate JSON-RPC call to\nenhance pooled mining."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Note that all sections of this specification are optional extensions on\ntop of [BIP 22](bip-0022.mediawiki \"wikilink\")."
     },
     {
       "header": "Summary Support Levels {#summary_support_levels}",
-      "content": ""
+      "content": "Something can be said to have BIP 23 Level 1 support if it implements at\nleast:\n\n-   [RFC 1945](http://www.ietf.org/rfc/rfc1945.txt)\n-   [JSON-RPC 1.0](http://json-rpc.org/wiki/specification)\n-   [BIP 22 (non-optional sections)](bip-0022.mediawiki \"wikilink\")\n-   [BIP 22 Long\nPolling](bip-0022.mediawiki#Optional:_Long_Polling \"wikilink\")\n-   [BIP 23 Basic Pool Extensions](#Basic_Pool_Extensions \"wikilink\")\n-   [BIP 23 Mutation \\\"coinbase/append\\\"](#Mutations \"wikilink\")\n-   [BIP 23 Submission Abbreviation\n\\\"submit/coinbase\\\"](#Submission_Abbreviation \"wikilink\")\n-   [BIP 23 Mutation \\\"time/increment\\\"](#Mutations \"wikilink\") (only\nrequired for servers)\n\nIt can be said to have BIP 23 Level 2 support if it also implements:\n\n-   [BIP 23 Mutation \\\"transactions/add\\\"](#Mutations \"wikilink\")\n-   [BIP 23 Block Proposals](#Block_Proposals \"wikilink\")"
     },
     {
       "header": "Basic Pool Extensions {#basic_pool_extensions}",
-      "content": ""
+      "content": "template request\n------------------\nKey\ntarget\n\ntemplate\n----------\nKey\nexpires\ntarget"
     },
     {
       "header": "Block Proposal {#block_proposal}",
-      "content": ""
+      "content": "Servers may indicate support for proposing blocks by including a\ncapability string in their original template:\n\ntemplate\n---------------\nKey\ncapabilities\nreject-reason\n\nIf supported, a miner MAY propose a block to the server for general\nvalidation at any point before the job expires. This is accomplished by\ncalling getblocktemplate with two keys:\n\ngetblocktemplate parameters\n-----------------------------\nKey\ndata\nmode\nworkid\n\nThe block data MUST be validated and checked against the server\\'s usual\nacceptance rules (excluding the check for a valid proof-of-work). If it\nis found to be in violation of any of these rules, the server MUST\nreturn one of the following:\n\n-   Null if it is acceptable as-is, with the same workid (if any) as\nprovided. Note that this SHOULD NOT invalidate the old template\\'s\nclaim to the same workid.\n-   A String giving the reason for the rejection (see [example rejection\nreasons](bip-0022.mediawiki#appendix-example-rejection-reasons \"wikilink\")).\n-   A \\\"delta\\\" block template (with changes needed); in this case, any\nmissing keys are assumed to default to those in the proposed block\nor, if not applicable, the original block template it was based on.\nThis template MAY also include a \\\"reject-reason\\\" key with a String\nof the reason for rejection.\n\nIt is RECOMMENDED that servers which merely need to track the proposed\nblock for later share/\\* submissions, return a simple Object of the\nform:\n\n`{\"workid\":\"new\u00a0workid\"}`\n\nClients SHOULD assume their proposed block will remain valid if the only\nchanges they make are to the portion of the coinbase scriptSig they\nthemselves provided (if any) and the time header. Servers SHOULD NOT\nbreak this assumption without good cause."
     },
     {
       "header": "Mutations",
-      "content": ""
+      "content": "template request\n------------------\nKey\nnonces\n\ntemplate\n------------\nKey\nmaxtime\nmaxtimeoff\nmintime\nmintimeoff\nmutable\nnoncerange\n\nIf the block template contains a \\\"mutable\\\" key, it is a list of these\nto signify modifications the miner is allowed to make:\n\nmutations\n----------------------------------------\nValue\ncoinbase/append\ncoinbase\ngeneration\ntime/increment\ntime/decrement\ntime\ntransactions/add (or \\\"transactions\\\")\nprevblock\nversion/force\nversion/reduce"
     },
     {
       "header": "Submission Abbreviation {#submission_abbreviation}",
-      "content": ""
+      "content": "template\n------------\nKey\nfulltarget\nmutable\n\nIf the block template contains a \\\"mutable\\\" key, it is a list of these\nto signify modifications the miner is allowed to make:\n\nabbreviation mutations\n------------------------\nValue\nsubmit/hash\nsubmit/coinbase\nsubmit/truncate\nshare/coinbase\nshare/merkle\nshare/truncate"
     },
     {
       "header": "Format of Data for Merkle-Only Shares {#format_of_data_for_merkle_only_shares}",
-      "content": ""
+      "content": "The format used for submitting shares with the \\\"share/merkle\\\" mutation\nshall be the 80-byte block header, the total number of transactions\nencoded in Bitcoin variable length number format, the coinbase\ntransaction, and then finally the little-endian SHA256 hashes of each\nlink in the merkle chain connecting it to the merkle root."
     },
     {
       "header": "Logical Services {#logical_services}",
-      "content": ""
+      "content": "template request\n------------------\nKey\ncapabilities\n\ntemplate\n------------\nKey\nserverlist\n\nIf the \\\"serverlist\\\" parameter is provided, clients MAY choose to\nintelligently treat the server as part of a larger single logical\nservice.\n\nEach host Object in the Array is comprised of the following fields:\n\nserverlist element\n--------------------\nKey\nuri\navoid\npriority\nsticky\nupdate\nweight\n\nWhen choosing which actual server to get the next job from, URIs MUST be\ntried in order of their \\\"priority\\\" key, lowest Number first. Where the\npriority of URIs is the same, they should be chosen from in random\norder, weighed by their \\\"weight\\\" key. Work proposals and submissions\nMUST be made to the same server that issued the job. Clients MAY attempt\nto submit to other servers if, and only if, the original server cannot\nbe reached. If cross-server share submissions are desired, services\nSHOULD instead use the equivalent domain name system (DNS) features\n(RFCs [1794](http://tools.ietf.org/html/rfc1794) and\n[2782](http://tools.ietf.org/html/rfc2782)).\n\nUpdates to the Logical Service server list may only be made by the\noriginal server, or servers listed with the \\\"update\\\" key missing or\ntrue. Clients MAY choose to advertise serverlist capability to servers\nwith a false \\\"update\\\" key, but if so, MUST treat the server list\nprovided as a subset of the current one, only considered in the context\nof this server. At least one server with \\\"update\\\" privilege MUST be\nattempted at least once daily.\n\nIf the \\\"sticky\\\" key is provided, then when that server is used, it\nshould be used consistently for at least that many seconds, if possible.\n\nA permanent change in server URI MAY be indicated with a simple\n\\\"serverlist\\\" parameter:\n\n`\"serverlist\":[{\"uri\":\u00a0\"`[`http://newserver`](http://newserver)`\"}]`\n\nA temporary delegation to another server for 5 minutes MAY be indicated\nlikewise:\n\n`\"serverlist\":[{\"uri\":\u00a0\"\",\u00a0avoid:\u00a0300},\u00a0{\"uri\":\u00a0\"`[`http://newserver`](http://newserver)`\",\u00a0\"update\":\u00a0false}]`"
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "There is reasonable concerns about mining currently being too\ncentralized on pools, and the amount of control these pools hold. By\nexposing the details of the block proposals to the miners, they are\nenabled to audit and possibly modify the block before hashing it.\n\nTo encourage widespread adoption, this BIP should be a complete superset\nof the existing centralized getwork protocol, so pools are not required\nto make substantial changes to adopt it."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Why allow servers to restrict the complete coinbase and nonce range?\n\n-   This is necessary to provide a complete superset of JSON-RPC getwork\nfunctionality, so that pools may opt to enable auditing without\nsignificantly changing or increasing the complexity of their share\nvalidation or mining policies.\n-   Since noncerange is optional (both for getwork and this BIP),\nneither clients nor servers are required to support it.\n\nWhy specify \\\"time/\\*\\\" mutations at all?\n\n-   In most cases, these are implied by the\nmintime/mintimecur/maxtime/maxtimecur keys, but there may be cases\nthat there are no applicable minimums/maximums.\n\nWhat is the purpose of the \\\"prevblock\\\" mutation?\n\n-   There are often cases where a miner has processed a new block before\nthe server. If the server allows \\\"prevblock\\\" mutation, the miner\nmay begin mining on the new block immediately, without waiting for a\nnew template.\n\nWhy must both \\\"mintime\\\"/\\\"maxtime\\\" and \\\"mintimeoff\\\"/\\\"maxtimeoff\\\"\nkeys be defined?\n\n-   In some cases, the limits may be unrelated to the current time (such\nas the Bitcoin network itself; the minimum is always a fixed median\ntime)\n-   In other cases, the limits may be bounded by other rules (many pools\nlimit the time header to within 5 minutes of when the share is\nsubmitted to them).\n\nIs \\\"target\\\" really needed?\n\n-   Some pools work with lower targets, and should not be expected to\nwaste bandwidth ignoring shares that don\\'t meet it.\n-   Required to be a proper superset of getwork.\n-   As mining hashrates grow, some miners may need the ability to\nrequest a lower target from their pools to be able to manage their\nbandwidth use.\n\nWhat is the purpose of the \\\"hash\\\" transaction list format?\n\n-   Non-mining tools may wish to simply get a list of memory pool\ntransactions.\n-   Humans may wish to view their current memory pool."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   [libblkmaker](http://gitorious.org/bitcoin/libblkmaker)\n-   [Eloipool](https://gitorious.org/bitcoin/eloipool)\n-   [bitcoind](https://github.com/bitcoin/bitcoin/pull/936/files)"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   [BIP 22: getblocktemplate -\nFundamentals](bip-0022.mediawiki \"wikilink\")"
     }
   ]
 }

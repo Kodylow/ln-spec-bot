@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies a user activated soft fork for\n[BIP141](bip-0141.mediawiki \"wikilink\"),\n[BIP143](bip-0143.mediawiki \"wikilink\") and\n[BIP147](bip-0147.mediawiki \"wikilink\") using versionbits with\nguaranteed lock-in."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Miners have been reluctant to signal the BIP9 segwit deployment despite\na large portion of the Bitcoin ecosystem who want the soft fork\nactivated. This BIP specifies a user activated soft fork (UASF) that\ndeploys segwit again using versionbits with guaranteed lock-in on\ntimeout if the BIP is not already locked-in or activated by the timeout.\nThis ensures users have sufficient time to prepare and no longer require\na miner supermajority, while still allowing for an earlier miner\nactivated soft fork (MASF)."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "The reference implementation will refuse to run on Bitcoin mainnet\nbefore 7 November 2017, and can only be run on testnet and regtest until\nthen.\n\n<https://github.com/bitcoin/bitcoin/compare/master>\\...shaolinfry:uasegwit-flagday"
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "This deployment will set service bit (1\\<\\<5) as NODE_UAWITNESS."
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP should only be deployed if BIP9-segwit fails to lock-in or\nactivate before timeout on 15 November 2017. This BIP cannot be deployed\nbefore 15 November 2017.\n\nThis BIP will be deployed by BIP8 with the name \\\"segwit\\\" and using bit\n1.\n\nFor Bitcoin mainnet, the BIP8 starttime will be midnight 16 November\n2017 UTC (Epoch timestamp 1510790400) and BIP8 timeout will be 4 July\n2018 UTC (Epoch timestamp 1530662400).\n\nFor Bitcoin testnet, segwit is already activated so no deployment is\nspecified."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "This deployment reuses the GBT deployment name \\\"segwit\\\" to maintain\ncompatibility with existing mining software.\n\nThis deployment is incompatible with the BIP9-segwit deployment and\nshould not be run concurrently with it."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The **starttime** of this BIP is after the BIP9-segwit timeout to remove\ncompatibility issues with old nodes."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[Mailing list\ndiscussion](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-April/014234.html)\n\n[BIP8](bip-0008.mediawiki \"wikilink\")\n\n[BIP9](bip-0009.mediawiki \"wikilink\")\n\n[BIP141](bip-0141.mediawiki \"wikilink\")\n\n[BIP143](bip-0143.mediawiki \"wikilink\")\n\n[BIP147](bip-0147.mediawiki \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is dual licensed as BSD 3-clause, and Creative Commons CC0\n1.0 Universal."
     }
   ]
 }

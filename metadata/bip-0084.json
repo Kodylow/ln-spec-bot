@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines the derivation scheme for HD wallets using the P2WPKH\n([BIP 173](bip-0173.mediawiki \"wikilink\")) serialization format for\nsegregated witness transactions."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "With the usage of P2WPKH transactions it is necessary to have a common\nderivation scheme. It allows the user to use different HD wallets with\nthe same masterseed and/or a single account seamlessly.\n\nThus the user needs to create dedicated segregated witness accounts,\nwhich ensures that only wallets compatible with this BIP will detect the\naccounts and handle them appropriately."
     },
     {
       "header": "Considerations",
-      "content": ""
+      "content": "We use the same rationale as described in Considerations section of [BIP\n49](bip-0049.mediawiki \"wikilink\")."
     },
     {
       "header": "Specifications",
-      "content": ""
+      "content": "This BIP defines the two needed steps to derive multiple deterministic\naddresses based on a [BIP 32](bip-0032.mediawiki \"wikilink\") root\naccount."
     },
     {
       "header": "Public key derivation {#public_key_derivation}",
-      "content": ""
+      "content": "To derive a public key from the root account, this BIP uses the same\naccount-structure as defined in [BIP 44](bip-0044.mediawiki \"wikilink\")\nand [BIP 49](bip-0049.mediawiki \"wikilink\"), but only uses a different\npurpose value to indicate the different transaction serialization\nmethod.\n\nm / purpose' / coin_type' / account' / change / address_index\n\nFor the `purpose`-path level it uses `84'`. The rest of the levels are\nused as defined in BIP44 or BIP49."
     },
     {
       "header": "Address derivation {#address_derivation}",
-      "content": ""
+      "content": "To derive the P2WPKH address from the above calculated public key, we\nuse the encapsulation defined in [BIP\n141](bip-0141.mediawiki#p2wpkh \"wikilink\"):\n\n`\u00a0\u00a0\u00a0witness:\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0``<signature>`{=html}`\u00a0``<pubkey>`{=html}\\\n`\u00a0\u00a0\u00a0scriptSig:\u00a0\u00a0\u00a0\u00a0(empty)`\\\n`\u00a0\u00a0\u00a0scriptPubKey:\u00a00\u00a0<20-byte-key-hash>`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0(0x0014{20-byte-key-hash})`"
     },
     {
       "header": "Extended Key Version {#extended_key_version}",
-      "content": ""
+      "content": "When serializing extended keys, this scheme uses alternate version\nbytes. Extended public keys use `0x04b24746` to produce a \\\"zpub\\\"\nprefix, and private keys use `0x04b2430c` to produce a \\\"zprv\\\" prefix.\nTestnet uses `0x045f1cf6` \\\"vpub\\\" and `0x045f18bc` \\\"vprv.\\\"\n\nAdditional registered version bytes are listed in\n[SLIP-0132](https://github.com/satoshilabs/slips/blob/master/slip-0132.md \"wikilink\")."
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "This BIP is not backwards compatible by design as described under\n\\[#considerations\\]. An incompatible wallet will not discover accounts\nat all and the user will notice that something is wrong."
     },
     {
       "header": "Test vectors {#test_vectors}",
-      "content": ""
+      "content": "mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about\nrootpriv = zprvAWgYBBk7JR8Gjrh4UJQ2uJdG1r3WNRRfURiABBE3RvMXYSrRJL62XuezvGdPvG6GFBZduosCc1YP5wixPox7zhZLfiUm8aunE96BBa4Kei5\nrootpub  = zpub6jftahH18ngZxLmXaKw3GSZzZsszmt9WqedkyZdezFtWRFBZqsQH5hyUmb4pCEeZGmVfQuP5bedXTB8is6fTv19U1GQRyQUKQGUTzyHACMF\n\n// Account 0, root = m/84'/0'/0'\nxpriv = zprvAdG4iTXWBoARxkkzNpNh8r6Qag3irQB8PzEMkAFeTRXxHpbF9z4QgEvBRmfvqWvGp42t42nvgGpNgYSJA9iefm1yYNZKEm7z6qUWCroSQnE\nxpub  = zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs\n\n// Account 0, first receiving address = m/84'/0'/0'/0/0\nprivkey = KyZpNDKnfs94vbrwhJneDi77V6jF64PWPF8x5cdJb8ifgg2DUc9d\npubkey  = 0330d54fd0dd420a6e5f8d3624f5f3482cae350f79d5f0753bf5beef9c2d91af3c\naddress = bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu\n\n// Account 0, second receiving address = m/84'/0'/0'/0/1\nprivkey = Kxpf5b8p3qX56DKEe5NqWbNUP9MnqoRFzZwHRtsFqhzuvUJsYZCy\npubkey  = 03e775fd51f0dfb8cd865d9ff1cca2a158cf651fe997fdc9fee9c1d3b5e995ea77\naddress = bc1qnjg0jd8228aq7egyzacy8cys3knf9xvrerkf9g\n\n// Account 0, first change address = m/84'/0'/0'/1/0\nprivkey = KxuoxufJL5csa1Wieb2kp29VNdn92Us8CoaUG3aGtPtcF3AzeXvF\npubkey  = 03025324888e429ab8e3dbaf1f7802648b9cd01e9b418485c5fa4c1b9b5700e1a6\naddress = bc1q8c6fshw2dlwun7ekn9qwf37cu2rn755upcp6el"
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP43 - Purpose Field for Deterministic\nWallets](bip-0043.mediawiki \"wikilink\")\n-   [BIP44 - Multi-Account Hierarchy for Deterministic\nWallets](bip-0044.mediawiki \"wikilink\")\n-   [BIP49 - Derivation scheme for P2WPKH-nested-in-P2SH based\naccounts](bip-0049.mediawiki \"wikilink\")\n-   [BIP141 - Segregated Witness (Consensus\nlayer)](bip-0141.mediawiki \"wikilink\")\n-   [BIP173 - Base32 address format for native v0-16 witness\noutputs](bip-0173.mediawiki \"wikilink\")"
     }
   ]
 }

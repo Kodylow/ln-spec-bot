@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Add a new message, \\\"feefilter\\\", which serves to instruct peers not to\nsend \\\"inv\\\"\\'s to the node for transactions with fees below the\nspecified fee rate."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The concept of a limited mempool was introduced in Bitcoin Core 0.12 to\nprovide protection against attacks or spam transactions of low fees that\nare not being mined. A reject filter was also introduced to help prevent\nrepeated requests for the same transaction that might have been recently\nrejected for insufficient fee. These methods help keep resource\nutilization on a node from getting out of control.\n\nHowever, there are limitations to the effectiveness of these approaches.\nThe reject filter is reset after every block which means transactions\nthat are inv\\'ed over a longer time period will be rerequested and there\nis no method to prevent requesting the transaction the first time.\nFurthermore, inv data is sent at least once either to or from each peer\nfor every transaction accepted to the mempool and there is no mechanism\nby which to know that an inv sent to a given peer would not result in a\ngetdata request because it represents a transaction with too little fee.\n\nAfter receiving a feefilter message, a node can know before sending an\ninv that a given transaction\\'s fee rate is below the minimum currently\nrequired by a given peer, and therefore the node can skip relaying an\ninv for that transaction to that peer."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  The feefilter message is defined as a message containing an int64_t\nwhere pchCommand == \\\"feefilter\\\"\n2.  Upon receipt of a \\\"feefilter\\\" message, the node will be permitted,\nbut not required, to filter transaction invs for transactions that\nfall below the feerate provided in the feefilter message interpreted\nas satoshis per kilobyte.\n3.  The fee filter is additive with a bloom filter for transactions so\nif an SPV client were to load a bloom filter and send a feefilter\nmessage, transactions would only be relayed if they passed both\nfilters.\n4.  Inv\\'s generated from a mempool message are also subject to a fee\nfilter if it exists.\n5.  Feature discovery is enabled by checking protocol version \\>= 70013"
     },
     {
       "header": "Considerations",
-      "content": ""
+      "content": "The propagation efficiency of transactions across the network should not\nbe adversely affected by this change. In general, transactions which are\nnot accepted to a node\\'s mempool are not relayed by this node and the\nfunctionality implemented with this message is meant only to filter\nthose transactions. There could be a small number of edge cases where a\nnode\\'s mempool min fee is actually less than the filter value a peer is\naware of and transactions with fee rates between these values will now\nbe newly inhibited.\n\nFeefilter messages are not sent to whitelisted peers if the\n\\\"-whitelistforcerelay\\\" option is set. In that case, transactions are\nintended to be relayed even if they are not accepted to the mempool.\n\nThere are privacy concerns with deanonymizing a node by the fact that it\nis broadcasting identifying information about its mempool min fee. To\nhelp ameliorate this concern, the implementation quantizes the filter\nvalue broadcast with a small amount of randomness, in addition, the\nmessages are broadcast to different peers at individually randomly\ndistributed times.\n\nIf a node is using prioritisetransaction to accept transactions whose\nactual fee rates might fall below the node\\'s mempool min fee, it may\nwant to consider disabling the fee filter to make sure it is exposed to\nall possible txid\\'s."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Older clients remain fully compatible and interoperable after this\nchange. Also, clients implementing this BIP can choose to not send any\nfeefilter messages."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/7542>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

@@ -12,83 +12,79 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "A standard for interoperable signed messages based on the Bitcoin Script\nformat, either for proving fund availability, or committing to a message\nas the intended recipient of funds sent to the invoice address."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The current message signing standard only works for P2PKH (1\\...)\ninvoice addresses. We propose to extend and generalize the standard by\nusing a Bitcoin Script based approach. This ensures that any coins, no\nmatter what script they are controlled by, can in-principle be signed\nfor. For easy interoperability with existing signing hardware, we also\ndefine a signature message format which resembles a Bitcoin transaction\n(except that it contains an invalid input, so it cannot be spent on any\nreal network).\n\nAdditionally, the current message signature format uses ECDSA signatures\nwhich do not commit to the public key, meaning that they do not actually\nprove knowledge of any secret keys. (Indeed, valid signatures can be\ntweaked by 3rd parties to become valid signatures on certain related\nkeys.)\n\nUltimately no message signing protocol can actually prove control of\nfunds, both because a signature is obsolete as soon as it is created,\nand because the possessor of a secret key may be willing to sign\nmessages on others\\' behalf even if it would not sign actual\ntransactions. No signmessage protocol can fix these limitations."
     },
     {
       "header": "Types of Signatures {#types_of_signatures}",
-      "content": ""
+      "content": "This BIP specifies three formats for signing messages: *legacy*,\n*simple* and *full*. Additionally, a variant of the *full* format can be\nused to demonstrate control over a set of UTXOs."
     },
     {
       "header": "Legacy",
-      "content": ""
+      "content": "New proofs should use the new format for all invoice address formats,\nincluding P2PKH.\n\nThe legacy format MAY be used, but must be restricted to the legacy\nP2PKH invoice address format."
     },
     {
       "header": "Simple",
-      "content": ""
+      "content": "A *simple* signature consists of a witness stack, consensus encoded as a\nvector of vectors of bytes, and base64-encoded. Validators should\nconstruct `to_spend` and `to_sign` as defined below, with default values\nfor all fields except that\n\n-   `message_hash` is a BIP340-tagged hash of the message, as specified\nbelow\n-   `message_challenge` in `to_spend` is set to the scriptPubKey being\nsigned with\n-   `message_signature` in `to_sign` is set to the provided simple\nsignature.\n\nand then proceed as they would for a full signature."
     },
     {
       "header": "Full",
-      "content": ""
+      "content": "Full signatures follow an analogous specification to the BIP-325\nchallenges and solutions used by Signet.\n\nLet there be two virtual transactions `to_spend` and `to_sign`.\n\nThe `to_spend` transaction is:\n\n`\u00a0\u00a0\u00a0nVersion\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0nLockTime\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.hash\u00a0=\u00a00000...000`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.n\u00a0=\u00a00xFFFFFFFF`\\\n`\u00a0\u00a0\u00a0vin[0].nSequence\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].scriptSig\u00a0=\u00a0OP_0\u00a0PUSH32[\u00a0message_hash\u00a0]`\\\n`\u00a0\u00a0\u00a0vin[0].scriptWitness\u00a0=\u00a0[]`\\\n`\u00a0\u00a0\u00a0vout[0].nValue\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vout[0].scriptPubKey\u00a0=\u00a0message_challenge`\n\nwhere `message_hash` is a BIP340-tagged hash of the message, i.e.\nsha256_tag(m), where tag = `BIP0322-signed-message` and `m` is the\nmessage as is without length prefix or null terminator, and\n`message_challenge` is the to be proven (public) key script.\n\nThe `to_sign` transaction is:\n\n`\u00a0\u00a0\u00a0nVersion\u00a0=\u00a00\u00a0or\u00a0(FULL\u00a0format\u00a0only)\u00a0as\u00a0appropriate\u00a0(e.g.\u00a02,\u00a0for\u00a0time\u00a0locks)`\\\n`\u00a0\u00a0\u00a0nLockTime\u00a0=\u00a00\u00a0or\u00a0(FULL\u00a0format\u00a0only)\u00a0as\u00a0appropriate\u00a0(for\u00a0time\u00a0locks)`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.hash\u00a0=\u00a0to_spend.txid`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.n\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].nSequence\u00a0=\u00a00\u00a0or\u00a0(FULL\u00a0format\u00a0only)\u00a0as\u00a0appropriate\u00a0(for\u00a0time\u00a0locks)`\\\n`\u00a0\u00a0\u00a0vin[0].scriptWitness\u00a0=\u00a0message_signature`\\\n`\u00a0\u00a0\u00a0vout[0].nValue\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vout[0].scriptPubKey\u00a0=\u00a0OP_RETURN`\n\nA full signature consists of the base64-encoding of the `to_sign`\ntransaction in standard network serialisation once it has been signed."
     },
     {
       "header": "Full (Proof of Funds) {#full_proof_of_funds}",
-      "content": ""
+      "content": "A signer may construct a proof of funds, demonstrating control of a set\nof UTXOs, by constructing a full signature as above, with the following\nmodifications.\n\n-   `message_challenge` is unused and shall be set to `OP_TRUE`\n-   Similarly, `message_signature` is then empty.\n-   All outputs that the signer wishes to demonstrate control of are\nincluded as additional inputs of `to_sign`, and their witness and\nscriptSig data should be set as though these outputs were actually\nbeing spent.\n\nUnlike an ordinary signature, validators of a proof of funds need access\nto the current UTXO set, to learn that the claimed inputs exist on the\nblockchain, and to learn their scriptPubKeys."
     },
     {
       "header": "Detailed Specification {#detailed_specification}",
-      "content": ""
+      "content": "For all signature types, except legacy, the `to_spend` and `to_sign`\ntransactions must be valid transactions which pass all consensus checks,\nexcept of course that the output with prevout `000...000:FFFFFFFF` does\nnot exist."
     },
     {
       "header": "Verification",
-      "content": ""
+      "content": "A validator is given as input an address *A* (which may be omitted in a\nproof-of-funds), signature *s* and message *m*, and outputs one of three\nstates\n\n-   *valid at time T and age S* indicates that the signature has set\ntimelocks but is otherwise valid\n-   *inconclusive* means the validator was unable to check the scripts\n-   *invalid* means that some check failed"
     },
     {
       "header": "Verification Process {#verification_process}",
-      "content": ""
+      "content": "Validation consists of the following steps:\n\n1.  Basic validation\n1.  Compute the transaction `to_spend` from *m* and *A*\n2.  Decode *s* as the transaction `to_sign`\n3.  If *s* was a full transaction, confirm all fields are set as\nspecified above; in particular that\n-   `to_sign` has at least one input and its first input spends\nthe output of `</code>`{=html}to_spend`</code>`{=html}\n-   `to_sign` has exactly one output, as specified above\n4.  Confirm that the two transactions together satisfy all consensus\nrules, except for `to_spend`\\'s missing input, and except that\n*nSequence* of `to_sign`\\'s first input and *nLockTime* of\n`to_sign` are not checked.\n2.  (Optional) If the validator does not have a full script interpreter,\nit should check that it understands all scripts being satisfied. If\nnot, it should stop here and output *inconclusive*.\n3.  Check the \\*\\*required rules\\*\\*:\n1.  All signatures must use the SIGHASH_ALL flag.\n2.  The use of `CODESEPARATOR` or `FindAndDelete` is forbidden.\n3.  `LOW_S`, `STRICTENC` and `NULLFAIL`: valid ECDSA signatures must\nbe strictly DER-encoded and have a low-S value; invalid ECDSA\nsignature must be the empty push\n4.  `MINIMALDATA`: all pushes must be minimally encoded\n5.  `CLEANSTACK`: require that only a single stack element remains\nafter evaluation\n6.  `MINIMALIF`: the argument of `IF`/`NOTIF` must be exactly 0x01\nor empty push\n7.  If any of the above steps failed, the validator should stop and\noutput the *invalid* state.\n4.  Check the \\*\\*upgradeable rules\\*\\*\n1.  The version of `to_sign` must be 0 or 2.\n2.  The use of NOPs reserved for upgrades is forbidden.\n3.  The use of segwit versions greater than 1 are forbidden.\n4.  If any of the above steps failed, the validator should stop and\noutput the *inconclusive* state.\n5.  Let *T* by the nLockTime of `to_sign` and *S* be the nSequence of\nthe first input of `to_sign`. Output the state *valid at time T and\nage S*."
     },
     {
       "header": "Signing",
-      "content": ""
+      "content": "Signers who control an address *A* who wish to sign a message *m* act as\nfollows:\n\n1.  They construct `to_spend` and `to_sign` as specified above, using\nthe scriptPubKey of *A* for `message_challenge` and tagged hash of\n*m* as `message_hash`.\n2.  Optionally, they may set nLockTime of `to_sign` or nSequence of its\nfirst input.\n3.  Optionally, they may add any additional outputs to `to_sign` that\nthey wish to prove control of.\n4.  They satisfy `to_sign` as they would any other transaction.\n\nThey then encode their signature, choosing either *simple* or *full* as\nfollows:\n\n-   If they added no inputs to `to_sign`, left nSequence and nLockTime\nat 0, and *A* is a Segwit address (either pure or P2SH-wrapped),\nthen they may base64-encode `message_signature`\n-   Otherwise they must base64-encode `to_sign`."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This specification is backwards compatible with the legacy\nsignmessage/verifymessage specification through the special case as\ndescribed above."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   Bitcoin Core pull request (basic support) at:\n<https://github.com/bitcoin/bitcoin/pull/24058>"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to David Harding, Jim Posen, Kalle Rosenbaum, Pieter Wuille,\nAndrew Poelstra, and many others for their feedback on the\nspecification."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "1.  Original mailing list thread:\n<https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-March/015818.html>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is licensed under the Creative Commons CC0 1.0 Universal\nlicense."
     },
     {
       "header": "Test vectors {#test_vectors}",
-      "content": ""
-    },
-    {
-      "header": "Message hashing {#message_hashing}",
-      "content": ""
+      "content": "### Message hashing {#message_hashing}\n\nMessage hashes are BIP340-tagged hashes of a message, i.e.\nsha256_tag(m), where tag = `BIP0322-signed-message`, and m is the\nmessage as is without length prefix or null terminator:\n\n-   Message = \\\"\\\" (empty string):\n`c90c269c4f8fcbe6880f72a721ddfbf1914268a794cbb21cfafee13770ae19f1`\n-   Message = \\\"Hello World\\\":\n`f0eb03b1a75ac6d9847f55c624a99169b5dccba2a31f5b23bea77ba270de0a7a`"
     },
     {
       "header": "Message signing {#message_signing}",
-      "content": ""
+      "content": "Given below parameters:\n\n-   private key `L3VFeEujGtevx9w18HD1fhRbCH67Az2dpCymeRE1SoPK6XQtaN2k`\n-   corresponding address `bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l`\n\nProduce signatures:\n\n-   Message = \\\"\\\" (empty string):\n`AkcwRAIgM2gBAQqvZX15ZiysmKmQpDrG83avLIT492QBzLnQIxYCIBaTpOaD20qRlEylyxFSeEA2ba9YOixpX8z46TSDtS40ASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI=`\n-   Message = \\\"Hello World\\\":\n`AkcwRAIgZRfIY3p7/DoVTty6YZbWS71bc5Vct9p9Fia83eRmw2QCICK/ENGfwLtptFluMGs2KsqoNSk89pO7F29zJLUx9a/sASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI=`"
     },
     {
       "header": "Transaction Hashes {#transaction_hashes}",
-      "content": ""
+      "content": "to_spend:\n\n-   Message = \\\"\\\" (empty string):\n`c5680aa69bb8d860bf82d4e9cd3504b55dde018de765a91bb566283c545a99a7`\n-   Message = \\\"Hello World\\\":\n`b79d196740ad5217771c1098fc4a4b51e0535c32236c71f1ea4d61a2d603352b`\n\nto_sign:\n\n-   Message = \\\"\\\" (empty string):\n`1e9654e951a5ba44c8604c4de6c67fd78a27e81dcadcfe1edf638ba3aaebaed6`\n-   Message = \\\"Hello World\\\":\n`88737ae86f2077145f93cc4b153ae9a1cb8d56afa511988c149c5c8c9d93bddf`"
     }
   ]
 }

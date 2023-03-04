@@ -12,47 +12,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies proposed changes to the Bitcoin transaction\nvalidity rules to restrict signatures to strict DER encoding."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Bitcoin\\'s reference implementation currently relies on OpenSSL for\nsignature validation, which means it is implicitly defining Bitcoin\\'s\nblock validity rules. Unfortunately, OpenSSL is not designed for\nconsensus-critical behaviour (it does not guarantee bug-for-bug\ncompatibility between versions), and thus changes to it can - and have -\naffected Bitcoin software.\n\nOne specifically critical area is the encoding of signatures. Until\nrecently, OpenSSL\\'s releases would accept various deviations from the\nDER standard and accept signatures as valid. When this changed in\nOpenSSL 1.0.0p and 1.0.1k, it made some nodes reject the chain.\n\nThis document proposes to restrict valid signatures to exactly what is\nmandated by DER, to make the consensus rules not depend on OpenSSL\\'s\nsignature parsing. A change like this is required if implementations\nwould want to remove all of OpenSSL from the consensus code."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Every signature passed to OP_CHECKSIG, OP_CHECKSIGVERIFY,\nOP_CHECKMULTISIG, or OP_CHECKMULTISIGVERIFY, to which ECDSA verification\nis applied, must be encoded using strict DER encoding (see further).\n\nThese operators all perform ECDSA verifications on pubkey/signature\npairs, iterating from the top of the stack backwards. For each such\nverification, if the signature does not pass the\n`IsValidSignatureEncoding` check below, the entire script evaluates to\nfalse immediately. If the signature is valid DER, but does not pass\nECDSA verification, opcode execution continues as it used to, causing\nopcode execution to stop and push false on the stack (but not\nimmediately fail the script) in some cases, which potentially skips\nfurther signatures (and thus does not subject them to\n`IsValidSignatureEncoding`)."
     },
     {
       "header": "DER encoding reference {#der_encoding_reference}",
-      "content": ""
+      "content": "The following code specifies the behaviour of strict DER checking. Note\nthat this function tests a signature byte vector which includes the\n1-byte sighash flag that Bitcoin adds, even though that flag falls\noutside of the DER specification, and is unaffected by this proposal.\nThe function is also not called for cases where the length of sig is 0,\nin order to provide a simple, short and efficiently-verifiable encoding\nfor deliberately invalid signatures.\n\nDER is specified in <https://www.itu.int/rec/T-REC-X.690/en> .\n\nbool static IsValidSignatureEncoding(const std::vector<unsigned char> &sig) {\n// Format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S] [sighash]\n// * total-length: 1-byte length descriptor of everything that follows,\n//   excluding the sighash byte.\n// * R-length: 1-byte length descriptor of the R value that follows.\n// * R: arbitrary-length big-endian encoded R value. It must use the shortest\n//   possible encoding for a positive integers (which means no null bytes at\n//   the start, except a single one when the next byte has its highest bit set).\n// * S-length: 1-byte length descriptor of the S value that follows.\n// * S: arbitrary-length big-endian encoded S value. The same rules apply.\n// * sighash: 1-byte value indicating what data is hashed (not part of the DER\n//   signature)\n\n// Minimum and maximum size constraints.\nif (sig.size() < 9) return false;\nif (sig.size() > 73) return false;\n\n// A signature is of type 0x30 (compound).\nif (sig[0] != 0x30) return false;\n\n// Make sure the length covers the entire signature.\nif (sig[1] != sig.size() - 3) return false;\n\n// Extract the length of the R element.\nunsigned int lenR = sig[3];\n\n// Make sure the length of the S element is still inside the signature.\nif (5 + lenR >= sig.size()) return false;\n\n// Extract the length of the S element.\nunsigned int lenS = sig[5 + lenR];\n\n// Verify that the length of the signature matches the sum of the length\n// of the elements.\nif ((size_t)(lenR + lenS + 7) != sig.size()) return false;\n\n// Check whether the R element is an integer.\nif (sig[2] != 0x02) return false;\n\n// Zero-length integers are not allowed for R.\nif (lenR == 0) return false;\n\n// Negative numbers are not allowed for R.\nif (sig[4] & 0x80) return false;\n\n// Null bytes at the start of R are not allowed, unless R would\n// otherwise be interpreted as a negative number.\nif (lenR > 1 && (sig[4] == 0x00) && !(sig[5] & 0x80)) return false;\n\n// Check whether the S element is an integer.\nif (sig[lenR + 4] != 0x02) return false;\n\n// Zero-length integers are not allowed for S.\nif (lenS == 0) return false;\n\n// Negative numbers are not allowed for S.\nif (sig[lenR + 6] & 0x80) return false;\n\n// Null bytes at the start of S are not allowed, unless S would otherwise be\n// interpreted as a negative number.\nif (lenS > 1 && (sig[lenR + 6] == 0x00) && !(sig[lenR + 7] & 0x80)) return false;\n\nreturn true;\n}"
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "Notation: P1 and P2 are valid, serialized, public keys. S1 and S2 are\nvalid signatures using respective keys P1 and P2. S1\\' and S2\\' are\nnon-DER but otherwise valid signatures using those same keys. F is any\ninvalid but DER-compliant signature (including 0, the empty string). F\\'\nis any invalid and non-DER-compliant signature.\n\n1.  `S1' P1 CHECKSIG` fails (`<b>`{=html}changed`</b>`{=html})\n2.  `S1' P1 CHECKSIG NOT` fails (unchanged)\n3.  `F P1 CHECKSIG` fails (unchanged)\n4.  `F P1 CHECKSIG NOT` can succeed (unchanged)\n5.  `F' P1 CHECKSIG` fails (unchanged)\n6.  `F' P1 CHECKSIG NOT` fails (`<b>`{=html}changed`</b>`{=html})\n\n```{=html}\n<!-- -->\n```\n1.  `0 S1' S2 2 P1 P2 2 CHECKMULTISIG` fails\n(`<b>`{=html}changed`</b>`{=html})\n2.  `0 S1' S2 2 P1 P2 2 CHECKMULTISIG NOT` fails (unchanged)\n3.  `0 F S2' 2 P1 P2 2 CHECKMULTISIG` fails (unchanged)\n4.  `0 F S2' 2 P1 P2 2 CHECKMULTISIG NOT` fails\n(`<b>`{=html}changed`</b>`{=html})\n5.  `0 S1' F 2 P1 P2 2 CHECKMULTISIG` fails (unchanged)\n6.  `0 S1' F 2 P1 P2 2 CHECKMULTISIG NOT` can succeed (unchanged)\n\nNote that the examples above show that only additional failures are\nrequired by this change, as required for a soft forking change."
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "We reuse the double-threshold switchover mechanism from BIP 34, with the\nsame thresholds, but for nVersion = 3. The new rules are in effect for\nevery block (at height H) with nVersion = 3 and at least 750 out of 1000\nblocks preceding it (with heights H-1000..H-1) also have nVersion = 3.\nFurthermore, when 950 out of the 1000 blocks preceding a block do have\nnVersion = 3, nVersion = 2 blocks become invalid, and all further blocks\nenforce the new rules."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "The requirement to have signatures that comply strictly with DER has\nbeen enforced as a relay policy by the reference client since v0.8.0,\nand very few transactions violating it are being added to the chain as\nof January 2015. In addition, every non-compliant signature can\ntrivially be converted into a compliant one, so there is no loss of\nfunctionality by this requirement. This proposal has the added benefit\nof reducing transaction malleability (see BIP 62)."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "An implementation for the reference client is available at\n<https://github.com/bitcoin/bitcoin/pull/5713>"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "This document is extracted from the previous BIP62 proposal, which had\ninput from various people, in particular Greg Maxwell and Peter Todd,\nwho gave feedback about this document as well."
     },
     {
       "header": "Disclosures",
-      "content": ""
+      "content": "-   Subsequent to the network-wide adoption and enforcement of this BIP,\nthe author\n[disclosed](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-July/009697.html)\nthat strict DER signatures provided an indirect solution to a\nconsensus bug he had previously discovered."
     }
   ]
 }

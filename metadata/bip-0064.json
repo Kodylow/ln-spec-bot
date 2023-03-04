@@ -11,27 +11,27 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document describes a small P2P protocol extension that performs\nUTXO lookups given a set of outpoints."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "All full Bitcoin nodes maintain a database called the unspent\ntransaction output set. This set is how double spending is checked for:\nto be valid a transaction must identify unspent outputs in this set\nusing an identifier called an \\\"outpoint\\\", which is merely the hash of\nthe output\\'s containing transaction plus an index.\n\nThe ability to query this can sometimes be useful for a lightweight/SPV\nclient which does not have the full UTXO set at hand. For example, it\ncan be useful in applications implementing assurance contracts to do a\nquick check when a new pledge becomes visible to test whether that\npledge was already revoked via a double spend. Although this message is\nnot strictly necessary because e.g. such an app could be implemented by\nfully downloading and storing the block chain, it is useful for\nobtaining acceptable performance and resolving various UI cases.\n\nAnother example of when this data can be useful is for performing\nfloating fee calculations in an SPV wallet. This use case requires some\nother changes to the Bitcoin protocol however, so we will not dwell on\nit here."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Two new messages are defined. The \\\"getutxos\\\" message has the following\nstructure:\n\nField Size   Description     Data type                    Comments\n------------ --------------- ---------------------------- -------------------------------------------------------------------------------------------------------------------------------\n1            check mempool   bool                         Whether to apply mempool transactions during the calculation, thus exposing their UTXOs and removing outputs that they spend.\n?            outpoints       vector`<COutPoint>`{=html}   The list of outpoints to be queried. Each outpoint is serialized in the same way it is in a tx message.\n\nThe response message \\\"utxos\\\" has the following structure:\n\nField Size   Description      Data type    Comments\n------------ ---------------- ------------ -------------------------------------------------------------------------------------------------------------------------------------------------\n4            chain height     uint32       The height of the chain at the moment the result was calculated.\n32           chain tip hash   uint256      Block hash of the top of the chain at the moment the result was calculated.\n?            hit bitmap       byte\\[\\]     An array of bytes encoding one bit for each outpoint queried. Each bit indicates whether the queried outpoint was found in the UTXO set or not.\n?            result utxos     result\\[\\]   A list of result objects (defined below), one for each outpoint that is unspent (i.e. has a bit set in the bitmap).\n\nThe result object is defined as:\n\nField Size   Description   Data type   Comments\n------------ ------------- ----------- ---------------------------------------------------------------------------------------------------------\n4            tx version    uint32      The version number of the transaction the UTXO was found in.\n4            height        uint32      The height of the block containing the defining transaction, or 0x7FFFFFFF if the tx is in the mempool.\n?            output        CTxOut      The output itself, serialized in the same way as in a tx message."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Nodes indicate support by advertising a protocol version above 70003 and\nby setting a new NODE_GETUTXO flag in their nServices field, which has a\nvalue of 2 (the second bit of the field)."
     },
     {
       "header": "Authentication",
-      "content": ""
+      "content": "The UTXO set is not currently authenticated by anything. There are\nproposals to resolve this by introducing a new consensus rule that\ncommits to a root hash of the UTXO set in blocks, however this feature\nis not presently available in the Bitcoin protocol. Once it is, the\nutxos message could be upgraded to include Merkle branches showing\ninclusion of the UTXOs in the committed sets.\n\nIf the requesting client is looking up outputs for a signed transaction\nthat they have locally, the client can partly verify the returned output\nby running the input scripts with it. Currently this verifies only that\nthe script is correct. A future version of the Bitcoin protocol is\nlikely to also allow the value to be checked in this way. It does not\nshow that the output is really unspent or was ever actually created in\nthe block chain however. Additionally, the form of the provided\nscriptPubKey should be checked before execution to ensure the remote\npeer doesn\\'t just set the script to OP_TRUE.\n\nIf the requesting client has a mapping of chain heights to block hashes\nin the best chain e.g. obtained via getheaders, then they can obtain a\nproof that the output did at one point exist by requesting the block and\nsearching for the output within it. When combined with Bloom filtering\nthis can be reasonably efficient.\n\nNote that even when the outputs are being checked against something this\nprotocol has the same security model as Bloom filtering: a remote node\ncan lie through omission by claiming the requested UTXO does not exist /\nwas already spent (they are the same, from the perspective of a full\nnode). Querying multiple nodes and combining their answers can be a\npartial solution to this, although as nothing authenticates the Bitcoin\nP2P network a man in the middle could still yield incorrect results."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/4351/files>"
     }
   ]
 }

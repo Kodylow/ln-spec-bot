@@ -11,31 +11,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Bits is presented here as the standard term for 100 (one hundred)\nsatoshis or 1/1,000,000 (one one-millionth) of a bitcoin."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The bitcoin price has grown over the years and once the price is past\n\\$10,000 USD or so, bitcoin amounts under \\$10 USD start having enough\ndecimal places that it\\'s difficult to tell whether the user is off by a\nfactor of 10 or not. Switching the denomination to \\\"bits\\\" makes\ncomprehension easier. For example, when BTC is \\$15,000 USD, \\$10.05 is\na somewhat confusing 0.00067 BTC, versus 670 bits, which is a lot\nclearer.\n\nAdditonally, reverse comparisons are easier as 59 bits being \\$1 is\neasier to comprehend for most people than 0.000059 BTC being \\$1.\nSimilar comparisons can be made to other currencies: 1 yen being 0.8\nbits, 1 won being 0.07 bits and so on.\n\nPotential benefits of utilizing \\\"bits\\\" include:\n\n1.  Reduce user error on small bitcoin amounts.\n2.  Reduce unit bias for users that want a \\\"whole\\\" bitcoin.\n3.  Allow easier comparisons of prices for most users.\n4.  Allow easier bi-directional comparisons to fiat currencies.\n5.  Allows all UTXO amounts to need at most 2 decimal places, which can\nbe easier to handle."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Definition: 1 bit = 100 satoshis. Plural of \\\"bit\\\" is \\\"bits.\\\" The\nterms \\\"bit\\\" and \\\"bits\\\" are not proper nouns and thus should not be\ncapitalized unless used at the start of a sentence, etc.\n\nAll bitcoin-denominated items are encouraged to also show the\ndenomination in bits, either as the default or as an option."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "As bitcoin grows in price versus fiat currencies, it\\'s important to\ngive users the ability to quickly and accurately calculate prices for\ntransactions, savings and other economic activities. \\\"Bits\\\" have been\nused as a denomination within the Bitcoin ecosystem for some time. The\nidea of this BIP is to formalize this name. Additionally, \\\"bits\\\" is\nlikely the only other denomination that will be needed for Bitcoin as\n0.01 bit = 1 satoshi, meaning that two decimal places will be sufficient\nto describe any current utxo.\n\nExisting terms used in bitcoin such as satoshi, milli-bitcoin (mBTC) and\nbitcoin (BTC) do not conflict as they operate at different orders of\nmagnitude.\n\nThe term micro-bitcoin (\u00b5BTC) can continue to exist in tandem with the\nterm \\\"bits.\\\""
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "Software such as the Bitcoin Core GUI currently use the \u00b5BTC\ndenomination and can continue to do so. There is no obligation to switch\nto \\\"bits.\\\"\n\nThe term \\\"bit\\\" has many different definitions, but the ones of\nparticular note are these:\n\n-   1 bit = 1/8 dollar (e.g., that candy cost me 2 bits {or 1/4 dollar})\n-   bit meaning some amount of data (e.g., the first bit of the version\nfield is 0)\n-   bit meaning strength of a cryptographic algorithm (e.g., 256-bit\nECDSA is used in Bitcoin)\n\nThe first is a bit dated and isn\\'t likely to confuse people dealing\nwith Bitcoin. The second and third are computer science terms and\ncontext should be sufficient to figure out what the user of the word\nmeans."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Credit",
-      "content": ""
+      "content": "It\\'s hard to ascertain exactly who invented the term \\\"bits,\\\" but the\nterm has been around for a while and the author of this BIP does not\ntake any credit for inventing the term."
     }
   ]
 }

@@ -12,47 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes modifications to the getblocktemplate JSON-RPC call\n([BIP 22](bip-0022.mediawiki \"wikilink\")) to support segregated witness\nas defined by [BIP 141](bip-0141.mediawiki \"wikilink\")."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Block Template {#block_template}",
-      "content": ""
+      "content": "### Block Template {#block_template}\n\nThe template Object is revised to include a new key:\n\ntemplate\n-------------\nKey\nweightlimit\n\nThe \\'!\\' rule prefix MUST be enabled on the \\\"segwit\\\" rule for\ntemplates including transactions with witness data. In particular, note\nthat even if the client\\'s \\\"rules\\\" list lacks \\\"segwit\\\", server MAY\nsupport old miners by producing a witness-free template and omitting the\n\\'!\\' rule prefix for \\\"segwit\\\" in the template\\'s \\\"rules\\\" list. If\nthe GBT server does not support producing witness-free templates after\nits activation, it must also use the \\'!\\' rule prefix in the\n\\\"vbavailable\\\" list prior to activation."
     },
     {
       "header": "Transactions Object Format {#transactions_object_format}",
-      "content": ""
+      "content": "The Objects listed in the response\\'s \\\"transactions\\\" key is revised to\ninclude these keys:\n\ntemplate \\\"transactions\\\" element\n-----------------------------------\nKey\ntxid\nweight\nhash\n\nTransactions with witness data may only be included if the template\\'s\n\\\"rules\\\" list (see [BIP\n9](bip-0009.mediawiki#getblocktemplate_changes \"wikilink\")) includes\n\\\"segwit\\\"."
     },
     {
       "header": "Sigops",
-      "content": ""
+      "content": "For templates with \\\"segwit\\\" enabled as a rule, the \\\"sigoplimit\\\" and\n\\\"sigops\\\" keys must use the new values as calculated in [BIP\n141](bip-0141.mediawiki#Sigops \"wikilink\")."
     },
     {
       "header": "Block Assembly with Witness Transactions {#block_assembly_with_witness_transactions}",
-      "content": ""
+      "content": "When block assembly is done without witness transactions, no changes are\nmade by this BIP, and it should be assembled as previously.\n\nWhen witness transactions are included in the block, the primary merkle\nroot MUST be calculated with those transactions\\' \\\"txid\\\" field instead\nof \\\"hash\\\". A secondary merkle root MUST be calculated as per [BIP\n141\\'s commitment structure\nspecification](bip-0141.mediawiki#Commitment_structure \"wikilink\") to be\ninserted into the generation (coinbase) transaction.\n\nServers MUST NOT include a commitment in the \\\"coinbasetxn\\\" key on the\ntemplate. Clients MUST insert the commitment as an additional output at\nthe end of the final generation (coinbase) transaction. Only if the\ntemplate includes a \\\"mutable\\\" key (see [BIP 23\nMutations](bip-0023.mediawiki#Mutations \"wikilink\")) including\n\\\"generation\\\", the client MAY in that case place the commitment output\nin any position it chooses, provided that no later output matches the\ncommitment pattern."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Segregated witness substantially changes the structure of blocks, so the\nprevious getblocktemplate specification is no longer sufficient. It\nadditionally also adds a new way of counting resource limits, and so GBT\nmust be extended to convey this information correctly as well."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Why doesn\\'t \\\"weightlimit\\\" simply redefine the existing \\\"sizelimit\\\"?\n\n-   \\\"sizelimit\\\" is already enforced by clients by counting the sum of\nbytes in transactions\\' \\\"data\\\" keys.\n-   Servers may wish to limit the overall size of a block, independently\nfrom the \\\"weight\\\" of the block.\n\nWhy is \\\"sigoplimit\\\" redefined instead of a new \\\"sigopweightlimit\\\"\nbeing added?\n\n-   The old limit was already arbitrarily defined, and could not be\ncounted by clients on their own anyway. The concept of \\\"sigop\nweight\\\" is merely a change in the arbitrary formula used.\n\nWhy is \\\"sigoplimit\\\" divided by 4?\n\n-   To resemble the previous values. (FIXME: is this a good reason?\nmaybe we shouldn\\'t divide it?)\n\nWhy is the witness commitment required to be added to the end of the\ngeneration transaction rather than anywhere else?\n\n-   Servers which do not allow modification of the generation outputs\nought to be checking this as part of the validity of submissions. By\nrequiring a specific placement, they can simply strip the commitment\nand do a byte-for-byte comparison of the outputs. Placing it at the\nend avoids the possibility of a later output matching the pattern\nand overriding it.\n\nWhy shouldn\\'t the server simply add the commitment upfront in the\n\\\"coinbasetxn\\\", and simply send the client stripped transaction data?\n\n-   It would become impossible for servers to specify only\n\\\"coinbasevalue\\\", since clients would no longer have the\ninformation required to construct the commitment.\n-   getblocktemplate is intended to be a \\*decentralised\\* mining\nprotocol, and allowing clients to be blinded to the content of the\nblock works contrary to that purpose.\n-   BIP 23\\'s \\\"transactions\\\" mutations allow the client to modify the\ntransaction-set on their own, which is impossible without the\ncomplete transaction data."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   [libblkmaker](https://github.com/bitcoin/libblkmaker/tree/segwit)\n-   [Eloipool](https://github.com/luke-jr/eloipool/tree/segwit)\n-   [Bitcoin Core](https://github.com/bitcoin/bitcoin/pull/7404/files)"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   [BIP 9: Version bits with timeout and\ndelay](bip-0009.mediawiki \"wikilink\")\n-   [BIP 22: getblocktemplate -\nFundamentals](bip-0022.mediawiki \"wikilink\")\n-   [BIP 23: getblocktemplate - Pooled\nMining](bip-0023.mediawiki \"wikilink\")\n-   [BIP 141: Segregated Witness (Consensus\nlayer)](bip-0141.mediawiki \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is dual-licensed under the Open Publication License and BSD\n2-clause license."
     }
   ]
 }

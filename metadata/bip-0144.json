@@ -12,43 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP defines new messages and serialization formats for propagation\nof transactions and blocks committing to segregated witness structures."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "In addition to defining witness structures and requiring commitments in\nfuture blocks\n([BIP141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki) -\nConsensus segwit BIP), new mechanisms must be defined to allow peers to\nadvertise support for segregated witness and to relay the witness\nstructures and request them from other peers without breaking\ncompatibility with older nodes."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Serialization",
-      "content": ""
+      "content": "### Serialization\n\nA new serialization format for tx messages is added to the peer-to-peer\nprotocol.\n\nThe serialization has the following structure:\n\nField Size   Name               Type                   Description\n------------ ------------------ ---------------------- ---------------------------------------------------------------------\n4            version            int32_t                Transaction data format version\n1            marker             char                   Must be zero\n1            flag               char                   Must be nonzero\n1+           txin_count         var_int                Number of transaction inputs\n41+          txins              txin\\[\\]               A list of one or more transaction inputs\n1+           txout_count        var_int                Number of transaction outputs\n9+           txouts             txouts\\[\\]             A list of one or more transaction outputs\n1+           script_witnesses   script_witnesses\\[\\]   The witness structure as a serialized byte array\n4            lock_time          uint32_t               The block number or timestamp until which the transaction is locked\n\nParsers supporting this BIP will be able to distinguish between the old\nserialization format (without the witness) and this one. The marker byte\nis set to zero so that this structure will never parse as a valid\ntransaction in a parser that does not support this BIP. If parsing were\nto succeed, such a transaction would contain no inputs and a single\noutput.\n\nIf the witness is empty, the old serialization format must be used.\n\nCurrently, the only witness objects type supported are script witnesses\nwhich consist of a stack of byte arrays. It is encoded as a var_int item\ncount followed by each item encoded as a var_int length followed by a\nstring of bytes. Each txin has its own script witness. The number of\nscript witnesses is not explicitly encoded as it is implied by\ntxin_count. Empty script witnesses are encoded as a zero byte. The order\nof the script witnesses follows the same order as the associated txins.\n\n-   **Rationale for not having an independent message type with its own\nserialization**: this would require separate \\\"tx\\\" and \\\"block\\\"\nmessages, and all RPC calls operating on raw transactions would need\nto be duplicated, or need inefficient or nondeterministic guesswork\nto know which type is to be used.\n\n```{=html}\n<!-- -->\n```\n-   **Rationale for not using just a single 0x00 byte as marker**: that\nwould lead to empty transactions (no inputs, no outputs, which are\nused in some tests) to be interpreted as new serialized data.\n\n```{=html}\n<!-- -->\n```\n-   **Rationale for the 0x01 flag byte in between**: this will allow us\nto easily add more extra non-committed data to transactions (like\ntxouts being spent, \\...). It can be interpreted as a bitvector."
     },
     {
       "header": "Handshake",
-      "content": ""
+      "content": "A node will signal that it can provide witnesses using the following\nservice bit\n\n`\u00a0\u00a0\u00a0NODE_WITNESS\u00a0=\u00a0(1\u00a0<<\u00a03)`\\\n`\u00a0\u00a0\u00a0`"
     },
     {
       "header": "Hashes",
-      "content": ""
+      "content": "Transaction hashes used in the transaction merkle tree and txin\noutpoints are always computed using the old non-witness serialization.\n\nSupport for a new hash including the witness data is added that is\ncomputed from the new witness serialization. (Note that transactions\nwith an empty witness always use the old serialization, and therefore,\nthey have witness hash equal to normal hash.)\n\n`<img src=bip-0144/witnesstx.png>`{=html}`</img>`{=html}"
     },
     {
       "header": "Relay",
-      "content": ""
+      "content": "New inv types MSG_WITNESS_TX (0x40000001, or (1\\<\\<30)+MSG_TX) and\nMSG_WITNESS_BLOCK (0x40000002, or (1\\<\\<30)+MSG_BLOCK) are added, only\nfor use in getdata. Inventory messages themselves still use just MSG_TX\nand MSG_BLOCK, similar to MSG_FILTERED_BLOCK. A further inv type\nMSG_FILTERED_WITNESS_BLOCK (0x40000003, or (1\\<\\<30)+MSG_FILTERED_BLOCK)\nis reserved for future use.\n\n-   **Rationale for not advertizing witnessness in invs**: we don\\'t\nalways use invs anymore (with \\'sendheaders\\' BIP 130), plus it\\'s\nnot useful: implicitly, every transaction and block have a witness,\nold ones just have empty ones.\n\nMSG_WITNESS_TX getdata requests should use the non-witness serialized\nhash. The peer shall respond with a tx message, and if the witness\nstructure is nonempty, the witness serialization shall be used.\n\nMSG_WITNESS_BLOCK requests will return a block message with transactions\nthat have a witness using witness serialization."
     },
     {
       "header": "Credits",
-      "content": ""
+      "content": "Special thanks to Gregory Maxwell for originating many of the ideas in\nthis BIP and Luke-Jr for figuring out how to deploy this as a soft fork."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/8149>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

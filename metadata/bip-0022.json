@@ -12,55 +12,51 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes a new JSON-RPC method for \\\"smart\\\" Bitcoin miners\nand proxies. Instead of sending a simple block header for hashing, the\nentire block structure is sent, and left to the miner to (optionally)\ncustomize and assemble."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Block Template Request {#block_template_request}",
-      "content": ""
+      "content": "### Block Template Request {#block_template_request}\n\nA JSON-RPC method is defined, called \\\"getblocktemplate\\\". It accepts\nexactly one argument, which MUST be an Object of request parameters. If\nthe request parameters include a \\\"mode\\\" key, that is used to\nexplicitly select between the default \\\"template\\\" request or a\n[\\\"proposal\\\"](bip-0023.mediawiki#Block_Proposal \"wikilink\").\n\nBlock template creation can be influenced by various parameters:\n\ntemplate request\n------------------\nKey\ncapabilities\nmode\n\ngetblocktemplate MUST return a JSON Object containing the following\nkeys:\n\ntemplate\n-------------------\nKey\nbits\ncurtime\nheight\npreviousblockhash\nsigoplimit\nsizelimit\ntransactions\nversion\ncoinbaseaux\ncoinbasetxn\ncoinbasevalue\nworkid"
     },
     {
       "header": "Transactions Object Format {#transactions_object_format}",
-      "content": ""
+      "content": "The Objects listed in the response\\'s \\\"transactions\\\" key contains\nthese keys:\n\ntemplate \\\"transactions\\\" element\n-----------------------------------\nKey\ndata\ndepends\nfee\nhash\nrequired\nsigops\n\nOnly the \\\"data\\\" key is required, but servers should provide the others\nif they are known."
     },
     {
       "header": "Block Submission {#block_submission}",
-      "content": ""
+      "content": "A JSON-RPC method is defined, called \\\"submitblock\\\", to submit\npotential blocks (or shares). It accepts two arguments: the first is\nalways a String of the hex-encoded block data to submit; the second is\nan Object of parameters, and is optional if parameters are not needed.\n\nsubmitblock parameters (2nd argument)\n---------------------------------------\nKey\nworkid\n\nThis method MUST return either null (when a share is accepted), a String\ndescribing briefly the reason the share was rejected, or an Object of\nthese with a key for each merged-mining chain the share was submitted\nto."
     },
     {
       "header": "Optional: Long Polling {#optional_long_polling}",
-      "content": ""
+      "content": "template request\n------------------\nKey\ncapabilities\nlongpollid\n\ntemplate\n-------------\nKey\nlongpollid\nlongpolluri\nsubmitold\n\nIf the server supports long polling, it MUST include a \\\"longpollid\\\"\nkey in block templates, and it MUST be unique for each event: any given\n\\\"longpollid\\\" should check for only one condition and not be reused.\nFor example, a server which has a long poll wakeup only for new blocks\nmight use the previous block hash. However, clients should not assume\nthe \\\"longpollid\\\" has any specific meaning. It MAY supply the\n\\\"longpolluri\\\" key with a relative or absolute URI, which MAY specify a\ncompletely different resource than the original connection, including\nport number. If \\\"longpolluri\\\" is provided by the server, clients MUST\nonly attempt to use that URI for longpoll requests.\n\nClients MAY start a longpoll request with a standard JSON-RPC request\n(in the case of HTTP transport, POST with data) and same authorization,\nsetting the \\\"longpollid\\\" parameter in the request to the value\nprovided by the server.\n\nThis request SHOULD NOT be processed nor answered by the server until it\nwishes to replace the current block data as identified by the\n\\\"longpollid\\\". Clients SHOULD make this request with a very long\nrequest timeout and MUST accept servers sending a partial response in\nadvance (such as HTTP headers with \\\"chunked\\\" Transfer-Encoding), and\nonly delaying the completion of the final JSON response until\nprocessing.\n\nUpon receiving a completed response:\n\n-   Only if \\\"submitold\\\" is provided and false, the client MAY discard\nthe results of past operations and MUST begin working on the new\nwork immediately.\n-   The client SHOULD begin working on the new work received as soon as\npossible, if not immediately.\n-   The client SHOULD make a new request to the same long polling URI.\n\nIf a client receives an incomplete or invalid response, it SHOULD retry\nthe request with an exponential backoff. Clients MAY implement this\nbackoff with limitations (such as maximum backoff time) or any algorithm\nas deemed suitable. It is, however, forbidden to simply retry\nimmediately with no delay after more than one failure. In the case of a\n\\\"Forbidden\\\" response (for example, HTTP 403), a client SHOULD NOT\nattempt to retry without user intervention."
     },
     {
       "header": "Optional: Template Tweaking {#optional_template_tweaking}",
-      "content": ""
+      "content": "template request\n------------------\nKey\nsigoplimit\nsizelimit\nmaxversion\n\nFor \\\"sigoplimit\\\" and \\\"sizelimit\\\", negative values and zero are\noffset from the server-determined block maximum. If a Boolean is\nprovided and true, the default limit is used; if false, the server is\ninstructed not to use any limits on returned template. Servers SHOULD\nrespect these desired maximums, but are NOT required to: clients SHOULD\ncheck that the returned template satisfies their requirements\nappropriately."
     },
     {
       "header": "Appendix: Example Rejection Reasons {#appendix_example_rejection_reasons}",
-      "content": ""
+      "content": "Possible reasons a share may be rejected include, but are not limited\nto:\n\nshare rejection reasons\n-------------------------\nReason\nbad-cb-flag\nbad-cb-length\nbad-cb-prefix\nbad-diffbits\nbad-prevblk\nbad-txnmrklroot\nbad-txns\nbad-version\nduplicate\nhigh-hash\nrejected\nstale-prevblk\nstale-work\ntime-invalid\ntime-too-new\ntime-too-old\nunknown-user\nunknown-work"
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "bitcoind\\'s JSON-RPC server can no longer support the load of generating\nthe work required to productively mine Bitcoin, and external software\nspecializing in work generation has become necessary. At the same time,\nnew independent node implementations are maturing to the point where\nthey will also be able to support miners.\n\nA common standard for communicating block construction details is\nnecessary to ensure compatibility between the full nodes and work\ngeneration software."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Why not just deal with transactions as hashes (txids)?\n\n-   Servers might not have access to the transaction database, or miners\nmay wish to include transactions not broadcast to the network as a\nwhole.\n-   Miners may opt not to do full transaction verification, and may not\nhave access to the transaction database on their end.\n\nWhat is the purpose of \\\"workid\\\"?\n\n-   If servers allow all mutations, it may be hard to identify which job\nit is based on. While it may be possible to verify the submission by\nits content, it is much easier to compare it to the job issued. It\nis very easy for the miner to keep track of this. Therefore, using a\n\\\"workid\\\" is a very cheap solution to enable more mutations.\n\nWhy should \\\"sigops\\\" be provided for transactions?\n\n-   Due to the [BIP 0016](bip-0016.mediawiki \"wikilink\") changes\nregarding rules on block sigops, it is impossible to count sigops\nfrom the transactions themselves (the sigops in the scriptCheck must\nalso be included in the count)."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "-   [Eloipool (server)](https://gitorious.org/bitcoin/eloipool)\n-   [libblkmaker (client)](http://gitorious.org/bitcoin/libblkmaker)\n-   [bitcoind (minimal\nserver)](https://github.com/bitcoin/bitcoin/pull/936/files)"
     },
     {
       "header": "See Also {#see_also}",
-      "content": ""
+      "content": "-   [BIP 23: getblocktemplate - Pooled\nMining](bip-0023.mediawiki \"wikilink\")"
     }
   ]
 }

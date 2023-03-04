@@ -12,59 +12,59 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes the next step in making Bitcoin\\'s most basic\nelement, the transaction, more flexible and easier to extend. At the\nsame time this fixes all known cases of malleability and resolves\nsignificant amounts of technical debt."
     },
     {
       "header": "Summary",
-      "content": ""
+      "content": "Flexible Transactions uses the fact that the first 4 bytes in a\ntransaction determine the version and that the majority of the clients\nuse a non-consensus rule (a policy) to not accept transaction version\nnumbers other than those specifically defined by Bitcoin. This BIP\nchooses a new version number, 4, and defines that the data following the\nbytes for the version is in a format called Compact Message Format\n(CMF). CMF is a flexible, token based format where each token is a\ncombination of a name, a format and a value. Because the name is added\nwe can skip unused tokens and we can freely add new tokens in a simple\nmanner in future. Soft fork upgrades will become much easier and cleaner\nthis way.\n\nThis protocol upgrade cleans up past soft fork changes like BIP68 which\nreuse existing fields and do them in a better to maintain and easier to\nparse system. It creates the building blocks to allow new features to be\nadded much cleaner in the future.\n\nIt also shows to be possible to remove signatures from transactions with\nminimal upgrades of software and still maintain a coherent transaction\nhistory. Tests show that this can reduce space usage to about 75%."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "After 8 years of using essentially the same transaction version and\nlayout Bitcoin is in need of an upgrade and lessons learned in that time\nare taking into account when designing it. The most important detail is\nthat we have seen a need for more flexibility. For instance when the\n\\'sequence\\' fields were introduced in the old transaction format, and\nlater deprecated again, the end result was that all transactions still\nwere forced to keep those fields and grow the blockchain while they all\nwere set to the default value.\n\nThe way towards that flexibility is to use a generic concept made\npopular various decades ago with the XML format. The idea is that we\ngive each field a name and this means that new fields can be added or\noptional fields can be omitted from individual transactions. Some other\nideas are the standardization of data-formats (like integer and string\nencoding) so we create a more consistent system. One thing we shall not\ninherit from XML is its text-based format. Instead we use the [Compact\nMessage\nFormat](https://github.com/bitcoinclassic/documentation/blob/master/spec/compactmessageformat.md)\n(CMF) which is optimized to keep the size small and fast to parse.\n\nToken based file-formats are not new, systems like XML and HTMl use a\nsimilar system to allow future growth and they have been quite\nsuccessful for decades in part because of this property.\n\nNext to that this protocol upgrade will re-order the data-fields which\nallows us to cleanly fix the malleability issue which means that future\ntechnologies like Lightning Network will depend on this BIP being\ndeployed.\n\nAt the same time, due to this re-ordering of data fields, it becomes\nvery easy to remove signatures from a transaction without breaking its\ntx-id, which is great for future pruning features."
     },
     {
       "header": "Features",
-      "content": ""
+      "content": "-   Fixes malleability\n-   Linear scaling of signature checking\n-   Very flexible future extensibility\n-   Makes transactions smaller\n-   Supports the Lightning Network\n\nAdditionally, in the v4 (flextrans) format we add the support for the\nfollowing proofs;\n\n-   input amount. Including the amount means we sign this transaction\nonly if the amount we are spending is the one provided. Wallets that\ndo not have the full UTXO DB can safely sign knowing that if they\nwere lied to about the amount being spent, their signature is\nuseless.\n-   scriptBase is the combined script of input and output, without\nsignatures naturally. Providing this to a hardware wallet means it\nknows what output it is spending and can respond properly. Including\nit in the hash means its signature would be broken if we lied..\n-   Double spent-proof. Should a node detect a double spent he can\nnotify his peers about this fact. Instead of sending the entire\ntransactions, instead he sends only a proof. The node needs to send\ntwo pairs of info that proves that in both transactions the CTxIn\nare identical."
     },
     {
       "header": "Tokens",
-      "content": ""
+      "content": "In the compact message format we define tokens and in this specification\nwe define how these tokens are named, where they can be placed and which\nare optional. To refer to XML, this specification would be the schema of\na transaction.\n\n[CMF](https://github.com/bitcoinclassic/documentation/blob/master/spec/compactmessageformat.md)\ntokens are triplets of name, format (like PositiveInteger) and value.\nNames in this scope are defined much like an enumeration where the\nactual integer value (id, below) is equally important to the written\nname. If any token found that is not covered in the next table it will\nmake the transaction that contains it invalid.\n\nName                        id   Format      Default Value   Description\n--------------------------- ---- ----------- --------------- ------------------------------------------------------------------------------------------------------------------------------\nTxEnd                       0    BoolTrue    Required        A marker that is the end of the transaction\nTxInPrevHash                1    ByteArray   Required        TxId we are spending\nTxPrevIndex                 2    Integer     0               Index in prev tx we are spending (applied to previous TxInPrevHash)\nTxInputStackItem            3    ByteArray   \u00a0               A \\'push\\' of the input script\nTxInputStackItemContinued   4    ByteArray   &nsbp;          Another section for the same input\nTxOutValue                  5    Integer     Required        Amount of Satoshis to transfer\nTxOutScript                 6    ByteArray   Required        The output script\nTxRelativeBlockLock         7    Integer     Optional        Part of the input stating the amount of blocks (max 0XFFFF) after that input was mined, it can be mined\nTxRelativeTimeLock          8    Integer     Optional        Part of the input stating the amount of time (max 0XFFFF) after that input was mined, it can be mined. 1 Unit is 512 seconds\nCoinbaseMessage             9    ByteArray   Optional        A message and some data for a coinbase transaction. Can\\'t be used in combination with any TxIn\\\\\\* tags\nNOP_1x                      1x   \u00a0           Optional        Values that will be ignored by anyone parsing the transaction"
     },
     {
       "header": "Scripting changes {#scripting_changes}",
-      "content": ""
+      "content": "In Bitcoin transactions version 1, checking of signatures is performed\nby various opcodes. The OP_CHECKSIG, OP_CHECKMULTISIG and their\nequivalents that immediately VERIFY. These are used to validate the\ncryptographic proofs that users have to provide in order to spend\noutputs.\n\nWe additionally have some hashing-types in like SIGHASH_SINGLE that all\nspecify slightly different subsections of what part of a transaction\nwill be hashed in order to be signed.\n\nFor transactions with version 4 we calculate a sha256 hash for signing\nan individual input based on the following content;\n\n1.  If the hash-type is 0 or 1 we hash the tx-id of the transaction. For\nother hash types we selectively ignore parts of the transaction\nexactly like it has always worked. With the caveat that we never\nserialize any signatures.\n2.  the TxId of the transaction we are spending in this input.\n3.  the index of output of the transaction we are spending in this\ninput.\n4.  the input script we are signing (without the signature, naturally).\n5.  the amount, as a var-int.\n6.  the hash-type as a var-int."
     },
     {
       "header": "Serialization order {#serialization_order}",
-      "content": ""
+      "content": "To keep in line with the name Flexible Transactions, there is very\nlittle requirement to have a specific order. The only exception is cases\nwhere there are optional values and reordering would make unclear what\nis meant.\n\nFor this reason the TxInPrevHash always has to be the first token to\nstart a new input. This is because the TxPrevIndex is optional. The\ntokens TxRelativeTimeLock and TxRelativeBlockLock are part of the input\nand similarly have to be set after the TxInPrevHash they belong to.\n\nSimilarly, the TxInputStackItem always has to be the first and can be\nfollowed by a number of TxInputStackItemContinued items.\n\nAt a larger scope we define 3 sections of a transaction.\n\nSegment       Tags                                          Description\n------------- --------------------------------------------- ---------------------------------------\nTransaction   all not elsewhere used                        This section is used to make the TxId\nSignatures    TxInputStackItem, TxInputStackItemContinued   The input-proofs\nTxEnd         TxEnd                                         \u00a0\n\nThe TxId is calculated by taking the serialized transaction without the\nSignatures and the TxEnd and hashing that.\n\nTxEnd is there to allow a parser to know when one transaction in a\nstream has ended, allowing the next to be parsed."
     },
     {
       "header": "Block-malleability {#block_malleability}",
-      "content": ""
+      "content": "The effect of leaving the signatures out of the calculation of the\ntransaction-id implies that the signatures are also not used for the\ncalculation of the merkle tree. This means that changes in signatures\nwould not be detectable and open an attack vector.\n\nFor this reason the merkle tree is extended to include (append) the hash\nof the v4 transactions. The merkle tree will continue to have all the\ntransactions\\' tx-ids but appended to that are the v4 hashes that\ninclude the signatures as well. Specifically the hash is taken over a\ndata-blob that is built up from:\n\n1.  the tx-id\n2.  The entire bytearray that makes up all of the transactions\nsignatures. This is a serialization of all of the signature tokens,\nso the TxInputStackItem and TxInputStackItemContinued in the order\nbased on the inputs they are associated with."
     },
     {
       "header": "Future extensibility {#future_extensibility}",
-      "content": ""
+      "content": "The NOP_1x wildcard used in the table explaining tokens is actually a\nlist of 10 values that currently are specified as NOP (no-operation)\ntags.\n\nAny implementation that supports the v4 transaction format should ignore\nthis field in a transaction. Interpreting and using the transaction as\nif that field was not present at all.\n\nFuture software may use these fields to decorate a transaction with\nadditional data or features. Transaction generating software should not\ntrivially use these tokens for their own usage without cooperation and\ncommunication with the rest of the Bitcoin ecosystem as miners certainly\nhave the option to reject transactions that use unknown-to-them tokens.\n\nThe amount of tokens that can be added after number 19 is practically\nunlimited and they are currently specified to not be allowed in any\ntransaction and the transaction will be rejected if they are present. In\nthe future a protocol upgrade may chance that and specify meaning for\nany token not yet specified here. Future upgrades should thus be quite a\nlot smoother because there is no change in concepts or in format. Just\nnew data."
     },
     {
       "header": "Backwards compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "Fully validating older clients will not be able to understand or\nvalidate version 4 transactions and will need to be updated to restore\nthat ability.\n\nSPV (simple payment validation) wallets need to be updated to receive or\ncreate the new transaction type.\n\nThis BIP introduces a new transaction format without changing or\ndeprecating the existing one or any of its practices. Therefore it is\nbackwards compatible for any existing data or parsing-code."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "Bitcoin Classic includes an implementation that is following this spec.\nThe spec-author rejects the notion of reference implementation. The\nspecification is always authoritative, the implementation is not.\n\nThe official spec can be found at;\n<https://github.com/bitcoinclassic/documentation/blob/master/spec/transactionv4.md>"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "To be determined"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[1](https://github.com/bitcoinclassic/documentation/blob/master/spec/compactmessageformat.md)\nCMF"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "Copyright (c) 2016 Tom Zander \\<tomz@freedommail.ch\\>\n\nThis document is dual-licensed under the Creative-Commons BY-SA license\nv4.0 and the Open Publication License v1.0 with the following\nlicence-options:\n\nDistribution of substantively modified versions of this document is\nprohibited without the explicit permission of the copyright holder.\nDistribution of the work or derivative of the work in any standard\n(paper) book form is prohibited unless prior permission is obtained from\nthe copyright holder."
     }
   ]
 }

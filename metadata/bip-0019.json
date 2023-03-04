@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes M-of-N-signatures required transactions as a new\n\\'standard\\' transaction type using the existing scripting system\nwithout significant modifications."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Enable secured wallets, escrow transactions, and other use cases where\nredeeming funds requires more than a single signature.\n\nA couple of motivating use cases:\n\n-   A wallet secured by a \\\"wallet protection service\\\" (WPS). 2-of-2\nsignatures required transactions will be used, with one signature\ncoming from the (possibly compromised) computer with the wallet and\nthe second signature coming from the WPS. When sending protected\nbitcoins, the user\\'s bitcoin client will contact the WPS with the\nproposed transaction and it can then contact the user for\nconfirmation that they initiated the transaction and that the\ntransaction details are correct. Details for how clients and WPS\\'s\ncommunicate are outside the scope of this BIP. Side note: customers\nshould insist that their wallet protection service provide them with\ncopies of the private key(s) used to secure their wallets that they\ncan safely store off-line, so that their coins can be spent even if\nthe WPS goes out of business.\n\n```{=html}\n<!-- -->\n```\n-   Three-party escrow (buyer, seller and trusted dispute agent). 2-of-3\nsignatures required transactions will be used. The buyer and seller\nand agent will each provide a public key, and the buyer will then\nsend coins into a 2-of-3 CHECKMULTISIG transaction and send the\nseller and the agent the transaction id. The seller will fulfill\ntheir obligation and then ask the buyer to co-sign a transaction (\nalready signed by seller ) that sends the tied-up coins to him\n(seller).\\\nIf the buyer and seller cannot agree, then the agent can, with the\ncooperation of either buyer or seller, decide what happens to the\ntied-up coins. Details of how buyer, seller, and agent communicate\nto gather signatures or public keys are outside the scope of this\nBIP."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Two new standard transaction types (scriptPubKey) that are relayed by\nclients and included in mined blocks.\n\nN-of-N (all signatures required):\n\n`\u00a0\u00a0\u00a0(\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY\u00a0)*n`\n\nN-of-M (some signatures required):\n\n`\u00a0\u00a0\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0\u00a0(\u00a0OP_SWAP\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_ADD\u00a0)*(n-1)\u00a0n\u00a0OP_EQUAL`\n\nBut only for n less than or equal to 3.\n\nThese transactions are redeemed using a standard scriptSig:\n\n`\u00a0\u00a0\u00a0...signatures...`\n\nThe current Satoshi bitcoin client does not relay or mine transactions\nwith scriptSigs larger than 200 bytes; to accommodate 3-signature\ntransactions, this will be increased to 500 bytes."
     },
     {
       "header": "Templates",
-      "content": ""
+      "content": "scriptPubKey:\n\n`\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY`\n\n`\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY\u00a0{pubkey}\u00a0OP_CHECKSIGVERIFY`\n\n`\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_SWAP\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_ADD\u00a0{n}\u00a0OP_EQUAL`\n\n`\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_SWAP\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_ADD\u00a0OP_SWAP\u00a0{pubkey}\u00a0OP_CHECKSIG\u00a0OP_ADD\u00a0{n}\u00a0OP_EQUAL`\n\nscriptSig:\n\n`\u00a0...signatures...\u00a0up\u00a0to\u00a0500\u00a0bytes`"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "OP_CHECKMULTISIG is already an enabled opcode, and is the most\nstraightforward way to support several important use cases. This is\nalready specified in [BIP 0011](bip-0011.mediawiki \"wikilink\"). However,\neach OP_CHECKMULTISIG counts toward the block limit as 20 sigops, which\nonly allows 1000 total multisig transactions in a block. Using\nOP_CHECKSIG only counts as 1 per signature, so can scale better."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "All used operations are already supported by old clients and miners as a\nnon-standard transaction type."
     }
   ]
 }

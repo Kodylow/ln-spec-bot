@@ -12,35 +12,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Automatic adjustment of max block size with the target of keeping blocks\n75% full, based on the average block size of the previous 2016 blocks.\nThis would be done on the same schedule as difficulty."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Blocks are already too full and cannot support further transaction\ngrowth. While SegWit and Lightning (and other off-chain solutions) will\nhelp, they will not solve this problem.\n\nBitcoin needs a reasonably effective and predictable way of managing the\nmaximum block size which allows moderate growth, keeps max block size as\nsmall as possible, and prevents wild swings in transaction fees.\n\nThe every two-week and automatic adjustment of difficulty has proven to\nbe a reasonably effective and predictable way of managing how quickly\nblocks are mined. It works well because humans aren't involved (except\nfor setting the original target of a 10 minute per block average), and\ntherefore it isn't political or contentious. It's simply a response to\nchanging network resources.\n\nIt's clear at this point that human beings should not be involved in the\ndetermination of max block size, just as they're not involved in\ndeciding the difficulty. Therefore, it is logical and consistent with\nBitcoin's design to implement a permanent solution which, as with the\ndifficulty adjustment, is simply an automatic response to changing\ntransaction volumes. With the target of keeping blocks 75% full on\naverage, this is the goal of Block75."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The max block size will be recalculated every 2016 blocks, along with\ndifficulty, using Block75's simple algorithm:\n\n`new max block size = x + (x * (AVERAGE_CAPACITY - TARGET_CAPACITY))`\n\n-   TARGET_CAPACITY = 0.75\u00a0 \u00a0 //Block75\\'s target of keeping blocks 75%\nfull\n-   AVERAGE_CAPACITY = average percentage full of the last 2016 blocks,\nas a decimal\n-   x = current max block size\n\nAll code which generates/validates blocks or uses/references the current\nhardcoded limits will need to be changed to support Block75."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "The 75% full block target was selected because:\n\n-   it is the middle ground between blocks being too small (average 100%\nfull) and blocks being unnecessarily large (average 50% full)\n-   it can handle short-term spikes in transaction volume of up to 33%\n-   it limits the growth of max block size to less than 25% over the\nprevious period\n-   it will maintain average transaction fees at a stable level similar\nto that of May/June 2016\n\nThe 2016 block (\\~2 weeks) period was selected because:\n\n-   it has been shown to be reasonably adaptive to changing network\nresources (re: difficulty)\n-   the frequent and gradual adjustments that result will be relatively\neasy for miners and node operators to predict and adapt to, as any\nunforeseen consequences will be visible well in advance\n-   it minimizes any effect a malicious party could have in an attempt\nto manipulate max block size\n\nThe Block75 algorithm will adjust the max block size up and down in\nresponse to transaction volume, including changes brought on by SegWit\nand Lightning. This is important as it will keep average transaction\nfees stable, thereby allowing miners and businesses using Bitcoin more\ncertainty regarding future income/expenses."
     },
     {
       "header": "Other solutions considered {#other_solutions_considered}",
-      "content": ""
+      "content": "A hardcoded increase to max block size (2MB, 8MB, etc.), rejected\nbecause:\n\n-   only a temporary solution, whatever limit was chosen would\ninevitably become a problem again\n-   would cause transaction fees to vary wildly over time\n\nAllow miners to vote for max block size, rejected because:\n\n-   overly complex and political\n-   human involvement makes this slow to respond to changing transaction\nvolumes\n-   focuses power over max block size to a relatively small group of\npeople\n-   unpredictable transaction fees caused by this would create\nuncertainty in the ecosystem"
     },
     {
       "header": "Backward Compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "This BIP is not backward compatible (hard fork). Any code which fully\nvalidates blocks must be upgraded prior to activation, as failure to do\nso will result in rejection of blocks over the current 1MB limit."
     },
     {
       "header": "Activation",
-      "content": ""
+      "content": "To help negate some of the risks associated with a hard fork and to\nprevent a single relatively small mining pool from preventing Block75\\'s\nadoption, activation would occur at the next difficulty adjustment once\n900 of the last 1,000 blocks mined signal support and a grace period of\n4,032 blocks (\\~1 month) has elapsed."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is dual-licensed under the BSD 2-clause license and the GNU\nAll-Permissive License."
     }
   ]
 }

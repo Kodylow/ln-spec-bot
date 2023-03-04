@@ -12,27 +12,27 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes two changes to the p2p protocol to support\ntransaction relay based on the BIP 141 wtxid of a transaction, rather\nthan its txid."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Historically, the inv messages sent on the Bitcoin peer-to-peer network\nto announce transactions refer to transactions by their txid, which is a\nhash of the transaction that does not include the witness (see BIP 141).\nThis has been the case even since Segregated Witness (BIP 141/143/144)\nhas been adopted by the network.\n\nNot committing to the witness in transaction announcements creates\ninefficiencies: because a transaction\\'s witness can be malleated\nwithout altering the txid, a node in receipt of a witness transaction\nthat the node does not accept will generally still download that same\ntransaction when announced by other peers. This is because the\nalternative \\-- of not downloading a given txid after rejecting a\ntransaction with that txid \\-- would allow a third party to interfere\nwith transaction relay by malleating a transaction\\'s witness and\nannouncing the resulting invalid transaction to nodes, preventing relay\nof the valid version of the transaction as well.\n\nWe can eliminate this concern by using the wtxid in place of the txid\nwhen announcing and fetching transactions."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "1.  A new wtxidrelay message is added, which is defined as an empty\nmessage where pchCommand == \\\"wtxidrelay\\\".\n2.  The protocol version of nodes implementing this BIP must be set to\n70016 or higher.\n3.  The wtxidrelay message MUST be sent in response to a version message\nfrom a peer whose protocol version is \\>= 70016 and prior to sending\na verack. A wtxidrelay message received after a verack message MUST\nbe ignored or treated as invalid.\n4.  A new inv type MSG_WTX (0x00000005) is added, for use in both inv\nmessages and getdata requests, indicating that the hash being\nreferenced is a transaction\\'s wtxid. In the case of getdata\nrequests, MSG_WTX implies that the transaction being requested\nshould be serialized with witness as well, as described in BIP 144.\n5.  After a node has received a wtxidrelay message from a peer, the node\nMUST use the MSG_WTX inv type when announcing transactions to that\npeer.\n6.  After a node has received a wtxidrelay message from a peer, the node\nSHOULD use a MSG_WTX getdata message to request any announced\ntransactions. A node MAY still request transactions from that peer\nusing MSG_TX getdata messages, such as for transactions not recently\nannounced by that peer (like the parents of recently announced\ntransactions)."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "As wtxid-based transaction relay is only enabled between peers that both\nsupport it, older clients remain fully compatible and interoperable\nafter this change."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/18044>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     }
   ]
 }

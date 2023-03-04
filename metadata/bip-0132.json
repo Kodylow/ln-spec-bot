@@ -11,39 +11,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "The current process for accepting a BIP is not clearly defined. While\n[BIP-0001](https://github.com/bitcoin/bips/blob/master/bip-0001.mediawiki)\ndefines the process for writing and submitting a Bitcoin Improvement\nProposal to the community it does not specify the precise method for\nwhich BIPs are considered accepted or rejected.\n\nThis proposal sets up a method for determining BIP acceptance.\n\nThis BIP has two parts:\n\n-   It sets up a **process** which a BIP goes through for comments and\nacceptance. The Process is:\n-   BIP Draft\n-   Submitted for comments (2 weeks)\n-   Waiting on opinion (2 weeks)\n-   BIP becomes either Accepted or Deferred\n-   It sets up **committees** for reviewing comments and indicating\nacceptance under precise conditions.\n-   Committees are authorized groups that represent client authors,\nminers, merchants, and users (each as a segment). Each one must\nrepresent at least 1% stake in the Bitcoin ecosystem.\n\nBIP acceptance is defined as at least 70% of the represented percentage\nstake in 3 out of the 4 Bitcoin segments."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed into the public domain."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "BIPs represent important improvements to Bitcoin infrastructure, and in\norder to foster continued innovation, the BIP process must have clearly\ndefined stages and acceptance acknowledgement."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "A committee system is used to organize the essential concerns of each\nsegment of the Bitcoin ecosystem. Although each segment may have many\ndifferent viewpoints on each BIP, in order to seek a decisive yes/no on\na BIP, a representational authoritative structure is sought. This\nstructure should be fluid, allowing people to move away from committees\nthat do not reflect their views and should be re-validated on each BIP\nevaluation."
     },
     {
       "header": "Weaknesses",
-      "content": ""
+      "content": "Each committee submits a declaration including their claim to represent\na certain percentage of the Bitcoin ecosystem in some way. Though\nguidelines are given, it\\'s up to each committee to prove their stake,\nand it\\'s up to the reader of the opinions to decide if a BIP was truly\naccepted or rejected.\n\nThe author doesn\\'t believe this is a problem because a BIP cannot be\nforced on client authors, miners, merchants, or users. Ultimately this\nBIP is a tool for determining whether a BIP is overwhelmingly accepted.\nIf one committee\\'s validity claim becomes the factor that decides\nwhether the BIP will succeed or fail, this process simply didn\\'t return\na clear answer and the BIP should be considered deferred."
     },
     {
       "header": "Process",
-      "content": ""
+      "content": "-   **Submit for Comments.** The first BIP champion named in the\nproposal can call a \\\"submit for comments\\\" at any time by posting\nto the [Dev Mailing\nList](https://lists.linuxfoundation.org/mailman/listinfo/bitcoin-dev)\nmailling with the BIP number and a statement that the champion\nintends to immediately submit the BIP for comments.\n-   The BIP must have been assigned BIP-number (i.e. been approved\nby the BIP editor) to be submitted for comments.\n-   **Comments.**\n-   After a BIP has been submitted for comments, a two-week waiting\nperiod begins in which the community should transition from\nmaking suggestions about a proposal to publishing their opinions\nor concerns on the proposal.\n-   **Reported Opinions.**\n-   After the waiting period has past, committees must submit a\nsummary of the comments which they have received from their\nrepresented communities.\n-   The deadline for this opinion is four weeks after the BIP was\nsubmitted for comments.\n-   Committees cannot reverse their decision after the deadline, but\nat their request may flag their decision as \\\"likely to change\nif another submit for comments is called\\\". Committees can\nchange their decision if a resubmit is called.\n-   Opinions must include:\n-   One of the following statements: \\\"Intend to accept\\\",\n\\\"Intent to implement\\\", \\\"Decline to accept\\\", \\\"Intend to\naccept, but decline to implement\\\".\n-   If rejected, the opinion must cite clear and specific\nreasons for rejecting including a checklist for what must\nhappen or be change for their committee to accept the\nproposal.\n-   If accepted, the committee must list why they accepted the\nproposal and also include concerns they have or what about\nthe BIP that, if things changed, would cause the committee\nto likely reverse their decision if another submit for\ncomments was called.\n-   **Accepted.**\n-   If at least 70% of the represented percentage stake in 3 out of\n4 segments accept a proposal, the BIP is considered accepted.\n-   If a committee fails to submit an opinion, consider the opinion\n\\\"Decline to accept\\\".\n-   The BIP cannot be substantially changed at this point, but can\nbe replaced. Minor changes or clarifications are allowed but\nmust be recorded in the document.\n-   **Deferred.**\n-   If the acceptance test above is not met, the BIP is sent back\ninto suggestions.\n-   BIP can be modified and re-submitted for a comments no sooner\nthan two months after the date of the previous submit for\ncomments is called.\n-   The BIP is marked rejected after two failed submission attempts.\nA rejected BIP can still be modified and re-submitted."
     },
     {
       "header": "Committees",
-      "content": ""
+      "content": "**BIP Committees.**\n\n-   BIP Committees are representational structures that represent\ncritical segments of the Bitcoin ecosystem.\n-   Each committee must prove and maintain a clear claim that they\nrepresent at least 1% of the Bitcoin ecosystem in some form.\n-   If an organization or community does not meet that requirement, it\nshould conglomerate itself with other communities and organizations\nso that it does.\n-   The segments that committees can be based around are:\n-   Bitcoin software\n-   Exchanges/Merchants/services/payment processors\n-   Mining operators\n-   User communities\n-   A person may be represented by any number of segments, but a\ncommittee cannot re-use the same resource as another committee in\nthe same segment.\n\n**Committee Declarations.**\n\n-   At any point, a Committee Declaration can be posted.\n-   This Declaration must contain details about:\n-   The segment the Committee is representing\n-   Who the committee claim to represent and it\\'s compositional\nmakeup (if made up of multiple miner orgs, user orgs, companies,\nclients, etc).\n-   Proof of claim and minimum 1% stake via:\n-   Software: proof of ownership and user base (Min 1% of\nBitcoin userbase)\n-   Merchant: proof of economic activity (Min 1% of Bitcoin\neconomic activity)\n-   Mining: proof of work (Min 1% of Hashpower)\n-   For a user organization, auditable signatures qualifies for\na valid committee (Min 1% of Bitcoin userbase)\n-   Who is running the committee, their names and roles\n-   How represented members can submit comments to the committee\n-   A code of conduct and code of ethics which the committee\npromises to abide by\n-   A committee declaration is accepted if:\n-   The declaration includes all of the required elements\n-   The stake is considered valid\n-   Committee validation is considered when considering the results\nof opinions submitted by committee on a BIP. A committee must\nhave met the required stake percentage before a BIP is submitted\nfor comments, and have maintained that stake until a valid\nopinion is submitted.\n-   Committees can dissolve at any time or submit a declaration at any\ntime\n-   Declaration must have been submitted no later than the third day\nfollowing a BIP\\'s request for comments to be eligible for inclusion\nin a BIP"
     },
     {
       "header": "BIP Process Management Role {#bip_process_management_role}",
-      "content": ""
+      "content": "BIPs, Opinions, and Committee Declaration must be public at all times.\n\nA BIP Process Manager should be chosen who is in charge of:\n\n-   Declaring where and how BIPs, Opinions, and Committee Declaration\nshould be posted and updated officially.\n-   Maintaining the security and authenticity of BIPs, Opinions, and\nCommittee Declarations\n-   Publishing advisory documents about what kinds of proof of stakes\nare valid and what kinds should be rejected.\n-   Naming a series of successors for the roles of the BIP Process\nManager and BIP Editor (BIP-001) as needed."
     },
     {
       "header": "Conditions for activation {#conditions_for_activation}",
-      "content": ""
+      "content": "In order for this process BIP to become active, it must succeed by its\nown rules. At least a 4% sample of the Bitcoin community must be\nrepresented, with at least one committee in each segment included. Once\nat least one committee has submitted a declaration, a request for\ncomments will be called and the process should be completed from there."
     }
   ]
 }

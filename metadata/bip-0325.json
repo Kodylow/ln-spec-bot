@@ -12,43 +12,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "A new type of test network where signatures are used in addition to\nproof of work for block progress, enabling much better coordination and\nrobustness (be reliably unreliable), for persistent, longer-term testing\nscenarios involving multiple independent parties."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Testnet is a great place to try out new things without risking real\nmoney, but it is notoriously unreliable. Huge block reorgs, long gaps in\nbetween blocks being mined or sudden bursts of blocks in rapid\nsuccession mean that realistic testing of software, especially involving\nmultiple independent parties running software over an extended period of\ntime, becomes infeasible in practice.\n\nA new type of test network would be more suitable for integration\ntesting by organizations such as exchanges, or testing of next\ngeneration Layer-2 protocols like Eltoo or sidechain pegs. The goal is\nnot to be perfectly reliable but rather to have a predictable amount of\nunreliability. You want a test network to behave like mainnet (i.e. no\nthousands of block reorgs) while also making it easier to trigger\nexpected but rare events like a 6-block reorg. Regtest is not suitable\nfor longer-term scenarios involving multiple independent parties because\ncreating blocks costs nothing, so any party can completely control the\ntest network."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "A new type of network (\\\"signet\\\"), which takes an additional consensus\nparameter called the challenge (scriptPubKey). The challenge can be a\nsimple pubkey (P2PKH style), or a k-of-n multisig, or any other script\nyou would want.\n\nSignet requires all blocks to have a BIP 141 commitment in the coinbase\ntransaction. In order to provide a non-empty solution to the block\nchallenge the block\\'s BIP 141 commitment\\'s optional data must include\nan additional commitment of the signature/solution for the block:\n\n`\u00a0\u00a0\u00a01-5\u00a0bytes\u00a0-\u00a0Push\u00a0the\u00a0following\u00a0(4\u00a0+\u00a0x\u00a0+\u00a0y)\u00a0bytes`\\\n`\u00a0\u00a0\u00a04\u00a0bytes\u00a0-\u00a0Signet\u00a0header\u00a0(0xecc7daa2)`\\\n`\u00a0\u00a0\u00a0x\u00a0bytes\u00a0-\u00a0scriptSig`\\\n`\u00a0\u00a0\u00a0y\u00a0bytes\u00a0-\u00a0scriptWitness`\n\nIn the special case where an empty solution is valid (ie scriptSig and\nscriptWitness are both empty) this additional commitment can optionally\nbe left out. This special case is to allow non-signet-aware block\ngeneration code to be used to test a custom signet chain where the\nchallenge is trivially true.\n\nThe scriptSig is serialized by first encoding its length as CompactSize.\nThe scriptWitness stack is serialized as described in BIP 141.\n\nAny push operations that do not start with the 4 byte Signet header are\nignored. Multiple push operations with the 4 byte Signet header are\nignored except for the first instance of the header.\n\nTo sign the block or verify a block signature, two virtual transactions,\neach with a single input and output are constructed from the block as\nfollows.\n\nThe \\\"to_spend\\\" transaction is:\n\n`\u00a0\u00a0\u00a0nVersion\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0nLockTime\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.hash\u00a0=\u00a00000...000`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.n\u00a0=\u00a00xFFFFFFFF`\\\n`\u00a0\u00a0\u00a0vin[0].nSequence\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].scriptSig\u00a0=\u00a0OP_0\u00a0PUSH72[\u00a0block_data\u00a0]`\\\n`\u00a0\u00a0\u00a0vin[0].scriptWitness\u00a0=\u00a0[]`\\\n`\u00a0\u00a0\u00a0vout[0].nValue\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vout[0].scriptPubKey\u00a0=\u00a0signet_challenge`\n\nwhere block_data is the serialization of the block\\'s nVersion,\nhashPrevBlock, signet_merkle_root, and nTime. The `signet_merkle_root`\nis obtained by generating the merkle root of the block transactions,\nafter modifying the coinbase witness commitment by replacing the signet\nsolution with an empty solution (that is, the witness commitment\nincludes a four byte push of the Signet header with no additional\nsolution data, and no prior pushes beginning with the Signet header).\nThis means the merkle root of the block is different from the merkle\nroot in the signet commitment. This is needed, because the signature can\nnever be included in the very message (in this case, a block) that is\nbeing signed.\n\nThe \\\"to_sign\\\" transaction is:\n\n`\u00a0\u00a0\u00a0nVersion\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0nLockTime\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.hash\u00a0=\u00a0to_spend.txid`\\\n`\u00a0\u00a0\u00a0vin[0].prevout.n\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].nSequence\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vin[0].sigScript\u00a0=\u00a0[\u00a0signet_solution\u00a0sigScript\u00a0(x\u00a0bytes),\u00a0if\u00a0any\u00a0]`\\\n`\u00a0\u00a0\u00a0vin[0].scriptWitness\u00a0=\u00a0[\u00a0signet_solution\u00a0scriptWitness\u00a0(y\u00a0bytes),\u00a0if\u00a0any\u00a0]`\\\n`\u00a0\u00a0\u00a0vout[0].nValue\u00a0=\u00a00`\\\n`\u00a0\u00a0\u00a0vout[0].scriptPubKey\u00a0=\u00a0OP_RETURN`\n\nThe scriptSig and/or scriptWitness for `vin[0]` are filled in from the\nSignet header push above.\n\nTo simplify block generation (mining), the signature also does not\ncommit to the block nonce value, so that rolling the nonce to generate\nproof-of-work does not also require regenerating signatures. When\ngrinding proof of work, the extended nonce cannot be used as it would\ninvalidate the signature. Instead, simply resigning the same (or an\nupdated) block will give a new search space.\n\nA block is considered fully validated only if the to_sign transaction is\na valid spend of the to_spend transaction. It is recommended that this\nverification is done directly before or after the witness commitment\nverification, as the data required to do both is approximately the same.\n\nThere is one other acceptable special case: if a block\\'s challenge is\ne.g. \\`OP_TRUE\\` (\\`0x51\\`), where an empty solution would result in\nsuccess, the block is also considered valid if the signet commitment is\nabsent."
     },
     {
       "header": "Genesis Block and Message Start {#genesis_block_and_message_start}",
-      "content": ""
+      "content": "The genesis block is the same for all signet networks, whereas the\nmessage start is defined as the first four bytes of the sha256d of the\nchallenge script as a single data push (see below)."
     },
     {
       "header": "Genesis Block {#genesis_block}",
-      "content": ""
+      "content": "-   Time stamp: 1598918400\n-   Nonce: 52613770\n-   Difficulty: 0x1e0377ae\n-   Version: 1\n\nThe resulting genesis block hash is\n00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6, and\nthe block hex is\n0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a008f4d5fae77031e8ad222030101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000."
     },
     {
       "header": "Message Start {#message_start}",
-      "content": ""
+      "content": "The message start is defined as the first four bytes of the sha256d of\nthe challenge script, as a single push (i.e. prefixed with the challenge\nscript length). Example:\n\n-   Challenge script =\n512103ad5e0edad18cb1f0fc0d28a3d4f1f3e445640337489abb10404f2d1e086be43051ae\n-   Sha256d(len \\|\\| challenge script) = sha256d(25512103ad\\...51ae) =\n7ec653a59b1912f9db10da2c461ed827d48f9404d5ef0346a6c94aadd4203646\n-   First four bytes = the message start = 7ec653a5"
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This specification is backwards compatible in the sense that existing\nsoftware can use Signet out of the box.\n\nSimply by adding the network parameters for signet (magic number, etc),\na client can connect to and use any signet network without further\nmodifications. The block headers have valid proof of work, so clients\ncan trivially check that blocks are \\\"probably\\\" valid.\n\nHowever, anyone can mine blocks that are accepted by the client for any\ngiven signet network. These blocks do not contain the required\nsignatures, however, so any fully validating node will promptly reject\nthem. As such, clients need to either validate the block signature\ninside the coinbase transaction, or connect to trusted peers.\n\nOther software need not add block signature validation code that they\nwill not use in production. This is adequate for non-production test\npurposes where the goal is to have a network behave as much like mainnet\nas possible."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "Pull request at <https://github.com/bitcoin/bitcoin/pull/18267>"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "1.  Original mailing list thread:\n<https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-March/016734.html>\n2.  Bitcoin Wiki entry: <https://en.bitcoin.it/wiki/Signet>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is licensed under the Creative Commons CC0 1.0 Universal\nlicense."
     }
   ]
 }

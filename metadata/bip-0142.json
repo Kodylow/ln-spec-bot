@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes new types of Bitcoin address to support native\nsegregated witness transactions with 20-byte and 32-byte program."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "To define standard payment address for native segregated witness\n(segwit) transactions to promote early adoption of the more efficient\ntransaction method."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The new Bitcoin address format defined is for the\nPay-to-Witness-Public-Key-Hash (P2WPKH) and Pay-to-Witness-Script-Hash\n(P2WSH) transaction described in segregated witness soft fork (BIP141).\nThe scriptPubKey is an OP_0 followed by a push of 20-byte-hash (P2WPKH)\nor 32-byte hash (P2WSH).\n\nThe new address is encoded in a way similar to existing address formats:\n\n`\u00a0base58-encode:`\\\n`\u00a0\u00a0\u00a0[1-byte\u00a0address\u00a0version]`\\\n`\u00a0\u00a0\u00a0[1-byte\u00a0witness\u00a0program\u00a0version]`\\\n`\u00a0\u00a0\u00a0[0x00]`\\\n`\u00a0\u00a0\u00a0[20/32-byte-hash]`\\\n`\u00a0\u00a0\u00a0[4-byte\u00a0checksum]`\\\n`\u00a0`\n\nFor P2WPKH address, the address version is 6 (0x06) for a main-network\naddress or 3 (0x03) for a testnet address.\n\nFor P2WSH address, the address version is 10 (0x0A) for a main-network\naddress or 40 (0x28) for a testnet address.\n\nThe witness program version is a 1-byte value between 0 (0x00) and 16\n(0x10). Only version 0 is defined in BIP141. Versions 1 to 16 are\nreserved for future extensions.\n\nFollowing the witness program version is a 0x00 padding to make sure\nthat each witness program version will have a unique prefix.\n\nFollowing the padding is the program hash, 20 byte for a P2WPKH address\nand 32 byte for a P2WSH address.\n\nThe 4-byte checksum is the first four bytes of the double SHA256 hash of\nthe serialization of the previous items.\n\nAll addresses generated with this scheme will have a constant length,\nwith 36 digits for 20-byte and 53 digits for 32-byte. Different witness\nprogram versions will have a unique prefix, as shown in the following\ntable:\n\nrowspan=3 style=\\\"\\\"\\|Witness program version   colspan=4 style=\\\"\\\"\\|Hash size\n----------------------------------------------- -----------------------------------------------\ncolspan=2 style=\\\"\\\"\\|20-byte (36 characters)   colspan=2 style=\\\"\\\"\\|32-byte (53 characters)\nMainnet                                         Testnet\n0                                               p2\n1                                               p4\n2                                               p6\n3                                               p7\n4                                               pA\n5                                               pB\n6                                               pD\n7                                               pF\n8                                               pG\n9                                               pJ\n10                                              pL\n11                                              pN\n12                                              pQ\n13                                              pS\n14                                              pT\n15                                              pV\n16                                              pX"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "BIP141 defines 2 ways of encoding a \\\"witness program\\\", a data push of\n2 to 32 bytes:\n\n-   A native witness program output is a scriptPubKey with a push of\nversion byte followed by a push of witness program, and nothing\nelse;\n-   Segwit-in-P2SH is a BIP16 P2SH redeemScript with a push of version\nbyte followed by a push of witness program, while the scriptPubKey\nlooks like a normal P2SH output.\n\nConsidering the BIP13 P2SH address has been defined in 2012, using\nsegwit-in-P2SH allows most existing wallets to pay a segwit-compatible\nwallet without any upgrade. However, this method requires more block\nspace and is only a short-term solution to make the transition smoother.\nEventually, all users are expected to use the more efficient native\nwitness program as the primary method of payment.\n\nThe drawbacks of Bitcoin addresses have been extensively discussed in\nBIP13. Since then, better payment methods have been proposed or\ndeployed, for example:\n\n-   BIP47 Reusable Payment Codes for Hierarchical Deterministic Wallets\n-   BIP63 Stealth Addresses\n-   BIP70 Payment protocol\n\nHowever, none of these are as widely adopted as the suboptimal base-58\nscriptPubKey template addresses, which is still a standard for the whole\neco-system, from wallets, block explorers, merchants, exchanges, to end\nusers. It is believed that the proposed P2WPKH and P2WSH address format\nis the easiest way for wallets and services to adopt native witness\nprogram, which is particularly important in the context of scaling the\ncapacity of the blockchain.\n\nWhile P2WPKH address is specific for simple payment to a single public\nkey, P2WSH address allows arbitrarily complex segwit transactions,\nsimilar to the BIP13 P2SH address."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This proposal is not backward-compatible. However, an older\nimplementation will report the new address type as invalid, and refuse\nto create a transaction.\n\nThis proposal is forward-compatible with future versions of witness\nprograms of 20 and 32 bytes."
     },
     {
       "header": "Example",
-      "content": ""
+      "content": "The following public key,\n\n`\u00a0\u00a0\u00a00450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6`\\\n\nwhen encoded as a P2PKH template, would become:\n\n`\u00a0\u00a0\u00a0DUP\u00a0HASH160\u00a0<010966776006953D5567439E5E39F86A0D273BEE>\u00a0EQUALVERIFY\u00a0CHECKSIG`\n\nWith the corresponding version 1 Bitcoin address being:\n\n`\u00a0\u00a0\u00a016UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM`\\\n\nWhen the same public key is encoded as P2WPKH, the scriptPubKey becomes:\n\n`\u00a0\u00a0\u00a0OP_0\u00a0<010966776006953D5567439E5E39F86A0D273BEE>`\n\nUsing 0x06 as address version, followed by 0x00 as witness program\nversion, and a 0x00 padding, the equivalent P2WPKH address is:\n\n`\u00a0\u00a0\u00a0p2xtZoXeX5X8BP8JfFhQK2nD3emtjch7UeFm`\\"
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
+      "content": "<https://github.com/theuni/bitcoin/commit/ede1b57058ac8efdefe61f67395affb48f2c0d80>"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "-   [BIP 13: Address Format for\npay-to-script-hash](bip-0013.mediawiki \"wikilink\")\n-   [BIP 16: Pay to Script Hash](bip-0016.mediawiki \"wikilink\")\n-   [BIP 70: Payment Protocol](bip-0070.mediawiki \"wikilink\")\n-   [BIP 141: Segregated Witness](bip-0141.mediawiki \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

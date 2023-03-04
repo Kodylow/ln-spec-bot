@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "A method of altering the maximum allowed block size of the Bitcoin\nprotocol using a consensus based approach."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "There is a belief that Bitcoin cannot easily respond to raising the\nblocksize limit if popularity was to suddenly increase due to a mass\nadoption curve, because co-ordinating a hard fork takes considerable\ntime, and being unable to respond in a timely manner would irreparably\nharm the credibility of bitcoin.\n\nAdditionally, predetermined block size increases are problematic because\nthey attempt to predict the future, and if too large could have\nunintended consequences like damaging the possibility for a fee market\nto develop as block subsidy decreases substantially over the next 9\nyears; introducing or exacerbating mining attack vectors; or somehow\naffect the network in unknown or unpredicted ways. Since fixed changes\nare hard to deploy, the damage could be extensive.\n\nDynamic block size adjustments also suffer from the potential to be\ngamed by the larger hash power.\n\nFree voting as suggested by BIP100 allows miners to sell their votes out\nof band at no risk, and enable the sponsor the ability to manipulate the\nblocksize. It also provides a cost free method or the larger pools to\nvote in ways to manipulate the blocksize such to disadvantage or attack\nsmaller pools."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "By introducing a cost to increase the block size ensures the mining\ncommunity will collude to increase it only when there is a clear\nnecessity, and reduce it when it is unnecessary. Larger miners cannot\nforce their wishes so easily because not only will they have to pay\nextra a difficulty target, then can be downvoted at no cost by the\nobjecting hash power.\n\nUsing difficulty as a penalty is better than a fixed cost in bitcoins\nbecause it is less predictable.\n\nIn order to prevent miners having complete control over blocksize, an\nupper limit is required at protocol level. This feature ensures full\nnodes retain control over consensus, remembering full nodes are the\nmechanism to keep miners honest."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The initial block size limit shall be 1MB.\n\nEach time a miner creates a block, they may vote to increase or decrease\nthe blocksize by a maximum of 10% of the current block size limit. These\nvotes will be used to recalculate the new block size limit every 2016\nblocks.\n\nVotes are cast using the block\\'s coinbase transaction scriptSig.\n\nAs per BIP34, the coinbase transaction scriptSig starts with a push of\nthe block height. The next push is a little-endian number representing\nthe preferred block size in bytes. For example, 0x4c(OP_PUSHDATA1)\n0x03(size of constant) 0x80 0x84 0x1e(2MB) or 0x4c(OP_PUSHDATA1)\n0x04(size of constant) 0x80 0x96 0x98 0x00(10MB).\n\nIf a miner votes for an increase, the block hash must meet a difficulty\ntarget which is proportionally larger than the standard difficulty\ntarget based on the percentage increase they voted for.\n\nVotes proposing decreasing the block size limit do not need to meet a\nhigher difficulty target.\n\nMiners can vote for no change by voting for the current block size.\n\nFor blocks to be valid the blockhash must meet the required difficulty\ntarget for the vote otherwise the block is invalid and will be rejected.\n\nEvery 2016 blocks, the block size limit will be recalculated by the\nmedian of all votes in the last 2016 blocks. This will redefine the\nblock size limit for the next 2016 blocks.\n\nBlocks that are larger than the calculated base block size limit are\ninvalid and will be rejected.\n\nThe base block size limit may not reduce below 1MB or increase above 8MB\n(the exact number for the upper limit requires further discussion)."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "This proposal is based on ideas and concepts derived from the writings\nof Meni Rosenfeld and Gregory Maxwell."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[BIP34](bip-0034.mediawiki \"wikilink\")"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

@@ -11,47 +11,43 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP proposes replacing the fixed one megabyte maximum block size\nwith a dynamically controlled maximum block size that may increase or\ndecrease with difficulty change depending on various network factors. I\nhave two proposals regarding this\\...\n\ni\\. Depending only on previous block size calculation.\n\nii\\. Depending on previous block size calculation and previous Tx fee\ncollected by miners."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "With increased adoption, transaction volume on bitcoin network is bound\nto grow. If the one megabyte max cap is not changed to a flexible one\nwhich changes itself with changing network demand, then adoption will\nhamper and bitcoin\\'s growth may choke up. Following graph shows the\nchange in average block size since inception\\...\n\n<https://blockchain.info/charts/avg-block-size?timespan=all&showDataPoints=false&daysAverageString=1&show_header=true&scale=0&address=>"
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Proposal 1 : Depending only on previous block size calculation {#proposal_1_depending_only_on_previous_block_size_calculation}",
-      "content": ""
+      "content": "### Proposal 1 : Depending only on previous block size calculation {#proposal_1_depending_only_on_previous_block_size_calculation}\n\n`\u00a0If\u00a0more\u00a0than\u00a050%\u00a0of\u00a0block's\u00a0size,\u00a0found\u00a0in\u00a0the\u00a0first\u00a02000\u00a0of\u00a0the\u00a0last\u00a0difficulty\u00a0period,\u00a0is\u00a0more\u00a0than\u00a090%\u00a0MaxBlockSize`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0Double\u00a0MaxBlockSize`\\\n`\u00a0Else\u00a0if\u00a0more\u00a0than\u00a090%\u00a0of\u00a0block's\u00a0size,\u00a0found\u00a0in\u00a0the\u00a0first\u00a02000\u00a0of\u00a0the\u00a0last\u00a0difficulty\u00a0period,\u00a0is\u00a0less\u00a0than\u00a050%\u00a0MaxBlockSize`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0Half\u00a0MaxBlockSize`\\\n`\u00a0Else`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0Keep\u00a0the\u00a0same\u00a0MaxBlockSize`"
     },
     {
       "header": "Proposal 2 : Depending on previous block size calculation and previous Tx fee collected by miners {#proposal_2_depending_on_previous_block_size_calculation_and_previous_tx_fee_collected_by_miners}",
-      "content": ""
+      "content": "`\u00a0TotalBlockSizeInLastButOneDifficulty\u00a0=\u00a0Sum\u00a0of\u00a0all\u00a0Block\u00a0size\u00a0of\u00a0first\u00a02008\u00a0blocks\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period`\\\n`\u00a0TotalBlockSizeInLastDifficulty\u00a0=\u00a0Sum\u00a0of\u00a0all\u00a0Block\u00a0size\u00a0of\u00a0second\u00a02008\u00a0blocks\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period\u00a0(This\u00a0actually\u00a0includes\u00a08\u00a0blocks\u00a0from\u00a0last\u00a0but\u00a0one\u00a0difficulty)`\\\n`\u00a0`\\\n`\u00a0TotalTxFeeInLastButOneDifficulty\u00a0=\u00a0Sum\u00a0of\u00a0all\u00a0Tx\u00a0fees\u00a0of\u00a0first\u00a02008\u00a0blocks\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period`\\\n`\u00a0TotalTxFeeInLastDifficulty\u00a0=\u00a0Sum\u00a0of\u00a0all\u00a0Tx\u00a0fees\u00a0of\u00a0second\u00a02008\u00a0blocks\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period\u00a0(This\u00a0actually\u00a0includes\u00a08\u00a0blocks\u00a0from\u00a0last\u00a0but\u00a0one\u00a0difficulty)`\\\n`\u00a0`\\\n`\u00a0If\u00a0(\u00a0(\u00a0(Sum\u00a0of\u00a0first\u00a04016\u00a0block\u00a0size\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period)/4016\u00a0>\u00a050%\u00a0MaxBlockSize)\u00a0AND\u00a0(TotalTxFeeInLastDifficulty\u00a0>\u00a0TotalTxFeeInLastButOneDifficulty)\u00a0AND\u00a0(TotalBlockSizeInLastDifficulty\u00a0>\u00a0TotalBlockSizeInLastButOneDifficulty)\u00a0)`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0MaxBlockSize\u00a0=\u00a0TotalBlockSizeInLastDifficulty\u00a0*\u00a0MaxBlockSize\u00a0/\u00a0TotalBlockSizeInLastButOneDifficulty`\\\n`\u00a0Else\u00a0If\u00a0(\u00a0(\u00a0(Sum\u00a0of\u00a0first\u00a04016\u00a0block\u00a0size\u00a0in\u00a0last\u00a02\u00a0difficulty\u00a0period)/4016\u00a0<\u00a050%\u00a0MaxBlockSize)\u00a0AND\u00a0(TotalTxFeeInLastDifficulty\u00a0<\u00a0TotalTxFeeInLastButOneDifficulty)\u00a0AND\u00a0(TotalBlockSizeInLastDifficulty\u00a0<\u00a0TotalBlockSizeInLastButOneDifficulty)\u00a0)`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0MaxBlockSize\u00a0=\u00a0TotalBlockSizeInLastDifficulty\u00a0*\u00a0MaxBlockSize\u00a0/\u00a0TotalBlockSizeInLastButOneDifficulty`\\\n`\u00a0Else`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0Keep\u00a0the\u00a0same\u00a0MaxBlockSize`"
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "These two proposals have been derived after discussion on\n[BitcoinTalk](https://bitcointalk.org/index.php?topic=1154536.0) and\n[bitcoin-dev mailing\nlist](http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-August/010285.html).\nThe original idea and its evolution in the light of various arguments\ncan be found [here](http://upalc.com/maxblocksize.php)."
     },
     {
       "header": "Proposal 1 : Depending only on previous block size calculation {#proposal_1_depending_only_on_previous_block_size_calculation_1}",
-      "content": ""
+      "content": "This solution is derived directly from the indication of the problem. If\ntransaction volume increases, then we will naturally see bigger blocks.\nOn the contrary, if there are not enough transaction volume, but maximum\nblock size is high, then only few blocks may sweep the mempool. Hence,\nif block size is itself taken into consideration, then maximum block\nsize can most rationally be derived. Moreover, this solution not only\nincreases, but also decreases the maximum block size, just like\ndifficulty."
     },
     {
       "header": "Proposal 2 : Depending on previous block size calculation and previous Tx fee collected by miners {#proposal_2_depending_on_previous_block_size_calculation_and_previous_tx_fee_collected_by_miners_1}",
-      "content": ""
+      "content": "This solution takes care of stable mining subsidy. It will not increase\nmaximum block size, if Tx fee collection is not increasing and thereby\ncreating a Tx fee pressure on the market. On the other hand, though the\nblock size max cap is dynamically controlled, it is very difficult to\ngame by any party because the increase or decrease of block size max cap\nwill take place in the same ratio of average block size increase or\ndecrease."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This is a hard-forking change to the Bitcoin protocol; anybody running\ncode that fully validates blocks must upgrade before the activation time\nor they will risk rejecting a chain containing larger-than-one-megabyte\nblocks."
     },
     {
       "header": "Other solutions considered {#other_solutions_considered}",
-      "content": ""
+      "content": "[Making Decentralized Economic\nPolicy](http://gtf.org/garzik/bitcoin/BIP100-blocksizechangeproposal.pdf) -\nby Jeff Garzik\n\n[Elastic block cap with rollover\npenalties](https://bitcointalk.org/index.php?topic=1078521.0) - by Meni\nRosenfeld\n\n[Increase maximum block\nsize](https://github.com/bitcoin/bips/blob/master/bip-0101.mediawiki) -\nby Gavin Andresen\n\n[Block size following technological\ngrowth](https://gist.github.com/sipa/c65665fc360ca7a176a6) - by Pieter\nWuille\n\n[The Bitcoin Lightning Network: Scalable Off-Chain Instant\nPayments](https://lightning.network/lightning-network-paper.pdf) - by\nJoseph Poon & Thaddeus Dryja"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "If consensus is achieved, deployment can be made at a future block\nnumber at which difficulty will change."
     }
   ]
 }

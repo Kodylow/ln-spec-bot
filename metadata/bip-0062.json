@@ -3,51 +3,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies proposed changes to the Bitcoin transaction\nvalidity rules in order to make malleability of transactions impossible\n(at least when the sender doesn\\'t choose to avoid it)."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "As of february 2014, Bitcoin transactions are malleable in multiple\nways. This means a (valid) transaction can be modified in-flight,\nwithout invalidating it, but without access to the relevant private\nkeys.\n\nThis is a problem for multiple reasons:\n\n-   The sender may not recognize his own transaction after being\nmodified.\n-   The sender may create transactions that spend change created by the\noriginal transaction. In case the modified transaction gets mined,\nthis becomes invalid.\n-   Modified transactions are effectively double-spends which can be\ncreated without malicious intent (of the sender), but can be used to\nmake other attacks easier.\n\nSeveral sources of malleability are known:\n\n1.  **Non-DER encoded ECDSA signatures** Right now, the Bitcoin\nreference client uses OpenSSL to validate signatures. As OpenSSL\naccepts more than serializations that strictly adhere to the DER\nstandard, this is a source of malleability. Since v0.8.0, non-DER\nsignatures are no longer relayed already.\n2.  **Non-push operations in scriptSig** Any sequence of script\noperations in scriptSig that results in the intended data pushes,\nbut is not just a push of that data, results in an alternative\ntransaction with the same validity.\n3.  **Push operations in scriptSig of non-standard size type** The\nBitcoin scripting language has several push operators (OP_0,\nsingle-byte pushes, data pushes of up to 75 bytes, OP_PUSHDATA1,\nOP_PUSHDATA2, OP_PUSHDATA4). As the later ones have the same result\nas the former ones, they result in additional possibilities.\n4.  **Zero-padded number pushes** In cases where scriptPubKey opcodes\nuse inputs that are interpreted as numbers, they can be zero padded.\n5.  **Inherent ECDSA signature malleability** ECDSA signatures\nthemselves are already malleable: taking the negative of the number\nS inside (modulo the curve order) does not invalidate it.\n6.  **Superfluous scriptSig operations** Adding extra data pushes at the\nstart of scripts, which are not consumed by the corresponding\nscriptPubKey, is also a source of malleability.\n7.  **Inputs ignored by scripts** If a scriptPubKey starts with an\nOP_DROP, for example, the last data push of the corresponding\nscriptSig will always be ignored.\n8.  **Sighash flags based masking** Sighash flags can be used to ignore\ncertain parts of a script when signing.\n9.  **New signatures by the sender** The sender (or anyone with access\nto the relevant private keys) is always able to create new\nsignatures that spend the same inputs to the same outputs.\n\nThe first six and part of the seventh can be fixed by extra consensus\nrules, but the last two can\\'t. Not being able to fix #7 means that even\nwith these new consensus rules, it will always be possible to create\noutputs whose spending transactions will all be malleable. However, when\nrestricted to using a safe set of output scripts, extra consensus rules\ncan make spending transactions optionally non-malleable (if the spender\nchooses to; as he can always bypass #8 and #9 himself)."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "New rules {#new_rules}",
-      "content": ""
+      "content": "### New rules {#new_rules}\n\nSeven extra rules are introduced, to combat exactly the seven first\nsources of malleability listed above:\n\n1.  **Canonically encoded ECDSA signatures** An ECDSA signature passed\nto OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_CHECKMULTISIG or\nOP_CHECKMULTISIGVERIFY must be encoded using strict DER encoding. To\nprovide a compact way to deliberately create an invalid signature\nfor OP_CHECKSIG and OP_CHECKMULTISIG, an empty byte array (i.e., the\nresult of OP_0) is also allowed. Doing a verification with a non-DER\nsignature makes the entire script evaluate to False (not just the\nsignature verification). See reference: [DER\nencoding](#der-encoding \"wikilink\").\n2.  **Non-push operations in scriptSig** Only data pushes are allowed in\nscriptSig. Evaluating any other operation makes the script evaluate\nto false. See reference: [Push\noperators](#push-operators \"wikilink\").\n3.  **Push operations in scriptSig of non-standard size type** The\nsmallest possible push operation must be used when possible. Pushing\ndata using an operation that could be encoded in a shorter way makes\nthe script evaluate to false. See reference: [Push\noperators](#push-operators \"wikilink\").\n4.  **Zero-padded number pushes** Any time a script opcode consumes a\nstack value that is interpreted as a number, it must be encoded in\nits shortest possible form. \\'Negative zero\\' is not allowed. See\nreference: [Numbers](#numbers \"wikilink\").\n5.  **Inherent ECDSA signature malleability** We require that the S\nvalue inside ECDSA signatures is at most the curve order divided by\n2 (essentially restricting this value to its lower half range). See\nreference: [Low S values in\nsignatures](#low-s-values-in-signatures \"wikilink\").\n6.  **Superfluous scriptSig operations** scriptPubKey evaluation will be\nrequired to result in a single non-zero value. If any extra data\nelements remain on the stack, the script evaluates to false.\n7.  **Inputs ignored by scripts** The (unnecessary) extra stack element\nconsumed by OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY must be the\nempty byte array (the result of OP_0). Anything else makes the\nscript evaluate to false."
     },
     {
       "header": "Block validity {#block_validity}",
-      "content": ""
+      "content": "To introduce these new rules in the network, we add both v3 blocks and\nv3 transactions. v2 is skipped for transactions to keep the version\nnumbers between transaction and block rules in sync. v2 transactions are\ntreated identically to v1 transactions. The same mechanism as in BIP\n0034 is used to introduce v3 blocks. When 75% of the past 1000 blocks\nare v3, a new consensus rule is activated:\n\n-   All transactions in v3 blocks are required to follow rules #1-#2.\n-   v3 (and higher) transactions in v3 blocks are required to follow\nrules #3-#7 as well.\n\nWhen 95% of the past 1000 blocks are v3 or higher, v2 blocks become\ninvalid entirely. Note however that v1 (and v2) transactions remain\nvalid forever."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "Below is a summary of the effects on signatures, their encoding and data\npushes."
     },
     {
       "header": "Low S values in signatures {#low_s_values_in_signatures}",
-      "content": ""
+      "content": "The value S in signatures must be between 0x1 and 0x7FFFFFFF FFFFFFFF\nFFFFFFFF FFFFFFFF 5D576E73 57A4501D DFE92F46 681B20A0 (inclusive). If S\nis too high, simply replace it by S\\' = 0xFFFFFFFF FFFFFFFF FFFFFFFF\nFFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141 - S.\n\nSignatures produced by the OpenSSL library are not guaranteed to be\nconsistent with this constraint. Version 0.9.3 of the reference client\nprovides [an\nexample](https://github.com/bitcoin/bitcoin/blob/v0.9.3/src/key.cpp#L202-L227)\nfor detection and correction.\n\nThe constraints on the value R are unchanged w.r.t. ECDSA, and values\ncan be between 0x1 and 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6\nAF48A03B BFD25E8C D0364140 (inclusive)."
     },
     {
       "header": "DER encoding {#der_encoding}",
-      "content": ""
+      "content": "For reference, here is how to encode signatures correctly in DER format.\n\n0x30 \\[total-length\\] 0x02 \\[R-length\\] \\[R\\] 0x02 \\[S-length\\] \\[S\\]\n\\[sighash-type\\]\n\n-   total-length: 1-byte length descriptor of everything that follows,\nexcluding the sighash byte.\n-   R-length: 1-byte length descriptor of the R value that follows.\n-   R: arbitrary-length big-endian encoded R value. It cannot start with\nany 0x00 bytes, unless the first byte that follows is 0x80 or\nhigher, in which case a single 0x00 is required.\n-   S-length: 1-byte length descriptor of the S value that follows.\n-   S: arbitrary-length big-endian encoded S value. The same rules apply\nas for R.\n-   sighash-type: 1-byte hashtype flag (only 0x01, 0x02, 0x03, 0x81,\n0x82 and 0x83 are allowed).\n\nThis is already enforced by the reference client as of version 0.8.0\n(only as relay policy, not as a consensus rule).\n\nThis rule, combined with the low S requirement above, results in\nS-length being at most 32 (and R-length at most 33), and the total\nsignature size being at most 72 bytes (and on average 71.494 bytes)."
     },
     {
       "header": "Push operators {#push_operators}",
-      "content": ""
+      "content": "-   Pushing an empty byte sequence must use OP_0.\n-   Pushing a 1-byte sequence of byte 0x01 through 0x10 must use OP_n.\n-   Pushing the byte 0x81 must use OP_1NEGATE.\n-   Pushing any other byte sequence up to 75 bytes must use the normal\ndata push (opcode byte n, with n the number of bytes, followed n\nbytes of data being pushed).\n-   Pushing 76 to 255 bytes must use OP_PUSHDATA1.\n-   Pushing 256 to 520 bytes must use OP_PUSHDATA2.\n-   OP_PUSHDATA4 can never be used, as pushes over 520 bytes are not\nallowed, and those below can be done using other operators.\n-   Any other operation is not considered to be a push."
     },
     {
       "header": "Numbers",
-      "content": ""
+      "content": "The native data type of stack elements is byte arrays, but some\noperations interpret arguments as integers. The used encoding is little\nendian with an explicit sign bit (the highest bit of the last byte). The\nshortest encodings for numbers are (with the range boundaries encodings\ngiven in hex between ()).\n\n-   0: OP_0; (00)\n-   1..16: OP_1..OP_16; (51)..(60)\n-   -1: OP_1NEGATE; (79)\n-   -127..-2 and 17..127: normal 1-byte data push; (01 FF)..(01 82) and\n(01 11)..(01 7F)\n-   -32767..-128 and 128..32767: normal 2-byte data push; (02 FF\nFF)..(02 80 80) and (02 80 00)..(02 FF 7F)\n-   -8388607..-32768 and 32768..8388607: normal 3-byte data push; (03 FF\nFF FF)..(03 00 80 80) and (03 00 80 00)..(03 FF FF 7F)\n-   -2147483647..-8388608 and 8388608..2147483647: normal 4-byte data\npush; (04 FF FF FF FF)..(04 00 00 80 80) and (04 00 00 80 00)..(04\nFF FF FF 7F)\n-   Any other numbers cannot be encoded.\n\nIn particular, note that zero could be encoded as (01 80) (negative\nzero) if using the non-shortest form is allowed."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "**Relay of transactions** A new node software version is released which\nmakes v3 transactions standard, and relays them when their scriptSigs\nsatisfy the above rules. Relaying of v1 transactions is unaffected. A v1\ntransaction spending an output created by a v3 transaction is also\nunaffected.\n\n**Wallet updates** As v3 transactions are non-standard currently, it is\nnot possible to start creating them immediately. Software can be checked\nto confirm to the new rules of course, but using v3 should only start\nwhen a significant part of the network\\'s nodes has upgraded to\ncompatible code. Its intended meaning is \\\"I want this transaction\nprotected from malleability\\\", and remains a choice of the wallet\nsoftware."
     }
   ]
 }

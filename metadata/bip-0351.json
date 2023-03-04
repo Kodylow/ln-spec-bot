@@ -11,95 +11,87 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP makes it possible for two parties to transact using addresses\nthat only they can calculate. This is done using exclusively on-chain\nmethods and in a manner that minimizes blockchain footprint. Receiving\nparties can share their payment codes publicly without a loss of\nprivacy, as every sender will calculate a unique set of addresses for\neach payment code."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "A recipient that wishes to receive funds privately has several options.\nEach has tradeoffs in terms of chain analysis potential, recoverability,\nand wallet complexity.\n\n**Sharing a static address** works well enough for one-time payments\nbetween two parties as long as the address is shared through a private\nchannel. It does not work well for recurring payments because address\nreuse leads to a loss of privacy. Using this method for donations\nexacerbates the problem since the address will serve as a focal point\nfor data collection and analysis. Wallets must not reissue the same\naddress to multiple recipients.\n\n**Sharing a BIP32 extended public key** works for recurring payments\nbetween two parties only. The same key cannot be shared to any other\nparty without leaking the chain of payments. Furthermore, an extended\npublic key does not say anything about address types and makes it\npossible for a sender to send to a script that a recipient cannot spend\nfrom. Alternate [version\nbytes](https://github.com/satoshilabs/slips/blob/master/slip-0132.md)\nhave been proposed to specify address types, but wallet adoption is\nlimited.\n\n**Sharing a BIP380 descriptor containing an extended public key** solves\nthe address type issue from sharing a raw BIP32 extended key. The\ndrawback is that descriptor support is not widespread, especially in\nmobile wallets.\n\n**Using a payment server** works in the case of recipients that have the\nresources to set up and maintain a payment server that will generate a\nfresh address for each payment. These are usually businesses and the\nmethod is usually out of reach for the average user. The centralized\nserver is vulnerable to takedown remotely and physically.\n\n**Sharing a BIP47 payment code** addresses most of the above\nshortcomings. However, it introduces the following problems:\n\n-   The BIP uses a notification mechanism that relies on publicly known\nper-recipient notification addresses. If Alice wants to send funds\nto Bob, she has to use the same notification address that everyone\nelse uses to notify Bob. If Alice is not careful with coin\nselection, i.e. ensuring that her notification UTXO is not linked to\nher, she will publicly expose herself as someone who is trying to\nsend funds to Bob and their relationship becomes permanently visible\non the blockchain.\n\n```{=html}\n<!-- -->\n```\n-   The BIP does not say anything about address types. Receiving wallets\ntherefore have to watch all address types that can be created from a\nsingle public key. Even then, a sender could send to a script that a\nreceipient cannot spend from."
     },
     {
       "header": "Method",
-      "content": ""
+      "content": "When Alice wants to start paying Bob in private, she imports his payment\ncode into a compatible wallet. Her wallet extracts Bob\\'s public key\nfrom the payment code and sends a notification transaction. If Bob finds\na notification transaction addressed to himself, he imports Alice\\'s\npublic key contained therein and stores it. Bob then performs ECDH using\nAlice\\'s public key and his own private key in order to calculate a\ncommon set of addresses to watch. Alice calculates the same set of\naddresses on her end and uses them to send coins to Bob. If Alice\nengages in coin control, both the initial notification transaction and\nsubsequent payment transactions cannot be attributed to either party.\nEven if Alice uses coins that are already associated with her, chain\nanalysis will identify her as a sender but Bob\\'s privacy will remain\nentirely preserved."
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "Definitions",
-      "content": ""
+      "content": "### Definitions\n\n-   Alice: sender\n-   Bob: recipient\n-   Payment code: static string that Bob generates and shares with\nothers so that he can receive payments\n-   *P*: public key contained in Bob\\'s payment code\n-   *p*: private key associated with Bob\\'s public key *P*\n-   *N*: extended public key used by Alice to derive child keys for each\nBob she wants to transact with\n-   *n*: private key associated with Alice\\'s public key *N*\n-   *x*: Alice\\'s secret recipient index, unique for each Bob\n-   *N~x~*: child public key derived from *N* at index *x*\n(non-hardened)\n-   *n~x~*: private key associated with *N~x~*\n-   *c*: Alice\\'s transaction count toward Bob\n-   *P~c~*: Bob\\'s public key at index *c*\n-   *p~c~*: Bob\\'s private key at index *c*\n-   *A~c~*: Bob\\'s receive address at index *c*\n-   *H*: SHA256 hash function\n-   *\\**: EC multiplication\n-   *+*: EC addition\n-   *\\|*: string concatenation\n-   *\\[a..b\\]*: string slicing (inclusive of *a*, exclusive of *b*)"
     },
     {
       "header": "Public Key Derivation Path {#public_key_derivation_path}",
-      "content": ""
+      "content": "The derivation path for this BIP follows BIP44. The following BIP32 path\nlevels are defined:\n\n`m / purpose' / coin_type' / account'`\n\n`purpose` is set to 351.\n\n*(p, P)* and *(n, N)* are keys associated with the above path, depending\non which side is performing the calculation.\n\n*N~x~* keys are the direct non-hardened children of *N*. For instance,\nthe path of *N~0~* from *N* is *m / 0*."
     },
     {
       "header": "Payment Code Structure and Encoding {#payment_code_structure_and_encoding}",
-      "content": ""
+      "content": "-   bytes `[0..2]`: address type flags (2 bytes)\n-   bytes `[2..35]`: compressed public key P (33 bytes)\n\nPayment codes are encoded in bech32m and the human readable part is\n\\\"pay\\\" for mainnet and \\\"payt\\\" for testnet (all types), resulting in\npayment codes that look like\n\\\"pay1cqqq8d29g0a7m8ghmycqk5yv24mfh3xg8ptzqcn8xz6d2tjl8ccdnfkpjl7p84\\\"."
     },
     {
       "header": "Address Types {#address_types}",
-      "content": ""
+      "content": "Address type flags determine which address types a payment code accepts.\nThis is represented by big-endian ordered 16 bits. For instance, a\nhypothetical payment code that handles all address types will have all\ndefined bits set to 1 (`0xffff`).\n\nCurrently defined flags:\n\nAddress Type   Flag       Flag Value   Ordinal Value\n-------------- ---------- ------------ ---------------\nP2PKH          `1 << 0`   `0x0001`     0\nP2WPKH         `1 << 1`   `0x0002`     1\nP2TR           `1 << 2`   `0x0004`     2\n\nThe remaining flags are reserved for future address types.\n\nWhile payment codes use 2-byte bitflag arrays, notifications use ordinal\nvalues in the form of a single byte.\n\nAll keys are compressed. Using uncompressed keys at any point is\nillegal."
     },
     {
       "header": "Notifications",
-      "content": ""
+      "content": "Notifications are performed by publishing transactions that contain a\n40-byte `OP_RETURN` output. The value of the `OP_RETURN` is constructed\nusing the following formula:\n\n*search_key \\| notification_code \\| N~x~ \\| address_type*\n\n-   *search_key* equals \\\"PP\\\" and is a static ASCII-encoded string (2\nbytes)\n-   *notification_code* is *H(n~x~ \\* P)\\[0..4\\]* (4 bytes)\n-   *N~x~* is the unique public key a sender is using for a particular\nrecipient (33 bytes)\n-   *address_type* is the **ordinal** value of a single address type\nthat a sender wants to send to (1 byte). This must be selected from\nthe recepient\\'s accepted address types.\n\nWhen Alice wants to notify Bob that he will receive future payments from\nher, she performs the following procedure:\n\n1.  Assigns an unused, unique index *x* to Bob (*0* if Bob is the first\nparty she is notifying).\n2.  Calculates a 4-byte notification code: *notification_code = H(n~x~\n\\* P)\\[0..4\\]*\n3.  Commits to one of Bob\\'s accepted address types by choosing its\nordinal value. Going forward Alice must not send to address types\nother than the one she committed to in the notification.\n4.  Constructs a notification payload by concatenating the above values\naccording to the formula.\n5.  Selects any UTXO in her wallet, preferably not associated with her.\n6.  Sends a transaction including an `OP_RETURN` output whose value is\nset to the constructed payload.\n\nWhen Bob notices a 40-byte `OP_RETURN` starting with *search key*, he\nperforms the following procedure:\n\n1.  Breaks down the payload into its four constituent parts.\n2.  Discards the *search_key* (item #0).\n3.  Selects *N~x~* (item #2) and performs *H(N~x~ \\* p)* (Bob does not\nknow the value of *x*). Bob takes the first four bytes of the\ncalculated value.\n4.  If the four bytes match the notification value (item #1), Bob found\na notification addressed to himself and stores *N~x~* together with\n*address_type*.\n5.  If this process fails for any reason, Bob assumes a spurious\nnotification or one not addressed to himself and gives up.\n\nSince changing *x* yields a completely different sender identity, Alice\ncan always re-notify Bob from a different index when she does not want\nto be associated with her previous identity. Alice can also re-notify\nBob when she wants to start sending to a different address type. Bob\nmust be able to update his watchlist in that case and he can stop\nwatching addresses associated with the old address type.\n\nOut-of-band notifications between Alice and Bob are legal (in fact, they\nmay not be prevented), but in that case Bob loses the ability to restore\nhis wallet from `OP_RETURN` outputs embedded in the blockchain. In that\ncase, Bob has the burden of keeping a valid backup of any out-of-band\nnotifications."
     },
     {
       "header": "Allowing Notification Collisions {#allowing_notification_collisions}",
-      "content": ""
+      "content": "Since *notification_code* is a 4-byte truncation of the full value, Bob\nhas a 1 in \\~4.3 billion chance of detecting a spurious notification.\nThis is considered acceptable because the cost of doing so is adding a\nfew more addresses to Bob\\'s watchlist. The benefit of this approach is\nthat is saves 28 bytes per notification."
     },
     {
       "header": "Scanning Requirement {#scanning_requirement}",
-      "content": ""
+      "content": "There is a scanning requirement on the recipient side in that the\nrecipient must have access to full blocks in order to be able to search\nthem for OP_RETURN outputs containing notifications. For more\ninformation on how light clients can get around this limitation and\nstill use the standard, see Appendix B.\n\nRecipients that do not want to decode raw block data can quickly search\nfor notifications in a block by looking for the following byte array:\n`[106, 40, 80, 80]`. The first two bytes represent *OP_RETURN* and\n*OP_PUSHBYTES_40*, followed by the ASCII value of *search_key*."
     },
     {
       "header": "Transacting",
-      "content": ""
+      "content": "Alice initializes counter *c* which is unique to Bob and increments with\neach transaction. *c* is a 64-bit integer and must be inputted into a\nhasher as a big-endian encoded array of 8 bytes.\n\n1\\. Alice calculates a secret point (constant between Alice and Bob):\n\n*S = n~x~ \\* P*\n\n2\\. Alice calculates a shared secret:\n\n*s = H(S \\| c)*\n\n3\\. Alice calculates Bob\\'s ephemeral public key and its associated\naddress where the funds will be sent:\n\n*P~c~ = P + s\\*G*\n\n4\\. Alice constructs an address using the key *P~c~*, using one of the\naddress types she committed to in the notification transaction.\n\nBob constructs his watchlist by mirroring this process on his end,\nexcept that his method of calculating *S* is:\n\n*S = N~x~ \\* p*\n\nWhen Bob wants to spend from such addresses, he calculates his private\nkeys in the following manner:\n\n*p~c~ = p + s*"
     },
     {
       "header": "Backward Compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Private Payments is a new standard which is not compatible with any\nprevious standard based on static payment codes, such as BIP47.\n\nWhile the standard does not support versioning, it reserves unused bits\nin the address type bitflag array which can be allocated to new address\ntypes once they are deemed ubiquitous. Older payment codes (i.e. those\ngenerated when fewer address types were available) are readable by\nsoftware supporting new address types. The reverse is also supported\nsince older software will ignore newer address type flags that are not\nunderstood."
     },
     {
       "header": "Appendix A: Test Vectors {#appendix_a_test_vectors}",
-      "content": ""
-    },
-    {
-      "header": "Alice\\'s Wallet {#alices_wallet}",
-      "content": ""
+      "content": "### Alice\\'s Wallet {#alices_wallet}\n\n**BIP32 seed:** 0xfe\n\n**Master xprv:**\nxprv9s21ZrQH143K2qVytoy3eZSSuc1gfzFrkV4bgoHzYTkgge4UoNP62eV8jkHYNqddaaefpnjwkz71P5m4EW6RuQBJeP9pdfa9WBnjP6XUivG\n\n**n:**\nxprv9zNFGn56Wm1s89ycTCg4hB615ehu6ZvNL4mxUEAL28pNhBAb6SZgLdsgmQd1ECgAiCjy6XxTTRyBdPAhH1oMfLhv2bSwfiCYhL9s9ahEehf\n\n**N:**\nxpub6DMbgHbzM8aALe45ZED54K2jdgYPW2eDhHhZGcZwaUMMZyVjdysvtSCAcfPYiqB5Zw41EyLWPxCXko6iEckwRdF5CD2ZKdTxUKigPXsnpaE\n\n**x:** 0\n\n**n~x~:**\nbe9518016ec15762877de7d2ce7367a2087cf5682e72bbffa89535d73bb42f40\n\n**N~x~:**\n02e3217349724307eed5514b53b1f53f0802672a9913d9bbb76afecc86be23f464"
     },
     {
       "header": "Bob\\'s Wallet {#bobs_wallet}",
-      "content": ""
+      "content": "**BIP32 seed:** 0xff\n\n**Master xprv:**\nxprv9s21ZrQH143K47bRNtc26e8Gb3wkUiJ4fH3ewYgJeiGABp7vQtTKsLBzHM2fsfiK7Er6uMrWbdDwwrdcVn5TDC1T1npTFFkdEVoMgTwfVuR\n\n**p:**\n0x26c610e7d0ed4395be3f0664073d66b0a3442b49e1ec13faf2dd9b7d3c335441\n\n**P:**\n0x0302be8bff520f35fae3439f245c52afb9085a7bf62d099c1f5e9e1b15a7e2121a\n\n**Accepted scripts:** 0x03 (legacy + segwit) (0x01 \\| 0x02)\n\n**Payment code:**\npay1qqpsxq4730l4yre4lt3588eyt3f2lwggtfalvtgfns04a8smzkn7yys6xv2gs8"
     },
     {
       "header": "Alice notifying Bob {#alice_notifying_bob}",
-      "content": ""
+      "content": "**S:**\n0x02c0892d6ba30b5b1eafebd47172e46d358721f294698f9f59b4d96b781da09a62\n\n**Notification code:** 0x49cb55bb\n\n**Address type commitment:** 1 (segwit)\n\n**Notification output script:** OP_RETURN OP_PUSHBYTES_40\n505049cb55bb02e3217349724307eed5514b53b1f53f0802672a9913d9bbb76afecc86be23f46401"
     },
     {
       "header": "Alice sending to Bob {#alice_sending_to_bob}",
-      "content": ""
+      "content": "**c:** 0\n\n**s:**\n0x5dbe5efee4a5b9df73708241858f2bf7ec65f141dbd229ea8e2f9f51804a18f2\n\n**s\\*G:**\n0x039362033c1bc3f05e081d4d7f76d5ffebde349b0f6a4d2e8ffc5c065c17233247\n\n**P~c~:**\n0x03e669bd1705691a080840b07d76713d040934a37f2e8dde2fe02f5d3286a49219\n\n**A~c~:** bc1qw7ld5h9tj2ruwxqvetznjfq9g5jyp0gjhrs30w"
     },
     {
       "header": "Bob spending {#bob_spending}",
-      "content": ""
+      "content": "**c:** 0\n\n**p~c~:**\n0x84846fe6b592fd7531af88a58ccc92a88faa1c8bbdbe3de5810d3acebc7d6d33"
     },
     {
       "header": "Appendix B: Potential OP_RETURN Services {#appendix_b_potential_op_return_services}",
-      "content": ""
+      "content": "Compact Block Filters, as formulated in BIP-0158, do not cover\n`OP_RETURN` data payloads. In support of light wallets, an external\nservice could publish transaction proofs for all transactions that\ninclude the tagged notification payload. Light wallets would download\nall such transactions, filter for matches against their payment code,\nthen verify the transaction proofs against the block headers obtained\nover the P2P network."
     },
     {
       "header": "Appendix C: Potential Notification Transaction Services {#appendix_c_potential_notification_transaction_services}",
-      "content": ""
+      "content": "No specific instruction is given as to the details of the notification\ntransaction beyond simply including the single `OP_RETURN` payload.\nSince no restriction exists for other inputs or outputs of this\ntransaction, there is an opportunity for an external service to include\nthis payload in a transaction completely unrelated to Alice\\'s wallet.\nSuch a service could charge a fee out-of-band to help cover fees.\n\nAnother opportunity exists for an existing business to attach\nnotification payloads to transactions sent during the normal course of\noperations. Large withdrawal transactions from mining pools or exchanges\ncould include a marginal notification payload without affecting overall\nfees."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "Reference implementation is available at\n<https://github.com/private-payments/rust-private-payments>"
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")\n-   [BIP43 - Purpose Field for Deterministic\nWallets](bip-0043.mediawiki \"wikilink\")\n-   [BIP44 - Multi-Account Hierarchy for Deterministic\nWallets](bip-0044.mediawiki \"wikilink\")\n-   [BIP47 - Reusable Payment Codes for Hierarchical Deterministic\nWallets](bip-0047.mediawiki \"wikilink\")\n-   [BIP157 - Client Side Block\nFiltering](bip-0157.mediawiki \"wikilink\")\n-   [BIP158 - Compact Block Filters for Light\nClients](bip-0158.mediawiki \"wikilink\")\n-   [BIP47 Prague Discussion (acknowledgements: \\@rubensomsen,\n\\@afilini,\n\\@kixunil](https://gist.github.com/RubenSomsen/21c477c90c942acf45f8e8f5c1ad4fae))"
     }
   ]
 }

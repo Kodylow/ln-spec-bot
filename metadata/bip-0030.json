@@ -12,35 +12,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document gives a specification for dealing with duplicate\ntransactions in the block chain, in an attempt to solve certain problems\nthe reference implementation has with them."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the 2-clause BSD license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "So far, the Bitcoin reference implementation always assumed duplicate\ntransactions (transactions with the same identifier) didn\\'t exist. This\nis not true; in particular coinbases are easy to duplicate, and by\nbuilding on duplicate coinbases, duplicate normal transactions are\npossible as well. Recently, an attack that exploits the reference\nimplementation\\'s dealing with duplicate transactions was described and\ndemonstrated. It allows reverting fully-confirmed transactions to a\nsingle confirmation, making them vulnerable to become unspendable\nentirely. Another attack is possible that allows forking the block chain\nfor a subset of the network."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "To counter this problem, the following network rule is introduced:\n\n-   Blocks are not allowed to contain a transaction whose identifier\nmatches that of an earlier, not-fully-spent transaction in the same\nchain.\n\nThis rule initially applied to all blocks whose timestamp is after March\n15, 2012, 00:00 UTC (testnet: February 20, 2012 00:00 UTC). It was later\nextended by Commit [Apply BIP30 checks to all blocks except the two\nhistoric\nviolations.](https://github.com/bitcoin/bitcoin/commit/ab91bf39b7c11e9c86bb2043c24f0f377f1cf514)\nto apply to all blocks except the two historic blocks at heights 91842\nand 91880 on the main chain that had to be grandfathered in."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "Whatever solution is used, the following law must be obeyed to guarantee\nsane behaviour: the set of usable transactions outputs must not be\nmodified by adding blocks to the chain and removing them again. This\nhappens during a reorganisation, and the current Bitcoin reference\nimplementation does not obey this law in case the temporarily added\nblocks contain a duplicate transaction.\n\nThere are several potential solutions to this problem:\n\n1.  Guarantee that all coinbases are unique, making duplicate\ntransactions very hard to create.\n2.  Remember previous remaining outputs of a given transaction\nidentifier, in case a new transaction with the same identifier is\nadded.\n3.  Only allow duplicate transactions in case the previous instance of\nthe transaction had no spendable outputs left. Removing a block from\nthe chain can then safely reset the removed transaction\\'s outputs\nto nothing.\n\nThe first option is probably the most complete one, as it also\nguarantees transaction identifiers are unique. However, implementing it\nrequires several changes that need to be accepted throughout the\nnetwork. Furthermore, it does not prevent duplicate transactions based\non earlier duplicate coinbases. The second option is impossible to\nimplement in a forward-compatible way, as it potentially renders\ncurrently-invalid blocks valid. In this document we choose for the third\noption, because it only requires a trivial change.\n\nFully-spent transactions are allowed to be duplicated in order not to\nhinder pruning at some point in the future. Not allowing any transaction\nto be duplicated would require evidence to be kept for each transaction\never made."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "The addition of this rule only makes some previously-valid blocks\ninvalid. This implies that if the rule is implemented by a supermajority\nof miners, it is not possible to fork the block chain in a permanent way\nbetween nodes with and without the new rule."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "A patch for the reference client can be found on\n<https://github.com/sipa/bitcoin/tree/nooverwritetx>\n\nThis BIP was implemented in Commit [Do not allow overwriting unspent\ntransactions (BIP\n30)](https://github.com/bitcoin/bitcoin/commit/a206b0ea12eb4606b93323268fc81a4f1f952531)\nThere have been additional commits to refine the implementation of this\nBIP."
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Russell O\\'Connor for finding and demonstrating this problem,\nand helping test the patch."
     }
   ]
 }

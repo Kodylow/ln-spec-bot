@@ -11,23 +11,23 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP introduces a \\\"Purpose Field\\\" for use in deterministic wallets\nbased on algorithm described in BIP-0032 (BIP32 from now on)."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Although Hierarchical Deterministic Wallet structure as described by\nBIP32 is an important step in user experience and security of the\ncryptocoin wallets, the BIP32 specification offers implementors too many\ndegrees of freedom. Multiple implementations may claim they are BIP32\ncompatible, but in fact they can produce wallets with different logical\nstructures making them non-interoperable. This situation unfortunately\nrenders \\\"BIP32 compatible\\\" statement rather useless."
     },
     {
       "header": "Purpose",
-      "content": ""
+      "content": "We propose the first level of BIP32 tree structure to be used as\n\\\"purpose\\\". This purpose determines the further structure beneath this\nnode.\n\nm / purpose' / *\n\nApostrophe indicates that BIP32 hardened derivation is used.\n\nWe encourage different schemes to apply for assigning a separate BIP\nnumber and use the same number for purpose field, so addresses won\\'t be\ngenerated from overlapping BIP32 spaces.\n\nPurpose codes from 10001 to 19999 are reserved for\n[SLIPs](https://github.com/satoshilabs/slips \"wikilink\").\n\nExample: Scheme described in BIP44 should use 44\\' (or 0x8000002C) as\npurpose.\n\nNote that m / 0\\' / \\* is already taken by BIP32 (default account),\nwhich preceded this BIP.\n\nNot all wallets may want to support the full range of features and\npossibilities described in these BIPs. Instead of choosing arbitrary\nsubset of defined features and calling themselves BIPxx compatible, we\nsuggest that software which needs only a limited structure should\ndescribe such structure in another BIP and use different \\\"purpose\\\"\nvalue."
     },
     {
       "header": "Node serialization {#node_serialization}",
-      "content": ""
+      "content": "Because this scheme can be used to generate nodes for more\ncryptocurrencies at once, or even something totally unrelated to\ncryptocurrencies, there\\'s no point in using a special version magic\ndescribed in section \\\"Serialization format\\\" of BIP32. We suggest to\nuse always 0x0488B21E for public and 0x0488ADE4 for private nodes\n(leading to prefixes \\\"xpub\\\" and \\\"xprv\\\" respectively)."
     },
     {
       "header": "Reference",
-      "content": ""
+      "content": "-   [BIP32 - Hierarchical Deterministic\nWallets](bip-0032.mediawiki \"wikilink\")"
     }
   ]
 }

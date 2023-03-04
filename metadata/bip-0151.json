@@ -13,67 +13,63 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes an alternative way that a peer can encrypt their\ncommunication between a selective subset of remote peers."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The Bitcoin network does not encrypt communication between peers today.\nThis opens up security issues (eg: traffic manipulation by others) and\nallows for mass surveillance / analysis of bitcoin users. Mostly this is\nnegligible because of the nature of Bitcoin\\'s trust model, however, for\nSPV nodes this can have significant privacy impacts \\[1\\] and could\nreduce the censorship-resistance of a peer.\n\nEncrypting peer traffic will make analysis and specific user targeting\nmuch more difficult than it currently is. Today it\\'s trivial for a\nnetwork provider or any other men-in-the-middle to identify a Bitcoin\nuser and its controlled addresses/keys (and link with his Google\nprofile, etc.). Just created and broadcasted transactions will reveal\nthe amount and the payee to the network provider.\n\nThis BIP also describes a way that data manipulation (blocking commands\nby a intercepting TCP/IP node) would be identifiable by the\ncommunicating peers.\n\nAnalyzing the type of p2p communication would still be possible because\nof the characteristics (size, sending-interval, etc.) of the encrypted\nmessages.\n\nEncrypting traffic between peers is already possible with VPN, tor,\nstunnel, curveCP or any other encryption mechanism on a deeper OSI\nlevel, however, most mechanisms are not practical for SPV or other\nDHCP/NAT environment and will require significant knowhow in how to\nsetup such a secure channel."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "A peer that supports encryption must accept encryption requests from all\npeers.\n\nAn independent ECDH negotiation for both communication directions is\nrequired and therefore a bidirectional communication will use two\nsymmetric cipher keys (one per direction).\n\nBoth peers must only send encrypted messages after a successful ECDH\nnegotiation in *both directions*.\n\nEncryption initialization must happen before sending any other messages\nto the responding peer (`encinit` message after a `version` message must\nbe ignored)."
     },
     {
       "header": "Symmetric Encryption Cipher Keys {#symmetric_encryption_cipher_keys}",
-      "content": ""
+      "content": "The symmetric encryption cipher keys will be calculated with ECDH/HKDF\nby sharing the pubkeys of an ephemeral key. Once the ECDH secret is\ncalculated on each side, the symmetric encryption cipher keys must be\nderived with HKDF \\[2\\] after the following specification:\n\n1\\. HKDF extraction\n`PRK = HKDF_EXTRACT(hash=SHA256, salt=\"bitcoinecdh\", ikm=ecdh_secret|cipher-type)`.\n\n2\\. Derive Key1\n`K_1 = HKDF_EXPAND(prk=PRK, hash=SHA256, info=\"BitcoinK1\", L=32)`\n\n3\\. Derive Key2\n`K_2 = HKDF_EXPAND(prk=PRK, hash=SHA256, info=\"BitcoinK2\", L=32)`\n\nIt is important to include the cipher-type into the symmetric cipher key\nderivation to avoid weak-cipher-attacks."
     },
     {
       "header": "Session ID {#session_id}",
-      "content": ""
+      "content": "Both sides must also calculate the 256bit session-id using\n`SID = HKDF_EXPAND(prk=PRK, hash=SHA256, info=\"BitcoinSessionID\", L=32)`.\nThe session-id can be used for linking the encryption-session to an\nidentity check."
     },
     {
       "header": "The `encinit` message type {#the_encinit_message_type}",
-      "content": ""
+      "content": "To request encrypted communication, the requesting peer generates an EC\nephemeral-session-keypair and sends an `encinit` message to the\nresponding peer and waits for an `encack` message. The responding node\nmust do the same `encinit`/`encack` interaction for the opposite\ncommunication direction.\n\nField Size   Description                 Data type      Comments\n------------ --------------------------- -------------- ---------------------------------------------\n33bytes      ephemeral-pubkey            comp.-pubkey   The session pubkey from the requesting peer\n1bytes       symmetric key cipher type   int8           symmetric key cipher type to use\n\nPossible symmetric key ciphers types\n\nNumber   symmetric key ciphers type\n-------- -------------------------------\n0        chacha20-poly1305@openssh.com"
     },
     {
       "header": "ChaCha20-Poly1305 Cipher Suite {#chacha20_poly1305_cipher_suite}",
-      "content": ""
+      "content": "ChaCha20 is a stream cipher designed by Daniel Bernstein \\[3\\]. It\noperates by permuting 128 fixed bits, 128 or 256 bits of key, a 64 bit\nnonce and a 64 bit counter into 64 bytes of output. This output is used\nas a keystream, with any unused bytes simply discarded.\n\nPoly1305, also by Daniel Bernstein \\[4\\], is a one-time Carter-Wegman\nMAC that computes a 128 bit integrity tag given a message and a\nsingle-use 256 bit secret key.\n\nThe chacha20-poly1305@openssh.com specified and defined by openssh \\[5\\]\ncombines these two primitives into an authenticated encryption mode. The\nconstruction used is based on that proposed for TLS by Adam Langley\n\\[6\\], but differs in the layout of data passed to the MAC and in the\naddition of encyption of the packet lengths.\n\n`K_1` must be used to only encrypt the payload size of the encrypted\nmessage to avoid leaking information by revealing the message size.\n\n`K_2` must be used in conjunction with poly1305 to build an AEAD.\n\nOptimized implementations of ChaCha20-Poly1305 are very fast in general,\ntherefore it is very likely that encrypted messages require less CPU\ncycles per byte then the current unencrypted p2p message format. A quick\nanalysis by Pieter Wuille of the current *standard implementations* has\nshown that SHA256 requires more CPU cycles per byte then ChaCha20 &\nPoly1304."
     },
     {
       "header": "The `encack` message type {#the_encack_message_type}",
-      "content": ""
+      "content": "The responding peer accepts the encryption request by sending an\n`encack` message.\n\nField Size   Description        Data type      Comments\n------------ ------------------ -------------- ---------------------------------------------\n33bytes      ephemeral-pubkey   comp.-pubkey   The session pubkey from the responding peer\n\nAt this point, the shared secret key for the symmetric key cipher must\nbe calculated by using ECDH (own privkey x remote pub key). Private keys\nwill never be transmitted. The shared secret can only be calculated if\nan attacker knows at least one private key and the remote peer\\'s public\nkey.\n\n-   **The `encinit`/`encack` interaction must be done from both sides.**\n-   Each communication direction uses its own secret key for the\nsymmetric cipher.\n-   The second `encinit` request (from the responding peer) must use the\nsame symmetric cipher type.\n-   All unencrypted messages before the second `encack` response (from\nthe responding peer) must be ignored.\n-   After a successful `encinit`/`encack` interaction, the \\\"encrypted\nmessages structure\\\" must be used. Non-encrypted messages from the\nrequesting peer must lead to a connection termination.\n\nAfter a successful `encinit`/`encack` interaction from both sides, the\nmessages format must use the \\\"encrypted messages structure\\\".\nNon-encrypted messages from the requesting peer must lead to a\nconnection termination (can be detected by the 4 byte network magic in\nthe unencrypted message structure)."
     },
     {
       "header": "Encrypted Messages Structure {#encrypted_messages_structure}",
-      "content": ""
+      "content": "Field Size   Description          Data type   Comments\n------------ -------------------- ----------- -------------------------------------------------\n4            length               uint32_t    Length of ciphertext payload in number of bytes\n?            ciphertext payload   ?           One or many ciphertext command & message data\n16           MAC tag              ?           128bit MAC-tag\n\nEncrypted messages do not have the 4byte network magic.\n\nThe maximum message length needs to be chosen carefully. The 4 byte\nlength field can lead to a required message buffer of 4 GiB. Processing\nthe message before the authentication succeeds must not be done.\n\nThe 4byte sha256 checksum is no longer required because the AEAD.\n\nBoth peers need to track the message sequence number (uint32) of sent\nmessages to the remote peer for building a 64 bit symmetric cipher IV.\nSequence numbers are allowed to overflow to zero after 4294967295\n(2\\^32-1).\n\nThe encrypted payload will result decrypted in one or many unencrypted\nmessages:\n\nField Size   Description   Data type   Comments\n------------ ------------- ----------- ---------------------------------------------------------------------------------------------\n?            command       varlen      ASCII string identifying the packet content, we are using varlen in the encrypted messages.\n4            length        uint32_t    Length of plaintext payload\n?            payload       ?           The actual data\n\nIf more data is present, another message must be deserialized. There is\nno explicit amount-of-messages integer."
     },
     {
       "header": "Re-Keying {#re_keying}",
-      "content": ""
+      "content": "A responding peer can inform the requesting peer over a re-keying with\nan `encack` message containing 33byte of zeros to indicate that all\nencrypted message following after this `encack` message will be\nencrypted with *the next symmetric cipher key*.\n\nThe new symmetric cipher key will be calculated by\n`SHA256(SHA256(session_id || old_symmetric_cipher_key))`.\n\nRe-Keying interval is a peer policy with a minimum timespan of 10\nseconds.\n\nThe Re-Keying must be done after every 1GB of data sent or received\n(recommended by RFC4253 SSH Transport)."
     },
     {
       "header": "Risks",
-      "content": ""
+      "content": "The encryption does not include an identity authentication scheme. This\nBIP does not cover a proposal to avoid MITM attacks during the\nencryption initialization.\n\nIdentity authentication will be covered in another BIP and will presume\ncommunication encryption after this BIP."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "This proposal is backward compatible. Non-supporting peers will ignore\nthe `encinit` messages."
     },
     {
       "header": "Reference implementation {#reference_implementation}",
-      "content": ""
-    },
-    {
-      "header": "References",
-      "content": ""
+      "content": "## References\n\n-   \\[1\\]\n<https://e-collection.library.ethz.ch/eserv/eth:48205/eth-48205-01.pdf>\n-   \\[2\\] HKDF (RFC 5869) <https://tools.ietf.org/html/rfc5869>\n-   \\[3\\] ChaCha20 <https://cr.yp.to/chacha/chacha-20080128.pdf>\n-   \\[4\\] Poly1305 <https://cr.yp.to/mac/poly1305-20050329.pdf>\n-   \\[5\\]\n<https://github.com/openssh/openssh-portable/blob/05855bf2ce7d5cd0a6db18bc0b4214ed5ef7516d/PROTOCOL.chacha20poly1305>\n-   \\[6\\] \\\"ChaCha20 and Poly1305 based Cipher Suites for TLS\\\", Adam\nLangley\n<https://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-03>"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "-   Pieter Wuille and Gregory Maxwell for most of the ideas in this BIP."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

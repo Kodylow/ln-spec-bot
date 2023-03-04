@@ -12,31 +12,31 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP extends BIP 37, Connection Bloom filtering, by defining a\nservice bit to allow peers to advertise that they support bloom filters\nexplicitly. It also bumps the protocol version to allow peers to\nidentify old nodes which allow bloom filtering of the connection despite\nlacking the new service bit."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "BIP 37 did not specify a service bit for the bloom filter service, thus\nimplicitly assuming that all nodes that serve peers data support it.\nHowever, the connection filtering algorithm proposed in BIP 37, and\nimplemented in several clients today, has been shown to provide little\nto no privacy[^1], as well as being a large DoS risk on some nodes[^2].\nThus, allowing node operators to disable connection bloom filtering is a\nmuch-needed feature."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The following protocol bit is added:\n\nNODE_BLOOM = (1 << 2)\n\nNodes which support bloom filters should set that protocol bit.\nOtherwise it should remain unset. In addition the protocol version is\nincreased from 70002 to 70011 in the reference implementation. It is\noften the case that nodes which have a protocol version smaller than\n70011, but larger than 70000 support bloom filtered connections without\nthe NODE_BLOOM bit set, however clients which require bloom filtered\nconnections should avoid making this assumption.\n\nNODE_BLOOM is distinct from NODE_NETWORK, and it is legal to advertise\nNODE_BLOOM but not NODE_NETWORK (though there is little reason to do so\nnow, some proposals may make this more useful in the future)\n\nIf a node does not support bloom filters but receives a \\\"filterload\\\",\n\\\"filteradd\\\", or \\\"filterclear\\\" message from a peer the node should\ndisconnect that peer immediately. For backwards compatibility, in\ninitial implementations, nodes may choose to only disconnect nodes which\nhave the new protocol version set and attempt to send a filter command.\n\nWhile outside the scope of this BIP it is suggested that DNS seeds and\nother peer discovery mechanisms support the ability to specify the\nservices required; current implementations simply check only that\nNODE_NETWORK is set."
     },
     {
       "header": "Design rational {#design_rational}",
-      "content": ""
+      "content": "A service bit was chosen as applying a bloom filter is a service.\n\nThe increase in protocol version is for backwards compatibility. In\ninitial implementations, old nodes which are not yet aware of NODE_BLOOM\nand use a protocol version \\< 70011 may still send filter messages to a\nnode without NODE_BLOOM. This feature may be removed after there are\nsufficient NODE_BLOOM nodes available and SPV clients have upgraded,\nallowing node operators to fully close the bloom-related DoS vectors."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/6579>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "```{=html}\n<references>\n```\n\n[^1]: <http://eprint.iacr.org/2014/763>\n\n[^2]: [1](http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2013-July/003044.html)\nis one example where the issues were found, though others\nindependently discovered issues as well. Sample DoS exploit code\navailable at <https://github.com/petertodd/bloom-io-attack>."
     }
   ]
 }

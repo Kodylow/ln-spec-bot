@@ -12,27 +12,27 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP alters the Payment Protocol to allow for zero value OP_RETURN\noutputs in serialized PaymentRequests."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The Payment Protocol (defined in BIP70) gives merchants a way to build\nsophisticated transactions by serializing one or more outputs in the\nform of a PaymentRequest. The PaymentRequest is then served over\nhttp/https to a customer\\'s wallet where the serialized transaction can\nbe executed.\n\nWhile the Payment Protocol allows for any valid script in its outputs,\nit also ignores outputs with zero value. This means BIP70\nimplementations can encode an OP_RETURN script but must provide a\ngreater than dust value for that output. The end result is a successful\nPaymentRequest transaction with an OP_RETURN but the value assigned to\nthat output is lost forever.\n\nThis BIP allows for zero value OP_RETURN outputs in serialized\nPaymentRequests. The change means that OP_RETURN scripts will work as\nthey were originally intended from within PaymentRequests without\npermanently destroying Bitcoin value. Zero value non-OP_RETURN scripts\nshould continue to be ignored.\n\nIn addition to fixing the issue of destroyed value, this change opens up\nnew use cases that were previously impossible.\n\nWhile storing data on the blockchain is controversial, when used\nresponsibly OP_RETURN provides a powerful mechanism for attaching\nmetadata to a transaction. This BIP effectively decouples the creation\nof transactions containing OP_RETURN data from the execution of those\ntransactions. The result are positive benefits for both merchants and\nwallets/customers.\n\nBy supporting this BIP, wallets can participate in current and future,\nunforeseen use cases that benefit from metadata stored in OP_RETURN.\nUntil now OP_RETURN transactions have typically been created and\nsubmitted by custom software. If a wallet can process a PaymentRequest\nwith OP_RETURN data as proposed by this BIP, it will support potentially\nsophisticated Bitcoin applications without the wallet developer having\nto have prior knowledge of that application.\n\nAn example might be a merchant that adds the hash of a plain text\ninvoice to the checkout transaction. The merchant could construct the\nPaymentRequest with the invoice hash in an OP_RETURN and pass it to the\ncustomer\\'s wallet. The wallet could then submit the transaction,\nincluding the invoice hash from the PaymentRequest. The wallet will have\nencoded a proof of purchase to the blockchain without the wallet\ndeveloper having to coordinate with the merchant software or add\nfeatures beyond this BIP.\n\nMerchants and Bitcoin application developers benefit from this BIP\nbecause they can now construct transactions that include OP_RETURN data\nin a keyless environment. Again, prior to this BIP, transactions that\nused OP_RETURN (with zero value) needed to be constructed and executed\nin the same software. By separating the two concerns, this BIP allows\nmerchant software to create transactions with OP_RETURN metadata on a\nserver without storing public or private Bitcoin keys. This greatly\nenhances security where OP_RETURN applications currently need access to\na private key to sign transactions."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The specification for this BIP is straightforward. BIP70 should be fully\nimplemented with the following changes:\n\n-   Outputs where the script is an OP_RETURN and the value is zero\nshould be accepted by the wallet.\n\nBIP70 has special handling for the case with multiple zero value\noutputs:\n\n> If the sum of outputs.amount is zero, the customer will be asked how\n> much to pay, and the bitcoin client may choose any or all of the\n> Outputs (if there are more than one) for payment. If the sum of\n> outputs.amount is non-zero, then the customer will be asked to pay the\n> sum, and the payment shall be split among the Outputs with non-zero\n> amounts (if there are more than one; Outputs with zero amounts shall\n> be ignored).\n\nThis behavior should be retained with the exception of OP_RETURN\nhandling. In the case of a multiple output transaction where the sum of\nthe output values is zero, the user should be prompted for a value and\nthat value should be distributed over any or all outputs *except* the\nOP_RETURN output. In the case where the sum of outputs.amount is\nnon-zero then any OP_RETURN outputs should not be ignored but no value\nshould be assigned to them.\n\nPayment requests also must contain at least one payable output (i.e. no\npayment requests with *just* an OP_RETURN)."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "As with the discussion around vanilla OP_RETURN, the practice of storing\ndata on the blockchain is controversial. While blockchain and network\nbloat is an undeniable issue, the benefits that come from attaching\nmetadata to transactions has proven to be too powerful to dismiss\nentirely. In the absence of OP_RETURN support the Bitcoin ecosystem has\nseen alternative, less elegant and more wasteful methods employed for\nBlockchain data storage.\n\nAs it exists today, BIP70 allows for OP_RETURN data storage at the\nexpense of permanently destroyed Bitcoin. Even fully removing support\nfor OP_RETURN values in the Payment Protocol would still leave the door\nopen to suboptimal data encoding via burning a larger than dust value to\nan output with a false address designed to encode data.\n\nThis BIP offers all of the same benefits that come from the OP_RETURN\ncompromise. Mainly that OP_RETURN scripts are provably unspendable and\nthus can be pruned from the UTXO pool. Without supporting this BIP,\nwallets that support BIP70 will allow for wasteful data storage."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Since this BIP still supports OP_RETURN statements with a greater than\nzero value, it should be fully backwards compatible with any existing\nimplementations."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

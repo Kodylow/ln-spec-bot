@@ -11,35 +11,35 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "Prior soft forks (BIP 34, BIP 65, and BIP 66) were activated via miner\nsignaling in block version numbers. Now that the chain has long since\npassed the blocks at which those consensus rules have triggered, we can\n(as a simplification) replace the trigger mechanism by caching the block\nheights at which those consensus rules became enforced."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "BIPs 34, 65 and 66 were deployed on mainnet using miner signaling using\nblock version numbers. In short, new consensus rules were proposed for\nuse in blocks with a higher version number (N+1) than the prevailing\nblock version (N) in use on the network, and those rules became enforced\nunder the following conditions:\n\n1.  75% rule: If 750 of the prior 1000 blocks are version N+1 or higher,\nthen blocks with version N+1 or higher must correctly enforce the\nnew consensus rule.\n2.  95% rule: If 950 of the prior 1000 blocks are version N+1 or higher,\nthen blocks with version less than N+1 are invalid.\n\nPlease see those [BIPs](#References \"wikilink\") for more details.\n\nNote that this trigger mechanism is dependent on the chain history. To\nvalidate a block, we must test whether the trigger was met by looking at\nthe previous 1000 blocks in the chain before it, which can be\ninefficient.\n\nIn addition, this mechanism for code deployments have been deprecated in\nfavor of BIP 9 deployments, which offer several advantages (please see\n[BIP\n9](https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki)).\n\nThus we propose elimination of the logic implementing these kinds of\ndeployments, by replacing the test which governs enforcement of BIP 34,\nBIP 65, and BIP 66 with simple height checks, which we choose to be the\nblock height triggering the 95% activation rule on mainnet for each of\nthose deployments. This simplification of the consensus rules would\nreduce the technical debt associated with deployment of those consensus\nchanges."
     },
     {
       "header": "Considerations",
-      "content": ""
+      "content": "It is technically possible for this to be a non-backwards compatible\nchange. For example, if an alternate chain were created in which BIP\n34\\'s 95% activation triggered at a lower height (H\\') than it did on\nthe current mainnet chain (H), then older software would enforce that\nversion 1 blocks were invalid at heights between H\\' and H, while newer\nsoftware implementing this change would not. Similarly, this BIP\nproposes doing away with the 75% threshold check altogether, which\nmeans, for example, that a version 2 block forking off of mainnet at\nheight H-1 which omitted the height in coinbase would be invalid to\nolder software, while accepted by newer software.\n\nHowever, while newer software and older software might validate old\nblocks differently, that could only cause a consensus split if there\nwere an extremely large blockchain reorganization onto a chain built off\nsuch a block. As of November 2016, the most recent of these changes (BIP\n65, enforced since December 2015) has nearly 50,000 blocks built on top\nof it. The occurrence of such a reorg that would cause the activating\nblock to be disconnected would raise fundamental concerns about the\nsecurity assumptions of Bitcoin, a far bigger issue than any\nnon-backwards compatible change.\n\nSo while this proposal could `<i>`{=html}theoretically`</i>`{=html}\nresult in a consensus split, it is extremely unlikely, and in particular\nany such circumstances would be sufficiently damaging to the Bitcoin\nnetwork to dwarf any concerns about the effects of this proposed change."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The BIP 34, 66, and 65 activation heights are set to 227931, 363725, and\n388381, respectively.\n\nThe 1000-block lookback test, first described in BIP 34, is no longer\nperformed during validation of any blocks. Instead, a new check is\nadded:\n\n`\u00a0\u00a0\u00a0if((block.nVersion\u00a0<\u00a02\u00a0&&\u00a0nHeight\u00a0>=\u00a0consensusParams.BIP34Height)\u00a0||`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0(block.nVersion\u00a0<\u00a03\u00a0&&\u00a0nHeight\u00a0>=\u00a0consensusParams.BIP66Height)\u00a0||`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0(block.nVersion\u00a0<\u00a04\u00a0&&\u00a0nHeight\u00a0>=\u00a0consensusParams.BIP65Height))`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0return\u00a0state.Invalid(false,\u00a0REJECT_OBSOLETE,\u00a0strprintf(\"bad-version(0x%08x)\",\u00a0block.nVersion),`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0strprintf(\"rejected\u00a0nVersion=0x%08x\u00a0block\",\u00a0block.nVersion));`\n\nFurthermore, rather than consider the block versions of the prior 1000\nblocks to determine whether to enforce BIP 34, BIP 65, or BIP 66 on a\ngiven block, we instead just compare the height of the block being\nvalidated with the stored activation heights:\n\n`\u00a0\u00a0\u00a0//\u00a0Enforce\u00a0rule\u00a0that\u00a0the\u00a0coinbase\u00a0starts\u00a0with\u00a0serialized\u00a0block\u00a0height`\\\n`\u00a0\u00a0\u00a0if\u00a0(nHeight\u00a0>=\u00a0consensusParams.BIP34Height)`\\\n`\u00a0\u00a0\u00a0{`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0CScript\u00a0expect\u00a0=\u00a0CScript()\u00a0<<\u00a0nHeight;`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0if\u00a0(block.vtx[0].vin[0].scriptSig.size()\u00a0<\u00a0expect.size()\u00a0||`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0!std::equal(expect.begin(),\u00a0expect.end(),\u00a0block.vtx[0].vin[0].scriptSig.begin()))\u00a0{`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0return\u00a0state.DoS(100,\u00a0false,\u00a0REJECT_INVALID,\u00a0\"bad-cb-height\",\u00a0false,\u00a0\"block\u00a0height\u00a0mismatch\u00a0in\u00a0coinbase\");`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0}`\\\n`\u00a0\u00a0\u00a0}`\n\nand\n\n`\u00a0\u00a0\u00a0//\u00a0Start\u00a0enforcing\u00a0the\u00a0DERSIG\u00a0(BIP66)\u00a0rule`\\\n`\u00a0\u00a0\u00a0if\u00a0(pindex->nHeight\u00a0>=\u00a0chainparams.GetConsensus().BIP66Height)\u00a0{`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0flags\u00a0|=\u00a0SCRIPT_VERIFY_DERSIG;`\\\n`\u00a0\u00a0\u00a0}`\n\n`\u00a0\u00a0\u00a0//\u00a0Start\u00a0enforcing\u00a0CHECKLOCKTIMEVERIFY\u00a0(BIP65)\u00a0rule`\\\n`\u00a0\u00a0\u00a0if\u00a0(pindex->nHeight\u00a0>=\u00a0chainparams.GetConsensus().BIP65Height)\u00a0{`\\\n`\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0flags\u00a0|=\u00a0SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;`\\\n`\u00a0\u00a0\u00a0}`\n\nPlease see the implementation for additional details."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/bitcoin/bitcoin/pull/8391>."
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[BIP34 Block v2, Height in\nCoinbase](https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki)\n\n[BIP66 Strict DER\nsignatures](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki)\n\n[BIP65\nOP_CHECKLOCKTIMEVERIFY](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki)\n\n[BIP9 Version bits with timeout and\ndelay](https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki)"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "Thanks to Nicolas Dorier for drafting an initial version of this BIP,\nand to Alex Morcos, Matt Corallo, and Greg Maxwell for suggestions and\nfeedback."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain."
     }
   ]
 }

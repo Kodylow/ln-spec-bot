@@ -12,39 +12,39 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies `multi()`, and `sortedmulti()` output script\ndescriptors. Both functions take a threshold and one or more public keys\nand produce a multisig output script. `multi()` specifies the public\nkeys in the output script in the order given in the descriptor while\n`sortedmulti()` sorts the public keys lexicographically when the output\nscript is produced."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This BIP is licensed under the BSD 2-clause license."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "The most common complex script used in Bitcoin is a threshold multisig.\nThese expressions allow specifying multisig scripts as a descriptor."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "Two new script expressions are defined: `multi()`, and `sortedmulti()`.\nBoth expressions produce the scripts of the same template and take the\nsame arguments. They are written as `multi(k,KEY_1,KEY_2,...,KEY_n)`.\n`k` is the threshold - the number of keys that must sign the input for\nthe script to be valid. `KEY_1,KEY_2,...,KEY_n` are the key expressions\nfor the multisig. `k` must be less than or equal to `n`.\n\n`multi()` and `sortedmulti()` expressions can be used as a top level\nexpression, or inside of either a `sh()` or `wsh()` descriptor.\nDepending on the higher level descriptors, there may be restrictions on\nthe type of public keys that can be included.\n\nDepending on the higher level descriptors, there are also restrictions\non the number of keys that can be present, i.e. the maximum value of\n`n`. When used at the top level, there can only be at most 3 keys. When\nused inside of a `sh()` expression, there can only be most 15 compressed\npublic keys (this is limited by the P2SH script limit). Otherwise the\nmaximum number of keys is 20.\n\nThe output script produced also depends on the value of `k`. If `k` is\nless than or equal to 16:\n\nOP_k KEY_1 KEY_2 ... KEY_n OP_CHECKMULTISIG\n\nif `k` is greater than 16:\n\nk KEY_1 KEY_2 ... KEY_n OP_CHECKMULTISIG"
     },
     {
       "header": "`sortedmulti()`",
-      "content": ""
+      "content": "The only change for `sortedmulti()` is that the keys are sorted\nlexicographically prior to the creation of the output script. This\nsorting is on the keys that are to be put into the output script, i.e.\nafter all extended keys are derived."
     },
     {
       "header": "Multiple Extended Keys`</tt>`{=html} {#multiple_extended_keys}",
-      "content": ""
+      "content": "When one or more the key expressions in a `multi()` or `sortedmulti()`\nexpression are extended keys, the derived keys use the same child index.\nThis changes the keys in lockstep and allows for output scripts to be\nindexed in the same way that the derived keys are indexed."
     },
     {
       "header": "Test Vectors {#test_vectors}",
-      "content": ""
+      "content": "TBD"
     },
     {
       "header": "Backwards Compatibility {#backwards_compatibility}",
-      "content": ""
+      "content": "`multi()`, and `sortedmulti()` descriptors use the format and general\noperation specified in [380](bip-0380.mediawiki \"wikilink\"). As these\nare a wholly new descriptors, they are not compatible with any\nimplementation. However the scripts produced are standard scripts so\nexisting software are likely to be familiar with them."
     },
     {
       "header": "Reference Implementation {#reference_implementation}",
-      "content": ""
+      "content": "`multi()`, and `sortedmulti()` descriptors have been implemented in\nBitcoin Core since version 0.17."
     }
   ]
 }

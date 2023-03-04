@@ -12,51 +12,47 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "One-time increase in total amount of transaction data permitted in a\nblock from 1MB to 2MB, with limits on signature operations and hashing."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "1.  Continue current economic policy.\n2.  Exercise hard fork network upgrade.\n3.  Mitigate potential CPU exhaustion attacks"
     },
     {
       "header": "Specification",
-      "content": ""
-    },
-    {
-      "header": "MAX_BLOCK_SIZE increased to 2,000,000 bytes {#max_block_size_increased_to_2000000_bytes}",
-      "content": ""
+      "content": "### MAX_BLOCK_SIZE increased to 2,000,000 bytes {#max_block_size_increased_to_2000000_bytes}\n\nThe maximum number of bytes in a canonically serialized block shall be\nincreased from 1,000,000 bytes to 2,000,000 bytes."
     },
     {
       "header": "Switch to accurately-counted sigop limit of 20,000 per block {#switch_to_accurately_counted_sigop_limit_of_20000_per_block}",
-      "content": ""
+      "content": "The existing MAX_SIGOPS limit of 20,000 signature operations per block\nshall be retained, but only ECDSA verifications actually performed to\nvalidate the block shall be counted.\n\nIn particular:\n\n-   The coinbase scriptSig is not counted\n-   Signature operations in un-executed branches of a Script are not\ncounted\n-   OP_CHECKMULTISIG evaluations are counted accurately; if the\nsignature for a 1-of-20 OP_CHECKMULTISIG is satisified by the public\nkey nearest the top of the execution stack, it is counted as one\nsignature operation. If it is satisfied by the public key nearest\nthe bottom of the execution stack, it is counted as twenty signature\noperations.\n-   Signature operations involving invalidly encoded signatures or\npublic keys are not counted towards the limit"
     },
     {
       "header": "Add a new limit of 1,300,000,000 bytes hashed to compute transaction signatures per block {#add_a_new_limit_of_1300000000_bytes_hashed_to_compute_transaction_signatures_per_block}",
-      "content": ""
+      "content": "The amount of data hashed to compute signature hashes is limited to\n1,300,000,000 bytes per block. The same rules for counting are used as\nfor counting signature operations."
     },
     {
       "header": "Activation: 75% hashpower support trigger, followed by 28-day \\'grace period\\' {#activation_75_hashpower_support_trigger_followed_by_28_day_grace_period}",
-      "content": ""
+      "content": "Solo miners or mining pool operators express their support for this BIP\nby setting the fourth-highest-bit in the block\\'s 32-bit version number\n(0x10000000 in hex). The first block with that bit set, a timestamp less\nthan or equal to the expiration time, and with at least 750 out of 1000\nblocks preceding it (with heights H-1000..H-1) with that bit set, shall\ndefine the beginning of a grace period. Blocks with timestamps greater\nthan or equal to the triggering block\\'s timestamp plus 28 days\n(60\\*60\\*24\\*28 seconds) shall be subject to the new limits.\n\nAs always, miners are expected to use their best judgement for what is\nbest for the entire Bitcoin ecosystem when making decisions about what\nconsensus-level changes to support."
     },
     {
       "header": "Expiration: 1-Jan-2018 {#expiration_1_jan_2018}",
-      "content": ""
+      "content": "If this BIP is not triggered before 1-Jan-2018 00:00:00 GMT it should be\nconsidered withdrawn.\n\nMiners that support this BIP should set bit 0x10000000 in the block\nversion until 1-Jan-2018. After that date, that bit can be safely\nre-used for future consensus rule upgrades."
     },
     {
       "header": "Backward compatibility {#backward_compatibility}",
-      "content": ""
+      "content": "Fully validating older clients are not compatible with this change. The\nfirst block exceeding the old limits on block size or inaccurately\ncounted signature operations will partition older clients off the new\nnetwork.\n\nSPV (simple payment validation) wallets are compatible with this change."
     },
     {
       "header": "Rationale",
-      "content": ""
+      "content": "In the short term, an increase is needed to handle increasing\ntransaction volume.\n\nThe limits on signature operations and amount of signature hashing done\nprevent possible CPU exhaustion attacks by \\\"rogue miners\\\" producing\nvery expensive-to-validate two megabyte blocks. The signature hashing\nlimit is chosen to be impossible to reach with any non-attack\ntransaction or block, to minimize the impact on existing mining or\nwallet software.\n\nThe choices of constants for the deployment scheme were motivated by\nprior experience with upgrades to the Bitcoin consensus rules:\n\n-   0x10000000 was chosen to be compatible with the BIP 9 proposal for\nparallel deployment of soft forks\n-   75% was chosen instead of 95% to minimize the opportunity for a\nsingle large mining pool or miner to be able to veto an increase,\neither because of ideological opposition or threat of violence or\nextortion.\n-   A four-week grace period after the voting period was chosen as a\nbalance between giving people sufficient time to upgrade and keeping\npeople\\'s attention on the urgent need to upgrade."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "<https://github.com/gavinandresen/bitcoin-git/tree/two_mb_bump>\n\nSee also <http://gavinandresen.ninja/a-guided-tour-of-the-2mb-fork>"
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This work is placed in the public domain."
     }
   ]
 }

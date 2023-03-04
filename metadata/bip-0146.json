@@ -12,51 +12,51 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This document specifies proposed changes to the Bitcoin transaction\nvalidity rules to fix signature malleability related to ECDSA signature\nencoding."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Signature malleability refers to the ability of any relay node on the\nnetwork to transform the signature in transactions, with no access to\nthe relevant private keys required. For non-segregated witness\ntransactions, signature malleability will change the `txid` and\ninvalidate any unconfirmed child transactions. Although the `txid` of\nsegregated witness\n([BIP141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki))\ntransactions is not third party malleable, this malleability vector will\nchange the `wtxid` and may reduce the efficiency of compact block relay\n([BIP152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki)).\n\nSince the enforcement of Strict DER signatures\n([BIP66](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki)),\nthere are 2 remaining known sources of malleability in ECDSA signatures:\n\n1.  **Inherent ECDSA signature malleability**: ECDSA signatures are\ninherently malleable as taking the negative of the number S inside\n(modulo the curve order) does not invalidate it.\n\n```{=html}\n<!-- -->\n```\n1.  **Malleability of failing signature**: If a signature failed to\nvalidate in `OP_CHECKSIG` or `OP_CHECKMULTISIG`, a `FALSE` would be\nreturned to the stack and the script evaluation would continue. The\nfailing signature may take any value, as long as it follows all the\nrules described in BIP66.\n\nThis document specifies new rules to fix the aforesaid signature\nmalleability."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "To fix signature encoding malleability, the following new rules are\napplied to pre-segregated witness and segregated witness scripts:"
     },
     {
       "header": "LOW_S",
-      "content": ""
+      "content": "We require that the S value inside ECDSA signatures is at most the curve\norder divided by 2 (essentially restricting this value to its lower half\nrange). Every signature passed to `OP_CHECKSIG`[^1],\n`OP_CHECKSIGVERIFY`, `OP_CHECKMULTISIG`, or `OP_CHECKMULTISIGVERIFY`, to\nwhich ECDSA verification is applied, MUST use a S value between `0x1`\nand\n`0x7FFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 5D576E73 57A4501D DFE92F46 681B20A0`\n(inclusive) with strict DER encoding (see\n[BIP66](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki)).\n\nIf a signature passing to ECDSA verification does not pass the Low S\nvalue check and is not an empty byte array, the entire script evaluates\nto false immediately.\n\nA high S value in signature could be trivially replaced by\n`S' = 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141 - S`."
     },
     {
       "header": "NULLFAIL",
-      "content": ""
+      "content": "If an `OP_CHECKSIG` is trying to return a `FALSE` value to the stack, we\nrequire that the relevant signature must be an empty byte array.\n\nIf an `OP_CHECKMULTISIG` is trying to return a `FALSE` value to the\nstack, we require that all signatures passing to this `OP_CHECKMULTISIG`\nmust be empty byte arrays, even the processing of some signatures might\nhave been skipped due to early termination of the signature\nverification.\n\nOtherwise, the entire script evaluates to false immediately."
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "The following examples are the combined results of the LOW_S and\nNULLFAIL rules.[^2]\n\nNotation:\n\n`\u00a0CO\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0:\u00a0curve\u00a0order\u00a0=\u00a00xFFFFFFFF\u00a0FFFFFFFF\u00a0FFFFFFFF\u00a0FFFFFFFE\u00a0BAAEDCE6\u00a0AF48A03B\u00a0BFD25E8C\u00a0D0364141`\\\n`\u00a0HCO\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0:\u00a0half\u00a0curve\u00a0order\u00a0=\u00a0CO\u00a0/\u00a02\u00a0=\u00a00x7FFFFFFF\u00a0FFFFFFFF\u00a0FFFFFFFF\u00a0FFFFFFFF\u00a05D576E73\u00a057A4501D\u00a0DFE92F46\u00a0681B20A0`\\\n`\u00a0P1,\u00a0P2\u00a0\u00a0\u00a0:\u00a0valid,\u00a0serialized,\u00a0public\u00a0keys`\\\n`\u00a0S1L,\u00a0S2L\u00a0:\u00a0valid\u00a0low\u00a0S\u00a0value\u00a0signatures\u00a0using\u00a0respective\u00a0keys\u00a0P1\u00a0and\u00a0P2\u00a0(1\u00a0\u2264\u00a0S\u00a0\u2264\u00a0HCO)`\\\n`\u00a0S1H,\u00a0S2H\u00a0:\u00a0signatures\u00a0with\u00a0high\u00a0S\u00a0value\u00a0(otherwise\u00a0valid)\u00a0using\u00a0respective\u00a0keys\u00a0P1\u00a0and\u00a0P2\u00a0(HCO\u00a0<\u00a0S\u00a0<\u00a0CO)`\\\n`\u00a0F\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0:\u00a0any\u00a0BIP66-compliant\u00a0non-empty\u00a0byte\u00a0array\u00a0but\u00a0not\u00a0a\u00a0valid\u00a0signature`\n\nThese scripts will return a `TRUE` to the stack as before:\n\n`\u00a0S1L\u00a0P1\u00a0CHECKSIG`\\\n`\u00a00\u00a0S1L\u00a0S2L\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\n\nThese scripts will return a `FALSE` to the stack as before:\n\n`\u00a00\u00a0P1\u00a0CHECKSIG`\\\n`\u00a00\u00a00\u00a00\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\n\nThese previously `TRUE` scripts will fail immediately under the new\nrules:\n\n`\u00a0S1H\u00a0P1\u00a0CHECKSIG`\\\n`\u00a00\u00a0S1H\u00a0S2L\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0S1L\u00a0S2H\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0S1H\u00a0S2H\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\n\nThese previously `FALSE` scripts will fail immediately under the new\nrules:\n\n`\u00a0F\u00a0P1\u00a0CHECKSIG`\\\n`\u00a00\u00a0S2L\u00a0S1L\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0S1L\u00a0F\u00a0\u00a0\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0F\u00a0\u00a0\u00a0S2L\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0S1L\u00a00\u00a0\u00a0\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a00\u00a0\u00a0\u00a0S2L\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a0F\u00a0\u00a0\u00a00\u00a0\u00a0\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`\\\n`\u00a00\u00a00\u00a0\u00a0\u00a0F\u00a0\u00a0\u00a02\u00a0P1\u00a0P2\u00a02\u00a0CHECKMULTISIG`"
     },
     {
       "header": "Deployment",
-      "content": ""
+      "content": "This BIP will be deployed by \\\"version bits\\\"\n[BIP9](https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki).\nDetails TBD.\n\nFor Bitcoin mainnet, the BIP9 starttime will be midnight TBD UTC (Epoch\ntimestamp TBD) and BIP9 timeout will be midnight TBD UTC (Epoch\ntimestamp TBD).\n\nFor Bitcoin testnet, the BIP9 starttime will be midnight TBD UTC (Epoch\ntimestamp TBD) and BIP9 timeout will be midnight TBD UTC (Epoch\ntimestamp TBD)."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "The reference client has produced LOW_S compatible signatures since\nv0.9.0, and the LOW_S rule has been enforced as relay policy by the\nreference client since v0.11.1. As of August 2016, very few transactions\nviolating the requirement are being added to the chain. For all\nscriptPubKey types in actual use, non-compliant signatures can trivially\nbe converted into compliant ones, so there is no loss of functionality\nby these requirements.\n\nScripts with failing `OP_CHECKSIG` or `OP_CHECKMULTISIG` rarely happen\non the chain. The NULLFAIL rule has been enforced as relay policy by the\nreference client since v0.13.1.\n\nUsers MUST pay extra attention to these new rules when designing exotic\nscripts."
     },
     {
       "header": "Implementation",
-      "content": ""
+      "content": "Implementations for the reference client is available at:\n\n<https://github.com/bitcoin/bitcoin/blob/35fe0393f216aa6020fc929272118eade5628636/src/script/interpreter.cpp#L185>\n\nand\n\n<https://github.com/bitcoin/bitcoin/pull/8634>"
     },
     {
       "header": "Footnotes",
-      "content": ""
+      "content": "```{=html}\n<references />\n```"
     },
     {
       "header": "Acknowledgements",
-      "content": ""
+      "content": "This document is extracted from the previous\n[BIP62](https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki)\nproposal which had input from various people."
     },
     {
       "header": "Copyright",
-      "content": ""
+      "content": "This document is placed in the public domain.\n\n[^1]: Including pay-to-witness-public-key-hash (P2WPKH) described in\nBIP141\n\n[^2]: Please note that due to implementation details in reference client\nv0.13.1, some signatures with S value higher than the half curve\norder might pass the LOW_S test. However, such signatures are\ncertainly invalid, and will fail later due to NULLFAIL test."
     }
   ]
 }

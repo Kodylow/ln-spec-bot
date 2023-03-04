@@ -11,27 +11,27 @@
   "sections": [
     {
       "header": "Abstract",
-      "content": ""
+      "content": "This BIP describes an extension to the bitcoin: URI scheme (BIP 21) to\nsupport the payment protocol (BIP 70)."
     },
     {
       "header": "Motivation",
-      "content": ""
+      "content": "Allow users to click on a link in a web page or email to initiate the\npayment protocol, while being backwards-compatible with existing bitcoin\nwallets."
     },
     {
       "header": "Specification",
-      "content": ""
+      "content": "The bitcoin: URI scheme is extended with an additional, optional \\\"r\\\"\nparameter, whose value is a URL from which a PaymentRequest message\nshould be fetched (characters not allowed within the scope of a query\nparameter must be percent-encoded as described in RFC 3986 and\nbip-0021).\n\nIf the \\\"r\\\" parameter is provided and backwards compatibility is not\nrequired, then the bitcoin address portion of the URI may be omitted\n(the URI will be of the form: <bitcoin:?r=>\\... ).\n\nWhen Bitcoin wallet software that supports this BIP receives a bitcoin:\nURI with a request parameter, it should ignore the bitcoin\naddress/amount/label/message in the URI and instead fetch a\nPaymentRequest message and then follow the payment protocol, as\ndescribed in BIP 70.\n\nBitcoin wallets must support fetching PaymentRequests via http and https\nprotocols; they may support other protocols. Wallets must include an\n\\\"Accept\\\" HTTP header in HTTP(s) requests (as defined in RFC 2616):\n\nAccept: application/bitcoin-paymentrequest\n\nIf a PaymentRequest cannot be obtained (perhaps the server is\nunavailable), then the customer should be informed that the merchant\\'s\npayment processing system is unavailable. In the case of an HTTP\nrequest, status codes which are neither success nor error (such as\nredirect) should be handled as outlined in RFC 2616."
     },
     {
       "header": "Compatibility",
-      "content": ""
+      "content": "Wallet software that does not support this BIP will simply ignore the r\nparameter and will initiate a payment to bitcoin address."
     },
     {
       "header": "Examples",
-      "content": ""
+      "content": "A backwards-compatible request:\n\nbitcoin:mq7se9wy2egettFxPbmn99cK8v5AFq55Lx?amount=0.11&r=https://merchant.com/pay.php?h%3D2a8628fc2fbe\n\nNon-backwards-compatible equivalent:\n\nbitcoin:?r=https://merchant.com/pay.php?h%3D2a8628fc2fbe"
     },
     {
       "header": "References",
-      "content": ""
+      "content": "[RFC 2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html \"wikilink\")\n: Hypertext Transfer Protocol \\-- HTTP/1.1"
     }
   ]
 }
