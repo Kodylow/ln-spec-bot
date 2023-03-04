@@ -1,9 +1,3 @@
-[submodule "bolts"]
-	path = bolts
-	url = https://github.com/lightning/bolts
-[submodule "bips"]
-	path = bips
-	url = https://github.com/bitcoin/bips
 [submodule "implementations/c/core-ln"]
 	path = implementations/c/core-ln
 	url = https://github.com/ElementsProject/lightning
