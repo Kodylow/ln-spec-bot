@@ -1,0 +1,12 @@
+{
+  "BIP": "129",
+  "Layer": "Applications",
+  "Title": "Bitcoin Secure Multisig Setup (BSMS)",
+  "Author": "Hugo Nguyen <hugo@nunchuk.io>",
+  "Comments-Summary": "No comments yet.",
+  "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0129",
+  "Status": "Proposed",
+  "Type": "Standards Track",
+  "Created": "2020-11-10",
+  "License": "BSD-2-Clause"
+}

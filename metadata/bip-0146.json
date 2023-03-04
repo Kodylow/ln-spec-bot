@@ -1,0 +1,12 @@
+{
+  "BIP": "146",
+  "Layer": "Consensus (soft fork)",
+  "Title": "Dealing with signature encoding malleability",
+  "Author": "Johnson Lau <jl2012@xbt.hk>",
+  "Comments-Summary": "No comments yet.",
+  "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0146",
+  "Status": "Withdrawn",
+  "Type": "Standards Track",
+  "Created": "2016-08-16",
+  "License": "PD"
+}

@@ -1,0 +1,12 @@
+{
+  "BIP": "136",
+  "Layer": "Applications",
+  "Title": "Bech32 Encoded Tx Position References",
+  "Author": "\u0412\u0435\u043b\u0435\u0441\u043b\u0430\u0432 <veleslav.bips@protonmail.com>",
+  "Comments-Summary": "No comments yet.",
+  "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0136",
+  "Status": "Draft",
+  "Type": "Informational",
+  "Created": "2017-07-09",
+  "License": "BSD-2-Clause"
+}

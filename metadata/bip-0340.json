@@ -1,0 +1,12 @@
+{
+  "BIP": "340",
+  "Title": "Schnorr Signatures for secp256k1",
+  "Author": "Pieter Wuille <pieter.wuille@gmail.com>",
+  "Comments-Summary": "No comments yet.",
+  "Comments-URI": "https://github.com/bitcoin/bips/wiki/Comments:BIP-0340",
+  "Status": "Final",
+  "Type": "Standards Track",
+  "License": "BSD-2-Clause",
+  "Created": "2020-01-19",
+  "Post-History": "2018-07-06: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-July/016203.html [bitcoin-dev] Schnorr signatures BIP"
+}
