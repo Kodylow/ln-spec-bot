@@ -27,25 +27,25 @@ The goal of this document is to explain exactly how a node should react when it
 encounters any of the above situations, on-chain.
 
 # Table of Contents
-  * [General Nomenclature](#general-nomenclature)
-  * [Commitment Transaction](#commitment-transaction)
-  * [Failing a Channel](#failing-a-channel)
-  * [Mutual Close Handling](#mutual-close-handling)
-  * [Unilateral Close Handling: Local Commitment Transaction](#unilateral-close-handling-local-commitment-transaction)
-      * [HTLC Output Handling: Local Commitment, Local Offers](#htlc-output-handling-local-commitment-local-offers)
-      * [HTLC Output Handling: Local Commitment, Remote Offers](#htlc-output-handling-local-commitment-remote-offers)
-  * [Unilateral Close Handling: Remote Commitment Transaction](#unilateral-close-handling-remote-commitment-transaction)
-      * [HTLC Output Handling: Remote Commitment, Local Offers](#htlc-output-handling-remote-commitment-local-offers)
-      * [HTLC Output Handling: Remote Commitment, Remote Offers](#htlc-output-handling-remote-commitment-remote-offers)
-  * [Revoked Transaction Close Handling](#revoked-transaction-close-handling)
-	  * [Penalty Transactions Weight Calculation](#penalty-transactions-weight-calculation)
-  * [Generation of HTLC Transactions](#generation-of-htlc-transactions)
-  * [General Requirements](#general-requirements)
-  * [Appendix A: Expected Weights](#appendix-a-expected-weights)
-	* [Expected Weight of the `to_local` Penalty Transaction Witness](#expected-weight-of-the-to-local-penalty-transaction-witness)
-	* [Expected Weight of the `offered_htlc` Penalty Transaction Witness](#expected-weight-of-the-offered-htlc-penalty-transaction-witness)
-	* [Expected Weight of the `accepted_htlc` Penalty Transaction Witness](#expected-weight-of-the-accepted-htlc-penalty-transaction-witness)
-  * [Authors](#authors)
+* [General Nomenclature](#general-nomenclature)
+* [Commitment Transaction](#commitment-transaction)
+* [Failing a Channel](#failing-a-channel)
+* [Mutual Close Handling](#mutual-close-handling)
+* [Unilateral Close Handling: Local Commitment Transaction](#unilateral-close-handling-local-commitment-transaction)
+* [HTLC Output Handling: Local Commitment, Local Offers](#htlc-output-handling-local-commitment-local-offers)
+* [HTLC Output Handling: Local Commitment, Remote Offers](#htlc-output-handling-local-commitment-remote-offers)
+* [Unilateral Close Handling: Remote Commitment Transaction](#unilateral-close-handling-remote-commitment-transaction)
+* [HTLC Output Handling: Remote Commitment, Local Offers](#htlc-output-handling-remote-commitment-local-offers)
+* [HTLC Output Handling: Remote Commitment, Remote Offers](#htlc-output-handling-remote-commitment-remote-offers)
+* [Revoked Transaction Close Handling](#revoked-transaction-close-handling)
+* [Penalty Transactions Weight Calculation](#penalty-transactions-weight-calculation)
+* [Generation of HTLC Transactions](#generation-of-htlc-transactions)
+* [General Requirements](#general-requirements)
+* [Appendix A: Expected Weights](#appendix-a-expected-weights)
+* [Expected Weight of the `to_local` Penalty Transaction Witness](#expected-weight-of-the-to-local-penalty-transaction-witness)
+* [Expected Weight of the `offered_htlc` Penalty Transaction Witness](#expected-weight-of-the-offered-htlc-penalty-transaction-witness)
+* [Expected Weight of the `accepted_htlc` Penalty Transaction Witness](#expected-weight-of-the-accepted-htlc-penalty-transaction-witness)
+* [Authors](#authors)
 
 # General Nomenclature
 
@@ -64,19 +64,19 @@ confirmations of miners' rewards (see [Reference Implementation](https://github.
 ## Requirements
 
 A node:
-  - once it has broadcast a funding transaction OR sent a commitment signature
-  for a commitment transaction that contains an HTLC output:
-    - until all outputs are *irrevocably resolved*:
-      - MUST monitor the blockchain for transactions that spend any output that
-      is NOT *irrevocably resolved*.
-  - MUST *resolve* all outputs, as specified below.
-  - MUST be prepared to resolve outputs multiple times, in case of blockchain
-  reorganizations.
-  - upon the funding transaction being spent, if the channel is NOT already
-  closed:
-    - MAY send a descriptive `error`.
-    - SHOULD fail the channel.
-  - SHOULD ignore invalid transactions.
+- once it has broadcast a funding transaction OR sent a commitment signature
+for a commitment transaction that contains an HTLC output:
+- until all outputs are *irrevocably resolved*:
+- MUST monitor the blockchain for transactions that spend any output that
+is NOT *irrevocably resolved*.
+- MUST *resolve* all outputs, as specified below.
+- MUST be prepared to resolve outputs multiple times, in case of blockchain
+reorganizations.
+- upon the funding transaction being spent, if the channel is NOT already
+closed:
+- MAY send a descriptive `error`.
+- SHOULD fail the channel.
+- SHOULD ignore invalid transactions.
 
 ## Rationale
 
@@ -129,29 +129,29 @@ error messages to peers are specified in
 ## Requirements
 
 A node:
-  - if a *local commitment transaction* has NOT ever contained a `to_local`
-  or HTLC output:
-    - MAY simply forget the channel.
-  - otherwise:
-    - if the *current commitment transaction* does NOT contain `to_local` or
-    other HTLC outputs:
-      - MAY simply wait for the remote node to close the channel.
-      - until the remote node closes:
-        - MUST NOT forget the channel.
-    - otherwise:
-      - if it has received a valid `closing_signed` message that includes a
-      sufficient fee:
-        - SHOULD use this fee to perform a *mutual close*.
-      - otherwise:
-      	- if the node knows or assumes its channel state is outdated:
-      	  - MUST NOT broadcast its *last commitment transaction*.
-        - otherwise:
-          - MUST broadcast the *last commitment transaction*, for which it has a
-          signature, to perform a *unilateral close*.
-          - MUST spend any `to_local_anchor` output, providing sufficient fees as incentive to include the commitment transaction in a block.
-          Special care must be taken when spending to a third-party, because this re-introduces the vulnerability that was
-          addressed by adding the CSV delay to the non-anchor outputs.
-          - SHOULD use [replace-by-fee](https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) or other mechanism on the spending transaction if it proves insufficient for timely inclusion in a block.
+- if a *local commitment transaction* has NOT ever contained a `to_local`
+or HTLC output:
+- MAY simply forget the channel.
+- otherwise:
+- if the *current commitment transaction* does NOT contain `to_local` or
+other HTLC outputs:
+- MAY simply wait for the remote node to close the channel.
+- until the remote node closes:
+- MUST NOT forget the channel.
+- otherwise:
+- if it has received a valid `closing_signed` message that includes a
+sufficient fee:
+- SHOULD use this fee to perform a *mutual close*.
+- otherwise:
+- if the node knows or assumes its channel state is outdated:
+- MUST NOT broadcast its *last commitment transaction*.
+- otherwise:
+- MUST broadcast the *last commitment transaction*, for which it has a
+signature, to perform a *unilateral close*.
+- MUST spend any `to_local_anchor` output, providing sufficient fees as incentive to include the commitment transaction in a block.
+Special care must be taken when spending to a third-party, because this re-introduces the vulnerability that was
+addressed by adding the CSV delay to the non-anchor outputs.
+- SHOULD use [replace-by-fee](https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) or other mechanism on the spending transaction if it proves insufficient for timely inclusion in a block.
 
 ## Rationale
 
@@ -193,21 +193,21 @@ noted below.
 ## Requirements
 
 A node:
-  - upon discovering its *local commitment transaction*:
-    - SHOULD spend the `to_local` output to a convenient address.
-    - MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as
-    specified by the remote node's `to_self_delay` field) before spending the
-    output.
-      - Note: if the output is spent (as recommended), the output is *resolved*
-      by the spending transaction, otherwise it is considered *resolved* by the
-      commitment transaction itself.
-    - MAY ignore the `to_remote` output.
-      - Note: No action is required by the local node, as `to_remote` is
-      considered *resolved* by the commitment transaction itself.
-    - MUST handle HTLCs offered by itself as specified in
-    [HTLC Output Handling: Local Commitment, Local Offers](#htlc-output-handling-local-commitment-local-offers).
-    - MUST handle HTLCs offered by the remote node as
-    specified in [HTLC Output Handling: Local Commitment, Remote Offers](#htlc-output-handling-local-commitment-remote-offers).
+- upon discovering its *local commitment transaction*:
+- SHOULD spend the `to_local` output to a convenient address.
+- MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as
+specified by the remote node's `to_self_delay` field) before spending the
+output.
+- Note: if the output is spent (as recommended), the output is *resolved*
+by the spending transaction, otherwise it is considered *resolved* by the
+commitment transaction itself.
+- MAY ignore the `to_remote` output.
+- Note: No action is required by the local node, as `to_remote` is
+considered *resolved* by the commitment transaction itself.
+- MUST handle HTLCs offered by itself as specified in
+[HTLC Output Handling: Local Commitment, Local Offers](#htlc-output-handling-local-commitment-local-offers).
+- MUST handle HTLCs offered by the remote node as
+specified in [HTLC Output Handling: Local Commitment, Remote Offers](#htlc-output-handling-local-commitment-remote-offers).
 
 ## Rationale
 
@@ -234,31 +234,31 @@ or greater than the HTLC `cltv_expiry`.
 ### Requirements
 
 A node:
-  - if the commitment transaction HTLC output is spent using the payment
-  preimage, the output is considered *irrevocably resolved*:
-    - MUST extract the payment preimage from the transaction input witness.
-  - if the commitment transaction HTLC output has *timed out* and hasn't been
-  *resolved*:
-    - MUST *resolve* the output by spending it using the HTLC-timeout
-    transaction.
-    - once the resolving transaction has reached reasonable depth:
-      - MUST fail the corresponding incoming HTLC (if any).
-      - MUST resolve the output of that HTLC-timeout transaction.
-      - SHOULD resolve the HTLC-timeout transaction by spending it to a
-      convenient address.
-        - Note: if the output is spent (as recommended), the output is
-        *resolved* by the spending transaction, otherwise it is considered
-        *resolved* by the HTLC-timeout transaction itself.
-      - MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as
-      specified by the remote node's `open_channel` `to_self_delay` field)
-      before spending that HTLC-timeout output.
-  - for any committed HTLC that does NOT have an output in this commitment
-  transaction:
-    - once the commitment transaction has reached reasonable depth:
-      - MUST fail the corresponding incoming HTLC (if any).
-    - if no *valid* commitment transaction contains an output corresponding to
-    the HTLC.
-      - MAY fail the corresponding incoming HTLC sooner.
+- if the commitment transaction HTLC output is spent using the payment
+preimage, the output is considered *irrevocably resolved*:
+- MUST extract the payment preimage from the transaction input witness.
+- if the commitment transaction HTLC output has *timed out* and hasn't been
+*resolved*:
+- MUST *resolve* the output by spending it using the HTLC-timeout
+transaction.
+- once the resolving transaction has reached reasonable depth:
+- MUST fail the corresponding incoming HTLC (if any).
+- MUST resolve the output of that HTLC-timeout transaction.
+- SHOULD resolve the HTLC-timeout transaction by spending it to a
+convenient address.
+- Note: if the output is spent (as recommended), the output is
+*resolved* by the spending transaction, otherwise it is considered
+*resolved* by the HTLC-timeout transaction itself.
+- MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as
+specified by the remote node's `open_channel` `to_self_delay` field)
+before spending that HTLC-timeout output.
+- for any committed HTLC that does NOT have an output in this commitment
+transaction:
+- once the commitment transaction has reached reasonable depth:
+- MUST fail the corresponding incoming HTLC (if any).
+- if no *valid* commitment transaction contains an output corresponding to
+the HTLC.
+- MAY fail the corresponding incoming HTLC sooner.
 
 ### Rationale
 
@@ -298,35 +298,35 @@ the offerer's responsibility to spend the HTLC output once it's timed out.
 There are several possible cases for an offered HTLC:
 
 1. The offerer is NOT irrevocably committed to it. The recipient will usually
-   not know the preimage, since it will not forward HTLCs until they're fully
-   committed. So using the preimage would reveal that this recipient is the
-   final hop; thus, in this case, it's best to allow the HTLC to time out.
+not know the preimage, since it will not forward HTLCs until they're fully
+committed. So using the preimage would reveal that this recipient is the
+final hop; thus, in this case, it's best to allow the HTLC to time out.
 2. The offerer is irrevocably committed to the offered HTLC, but the recipient
-   has not yet committed to an outgoing HTLC. In this case, the recipient can
-   either forward or timeout the offered HTLC.
+has not yet committed to an outgoing HTLC. In this case, the recipient can
+either forward or timeout the offered HTLC.
 3. The recipient has committed to an outgoing HTLC, in exchange for the offered
-   HTLC. In this case, the recipient must use the preimage, once it receives it
-   from the outgoing HTLC; otherwise, it will lose funds by sending an outgoing
-   payment without redeeming the incoming payment.
+HTLC. In this case, the recipient must use the preimage, once it receives it
+from the outgoing HTLC; otherwise, it will lose funds by sending an outgoing
+payment without redeeming the incoming payment.
 
 ### Requirements
 
 A local node:
-  - if it receives (or already possesses) a payment preimage for an unresolved
-  HTLC output that it has been offered AND for which it has committed to an
-  outgoing HTLC:
-    - MUST *resolve* the output by spending it, using the HTLC-success
-    transaction.
-    - MUST NOT reveal its own preimage when it's not the final recipient.<sup>[Preimage-Extraction](https://lists.linuxfoundation.org/pipermail/lightning-dev/2020-October/002857.html)</sup>
-    - MUST resolve the output of that HTLC-success transaction.
-  - otherwise:
-    - if the *remote node* is NOT irrevocably committed to the HTLC:
-      - MUST NOT *resolve* the output by spending it.
-  - SHOULD resolve that HTLC-success transaction output by spending it to a
-  convenient address.
-  - MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as specified
-    by the *remote node's* `open_channel`'s `to_self_delay` field), before
-    spending that HTLC-success transaction output.
+- if it receives (or already possesses) a payment preimage for an unresolved
+HTLC output that it has been offered AND for which it has committed to an
+outgoing HTLC:
+- MUST *resolve* the output by spending it, using the HTLC-success
+transaction.
+- MUST NOT reveal its own preimage when it's not the final recipient.<sup>[Preimage-Extraction](https://lists.linuxfoundation.org/pipermail/lightning-dev/2020-October/002857.html)</sup>
+- MUST resolve the output of that HTLC-success transaction.
+- otherwise:
+- if the *remote node* is NOT irrevocably committed to the HTLC:
+- MUST NOT *resolve* the output by spending it.
+- SHOULD resolve that HTLC-success transaction output by spending it to a
+convenient address.
+- MUST wait until the `OP_CHECKSEQUENCEVERIFY` delay has passed (as specified
+by the *remote node's* `open_channel`'s `to_self_delay` field), before
+spending that HTLC-success transaction output.
 
 If the output is spent (as is recommended), the output is *resolved* by
 the spending transaction, otherwise it's considered *resolved* by the HTLC-success
@@ -347,24 +347,24 @@ transaction (see [Unilateral Close Handling: Local Commitment Transaction](#unil
 ## Requirements
 
 A local node:
-  - upon discovering a *valid* commitment transaction broadcast by a
-  *remote node*:
-    - if possible:
-      - MUST handle each output as specified below.
-      - MAY take no action in regard to the associated `to_remote`, which is
-      simply a P2WPKH output to the *local node*.
-        - Note: `to_remote` is considered *resolved* by the commitment transaction
-        itself.
-      - MAY take no action in regard to the associated `to_local`, which is a
-      payment output to the *remote node*.
-        - Note: `to_local` is considered *resolved* by the commitment transaction
-        itself.
-      - MUST handle HTLCs offered by itself as specified in
-      [HTLC Output Handling: Remote Commitment, Local Offers](#htlc-output-handling-remote-commitment-local-offers)
-      - MUST handle HTLCs offered by the remote node as specified in
-      [HTLC Output Handling: Remote Commitment, Remote Offers](#htlc-output-handling-remote-commitment-remote-offers)
-    - otherwise (it is NOT able to handle the broadcast for some reason):
-      - MUST inform the user of potentially lost funds.
+- upon discovering a *valid* commitment transaction broadcast by a
+*remote node*:
+- if possible:
+- MUST handle each output as specified below.
+- MAY take no action in regard to the associated `to_remote`, which is
+simply a P2WPKH output to the *local node*.
+- Note: `to_remote` is considered *resolved* by the commitment transaction
+itself.
+- MAY take no action in regard to the associated `to_local`, which is a
+payment output to the *remote node*.
+- Note: `to_local` is considered *resolved* by the commitment transaction
+itself.
+- MUST handle HTLCs offered by itself as specified in
+[HTLC Output Handling: Remote Commitment, Local Offers](#htlc-output-handling-remote-commitment-local-offers)
+- MUST handle HTLCs offered by the remote node as specified in
+[HTLC Output Handling: Remote Commitment, Remote Offers](#htlc-output-handling-remote-commitment-remote-offers)
+- otherwise (it is NOT able to handle the broadcast for some reason):
+- MUST inform the user of potentially lost funds.
 
 ## Rationale
 
@@ -398,22 +398,22 @@ or greater than the HTLC `cltv_expiry`.
 ### Requirements
 
 A local node:
-  - if the commitment transaction HTLC output is spent using the payment
-  preimage:
-    - MUST extract the payment preimage from the HTLC-success transaction input
-    witness.
-      - Note: the output is considered *irrevocably resolved*.
-  - if the commitment transaction HTLC output has *timed out* AND NOT been
-  *resolved*:
-    - MUST *resolve* the output, by spending it to a convenient address.
-  - for any committed HTLC that does NOT have an output in this commitment
-  transaction:
-    - once the commitment transaction has reached reasonable depth:
-      - MUST fail the corresponding incoming HTLC (if any).
-    - otherwise:
-      - if no *valid* commitment transaction contains an output corresponding to
-      the HTLC:
-        - MAY fail it sooner.
+- if the commitment transaction HTLC output is spent using the payment
+preimage:
+- MUST extract the payment preimage from the HTLC-success transaction input
+witness.
+- Note: the output is considered *irrevocably resolved*.
+- if the commitment transaction HTLC output has *timed out* AND NOT been
+*resolved*:
+- MUST *resolve* the output, by spending it to a convenient address.
+- for any committed HTLC that does NOT have an output in this commitment
+transaction:
+- once the commitment transaction has reached reasonable depth:
+- MUST fail the corresponding incoming HTLC (if any).
+- otherwise:
+- if no *valid* commitment transaction contains an output corresponding to
+the HTLC:
+- MAY fail it sooner.
 
 ### Rationale
 
@@ -457,27 +457,27 @@ once it's timed out.
 There are actually several possible cases for an offered HTLC:
 
 1. The offerer is not irrevocably committed to it. In this case, the recipient
-   usually won't know the preimage, since it won't forward HTLCs until
-   they're fully committed. As using the preimage would reveal that
-   this recipient is the final hop, it's best to allow the HTLC to time out.
+usually won't know the preimage, since it won't forward HTLCs until
+they're fully committed. As using the preimage would reveal that
+this recipient is the final hop, it's best to allow the HTLC to time out.
 2. The offerer is irrevocably committed to the offered HTLC, but the recipient
-   hasn't yet committed to an outgoing HTLC. In this case, the recipient can
-   either forward it or wait for it to timeout.
+hasn't yet committed to an outgoing HTLC. In this case, the recipient can
+either forward it or wait for it to timeout.
 3. The recipient has committed to an outgoing HTLC in exchange for an offered
-   HTLC. In this case, the recipient must use the preimage, if it receives it
-   from the outgoing HTLC; otherwise, it will lose funds by sending an outgoing
-   payment without redeeming the incoming one.
+HTLC. In this case, the recipient must use the preimage, if it receives it
+from the outgoing HTLC; otherwise, it will lose funds by sending an outgoing
+payment without redeeming the incoming one.
 
 ### Requirements
 
 A local node:
-  - if it receives (or already possesses) a payment preimage for an unresolved
-  HTLC output that it was offered AND for which it has committed to an
+- if it receives (or already possesses) a payment preimage for an unresolved
+HTLC output that it was offered AND for which it has committed to an
 outgoing HTLC:
-    - MUST *resolve* the output by spending it to a convenient address.
-  - otherwise:
-    - if the remote node is NOT irrevocably committed to the HTLC:
-      - MUST NOT *resolve* the output by spending it.
+- MUST *resolve* the output by spending it to a convenient address.
+- otherwise:
+- if the remote node is NOT irrevocably committed to the HTLC:
+- MUST NOT *resolve* the output by spending it.
 
 If not otherwise resolved, once the HTLC output has expired, it is considered
 *irrevocably resolved*.
@@ -495,38 +495,38 @@ Once a node discovers a commitment transaction for which *it* has a
 revocation private key, the funding transaction output is *resolved*.
 
 A local node:
-  - MUST NOT broadcast a commitment transaction for which *it* has exposed the
-  `per_commitment_secret`.
-  - MAY take no action regarding the _local node's main output_, as this is a
-  simple P2WPKH output to itself.
-    - Note: this output is considered *resolved* by the commitment transaction
-      itself.
-  - MUST *resolve* the _remote node's main output_ by spending it using the
-  revocation private key.
-  - MUST *resolve* the _remote node's offered HTLCs_ in one of three ways:
-    * spend the *commitment tx* using the payment revocation private key.
-    * spend the *commitment tx* using the payment preimage (if known).
-    * spend the *HTLC-timeout tx*, if the remote node has published it.
-  - MUST *resolve* the _local node's offered HTLCs_ in one of three ways:
-    * spend the *commitment tx* using the payment revocation private key.
-    * spend the *commitment tx* once the HTLC timeout has passed.
-    * spend the *HTLC-success tx*, if the remote node has published it.
-  - MUST *resolve* the _remote node's HTLC-timeout transaction_ by spending it
-  using the revocation private key.
-  - MUST *resolve* the _remote node's HTLC-success transaction_ by spending it
-  using the revocation private key.
-  - SHOULD extract the payment preimage from the transaction input witness, if
-  it's not already known.
-  - if `option_anchors` applies:
-    - MAY use a single transaction to *resolve* all the outputs.
-    - if confirmation doesn't happen before reaching `security_delay` blocks from
-  expiry:
-      - SHOULD *resolve* revoked outputs in their own, separate penalty transactions. A previous
-  penalty transaction claiming multiple revoked outputs at once may be blocked from confirming
-  because of a transaction pinning attack.
-  - otherwise:
-    - MAY use a single transaction to *resolve* all the outputs.
-  - MUST handle its transactions being invalidated by HTLC transactions.
+- MUST NOT broadcast a commitment transaction for which *it* has exposed the
+`per_commitment_secret`.
+- MAY take no action regarding the _local node's main output_, as this is a
+simple P2WPKH output to itself.
+- Note: this output is considered *resolved* by the commitment transaction
+itself.
+- MUST *resolve* the _remote node's main output_ by spending it using the
+revocation private key.
+- MUST *resolve* the _remote node's offered HTLCs_ in one of three ways:
+* spend the *commitment tx* using the payment revocation private key.
+* spend the *commitment tx* using the payment preimage (if known).
+* spend the *HTLC-timeout tx*, if the remote node has published it.
+- MUST *resolve* the _local node's offered HTLCs_ in one of three ways:
+* spend the *commitment tx* using the payment revocation private key.
+* spend the *commitment tx* once the HTLC timeout has passed.
+* spend the *HTLC-success tx*, if the remote node has published it.
+- MUST *resolve* the _remote node's HTLC-timeout transaction_ by spending it
+using the revocation private key.
+- MUST *resolve* the _remote node's HTLC-success transaction_ by spending it
+using the revocation private key.
+- SHOULD extract the payment preimage from the transaction input witness, if
+it's not already known.
+- if `option_anchors` applies:
+- MAY use a single transaction to *resolve* all the outputs.
+- if confirmation doesn't happen before reaching `security_delay` blocks from
+expiry:
+- SHOULD *resolve* revoked outputs in their own, separate penalty transactions. A previous
+penalty transaction claiming multiple revoked outputs at once may be blocked from confirming
+because of a transaction pinning attack.
+- otherwise:
+- MAY use a single transaction to *resolve* all the outputs.
+- MUST handle its transactions being invalidated by HTLC transactions.
 
 ## Rationale
 
@@ -554,16 +554,16 @@ There are three different scripts for penalty transactions, with the following
 witness weights (details of weight computation are in
 [Appendix A](#appendix-a-expected-weights)):
 
-    to_local_penalty_witness: 160 bytes
-    offered_htlc_penalty_witness: 243 bytes
-    accepted_htlc_penalty_witness: 249 bytes
+to_local_penalty_witness: 160 bytes
+offered_htlc_penalty_witness: 243 bytes
+accepted_htlc_penalty_witness: 249 bytes
 
 The penalty *txinput* itself takes up 41 bytes and has a weight of 164 bytes,
 which results in the following weights for each input:
 
-    to_local_penalty_input_weight: 324 bytes
-    offered_htlc_penalty_input_weight: 407 bytes
-    accepted_htlc_penalty_input_weight: 413 bytes
+to_local_penalty_input_weight: 324 bytes
+offered_htlc_penalty_input_weight: 407 bytes
+accepted_htlc_penalty_input_weight: 413 bytes
 
 The rest of the penalty transaction takes up 4+1+1+8+1+34+4=53 bytes of
 non-witness data: assuming it has a pay-to-witness-script-hash (the largest
@@ -581,7 +581,7 @@ the commitment transaction.
 With a maximum standard weight of 400000 bytes, the maximum number of HTLCs that
 can be swept in a single transaction is as follows:
 
-    max_num_htlcs = (400000 - 324 - 272 - (4 * 53) - 2) / 413 = 966
+max_num_htlcs = (400000 - 324 - 272 - (4 * 53) - 2) / 413 = 966
 
 Thus, 483 bidirectional HTLCs (containing both `to_local` and
 `to_remote` outputs) can be resolved in a single penalty transaction.
@@ -608,14 +608,14 @@ to arrive at a reasonable fee.
 
 A node which broadcasts an HTLC-success or HTLC-timeout transaction for a
 commitment transaction:
-  1. if `option_anchor_outputs` applies:
-    - SHOULD combine it with inputs contributing sufficient fee to ensure
-      timely inclusion in a block.
-    - MAY combine it with other transactions.
-  2. if `option_anchors_zero_fee_htlc_tx` applies:
-    - MUST combine it with inputs contributing sufficient fee to ensure timely
-      inclusion in a block.
-    - MAY combine it with other transactions.
+1. if `option_anchor_outputs` applies:
+- SHOULD combine it with inputs contributing sufficient fee to ensure
+timely inclusion in a block.
+- MAY combine it with other transactions.
+2. if `option_anchors_zero_fee_htlc_tx` applies:
+- MUST combine it with inputs contributing sufficient fee to ensure timely
+inclusion in a block.
+- MAY combine it with other transactions.
 
 Note that `option_anchors_zero_fee_htlc_tx` has a stronger requirement for
 adding inputs to the final transactions than `option_anchor_outputs`, since the
@@ -625,18 +625,18 @@ inputs added.
 # General Requirements
 
 A node:
-  - upon discovering a transaction that spends a funding transaction output
-  which does not fall into one of the above categories (mutual close, unilateral
-  close, or revoked transaction close):
-    - MUST warn the user of potentially lost funds.
-      - Note: the existence of such a rogue transaction implies that its private
-      key has leaked and that its funds may be lost as a result.
-  - MAY simply monitor the contents of the most-work chain for transactions.
-    - Note: on-chain HTLCs should be sufficiently rare that speed need not be
-    considered critical.
-  - MAY monitor (valid) broadcast transactions (a.k.a the mempool).
-    - Note: watching for mempool transactions should result in lower latency
-    HTLC redemptions.
+- upon discovering a transaction that spends a funding transaction output
+which does not fall into one of the above categories (mutual close, unilateral
+close, or revoked transaction close):
+- MUST warn the user of potentially lost funds.
+- Note: the existence of such a rogue transaction implies that its private
+key has leaked and that its funds may be lost as a result.
+- MAY simply monitor the contents of the most-work chain for transactions.
+- Note: on-chain HTLCs should be sufficiently rare that speed need not be
+considered critical.
+- MAY monitor (valid) broadcast transactions (a.k.a the mempool).
+- Note: watching for mempool transactions should result in lower latency
+HTLC redemptions.
 
 # Appendix A: Expected Weights
 
@@ -645,32 +645,32 @@ A node:
 As described in [BOLT #3](03-transactions.md), the witness for this transaction
 is:
 
-    <sig> 1 { OP_IF <revocationpubkey> OP_ELSE to_self_delay OP_CSV OP_DROP <local_delayedpubkey> OP_ENDIF OP_CHECKSIG }
+<sig> 1 { OP_IF <revocationpubkey> OP_ELSE to_self_delay OP_CSV OP_DROP <local_delayedpubkey> OP_ENDIF OP_CHECKSIG }
 
 The *expected weight* of the `to_local` penalty transaction witness is
 calculated as follows:
 
-    to_local_script: 83 bytes
-        - OP_IF: 1 byte
-            - OP_DATA: 1 byte (revocationpubkey length)
-            - revocationpubkey: 33 bytes
-        - OP_ELSE: 1 byte
-            - OP_DATA: 1 byte (delay length)
-            - delay: 8 bytes
-            - OP_CHECKSEQUENCEVERIFY: 1 byte
-            - OP_DROP: 1 byte
-            - OP_DATA: 1 byte (local_delayedpubkey length)
-            - local_delayedpubkey: 33 bytes
-        - OP_ENDIF: 1 byte
-        - OP_CHECKSIG: 1 byte
+to_local_script: 83 bytes
+- OP_IF: 1 byte
+- OP_DATA: 1 byte (revocationpubkey length)
+- revocationpubkey: 33 bytes
+- OP_ELSE: 1 byte
+- OP_DATA: 1 byte (delay length)
+- delay: 8 bytes
+- OP_CHECKSEQUENCEVERIFY: 1 byte
+- OP_DROP: 1 byte
+- OP_DATA: 1 byte (local_delayedpubkey length)
+- local_delayedpubkey: 33 bytes
+- OP_ENDIF: 1 byte
+- OP_CHECKSIG: 1 byte
 
-    to_local_penalty_witness: 160 bytes
-        - number_of_witness_elements: 1 byte
-        - revocation_sig_length: 1 byte
-        - revocation_sig: 73 bytes
-        - one_length: 1 byte
-        - witness_script_length: 1 byte
-        - witness_script (to_local_script)
+to_local_penalty_witness: 160 bytes
+- number_of_witness_elements: 1 byte
+- revocation_sig_length: 1 byte
+- revocation_sig: 73 bytes
+- one_length: 1 byte
+- witness_script_length: 1 byte
+- witness_script (to_local_script)
 
 ## Expected Weight of the `offered_htlc` Penalty Transaction Witness
 
@@ -678,16 +678,16 @@ The *expected weight* of the `offered_htlc` penalty transaction witness is
 calculated as follows (some calculations have already been made in
 [BOLT #3](03-transactions.md)):
 
-    offered_htlc_script: 133 bytes
+offered_htlc_script: 133 bytes
 
-    offered_htlc_penalty_witness: 243 bytes
-        - number_of_witness_elements: 1 byte
-        - revocation_sig_length: 1 byte
-        - revocation_sig: 73 bytes
-        - revocation_key_length: 1 byte
-        - revocation_key: 33 bytes
-        - witness_script_length: 1 byte
-        - witness_script (offered_htlc_script)
+offered_htlc_penalty_witness: 243 bytes
+- number_of_witness_elements: 1 byte
+- revocation_sig_length: 1 byte
+- revocation_sig: 73 bytes
+- revocation_key_length: 1 byte
+- revocation_key: 33 bytes
+- witness_script_length: 1 byte
+- witness_script (offered_htlc_script)
 
 ## Expected Weight of the `accepted_htlc` Penalty Transaction Witness
 
@@ -695,16 +695,16 @@ The *expected weight*  of the `accepted_htlc` penalty transaction witness is
 calculated as follows (some calculations have already been made in
 [BOLT #3](03-transactions.md)):
 
-    accepted_htlc_script: 139 bytes
+accepted_htlc_script: 139 bytes
 
-    accepted_htlc_penalty_witness: 249 bytes
-        - number_of_witness_elements: 1 byte
-        - revocation_sig_length: 1 byte
-        - revocation_sig: 73 bytes
-        - revocationpubkey_length: 1 byte
-        - revocationpubkey: 33 bytes
-        - witness_script_length: 1 byte
-        - witness_script (accepted_htlc_script)
+accepted_htlc_penalty_witness: 249 bytes
+- number_of_witness_elements: 1 byte
+- revocation_sig_length: 1 byte
+- revocation_sig: 73 bytes
+- revocationpubkey_length: 1 byte
+- revocationpubkey: 33 bytes
+- witness_script_length: 1 byte
+- witness_script (accepted_htlc_script)
 
 # Authors
 

@@ -80,12 +80,12 @@ If your New Thing replaces the existing one, be sure to move the existing
 one to a Legacy subsection: new readers will want to go straight to the
 modern version.  Don't emulate the classic Linux snprintf 1.27 man page:
 
-    RETURN VALUE
-       If the output was truncated, the return value is -1, otherwise it is the
-       number of characters stored, not including the terminating null.   (Thus
-       until  glibc  2.0.6.  Since glibc 2.1 these functions return the  number
-       of characters (excluding the trailing null) which would have been  writ‐
-       ten to the final string if enough space had been available.)
+RETURN VALUE
+If the output was truncated, the return value is -1, otherwise it is the
+number of characters stored, not including the terminating null.   (Thus
+until  glibc  2.0.6.  Since glibc 2.1 these functions return the  number
+of characters (excluding the trailing null) which would have been  writ‐
+ten to the final string if enough space had been available.)
 
 Imagine the bitterness of someone who only reads the first sentence
 assuming they have the answer they're looking for!  Someone who still

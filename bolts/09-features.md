@@ -53,18 +53,18 @@ We define `option_anchors` as `option_anchor_outputs || option_anchors_zero_fee_
 ## Requirements
 
 The origin node:
-  * If it supports a feature above, SHOULD set the corresponding odd
-    bit in all feature fields indicated by the Context column unless
-	indicated that it must set the even feature bit instead.
-  * If it requires a feature above, MUST set the corresponding even
-    feature bit in all feature fields indicated by the Context column,
-    unless indicated that it must set the odd feature bit instead.
-  * MUST NOT set feature bits it does not support.
-  * MUST NOT set feature bits in fields not specified by the table above.
-  * MUST set all transitive feature dependencies.
+* If it supports a feature above, SHOULD set the corresponding odd
+bit in all feature fields indicated by the Context column unless
+indicated that it must set the even feature bit instead.
+* If it requires a feature above, MUST set the corresponding even
+feature bit in all feature fields indicated by the Context column,
+unless indicated that it must set the odd feature bit instead.
+* MUST NOT set feature bits it does not support.
+* MUST NOT set feature bits in fields not specified by the table above.
+* MUST set all transitive feature dependencies.
 
 The origin node MUST support:
-  * `var_onion_optin`
+* `var_onion_optin`
 
 The requirements for receiving specific bits are defined in the linked sections in the table above.
 The requirements for feature bits that are not defined
