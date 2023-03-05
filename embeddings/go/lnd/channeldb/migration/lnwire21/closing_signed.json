@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/closing_signed.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ClosingSigned struct {",
+      "content": "type ClosingSigned struct {\n\t// ChannelID serves to identify which channel is to be closed.\n\tChannelID ChannelID\n\n\t// FeeSatoshis is the total fee in satoshis that the party to the\n\t// channel would like to propose for the close transaction.\n\tFeeSatoshis btcutil.Amount\n\n\t// Signature is for the proposed channel close transaction.\n\tSignature Sig\n}\n\n// NewClosingSigned creates a new empty ClosingSigned message.",
+      "length": 373,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func NewClosingSigned(cid ChannelID, fs btcutil.Amount,",
+      "content": "func NewClosingSigned(cid ChannelID, fs btcutil.Amount,\n\tsig Sig) *ClosingSigned {\n\n\treturn &ClosingSigned{\n\t\tChannelID:   cid,\n\t\tFeeSatoshis: fs,\n\t\tSignature:   sig,\n\t}\n}\n\n// A compile time check to ensure ClosingSigned implements the lnwire.Message\n// interface.\nvar _ Message = (*ClosingSigned)(nil)\n\n// Decode deserializes a serialized ClosingSigned message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 417,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ClosingSigned) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *ClosingSigned) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r, &c.ChannelID, &c.FeeSatoshis, &c.Signature)\n}\n\n// Encode serializes the target ClosingSigned into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 233,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ClosingSigned) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (c *ClosingSigned) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w, c.ChannelID, c.FeeSatoshis, c.Signature)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 200,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ClosingSigned) MsgType() MessageType {",
+      "content": "func (c *ClosingSigned) MsgType() MessageType {\n\treturn MsgClosingSigned\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a\n// ClosingSigned complete message observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 216,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ClosingSigned) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (c *ClosingSigned) MaxPayloadLength(uint32) uint32 {\n\tvar length uint32\n\n\t// ChannelID - 32 bytes\n\tlength += 32\n\n\t// FeeSatoshis - 8 bytes\n\tlength += 8\n\n\t// Signature - 64 bytes\n\tlength += 64\n\n\treturn length\n}\n",
+      "length": 144,
+      "tokens": 30,
+      "embedding": []
+    }
+  ]
+}

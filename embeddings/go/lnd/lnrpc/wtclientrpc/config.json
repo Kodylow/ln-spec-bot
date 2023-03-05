@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/wtclientrpc/config.go",
+  "package": "wtclientrpc",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// Active indicates if the watchtower client is enabled.\n\tActive bool\n\n\t// Client is the backing watchtower client that we'll interact with\n\t// through the watchtower RPC subserver.\n\tClient wtclient.Client\n\n\t// AnchorClient is the backing watchtower client for anchor channels that\n\t// we'll interact through the watchtower RPC subserver.\n\tAnchorClient wtclient.Client\n\n\t// Resolver is a custom resolver that will be used to resolve watchtower\n\t// addresses to ensure we don't leak any information when running over\n\t// non-clear networks, e.g. Tor, etc.\n\tResolver lncfg.TCPResolver\n\n\t// Log is the logger instance we should log output to.\n\tLog btclog.Logger\n}\n",
+      "length": 643,
+      "tokens": 98,
+      "embedding": []
+    }
+  ]
+}

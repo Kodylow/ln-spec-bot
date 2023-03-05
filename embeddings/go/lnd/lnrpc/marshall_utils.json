@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/marshall_utils.go",
+  "package": "lnrpc",
+  "sections": [
+    {
+      "slug": "func CalculateFeeLimit(feeLimit *FeeLimit,",
+      "content": "func CalculateFeeLimit(feeLimit *FeeLimit,\n\tamount lnwire.MilliSatoshi) lnwire.MilliSatoshi {\n\n\tswitch feeLimit.GetLimit().(type) {\n\tcase *FeeLimit_Fixed:\n\t\treturn lnwire.NewMSatFromSatoshis(\n\t\t\tbtcutil.Amount(feeLimit.GetFixed()),\n\t\t)\n\n\tcase *FeeLimit_FixedMsat:\n\t\treturn lnwire.MilliSatoshi(feeLimit.GetFixedMsat())\n\n\tcase *FeeLimit_Percent:\n\t\treturn amount * lnwire.MilliSatoshi(feeLimit.GetPercent()) / 100\n\n\tdefault:\n\t\t// Fall back to a sane default value that is based on the amount\n\t\t// itself.\n\t\treturn lnwallet.DefaultRoutingFeeLimitForAmount(amount)\n\t}\n}\n\n// UnmarshallAmt returns a strong msat type for a sat/msat pair of rpc fields.",
+      "length": 580,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func UnmarshallAmt(amtSat, amtMsat int64) (lnwire.MilliSatoshi, error) {",
+      "content": "func UnmarshallAmt(amtSat, amtMsat int64) (lnwire.MilliSatoshi, error) {\n\tif amtSat != 0 && amtMsat != 0 {\n\t\treturn 0, ErrSatMsatMutualExclusive\n\t}\n\n\tif amtSat != 0 {\n\t\treturn lnwire.NewMSatFromSatoshis(btcutil.Amount(amtSat)), nil\n\t}\n\n\treturn lnwire.MilliSatoshi(amtMsat), nil\n}\n\n// ParseConfs validates the minimum and maximum confirmation arguments of a\n// ListUnspent request.",
+      "length": 295,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseConfs(min, max int32) (int32, int32, error) {",
+      "content": "func ParseConfs(min, max int32) (int32, int32, error) {\n\tswitch {\n\t// Ensure that the user didn't attempt to specify a negative number of\n\t// confirmations, as that isn't possible.\n\tcase min < 0:\n\t\treturn 0, 0, fmt.Errorf(\"min confirmations must be >= 0\")\n\n\t// We'll also ensure that the min number of confs is strictly less than\n\t// or equal to the max number of confs for sanity.\n\tcase min > max:\n\t\treturn 0, 0, fmt.Errorf(\"max confirmations must be >= min \" +\n\t\t\t\"confirmations\")\n\n\tdefault:\n\t\treturn min, max, nil\n\t}\n}\n\n// MarshalUtxos translates a []*lnwallet.Utxo into a []*lnrpc.Utxo.",
+      "length": 517,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func MarshalUtxos(utxos []*lnwallet.Utxo, activeNetParams *chaincfg.Params) (",
+      "content": "func MarshalUtxos(utxos []*lnwallet.Utxo, activeNetParams *chaincfg.Params) (\n\t[]*Utxo, error) {\n\n\tres := make([]*Utxo, 0, len(utxos))\n\tfor _, utxo := range utxos {\n\t\t// Translate lnwallet address type to the proper gRPC proto\n\t\t// address type.\n\t\tvar addrType AddressType\n\t\tswitch utxo.AddressType {\n\t\tcase lnwallet.WitnessPubKey:\n\t\t\taddrType = AddressType_WITNESS_PUBKEY_HASH\n\n\t\tcase lnwallet.NestedWitnessPubKey:\n\t\t\taddrType = AddressType_NESTED_PUBKEY_HASH\n\n\t\tcase lnwallet.TaprootPubkey:\n\t\t\taddrType = AddressType_TAPROOT_PUBKEY\n\n\t\tcase lnwallet.UnknownAddressType:\n\t\t\tcontinue\n\n\t\tdefault:\n\t\t\treturn nil, fmt.Errorf(\"invalid utxo address type\")\n\t\t}\n\n\t\t// Now that we know we have a proper mapping to an address,\n\t\t// we'll convert the regular outpoint to an lnrpc variant.\n\t\toutpoint := &OutPoint{\n\t\t\tTxidBytes:   utxo.OutPoint.Hash[:],\n\t\t\tTxidStr:     utxo.OutPoint.Hash.String(),\n\t\t\tOutputIndex: utxo.OutPoint.Index,\n\t\t}\n\n\t\tutxoResp := Utxo{\n\t\t\tAddressType:   addrType,\n\t\t\tAmountSat:     int64(utxo.Value),\n\t\t\tPkScript:      hex.EncodeToString(utxo.PkScript),\n\t\t\tOutpoint:      outpoint,\n\t\t\tConfirmations: utxo.Confirmations,\n\t\t}\n\n\t\t// Finally, we'll attempt to extract the raw address from the\n\t\t// script so we can display a human friendly address to the end\n\t\t// user.\n\t\t_, outAddresses, _, err := txscript.ExtractPkScriptAddrs(\n\t\t\tutxo.PkScript, activeNetParams,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// If we can't properly locate a single address, then this was\n\t\t// an error in our mapping, and we'll return an error back to\n\t\t// the user.\n\t\tif len(outAddresses) != 1 {\n\t\t\treturn nil, fmt.Errorf(\"an output was unexpectedly \" +\n\t\t\t\t\"multisig\")\n\t\t}\n\t\tutxoResp.Address = outAddresses[0].String()\n\n\t\tres = append(res, &utxoResp)\n\t}\n\n\treturn res, nil\n}\n\n// MarshallOutputType translates a txscript.ScriptClass into a\n// lnrpc.OutputScriptType.",
+      "length": 1719,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func MarshallOutputType(o txscript.ScriptClass) OutputScriptType {",
+      "content": "func MarshallOutputType(o txscript.ScriptClass) OutputScriptType {\n\t// Translate txscript ScriptClass type to the proper gRPC proto\n\t// output script type.\n\tswitch o {\n\tcase txscript.ScriptHashTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_SCRIPT_HASH\n\tcase txscript.WitnessV0PubKeyHashTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_WITNESS_V0_PUBKEY_HASH\n\tcase txscript.WitnessV0ScriptHashTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_WITNESS_V0_SCRIPT_HASH\n\tcase txscript.PubKeyTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_PUBKEY\n\tcase txscript.MultiSigTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_MULTISIG\n\tcase txscript.NullDataTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_NULLDATA\n\tcase txscript.NonStandardTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_NON_STANDARD\n\tcase txscript.WitnessUnknownTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_WITNESS_UNKNOWN\n\tcase txscript.WitnessV1TaprootTy:\n\t\treturn OutputScriptType_SCRIPT_TYPE_WITNESS_V1_TAPROOT\n\tdefault:\n\t\treturn OutputScriptType_SCRIPT_TYPE_PUBKEY_HASH\n\t}\n}\n",
+      "length": 896,
+      "tokens": 58,
+      "embedding": []
+    }
+  ]
+}

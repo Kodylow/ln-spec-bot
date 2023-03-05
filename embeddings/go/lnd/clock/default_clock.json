@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/clock/default_clock.go",
+  "package": "clock",
+  "sections": [
+    {
+      "slug": "type DefaultClock struct{}",
+      "content": "type DefaultClock struct{}\n\n// NewDefaultClock constructs a new DefaultClock.",
+      "length": 49,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func NewDefaultClock() Clock {",
+      "content": "func NewDefaultClock() Clock {\n\treturn &DefaultClock{}\n}\n\n// Now simply returns time.Now().",
+      "length": 57,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (DefaultClock) Now() time.Time {",
+      "content": "func (DefaultClock) Now() time.Time {\n\treturn time.Now()\n}\n\n// TickAfter simply wraps time.After().",
+      "length": 58,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (DefaultClock) TickAfter(duration time.Duration) <-chan time.Time {",
+      "content": "func (DefaultClock) TickAfter(duration time.Duration) <-chan time.Time {\n\treturn time.After(duration)\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/wtclientrpc/wtclient_grpc.pb.go",
+  "package": "wtclientrpc",
+  "sections": [
+    {
+      "slug": "type WatchtowerClientClient interface {",
+      "content": "type WatchtowerClientClient interface {\n\t// AddTower adds a new watchtower reachable at the given address and\n\t// considers it for new sessions. If the watchtower already exists, then\n\t// any new addresses included will be considered when dialing it for\n\t// session negotiations and backups.\n\tAddTower(ctx context.Context, in *AddTowerRequest, opts ...grpc.CallOption) (*AddTowerResponse, error)\n\t// RemoveTower removes a watchtower from being considered for future session\n\t// negotiations and from being used for any subsequent backups until it's added\n\t// again. If an address is provided, then this RPC only serves as a way of\n\t// removing the address from the watchtower instead.\n\tRemoveTower(ctx context.Context, in *RemoveTowerRequest, opts ...grpc.CallOption) (*RemoveTowerResponse, error)\n\t// ListTowers returns the list of watchtowers registered with the client.\n\tListTowers(ctx context.Context, in *ListTowersRequest, opts ...grpc.CallOption) (*ListTowersResponse, error)\n\t// GetTowerInfo retrieves information for a registered watchtower.\n\tGetTowerInfo(ctx context.Context, in *GetTowerInfoRequest, opts ...grpc.CallOption) (*Tower, error)\n\t// Stats returns the in-memory statistics of the client since startup.\n\tStats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)\n\t// Policy returns the active watchtower client policy configuration.\n\tPolicy(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*PolicyResponse, error)\n}\n",
+      "length": 1430,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "type watchtowerClientClient struct {",
+      "content": "type watchtowerClientClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWatchtowerClientClient(cc grpc.ClientConnInterface) WatchtowerClientClient {",
+      "content": "func NewWatchtowerClientClient(cc grpc.ClientConnInterface) WatchtowerClientClient {\n\treturn &watchtowerClientClient{cc}\n}\n",
+      "length": 36,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) AddTower(ctx context.Context, in *AddTowerRequest, opts ...grpc.CallOption) (*AddTowerResponse, error) {",
+      "content": "func (c *watchtowerClientClient) AddTower(ctx context.Context, in *AddTowerRequest, opts ...grpc.CallOption) (*AddTowerResponse, error) {\n\tout := new(AddTowerResponse)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/AddTower\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 165,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) RemoveTower(ctx context.Context, in *RemoveTowerRequest, opts ...grpc.CallOption) (*RemoveTowerResponse, error) {",
+      "content": "func (c *watchtowerClientClient) RemoveTower(ctx context.Context, in *RemoveTowerRequest, opts ...grpc.CallOption) (*RemoveTowerResponse, error) {\n\tout := new(RemoveTowerResponse)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/RemoveTower\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 171,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) ListTowers(ctx context.Context, in *ListTowersRequest, opts ...grpc.CallOption) (*ListTowersResponse, error) {",
+      "content": "func (c *watchtowerClientClient) ListTowers(ctx context.Context, in *ListTowersRequest, opts ...grpc.CallOption) (*ListTowersResponse, error) {\n\tout := new(ListTowersResponse)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/ListTowers\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 169,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) GetTowerInfo(ctx context.Context, in *GetTowerInfoRequest, opts ...grpc.CallOption) (*Tower, error) {",
+      "content": "func (c *watchtowerClientClient) GetTowerInfo(ctx context.Context, in *GetTowerInfoRequest, opts ...grpc.CallOption) (*Tower, error) {\n\tout := new(Tower)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/GetTowerInfo\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 158,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) Stats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {",
+      "content": "func (c *watchtowerClientClient) Stats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {\n\tout := new(StatsResponse)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/Stats\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 159,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *watchtowerClientClient) Policy(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*PolicyResponse, error) {",
+      "content": "func (c *watchtowerClientClient) Policy(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*PolicyResponse, error) {\n\tout := new(PolicyResponse)\n\terr := c.cc.Invoke(ctx, \"/wtclientrpc.WatchtowerClient/Policy\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// WatchtowerClientServer is the server API for WatchtowerClient service.\n// All implementations must embed UnimplementedWatchtowerClientServer\n// for forward compatibility",
+      "length": 331,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type WatchtowerClientServer interface {",
+      "content": "type WatchtowerClientServer interface {\n\t// AddTower adds a new watchtower reachable at the given address and\n\t// considers it for new sessions. If the watchtower already exists, then\n\t// any new addresses included will be considered when dialing it for\n\t// session negotiations and backups.\n\tAddTower(context.Context, *AddTowerRequest) (*AddTowerResponse, error)\n\t// RemoveTower removes a watchtower from being considered for future session\n\t// negotiations and from being used for any subsequent backups until it's added\n\t// again. If an address is provided, then this RPC only serves as a way of\n\t// removing the address from the watchtower instead.\n\tRemoveTower(context.Context, *RemoveTowerRequest) (*RemoveTowerResponse, error)\n\t// ListTowers returns the list of watchtowers registered with the client.\n\tListTowers(context.Context, *ListTowersRequest) (*ListTowersResponse, error)\n\t// GetTowerInfo retrieves information for a registered watchtower.\n\tGetTowerInfo(context.Context, *GetTowerInfoRequest) (*Tower, error)\n\t// Stats returns the in-memory statistics of the client since startup.\n\tStats(context.Context, *StatsRequest) (*StatsResponse, error)\n\t// Policy returns the active watchtower client policy configuration.\n\tPolicy(context.Context, *PolicyRequest) (*PolicyResponse, error)\n\tmustEmbedUnimplementedWatchtowerClientServer()\n}\n\n// UnimplementedWatchtowerClientServer must be embedded to have forward compatible implementations.",
+      "length": 1384,
+      "tokens": 164,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedWatchtowerClientServer struct {",
+      "content": "type UnimplementedWatchtowerClientServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) AddTower(context.Context, *AddTowerRequest) (*AddTowerResponse, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) AddTower(context.Context, *AddTowerRequest) (*AddTowerResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method AddTower not implemented\")\n}",
+      "length": 83,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) RemoveTower(context.Context, *RemoveTowerRequest) (*RemoveTowerResponse, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) RemoveTower(context.Context, *RemoveTowerRequest) (*RemoveTowerResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method RemoveTower not implemented\")\n}",
+      "length": 86,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) ListTowers(context.Context, *ListTowersRequest) (*ListTowersResponse, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) ListTowers(context.Context, *ListTowersRequest) (*ListTowersResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method ListTowers not implemented\")\n}",
+      "length": 85,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) GetTowerInfo(context.Context, *GetTowerInfoRequest) (*Tower, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) GetTowerInfo(context.Context, *GetTowerInfoRequest) (*Tower, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method GetTowerInfo not implemented\")\n}",
+      "length": 87,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) Stats(context.Context, *StatsRequest) (*StatsResponse, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) Stats(context.Context, *StatsRequest) (*StatsResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method Stats not implemented\")\n}",
+      "length": 80,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) Policy(context.Context, *PolicyRequest) (*PolicyResponse, error) {",
+      "content": "func (UnimplementedWatchtowerClientServer) Policy(context.Context, *PolicyRequest) (*PolicyResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method Policy not implemented\")\n}",
+      "length": 81,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedWatchtowerClientServer) mustEmbedUnimplementedWatchtowerClientServer() {}",
+      "content": "func (UnimplementedWatchtowerClientServer) mustEmbedUnimplementedWatchtowerClientServer() {}\n\n// UnsafeWatchtowerClientServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to WatchtowerClientServer will\n// result in compilation errors.",
+      "length": 225,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeWatchtowerClientServer interface {",
+      "content": "type UnsafeWatchtowerClientServer interface {\n\tmustEmbedUnimplementedWatchtowerClientServer()\n}\n",
+      "length": 48,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterWatchtowerClientServer(s grpc.ServiceRegistrar, srv WatchtowerClientServer) {",
+      "content": "func RegisterWatchtowerClientServer(s grpc.ServiceRegistrar, srv WatchtowerClientServer) {\n\ts.RegisterService(&WatchtowerClient_ServiceDesc, srv)\n}\n",
+      "length": 55,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_AddTower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_AddTower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(AddTowerRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).AddTower(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/AddTower\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).AddTower(ctx, req.(*AddTowerRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 463,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_RemoveTower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_RemoveTower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(RemoveTowerRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).RemoveTower(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/RemoveTower\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).RemoveTower(ctx, req.(*RemoveTowerRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 478,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_ListTowers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_ListTowers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(ListTowersRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).ListTowers(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/ListTowers\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).ListTowers(ctx, req.(*ListTowersRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 473,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_GetTowerInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_GetTowerInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(GetTowerInfoRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).GetTowerInfo(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/GetTowerInfo\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).GetTowerInfo(ctx, req.(*GetTowerInfoRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 483,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_Stats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_Stats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(StatsRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).Stats(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/Stats\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).Stats(ctx, req.(*StatsRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 448,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _WatchtowerClient_Policy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _WatchtowerClient_Policy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(PolicyRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(WatchtowerClientServer).Policy(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/wtclientrpc.WatchtowerClient/Policy\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(WatchtowerClientServer).Policy(ctx, req.(*PolicyRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// WatchtowerClient_ServiceDesc is the grpc.ServiceDesc for WatchtowerClient service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar WatchtowerClient_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"wtclientrpc.WatchtowerClient\",\n\tHandlerType: (*WatchtowerClientServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"AddTower\",\n\t\t\tHandler:    _WatchtowerClient_AddTower_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"RemoveTower\",\n\t\t\tHandler:    _WatchtowerClient_RemoveTower_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"ListTowers\",\n\t\t\tHandler:    _WatchtowerClient_ListTowers_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"GetTowerInfo\",\n\t\t\tHandler:    _WatchtowerClient_GetTowerInfo_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"Stats\",\n\t\t\tHandler:    _WatchtowerClient_Stats_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"Policy\",\n\t\t\tHandler:    _WatchtowerClient_Policy_Handler,\n\t\t},\n\t},\n\tStreams:  []grpc.StreamDesc{},\n\tMetadata: \"wtclientrpc/wtclient.proto\",\n}\n",
+      "length": 1410,
+      "tokens": 132,
+      "embedding": []
+    }
+  ]
+}

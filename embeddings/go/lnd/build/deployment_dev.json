@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/deployment_dev.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage build\n\n// Deployment specifies a development build.\nconst Deployment = Development\n",
+      "length": 100,
+      "tokens": 15,
+      "embedding": []
+    }
+  ]
+}

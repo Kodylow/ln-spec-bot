@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/chainntnfs/bitcoindnotify/bitcoind_test.go",
+  "package": "bitcoindnotify",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage bitcoindnotify\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/btcsuite/btcd/integration/rpctest\"\n\t\"github.com/btcsuite/btcwallet/chain\"\n\t\"github.com/lightningnetwork/lnd/blockcache\"\n\t\"github.com/lightningnetwork/lnd/chainntnfs\"\n\t\"github.com/lightningnetwork/lnd/channeldb\"\n\t\"github.com/stretchr/testify/require\"\n)\n\nvar (\n\ttestScript = []byte{\n\t\t// OP_HASH160\n\t\t0xA9,\n\t\t// OP_DATA_20\n\t\t0x14,\n\t\t// <20-byte hash>\n\t\t0xec, 0x6f, 0x7a, 0x5a, 0xa8, 0xf2, 0xb1, 0x0c, 0xa5, 0x15,\n\t\t0x04, 0x52, 0x3a, 0x60, 0xd4, 0x03, 0x06, 0xf6, 0x96, 0xcd,\n\t\t// OP_EQUAL\n\t\t0x87,\n\t}\n)\n",
+      "length": 606,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func initHintCache(t *testing.T) *channeldb.HeightHintCache {",
+      "content": "func initHintCache(t *testing.T) *channeldb.HeightHintCache {\n\tt.Helper()\n\n\tdb, err := channeldb.Open(t.TempDir())\n\trequire.NoError(t, err, \"unable to create db\")\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, db.Close())\n\t})\n\n\ttestCfg := channeldb.CacheConfig{\n\t\tQueryDisable: false,\n\t}\n\thintCache, err := channeldb.NewHeightHintCache(testCfg, db.Backend)\n\trequire.NoError(t, err, \"unable to create hint cache\")\n\n\treturn hintCache\n}\n\n// setUpNotifier is a helper function to start a new notifier backed by a\n// bitcoind driver.",
+      "length": 442,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func setUpNotifier(t *testing.T, bitcoindConn *chain.BitcoindConn,",
+      "content": "func setUpNotifier(t *testing.T, bitcoindConn *chain.BitcoindConn,\n\tspendHintCache chainntnfs.SpendHintCache,\n\tconfirmHintCache chainntnfs.ConfirmHintCache,\n\tblockCache *blockcache.BlockCache) *BitcoindNotifier {\n\n\tt.Helper()\n\n\tnotifier := New(\n\t\tbitcoindConn, chainntnfs.NetParams, spendHintCache,\n\t\tconfirmHintCache, blockCache,\n\t)\n\tif err := notifier.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start notifier: %v\", err)\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, notifier.Stop())\n\t})\n\n\treturn notifier\n}\n\n// syncNotifierWithMiner is a helper method that attempts to wait until the\n// notifier is synced (in terms of the chain) with the miner.",
+      "length": 559,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func syncNotifierWithMiner(t *testing.T, notifier *BitcoindNotifier,",
+      "content": "func syncNotifierWithMiner(t *testing.T, notifier *BitcoindNotifier,\n\tminer *rpctest.Harness) uint32 {\n\n\tt.Helper()\n\n\t_, minerHeight, err := miner.Client.GetBestBlock()\n\trequire.NoError(t, err, \"unable to retrieve miner's current height\")\n\n\ttimeout := time.After(10 * time.Second)\n\tfor {\n\t\t_, bitcoindHeight, err := notifier.chainConn.GetBestBlock()\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to retrieve bitcoind's current \"+\n\t\t\t\t\"height: %v\", err)\n\t\t}\n\n\t\tif bitcoindHeight == minerHeight {\n\t\t\treturn uint32(bitcoindHeight)\n\t\t}\n\n\t\tselect {\n\t\tcase <-time.After(100 * time.Millisecond):\n\t\tcase <-timeout:\n\t\t\tt.Fatalf(\"timed out waiting to sync notifier\")\n\t\t}\n\t}\n}\n\n// TestHistoricalConfDetailsTxIndex ensures that we correctly retrieve\n// historical confirmation details using the backend node's txindex.",
+      "length": 701,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHistoricalConfDetailsTxIndex(t *testing.T) {",
+      "content": "func TestHistoricalConfDetailsTxIndex(t *testing.T) {\n\tt.Run(\"txindex enabled\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\ttestHistoricalConfDetailsTxIndex(st, true)\n\t})\n\n\tt.Run(\"txindex disabled\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\ttestHistoricalConfDetailsTxIndex(st, false)\n\t})\n}\n",
+      "length": 221,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func testHistoricalConfDetailsTxIndex(t *testing.T, rpcPolling bool) {",
+      "content": "func testHistoricalConfDetailsTxIndex(t *testing.T, rpcPolling bool) {\n\tminer := chainntnfs.NewMiner(\n\t\tt, []string{\"--txindex\"}, true, 25,\n\t)\n\n\tbitcoindConn := chainntnfs.NewBitcoindBackend(\n\t\tt, miner.P2PAddress(), true, rpcPolling,\n\t)\n\n\thintCache := initHintCache(t)\n\tblockCache := blockcache.NewBlockCache(10000)\n\n\tnotifier := setUpNotifier(\n\t\tt, bitcoindConn, hintCache, hintCache, blockCache,\n\t)\n\n\tsyncNotifierWithMiner(t, notifier, miner)\n\n\t// A transaction unknown to the node should not be found within the\n\t// txindex even if it is enabled, so we should not proceed with any\n\t// fallback methods.\n\tvar unknownHash chainhash.Hash\n\tcopy(unknownHash[:], bytes.Repeat([]byte{0x10}, 32))\n\tunknownConfReq, err := chainntnfs.NewConfRequest(&unknownHash, testScript)\n\trequire.NoError(t, err, \"unable to create conf request\")\n\t_, txStatus, err := notifier.historicalConfDetails(unknownConfReq, 0, 0)\n\trequire.NoError(t, err, \"unable to retrieve historical conf details\")\n\n\tswitch txStatus {\n\tcase chainntnfs.TxNotFoundIndex:\n\tcase chainntnfs.TxNotFoundManually:\n\t\tt.Fatal(\"should not have proceeded with fallback method, but did\")\n\tdefault:\n\t\tt.Fatal(\"should not have found non-existent transaction, but did\")\n\t}\n\n\t// Now, we'll create a test transaction, confirm it, and attempt to\n\t// retrieve its confirmation details.\n\ttxid, pkScript, err := chainntnfs.GetTestTxidAndScript(miner)\n\trequire.NoError(t, err, \"unable to create tx\")\n\tif err := chainntnfs.WaitForMempoolTx(miner, txid); err != nil {\n\t\tt.Fatal(err)\n\t}\n\tconfReq, err := chainntnfs.NewConfRequest(txid, pkScript)\n\trequire.NoError(t, err, \"unable to create conf request\")\n\n\t// The transaction should be found in the mempool at this point.\n\t_, txStatus, err = notifier.historicalConfDetails(confReq, 0, 0)\n\trequire.NoError(t, err, \"unable to retrieve historical conf details\")\n\n\t// Since it has yet to be included in a block, it should have been found\n\t// within the mempool.\n\tswitch txStatus {\n\tcase chainntnfs.TxFoundMempool:\n\tdefault:\n\t\tt.Fatalf(\"should have found the transaction within the \"+\n\t\t\t\"mempool, but did not: %v\", txStatus)\n\t}\n\n\tif _, err := miner.Client.Generate(1); err != nil {\n\t\tt.Fatalf(\"unable to generate block: %v\", err)\n\t}\n\n\t// Ensure the notifier and miner are synced to the same height to ensure\n\t// the txindex includes the transaction just mined.\n\tsyncNotifierWithMiner(t, notifier, miner)\n\n\t_, txStatus, err = notifier.historicalConfDetails(confReq, 0, 0)\n\trequire.NoError(t, err, \"unable to retrieve historical conf details\")\n\n\t// Since the backend node's txindex is enabled and the transaction has\n\t// confirmed, we should be able to retrieve it using the txindex.\n\tswitch txStatus {\n\tcase chainntnfs.TxFoundIndex:\n\tdefault:\n\t\tt.Fatal(\"should have found the transaction within the \" +\n\t\t\t\"txindex, but did not\")\n\t}\n}\n\n// TestHistoricalConfDetailsNoTxIndex ensures that we correctly retrieve\n// historical confirmation details using the set of fallback methods when the\n// backend node's txindex is disabled.",
+      "length": 2848,
+      "tokens": 368,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHistoricalConfDetailsNoTxIndex(t *testing.T) {",
+      "content": "func TestHistoricalConfDetailsNoTxIndex(t *testing.T) {\n\tt.Run(\"txindex enabled\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\ttestHistoricalConfDetailsNoTxIndex(st, true)\n\t})\n\n\tt.Run(\"txindex disabled\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\ttestHistoricalConfDetailsNoTxIndex(st, false)\n\t})\n}\n",
+      "length": 225,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func testHistoricalConfDetailsNoTxIndex(t *testing.T, rpcpolling bool) {",
+      "content": "func testHistoricalConfDetailsNoTxIndex(t *testing.T, rpcpolling bool) {\n\tminer := chainntnfs.NewMiner(t, nil, true, 25)\n\n\tbitcoindConn := chainntnfs.NewBitcoindBackend(\n\t\tt, miner.P2PAddress(), false, rpcpolling,\n\t)\n\n\thintCache := initHintCache(t)\n\tblockCache := blockcache.NewBlockCache(10000)\n\n\tnotifier := setUpNotifier(t, bitcoindConn, hintCache, hintCache, blockCache)\n\n\t// Since the node has its txindex disabled, we fall back to scanning the\n\t// chain manually. A transaction unknown to the network should not be\n\t// found.\n\tvar unknownHash chainhash.Hash\n\tcopy(unknownHash[:], bytes.Repeat([]byte{0x10}, 32))\n\tunknownConfReq, err := chainntnfs.NewConfRequest(&unknownHash, testScript)\n\trequire.NoError(t, err, \"unable to create conf request\")\n\tbroadcastHeight := syncNotifierWithMiner(t, notifier, miner)\n\t_, txStatus, err := notifier.historicalConfDetails(\n\t\tunknownConfReq, uint32(broadcastHeight), uint32(broadcastHeight),\n\t)\n\trequire.NoError(t, err, \"unable to retrieve historical conf details\")\n\n\tswitch txStatus {\n\tcase chainntnfs.TxNotFoundManually:\n\tcase chainntnfs.TxNotFoundIndex:\n\t\tt.Fatal(\"should have proceeded with fallback method, but did not\")\n\tdefault:\n\t\tt.Fatal(\"should not have found non-existent transaction, but did\")\n\t}\n\n\t// Now, we'll create a test transaction and attempt to retrieve its\n\t// confirmation details. In order to fall back to manually scanning the\n\t// chain, the transaction must be in the chain and not contain any\n\t// unspent outputs. To ensure this, we'll create a transaction with only\n\t// one output, which we will manually spend. The backend node's\n\t// transaction index should also be disabled, which we've already\n\t// ensured above.\n\toutpoint, output, privKey := chainntnfs.CreateSpendableOutput(t, miner)\n\tspendTx := chainntnfs.CreateSpendTx(t, outpoint, output, privKey)\n\tspendTxHash, err := miner.Client.SendRawTransaction(spendTx, true)\n\trequire.NoError(t, err, \"unable to broadcast tx\")\n\tif err := chainntnfs.WaitForMempoolTx(miner, spendTxHash); err != nil {\n\t\tt.Fatalf(\"tx not relayed to miner: %v\", err)\n\t}\n\tif _, err := miner.Client.Generate(1); err != nil {\n\t\tt.Fatalf(\"unable to generate block: %v\", err)\n\t}\n\n\t// Ensure the notifier and miner are synced to the same height to ensure\n\t// we can find the transaction when manually scanning the chain.\n\tconfReq, err := chainntnfs.NewConfRequest(&outpoint.Hash, output.PkScript)\n\trequire.NoError(t, err, \"unable to create conf request\")\n\tcurrentHeight := syncNotifierWithMiner(t, notifier, miner)\n\t_, txStatus, err = notifier.historicalConfDetails(\n\t\tconfReq, uint32(broadcastHeight), uint32(currentHeight),\n\t)\n\trequire.NoError(t, err, \"unable to retrieve historical conf details\")\n\n\t// Since the backend node's txindex is disabled and the transaction has\n\t// confirmed, we should be able to find it by falling back to scanning\n\t// the chain manually.\n\tswitch txStatus {\n\tcase chainntnfs.TxFoundManually:\n\tdefault:\n\t\tt.Fatal(\"should have found the transaction by manually \" +\n\t\t\t\"scanning the chain, but did not\")\n\t}\n}\n",
+      "length": 2887,
+      "tokens": 362,
+      "embedding": []
+    }
+  ]
+}

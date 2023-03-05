@@ -1,0 +1,153 @@
+{
+  "filepath": "../implementations/go/lnd/channelnotifier/channelnotifier.go",
+  "package": "channelnotifier",
+  "sections": [
+    {
+      "slug": "type ChannelNotifier struct {",
+      "content": "type ChannelNotifier struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tntfnServer *subscribe.Server\n\n\tchanDB *channeldb.ChannelStateDB\n}\n\n// PendingOpenChannelEvent represents a new event where a new channel has\n// entered a pending open state.",
+      "length": 204,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type PendingOpenChannelEvent struct {",
+      "content": "type PendingOpenChannelEvent struct {\n\t// ChannelPoint is the channel outpoint for the new channel.\n\tChannelPoint *wire.OutPoint\n\n\t// PendingChannel is the channel configuration for the newly created\n\t// channel. This might not have been persisted to the channel DB yet\n\t// because we are still waiting for the final message from the remote\n\t// peer.\n\tPendingChannel *channeldb.OpenChannel\n}\n\n// OpenChannelEvent represents a new event where a channel goes from pending\n// open to open.",
+      "length": 437,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "type OpenChannelEvent struct {",
+      "content": "type OpenChannelEvent struct {\n\t// Channel is the channel that has become open.\n\tChannel *channeldb.OpenChannel\n}\n\n// ActiveLinkEvent represents a new event where the link becomes active in the\n// switch. This happens before the ActiveChannelEvent.",
+      "length": 212,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type ActiveLinkEvent struct {",
+      "content": "type ActiveLinkEvent struct {\n\t// ChannelPoint is the channel point for the newly active channel.\n\tChannelPoint *wire.OutPoint\n}\n\n// InactiveLinkEvent represents a new event where the link becomes inactive in\n// the switch.",
+      "length": 188,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "type InactiveLinkEvent struct {",
+      "content": "type InactiveLinkEvent struct {\n\t// ChannelPoint is the channel point for the inactive channel.\n\tChannelPoint *wire.OutPoint\n}\n\n// ActiveChannelEvent represents a new event where a channel becomes active.",
+      "length": 168,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type ActiveChannelEvent struct {",
+      "content": "type ActiveChannelEvent struct {\n\t// ChannelPoint is the channelpoint for the newly active channel.\n\tChannelPoint *wire.OutPoint\n}\n\n// InactiveChannelEvent represents a new event where a channel becomes inactive.",
+      "length": 175,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type InactiveChannelEvent struct {",
+      "content": "type InactiveChannelEvent struct {\n\t// ChannelPoint is the channelpoint for the newly inactive channel.\n\tChannelPoint *wire.OutPoint\n}\n\n// ClosedChannelEvent represents a new event where a channel becomes closed.",
+      "length": 173,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type ClosedChannelEvent struct {",
+      "content": "type ClosedChannelEvent struct {\n\t// CloseSummary is the summary of the channel close that has occurred.\n\tCloseSummary *channeldb.ChannelCloseSummary\n}\n\n// FullyResolvedChannelEvent represents a new event where a channel becomes\n// fully resolved.",
+      "length": 209,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type FullyResolvedChannelEvent struct {",
+      "content": "type FullyResolvedChannelEvent struct {\n\t// ChannelPoint is the channelpoint for the newly fully resolved\n\t// channel.\n\tChannelPoint *wire.OutPoint\n}\n\n// New creates a new channel notifier. The ChannelNotifier gets channel\n// events from peers and from the chain arbitrator, and dispatches them to\n// its clients.",
+      "length": 266,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func New(chanDB *channeldb.ChannelStateDB) *ChannelNotifier {",
+      "content": "func New(chanDB *channeldb.ChannelStateDB) *ChannelNotifier {\n\treturn &ChannelNotifier{\n\t\tntfnServer: subscribe.NewServer(),\n\t\tchanDB:     chanDB,\n\t}\n}\n\n// Start starts the ChannelNotifier and all goroutines it needs to carry out its task.",
+      "length": 171,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) Start() error {",
+      "content": "func (c *ChannelNotifier) Start() error {\n\tvar err error\n\tc.started.Do(func() {\n\t\tlog.Info(\"ChannelNotifier starting\")\n\t\terr = c.ntfnServer.Start()\n\t})\n\treturn err\n}\n\n// Stop signals the notifier for a graceful shutdown.",
+      "length": 170,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) Stop() error {",
+      "content": "func (c *ChannelNotifier) Stop() error {\n\tvar err error\n\tc.stopped.Do(func() {\n\t\tlog.Info(\"ChannelNotifier shutting down\")\n\t\terr = c.ntfnServer.Stop()\n\t})\n\treturn err\n}\n\n// SubscribeChannelEvents returns a subscribe.Client that will receive updates\n// any time the Server is made aware of a new event. The subscription provides\n// channel events from the point of subscription onwards.\n//\n// TODO(carlaKC): update  to allow subscriptions to specify a block height from\n// which we would like to subscribe to events.",
+      "length": 461,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) SubscribeChannelEvents() (*subscribe.Client, error) {",
+      "content": "func (c *ChannelNotifier) SubscribeChannelEvents() (*subscribe.Client, error) {\n\treturn c.ntfnServer.Subscribe()\n}\n\n// NotifyPendingOpenChannelEvent notifies the channelEventNotifier goroutine\n// that a new channel is pending. The pending channel is passed as a parameter\n// instead of read from the database because it might not yet have been\n// persisted to the DB because we still wait for the final message from the\n// remote peer.",
+      "length": 348,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyPendingOpenChannelEvent(chanPoint wire.OutPoint,",
+      "content": "func (c *ChannelNotifier) NotifyPendingOpenChannelEvent(chanPoint wire.OutPoint,\n\tpendingChan *channeldb.OpenChannel) {\n\n\tevent := PendingOpenChannelEvent{\n\t\tChannelPoint:   &chanPoint,\n\t\tPendingChannel: pendingChan,\n\t}\n\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send pending open channel update: %v\", err)\n\t}\n}\n\n// NotifyOpenChannelEvent notifies the channelEventNotifier goroutine that a\n// channel has gone from pending open to open.",
+      "length": 379,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyOpenChannelEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyOpenChannelEvent(chanPoint wire.OutPoint) {\n\t// Fetch the relevant channel from the database.\n\tchannel, err := c.chanDB.FetchChannel(nil, chanPoint)\n\tif err != nil {\n\t\tlog.Warnf(\"Unable to fetch open channel from the db: %v\", err)\n\t}\n\n\t// Send the open event to all channel event subscribers.\n\tevent := OpenChannelEvent{Channel: channel}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send open channel update: %v\", err)\n\t}\n}\n\n// NotifyClosedChannelEvent notifies the channelEventNotifier goroutine that a\n// channel has closed.",
+      "length": 502,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyClosedChannelEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyClosedChannelEvent(chanPoint wire.OutPoint) {\n\t// Fetch the relevant closed channel from the database.\n\tcloseSummary, err := c.chanDB.FetchClosedChannel(&chanPoint)\n\tif err != nil {\n\t\tlog.Warnf(\"Unable to fetch closed channel summary from the db: %v\", err)\n\t}\n\n\t// Send the closed event to all channel event subscribers.\n\tevent := ClosedChannelEvent{CloseSummary: closeSummary}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send closed channel update: %v\", err)\n\t}\n}\n\n// NotifyFullyResolvedChannelEvent notifies the channelEventNotifier goroutine\n// that a channel was fully resolved on chain.",
+      "length": 566,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyFullyResolvedChannelEvent(",
+      "content": "func (c *ChannelNotifier) NotifyFullyResolvedChannelEvent(\n\tchanPoint wire.OutPoint) {\n\n\t// Send the resolved event to all channel event subscribers.\n\tevent := FullyResolvedChannelEvent{ChannelPoint: &chanPoint}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send resolved channel update: %v\", err)\n\t}\n}\n\n// NotifyActiveLinkEvent notifies the channelEventNotifier goroutine that a\n// link has been added to the switch.",
+      "length": 381,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyActiveLinkEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyActiveLinkEvent(chanPoint wire.OutPoint) {\n\tevent := ActiveLinkEvent{ChannelPoint: &chanPoint}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send active link update: %v\", err)\n\t}\n}\n\n// NotifyActiveChannelEvent notifies the channelEventNotifier goroutine that a\n// channel is active.",
+      "length": 265,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyActiveChannelEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyActiveChannelEvent(chanPoint wire.OutPoint) {\n\tevent := ActiveChannelEvent{ChannelPoint: &chanPoint}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send active channel update: %v\", err)\n\t}\n}\n\n// NotifyInactiveLinkEvent notifies the channelEventNotifier goroutine that a\n// link has been removed from the switch.",
+      "length": 290,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyInactiveLinkEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyInactiveLinkEvent(chanPoint wire.OutPoint) {\n\tevent := InactiveLinkEvent{ChannelPoint: &chanPoint}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send inactive link update: %v\", err)\n\t}\n}\n\n// NotifyInactiveChannelEvent notifies the channelEventNotifier goroutine that a\n// channel is inactive.",
+      "length": 273,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelNotifier) NotifyInactiveChannelEvent(chanPoint wire.OutPoint) {",
+      "content": "func (c *ChannelNotifier) NotifyInactiveChannelEvent(chanPoint wire.OutPoint) {\n\tevent := InactiveChannelEvent{ChannelPoint: &chanPoint}\n\tif err := c.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send inactive channel update: %v\", err)\n\t}\n}\n",
+      "length": 176,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

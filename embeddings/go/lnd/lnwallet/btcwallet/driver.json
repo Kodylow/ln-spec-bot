@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/btcwallet/driver.go",
+  "package": "btcwallet",
+  "sections": [
+    {
+      "slug": "func createNewWallet(args ...interface{}) (lnwallet.WalletController, error) {",
+      "content": "func createNewWallet(args ...interface{}) (lnwallet.WalletController, error) {\n\tif len(args) != 2 {\n\t\treturn nil, fmt.Errorf(\"incorrect number of arguments to .New(...), \"+\n\t\t\t\"expected 2, instead passed %v\", len(args))\n\t}\n\n\tconfig, ok := args[0].(*Config)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"first argument to btcdnotifier.New is \" +\n\t\t\t\"incorrect, expected a *rpcclient.ConnConfig\")\n\t}\n\n\tblockCache, ok := args[1].(*blockcache.BlockCache)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"second argument to btcdnotifier.New is \" +\n\t\t\t\"incorrect, expected a *blockcache.BlockCache\")\n\t}\n\n\treturn New(*config, blockCache)\n}\n\n// init registers a driver for the BtcWallet concrete implementation of the\n// lnwallet.WalletController interface.",
+      "length": 626,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Register the driver.\n\tdriver := &lnwallet.WalletDriver{\n\t\tWalletType: walletType,\n\t\tNew:        createNewWallet,\n\t\tBackEnds:   chain.BackEnds,\n\t}\n\n\tif err := lnwallet.RegisterWallet(driver); err != nil {\n\t\tpanic(fmt.Sprintf(\"failed to register wallet driver '%s': %v\",\n\t\t\twalletType, err))\n\t}\n}\n",
+      "length": 287,
+      "tokens": 33,
+      "embedding": []
+    }
+  ]
+}

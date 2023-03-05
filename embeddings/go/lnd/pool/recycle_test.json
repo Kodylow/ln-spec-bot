@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/pool/recycle_test.go",
+  "package": "pool_test",
+  "sections": [
+    {
+      "slug": "type mockRecycler bool",
+      "content": "type mockRecycler bool\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockRecycler) Recycle() {",
+      "content": "func (m *mockRecycler) Recycle() {\n\t*m = false\n}\n\n// TestRecyclers verifies that known recyclable types properly return to their\n// zero-value after invoking Recycle.",
+      "length": 127,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func TestRecyclers(t *testing.T) {",
+      "content": "func TestRecyclers(t *testing.T) {\n\ttests := []struct {\n\t\tname    string\n\t\tnewItem func() interface{}\n\t}{\n\t\t{\n\t\t\t\"mock recycler\",\n\t\t\tfunc() interface{} { return new(mockRecycler) },\n\t\t},\n\t\t{\n\t\t\t\"write_buffer\",\n\t\t\tfunc() interface{} { return new(buffer.Write) },\n\t\t},\n\t\t{\n\t\t\t\"read_buffer\",\n\t\t\tfunc() interface{} { return new(buffer.Read) },\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t// Initialize the Recycler to test.\n\t\t\tr := test.newItem().(pool.Recycler)\n\n\t\t\t// Dirty the item.\n\t\t\tdirtyGeneric(t, r)\n\n\t\t\t// Invoke Recycle to clear the item.\n\t\t\tr.Recycle()\n\n\t\t\t// Assert the item is now clean.\n\t\t\tisCleanGeneric(t, r)\n\t\t})\n\t}\n}\n",
+      "length": 600,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "type recyclePoolTest struct {",
+      "content": "type recyclePoolTest struct {\n\tname    string\n\tnewPool func() interface{}\n}\n\n// TestGenericRecyclePoolTests generically tests that pools derived from the\n// base Recycle pool properly are properly configured.",
+      "length": 173,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func TestConcreteRecyclePoolTests(t *testing.T) {",
+      "content": "func TestConcreteRecyclePoolTests(t *testing.T) {\n\tconst (\n\t\tgcInterval     = time.Second\n\t\texpiryInterval = 250 * time.Millisecond\n\t)\n\n\ttests := []recyclePoolTest{\n\t\t{\n\t\t\tname: \"write buffer pool\",\n\t\t\tnewPool: func() interface{} {\n\t\t\t\treturn pool.NewWriteBuffer(\n\t\t\t\t\tgcInterval, expiryInterval,\n\t\t\t\t)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"read buffer pool\",\n\t\t\tnewPool: func() interface{} {\n\t\t\t\treturn pool.NewReadBuffer(\n\t\t\t\t\tgcInterval, expiryInterval,\n\t\t\t\t)\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestRecyclePool(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 493,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func testRecyclePool(t *testing.T, test recyclePoolTest) {",
+      "content": "func testRecyclePool(t *testing.T, test recyclePoolTest) {\n\tp := test.newPool()\n\n\t// Take an item from the pool.\n\tr1 := takeGeneric(t, p)\n\n\t// Dirty the item.\n\tdirtyGeneric(t, r1)\n\n\t// Return the item to the pool.\n\treturnGeneric(t, p, r1)\n\n\t// Take items from the pool until we find the original. We expect at\n\t// most two, in the event that a fresh item is populated after the\n\t// first is taken.\n\tfor i := 0; i < 2; i++ {\n\t\t// Wait a small duration to ensure the tests are reliable, and\n\t\t// don't to active the non-blocking case unintentionally.\n\t\t<-time.After(time.Millisecond)\n\n\t\tr2 := takeGeneric(t, p)\n\n\t\t// Take an item, skipping those whose pointer does not match the\n\t\t// one we dirtied.\n\t\tif r1 != r2 {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Finally, verify that the item has been properly cleaned.\n\t\tisCleanGeneric(t, r2)\n\n\t\treturn\n\t}\n\n\tt.Fatalf(\"original item not found\")\n}\n",
+      "length": 776,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "func takeGeneric(t *testing.T, p interface{}) pool.Recycler {",
+      "content": "func takeGeneric(t *testing.T, p interface{}) pool.Recycler {\n\tt.Helper()\n\n\tswitch pp := p.(type) {\n\tcase *pool.WriteBuffer:\n\t\treturn pp.Take()\n\n\tcase *pool.ReadBuffer:\n\t\treturn pp.Take()\n\n\tdefault:\n\t\tt.Fatalf(\"unknown pool type: %T\", p)\n\t}\n\n\treturn nil\n}\n",
+      "length": 179,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func returnGeneric(t *testing.T, p, item interface{}) {",
+      "content": "func returnGeneric(t *testing.T, p, item interface{}) {\n\tt.Helper()\n\n\tswitch pp := p.(type) {\n\tcase *pool.WriteBuffer:\n\t\tpp.Return(item.(*buffer.Write))\n\n\tcase *pool.ReadBuffer:\n\t\tpp.Return(item.(*buffer.Read))\n\n\tdefault:\n\t\tt.Fatalf(\"unknown pool type: %T\", p)\n\t}\n}\n",
+      "length": 197,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func dirtyGeneric(t *testing.T, i interface{}) {",
+      "content": "func dirtyGeneric(t *testing.T, i interface{}) {\n\tt.Helper()\n\n\tswitch item := i.(type) {\n\tcase *mockRecycler:\n\t\t*item = true\n\n\tcase *buffer.Write:\n\t\tdirtySlice(item[:])\n\n\tcase *buffer.Read:\n\t\tdirtySlice(item[:])\n\n\tdefault:\n\t\tt.Fatalf(\"unknown item type: %T\", i)\n\t}\n\n}\n",
+      "length": 202,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func dirtySlice(slice []byte) {",
+      "content": "func dirtySlice(slice []byte) {\n\tfor i := range slice {\n\t\tslice[i] = 0xff\n\t}\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func isCleanGeneric(t *testing.T, i interface{}) {",
+      "content": "func isCleanGeneric(t *testing.T, i interface{}) {\n\tt.Helper()\n\n\tswitch item := i.(type) {\n\tcase *mockRecycler:\n\t\tif isDirty := *item; isDirty {\n\t\t\tt.Fatalf(\"mock recycler still diry\")\n\t\t}\n\n\tcase *buffer.Write:\n\t\tisCleanSlice(t, item[:])\n\n\tcase *buffer.Read:\n\t\tisCleanSlice(t, item[:])\n\n\tdefault:\n\t\tt.Fatalf(\"unknown item type: %T\", i)\n\t}\n}\n",
+      "length": 272,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func isCleanSlice(t *testing.T, slice []byte) {",
+      "content": "func isCleanSlice(t *testing.T, slice []byte) {\n\tt.Helper()\n\n\texpSlice := make([]byte, len(slice))\n\tif !bytes.Equal(expSlice, slice) {\n\t\tt.Fatalf(\"slice not recycled, want: %v, got: %v\",\n\t\t\texpSlice, slice)\n\t}\n}\n",
+      "length": 156,
+      "tokens": 20,
+      "embedding": []
+    }
+  ]
+}

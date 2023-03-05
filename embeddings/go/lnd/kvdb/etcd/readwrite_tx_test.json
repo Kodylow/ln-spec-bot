@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_tx_test.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"context\"\n\t\"testing\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/stretchr/testify/require\"\n)\n",
+      "length": 139,
+      "tokens": 12,
+      "embedding": []
+    },
     {
       "slug": "func TestChangeDuringManualTx(t *testing.T) {",
       "content": "func TestChangeDuringManualTx(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tdb, err := newEtcdBackend(context.TODO(), f.BackendConfig())\n\trequire.NoError(t, err)\n\n\ttx, err := db.BeginReadWriteTx()\n\trequire.Nil(t, err)\n\trequire.NotNil(t, tx)\n\n\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\trequire.Nil(t, err)\n\trequire.NotNil(t, apple)\n\n\trequire.NoError(t, apple.Put([]byte(\"testKey\"), []byte(\"testVal\")))\n\n\t// Try overwriting the bucket key.\n\tf.Put(BucketKey(\"apple\"), \"banana\")\n\n\t// TODO: translate error\n\trequire.NotNil(t, tx.Commit())\n\trequire.Equal(t, map[string]string{\n\t\tBucketKey(\"apple\"): \"banana\",\n\t}, f.Dump())\n}\n",

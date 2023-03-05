@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/routing/probability_bimodal.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type BimodalConfig struct {",
+      "content": "type BimodalConfig struct {\n\t// BimodalNodeWeight defines how strongly other previous forwardings on\n\t// channels of a router should be taken into account when computing a\n\t// channel's probability to route. The allowed values are in the range\n\t// [0, 1], where a value of 0 means that only direct information about a\n\t// channel is taken into account.\n\tBimodalNodeWeight float64\n\n\t// BimodalScaleMsat describes the scale over which channels\n\t// statistically have some liquidity left. The value determines how\n\t// quickly the bimodal distribution drops off from the edges of a\n\t// channel. A larger value (compared to typical channel capacities)\n\t// means that the drop off is slow and that channel balances are\n\t// distributed more uniformly. A small value leads to the assumption of\n\t// very unbalanced channels.\n\tBimodalScaleMsat lnwire.MilliSatoshi\n\n\t// BimodalDecayTime is the scale for the exponential information decay\n\t// over time for previous successes or failures.\n\tBimodalDecayTime time.Duration\n}\n\n// validate checks the configuration of the estimator for allowed values.",
+      "length": 1036,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (p BimodalConfig) validate() error {",
+      "content": "func (p BimodalConfig) validate() error {\n\tif p.BimodalDecayTime <= 0 {\n\t\treturn fmt.Errorf(\"%v: %w\", BimodalEstimatorName,\n\t\t\tErrInvalidDecayTime)\n\t}\n\n\tif p.BimodalNodeWeight < 0 || p.BimodalNodeWeight > 1 {\n\t\treturn fmt.Errorf(\"%v: %w\", BimodalEstimatorName,\n\t\t\tErrInvalidNodeWeight)\n\t}\n\n\tif p.BimodalScaleMsat == 0 || p.BimodalScaleMsat > BimodalScaleMsatMax {\n\t\treturn fmt.Errorf(\"%v: %w\", BimodalEstimatorName,\n\t\t\tErrInvalidScale)\n\t}\n\n\treturn nil\n}\n\n// DefaultBimodalConfig returns the default configuration for the estimator.",
+      "length": 471,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultBimodalConfig() BimodalConfig {",
+      "content": "func DefaultBimodalConfig() BimodalConfig {\n\treturn BimodalConfig{\n\t\tBimodalNodeWeight: DefaultBimodalNodeWeight,\n\t\tBimodalScaleMsat:  DefaultBimodalScaleMsat,\n\t\tBimodalDecayTime:  DefaultBimodalDecayTime,\n\t}\n}\n\n// BimodalEstimator returns node and pair probabilities based on historical\n// payment results based on a liquidity distribution model of the LN. The main\n// function is to estimate the direct channel probability based on a depleted\n// liquidity distribution model, with additional information decay over time. A\n// per-node probability can be mixed with the direct probability, taking into\n// account successes/failures on other channels of the forwarder.",
+      "length": 612,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "type BimodalEstimator struct {",
+      "content": "type BimodalEstimator struct {\n\t// BimodalConfig contains configuration options for our estimator.\n\tBimodalConfig\n}\n\n// NewBimodalEstimator creates a new BimodalEstimator.",
+      "length": 136,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBimodalEstimator(cfg BimodalConfig) (*BimodalEstimator, error) {",
+      "content": "func NewBimodalEstimator(cfg BimodalConfig) (*BimodalEstimator, error) {\n\tif err := cfg.validate(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &BimodalEstimator{\n\t\tBimodalConfig: cfg,\n\t}, nil\n}\n\n// Compile-time checks that interfaces are implemented.\nvar _ Estimator = (*BimodalEstimator)(nil)\nvar _ estimatorConfig = (*BimodalConfig)(nil)\n\n// config returns the current configuration of the estimator.",
+      "length": 316,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) Config() estimatorConfig {",
+      "content": "func (p *BimodalEstimator) Config() estimatorConfig {\n\treturn p.BimodalConfig\n}\n\n// String returns the estimator's configuration as a string representation.",
+      "length": 99,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) String() string {",
+      "content": "func (p *BimodalEstimator) String() string {\n\treturn fmt.Sprintf(\"estimator type: %v, decay time: %v, liquidity \"+\n\t\t\"scale: %v, node weight: %v\", BimodalEstimatorName,\n\t\tp.BimodalDecayTime, p.BimodalScaleMsat, p.BimodalNodeWeight)\n}\n\n// PairProbability estimates the probability of successfully traversing to\n// toNode based on historical payment outcomes for the from node. Those outcomes\n// are passed in via the results parameter.",
+      "length": 382,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) PairProbability(now time.Time,",
+      "content": "func (p *BimodalEstimator) PairProbability(now time.Time,\n\tresults NodeResults, toNode route.Vertex, amt lnwire.MilliSatoshi,\n\tcapacity btcutil.Amount) float64 {\n\n\t// We first compute the probability for the desired hop taking into\n\t// account previous knowledge.\n\tdirectProbability := p.directProbability(\n\t\tnow, results, toNode, amt, lnwire.NewMSatFromSatoshis(capacity),\n\t)\n\n\t// The final probability is computed by taking into account other\n\t// channels of the from node.\n\treturn p.calculateProbability(directProbability, now, results, toNode)\n}\n\n// LocalPairProbability computes the probability to reach toNode given a set of\n// previous learnings.",
+      "length": 580,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) LocalPairProbability(now time.Time,",
+      "content": "func (p *BimodalEstimator) LocalPairProbability(now time.Time,\n\tresults NodeResults, toNode route.Vertex) float64 {\n\n\t// For direct local probabilities we assume to know exactly how much we\n\t// can send over a channel, which assumes that channels are active and\n\t// have enough liquidity.\n\tdirectProbability := 1.0\n\n\t// If we had an unexpected failure for this node, we reduce the\n\t// probability for some time to avoid infinite retries.\n\tresult, ok := results[toNode]\n\tif ok && !result.FailTime.IsZero() {\n\t\ttimeAgo := now.Sub(result.FailTime)\n\n\t\t// We only expect results in the past to get a probability\n\t\t// between 0 and 1.\n\t\tif timeAgo < 0 {\n\t\t\ttimeAgo = 0\n\t\t}\n\t\texponent := -float64(timeAgo) / float64(p.BimodalDecayTime)\n\t\tdirectProbability -= math.Exp(exponent)\n\t}\n\n\treturn directProbability\n}\n\n// directProbability computes the probability to reach a node based on the\n// liquidity distribution in the LN.",
+      "length": 826,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) directProbability(now time.Time,",
+      "content": "func (p *BimodalEstimator) directProbability(now time.Time,\n\tresults NodeResults, toNode route.Vertex, amt lnwire.MilliSatoshi,\n\tcapacity lnwire.MilliSatoshi) float64 {\n\n\t// We first determine the time-adjusted success and failure amounts to\n\t// then compute a probability. We know that we can send a zero amount.\n\tsuccessAmount := lnwire.MilliSatoshi(0)\n\n\t// We know that we cannot send the full capacity.\n\tfailAmount := capacity\n\n\t// If we have information about past successes or failures, we modify\n\t// them with a time decay.\n\tresult, ok := results[toNode]\n\tif ok {\n\t\t// Apply a time decay for the amount we cannot send.\n\t\tif !result.FailTime.IsZero() {\n\t\t\tfailAmount = cannotSend(\n\t\t\t\tresult.FailAmt, capacity, now, result.FailTime,\n\t\t\t\tp.BimodalDecayTime,\n\t\t\t)\n\t\t}\n\n\t\t// Apply a time decay for the amount we can send.\n\t\tif !result.SuccessTime.IsZero() {\n\t\t\tsuccessAmount = canSend(\n\t\t\t\tresult.SuccessAmt, now, result.SuccessTime,\n\t\t\t\tp.BimodalDecayTime,\n\t\t\t)\n\t\t}\n\t}\n\n\t// Compute the direct channel probability.\n\tprobability, err := p.probabilityFormula(\n\t\tcapacity, successAmount, failAmount, amt,\n\t)\n\tif err != nil {\n\t\tlog.Errorf(\"error computing probability: %v\", err)\n\n\t\treturn 0.0\n\t}\n\n\treturn probability\n}\n\n// calculateProbability computes the total hop probability combining the channel\n// probability and historic forwarding data of other channels of the node we try\n// to send from.\n//\n// Goals:\n// * We want to incentivize good routing nodes: the more routable channels a\n// node has, the more we want to incentivize (vice versa for failures).\n// -> We reduce/increase the direct probability depending on past\n// failures/successes for other channels of the node.\n//\n// * We want to be forgiving/give other nodes a chance as well: we want to\n// forget about (non-)routable channels over time.\n// -> We weight the successes/failures with a time decay such that they will not\n// influence the total probability if a long time went by.\n//\n// * If we don't have other info, we want to solely rely on the direct\n// probability.\n//\n// * We want to be able to specify how important the other channels are compared\n// to the direct channel.\n// -> Introduce a node weight factor that weights the direct probability against\n// the node-wide average. The larger the node weight, the more important other\n// channels of the node are.\n//\n// How do failures on low fee nodes redirect routing to higher fee nodes?\n// Assumptions:\n// * attemptCostPPM of 1000 PPM\n// * constant direct channel probability of P0 (usually 0.5 for large amounts)\n// * node weight w of 0.2\n//\n// The question we want to answer is:\n// How often would a zero-fee node be tried (even if there were failures for its\n// other channels) over trying a high-fee node with 2000 PPM and no direct\n// knowledge about the channel to send over?\n//\n// The probability of a route of length l is P(l) = l * P0.\n//\n// The total probability after n failures (with the implemented method here) is:\n// P(l, n) = P(l-1) * P(n)\n// = P(l-1) * (P0 + n*0) / (1 + n*w)\n// = P(l) / (1 + n*w)\n//\n// Condition for a high-fee channel to overcome a low fee channel in the\n// Dijkstra weight function (only looking at fee and probability PPM terms):\n// highFeePPM + attemptCostPPM * 1/P(l) = 0PPM + attemptCostPPM * 1/P(l, n)\n// highFeePPM/attemptCostPPM = 1/P(l, n) - 1/P(l) =\n// = (1 + n*w)/P(l) - 1/P(l) =\n// = n*w/P(l)\n//\n// Therefore:\n// n = (highFeePPM/attemptCostPPM) * (P(l)/w) =\n// = (2000/1000) * 0.5 * l / w = l/w\n//\n// For a one-hop route we get:\n// n = 1/0.2 = 5 tolerated failures\n//\n// For a three-hop route we get:\n// n = 3/0.2 = 15 tolerated failures\n//\n// For more details on the behavior see tests.",
+      "length": 3500,
+      "tokens": 621,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) calculateProbability(directProbability float64,",
+      "content": "func (p *BimodalEstimator) calculateProbability(directProbability float64,\n\tnow time.Time, results NodeResults, toNode route.Vertex) float64 {\n\n\t// If we don't take other channels into account, we can return early.\n\tif p.BimodalNodeWeight == 0.0 {\n\t\treturn directProbability\n\t}\n\n\t// w is a parameter which determines how strongly the other channels of\n\t// a node should be incorporated, the higher the stronger.\n\tw := p.BimodalNodeWeight\n\n\t// dt determines the timeliness of the previous successes/failures\n\t// to be taken into account.\n\tdt := float64(p.BimodalDecayTime)\n\n\t// The direct channel probability is weighted fully, all other results\n\t// are weighted according to how recent the information is.\n\ttotalProbabilities := directProbability\n\ttotalWeights := 1.0\n\n\tfor peer, result := range results {\n\t\t// We don't include the direct hop probability here because it\n\t\t// is already included in totalProbabilities.\n\t\tif peer == toNode {\n\t\t\tcontinue\n\t\t}\n\n\t\t// We add probabilities weighted by how recent the info is.\n\t\tvar weight float64\n\t\tif result.SuccessAmt > 0 {\n\t\t\texponent := -float64(now.Sub(result.SuccessTime)) / dt\n\t\t\tweight = math.Exp(exponent)\n\t\t\ttotalProbabilities += w * weight\n\t\t\ttotalWeights += w * weight\n\t\t}\n\t\tif result.FailAmt > 0 {\n\t\t\texponent := -float64(now.Sub(result.FailTime)) / dt\n\t\t\tweight = math.Exp(exponent)\n\n\t\t\t// Failures don't add to total success probability.\n\t\t\ttotalWeights += w * weight\n\t\t}\n\t}\n\n\treturn totalProbabilities / totalWeights\n}\n\n// canSend returns the sendable amount over the channel, respecting time decay.\n// canSend approaches zero, if we wait for a much longer time than the decay\n// time.",
+      "length": 1521,
+      "tokens": 231,
+      "embedding": []
+    },
+    {
+      "slug": "func canSend(successAmount lnwire.MilliSatoshi, now, successTime time.Time,",
+      "content": "func canSend(successAmount lnwire.MilliSatoshi, now, successTime time.Time,\n\tdecayConstant time.Duration) lnwire.MilliSatoshi {\n\n\t// The factor approaches 0 for successTime a long time in the past,\n\t// is 1 when the successTime is now.\n\tfactor := math.Exp(\n\t\t-float64(now.Sub(successTime)) / float64(decayConstant),\n\t)\n\n\tcanSend := factor * float64(successAmount)\n\n\treturn lnwire.MilliSatoshi(canSend)\n}\n\n// cannotSend returns the not sendable amount over the channel, respecting time\n// decay. cannotSend approaches the capacity, if we wait for a much longer time\n// than the decay time.",
+      "length": 497,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func cannotSend(failAmount, capacity lnwire.MilliSatoshi, now,",
+      "content": "func cannotSend(failAmount, capacity lnwire.MilliSatoshi, now,\n\tfailTime time.Time, decayConstant time.Duration) lnwire.MilliSatoshi {\n\n\tif failAmount > capacity {\n\t\tfailAmount = capacity\n\t}\n\n\t// The factor approaches 0 for failTime a long time in the past and it\n\t// is 1 when the failTime is now.\n\tfactor := math.Exp(\n\t\t-float64(now.Sub(failTime)) / float64(decayConstant),\n\t)\n\n\tcannotSend := capacity - lnwire.MilliSatoshi(\n\t\tfactor*float64(capacity-failAmount),\n\t)\n\n\treturn cannotSend\n}\n\n// primitive computes the indefinite integral of our assumed (normalized)\n// liquidity probability distribution. The distribution of liquidity x here is\n// the function P(x) ~ exp(-x/s) + exp((x-c)/s), i.e., two exponentials residing\n// at the ends of channels. This means that we expect liquidity to be at either\n// side of the channel with capacity c. The s parameter (scale) defines how far\n// the liquidity leaks into the channel. A very low scale assumes completely\n// unbalanced channels, a very high scale assumes a random distribution. More\n// details can be found in\n// https://github.com/lightningnetwork/lnd/issues/5988#issuecomment-1131234858.",
+      "length": 1057,
+      "tokens": 152,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) primitive(c, x float64) float64 {",
+      "content": "func (p *BimodalEstimator) primitive(c, x float64) float64 {\n\ts := float64(p.BimodalScaleMsat)\n\n\t// The indefinite integral of P(x) is given by\n\t// Int P(x) dx = H(x) = s * (-e(-x/s) + e((x-c)/s)),\n\t// and its norm from 0 to c can be computed from it,\n\t// norm = [H(x)]_0^c = s * (-e(-c/s) + 1 -(1 + e(-c/s))).\n\tecs := math.Exp(-c / s)\n\texs := math.Exp(-x / s)\n\n\t// It would be possible to split the next term and reuse the factors\n\t// from before, but this can lead to numerical issues with large\n\t// numbers.\n\texcs := math.Exp((x - c) / s)\n\n\t// norm can only become zero, if c is zero, which we sorted out before\n\t// calling this method.\n\tnorm := -2*ecs + 2\n\n\t// We end up with the primitive function of the normalized P(x).\n\treturn (-exs + excs) / norm\n}\n\n// integral computes the integral of our liquidity distribution from the lower\n// to the upper value.",
+      "length": 776,
+      "tokens": 155,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) integral(capacity, lower, upper float64) float64 {",
+      "content": "func (p *BimodalEstimator) integral(capacity, lower, upper float64) float64 {\n\tif lower < 0 || lower > upper {\n\t\tlog.Errorf(\"probability integral limits nonsensical: capacity:\"+\n\t\t\t\"%v lower: %v upper: %v\", capacity, lower, upper)\n\n\t\treturn 0.0\n\t}\n\n\treturn p.primitive(capacity, upper) - p.primitive(capacity, lower)\n}\n\n// probabilityFormula computes the expected probability for a payment of\n// amountMsat given prior learnings for a channel of certain capacity.\n// successAmountMsat and failAmountMsat stand for the unsettled success and\n// failure amounts, respectively. The formula is derived using the formalism\n// presented in Pickhardt et al., https://arxiv.org/abs/2103.08576.",
+      "length": 592,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *BimodalEstimator) probabilityFormula(capacityMsat, successAmountMsat,",
+      "content": "func (p *BimodalEstimator) probabilityFormula(capacityMsat, successAmountMsat,\n\tfailAmountMsat, amountMsat lnwire.MilliSatoshi) (float64, error) {\n\n\t// Convert to positive-valued floats.\n\tcapacity := float64(capacityMsat)\n\tsuccessAmount := float64(successAmountMsat)\n\tfailAmount := float64(failAmountMsat)\n\tamount := float64(amountMsat)\n\n\t// Capacity being zero is a sentinel value to ignore the probability\n\t// estimation, we'll return the full probability here.\n\tif capacity == 0.0 {\n\t\treturn 1.0, nil\n\t}\n\n\t// We cannot send more than the capacity.\n\tif amount > capacity {\n\t\treturn 0.0, nil\n\t}\n\n\t// Mission control may have some outdated values, we correct them here.\n\t// TODO(bitromortac): there may be better decisions to make in these\n\t//  cases, e.g., resetting failAmount=cap and successAmount=0.\n\n\t// failAmount should be capacity at max.\n\tif failAmount > capacity {\n\t\tfailAmount = capacity\n\t}\n\n\t// successAmount should be capacity at max.\n\tif successAmount > capacity {\n\t\tsuccessAmount = capacity\n\t}\n\n\t// The next statement is a safety check against an illogical condition,\n\t// otherwise the renormalization integral would become zero. This may\n\t// happen if a large channel gets closed and smaller ones remain, but\n\t// it should recover with the time decay.\n\tif failAmount <= successAmount {\n\t\tlog.Tracef(\"fail amount (%v) is larger than or equal the \"+\n\t\t\t\"success amount (%v) for capacity (%v)\",\n\t\t\tfailAmountMsat, successAmountMsat, capacityMsat)\n\n\t\treturn 0.0, nil\n\t}\n\n\t// We cannot send more than the fail amount.\n\tif amount >= failAmount {\n\t\treturn 0.0, nil\n\t}\n\n\t// The success probability for payment amount a is the integral over the\n\t// prior distribution P(x), the probability to find liquidity between\n\t// the amount a and channel capacity c (or failAmount a_f):\n\t// P(X >= a | X < a_f) = Integral_{a}^{a_f} P(x) dx\n\tprob := p.integral(capacity, amount, failAmount)\n\tif math.IsNaN(prob) {\n\t\treturn 0.0, fmt.Errorf(\"non-normalized probability is NaN, \"+\n\t\t\t\"capacity: %v, amount: %v, fail amount: %v\",\n\t\t\tcapacity, amount, failAmount)\n\t}\n\n\t// If we have payment information, we need to adjust the prior\n\t// distribution P(x) and get the posterior distribution by renormalizing\n\t// the prior distribution in such a way that the probability mass lies\n\t// between a_s and a_f.\n\treNorm := p.integral(capacity, successAmount, failAmount)\n\tif math.IsNaN(reNorm) {\n\t\treturn 0.0, fmt.Errorf(\"normalization factor is NaN, \"+\n\t\t\t\"capacity: %v, success amount: %v, fail amount: %v\",\n\t\t\tcapacity, successAmount, failAmount)\n\t}\n\n\t// The normalization factor can only be zero if the success amount is\n\t// equal or larger than the fail amount. This should not happen as we\n\t// have checked this scenario above.\n\tif reNorm == 0.0 {\n\t\treturn 0.0, fmt.Errorf(\"normalization factor is zero, \"+\n\t\t\t\"capacity: %v, success amount: %v, fail amount: %v\",\n\t\t\tcapacity, successAmount, failAmount)\n\t}\n\n\tprob /= reNorm\n\n\t// Note that for payment amounts smaller than successAmount, we can get\n\t// a value larger than unity, which we cap here to get a proper\n\t// probability.\n\tif prob > 1.0 {\n\t\tif amount > successAmount {\n\t\t\treturn 0.0, fmt.Errorf(\"unexpected large probability \"+\n\t\t\t\t\"(%v) capacity: %v, amount: %v, success \"+\n\t\t\t\t\"amount: %v, fail amount: %v\", prob, capacity,\n\t\t\t\tamount, successAmount, failAmount)\n\t\t}\n\n\t\treturn 1.0, nil\n\t} else if prob < 0.0 {\n\t\treturn 0.0, fmt.Errorf(\"negative probability \"+\n\t\t\t\"(%v) capacity: %v, amount: %v, success \"+\n\t\t\t\"amount: %v, fail amount: %v\", prob, capacity,\n\t\t\tamount, successAmount, failAmount)\n\t}\n\n\treturn prob, nil\n}\n",
+      "length": 3382,
+      "tokens": 518,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/funding/batch.go",
+  "package": "funding",
+  "sections": [
+    {
+      "slug": "type batchChannel struct {",
+      "content": "type batchChannel struct {\n\tfundingReq    *InitFundingMsg\n\tpendingChanID [32]byte\n\tupdateChan    chan *lnrpc.OpenStatusUpdate\n\terrChan       chan error\n\tfundingAddr   string\n\tchanPoint     *wire.OutPoint\n\tisPending     bool\n}\n\n// processPsbtUpdate processes the first channel update message that is sent\n// once the initial part of the negotiation has completed and the funding output\n// (and therefore address) is known.",
+      "length": 383,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *batchChannel) processPsbtUpdate(u *lnrpc.OpenStatusUpdate) error {",
+      "content": "func (c *batchChannel) processPsbtUpdate(u *lnrpc.OpenStatusUpdate) error {\n\tpsbtUpdate := u.GetPsbtFund()\n\tif psbtUpdate == nil {\n\t\treturn fmt.Errorf(\"got unexpected channel update %v\", u.Update)\n\t}\n\n\tif psbtUpdate.FundingAmount != int64(c.fundingReq.LocalFundingAmt) {\n\t\treturn fmt.Errorf(\"got unexpected funding amount %d, wanted \"+\n\t\t\t\"%d\", psbtUpdate.FundingAmount,\n\t\t\tc.fundingReq.LocalFundingAmt)\n\t}\n\n\tc.fundingAddr = psbtUpdate.FundingAddress\n\n\treturn nil\n}\n\n// processPendingUpdate is the second channel update message that is sent once\n// the negotiation with the peer has completed and the channel is now pending.",
+      "length": 531,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *batchChannel) processPendingUpdate(u *lnrpc.OpenStatusUpdate) error {",
+      "content": "func (c *batchChannel) processPendingUpdate(u *lnrpc.OpenStatusUpdate) error {\n\tpendingUpd := u.GetChanPending()\n\tif pendingUpd == nil {\n\t\treturn fmt.Errorf(\"got unexpected channel update %v\", u.Update)\n\t}\n\n\thash, err := chainhash.NewHash(pendingUpd.Txid)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"could not parse outpoint TX hash: %v\", err)\n\t}\n\n\tc.chanPoint = &wire.OutPoint{\n\t\tIndex: pendingUpd.OutputIndex,\n\t\tHash:  *hash,\n\t}\n\tc.isPending = true\n\n\treturn nil\n}\n\n// RequestParser is a function that parses an incoming RPC request into the\n// internal funding initialization message.",
+      "length": 481,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "type RequestParser func(*lnrpc.OpenChannelRequest) (*InitFundingMsg, error)",
+      "content": "type RequestParser func(*lnrpc.OpenChannelRequest) (*InitFundingMsg, error)\n\n// ChannelOpener is a function that kicks off the initial channel open\n// negotiation with the peer.",
+      "length": 99,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelOpener func(*InitFundingMsg) (chan *lnrpc.OpenStatusUpdate,",
+      "content": "type ChannelOpener func(*InitFundingMsg) (chan *lnrpc.OpenStatusUpdate,\n\tchan error)\n\n// ChannelAbandoner is a function that can abandon a channel in the local\n// database, graph and arbitrator state.",
+      "length": 125,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelAbandoner func(*wire.OutPoint) error",
+      "content": "type ChannelAbandoner func(*wire.OutPoint) error\n\n// WalletKitServer is a local interface that abstracts away the methods we need\n// from the wallet kit sub server instance.",
+      "length": 122,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type WalletKitServer interface {",
+      "content": "type WalletKitServer interface {\n\t// FundPsbt creates a fully populated PSBT that contains enough inputs\n\t// to fund the outputs specified in the template.\n\tFundPsbt(context.Context,\n\t\t*walletrpc.FundPsbtRequest) (*walletrpc.FundPsbtResponse, error)\n\n\t// FinalizePsbt expects a partial transaction with all inputs and\n\t// outputs fully declared and tries to sign all inputs that belong to\n\t// the wallet.\n\tFinalizePsbt(context.Context,\n\t\t*walletrpc.FinalizePsbtRequest) (*walletrpc.FinalizePsbtResponse,\n\t\terror)\n\n\t// ReleaseOutput unlocks an output, allowing it to be available for coin\n\t// selection if it remains unspent. The ID should match the one used to\n\t// originally lock the output.\n\tReleaseOutput(context.Context,\n\t\t*walletrpc.ReleaseOutputRequest) (*walletrpc.ReleaseOutputResponse,\n\t\terror)\n}\n\n// Wallet is a local interface that abstracts away the methods we need from the\n// internal lightning wallet instance.",
+      "length": 871,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "type Wallet interface {",
+      "content": "type Wallet interface {\n\t// PsbtFundingVerify looks up a previously registered funding intent by\n\t// its pending channel ID and tries to advance the state machine by\n\t// verifying the passed PSBT.\n\tPsbtFundingVerify([32]byte, *psbt.Packet, bool) error\n\n\t// PsbtFundingFinalize looks up a previously registered funding intent\n\t// by its pending channel ID and tries to advance the state machine by\n\t// finalizing the passed PSBT.\n\tPsbtFundingFinalize([32]byte, *psbt.Packet, *wire.MsgTx) error\n\n\t// PublishTransaction performs cursory validation (dust checks, etc),\n\t// then finally broadcasts the passed transaction to the Bitcoin\n\t// network.\n\tPublishTransaction(*wire.MsgTx, string) error\n\n\t// CancelFundingIntent allows a caller to cancel a previously registered\n\t// funding intent. If no intent was found, then an error will be\n\t// returned.\n\tCancelFundingIntent([32]byte) error\n}\n\n// BatchConfig is the configuration for executing a single batch transaction for\n// opening multiple channels atomically.",
+      "length": 961,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "type BatchConfig struct {",
+      "content": "type BatchConfig struct {\n\t// RequestParser is the function that parses an incoming RPC request\n\t// into the internal funding initialization message.\n\tRequestParser RequestParser\n\n\t// ChannelOpener is the function that kicks off the initial channel open\n\t// negotiation with the peer.\n\tChannelOpener ChannelOpener\n\n\t// ChannelAbandoner is the function that can abandon a channel in the\n\t// local database, graph and arbitrator state.\n\tChannelAbandoner ChannelAbandoner\n\n\t// WalletKitServer is an instance of the wallet kit sub server that can\n\t// handle PSBT funding and finalization.\n\tWalletKitServer WalletKitServer\n\n\t// Wallet is an instance of the internal lightning wallet.\n\tWallet Wallet\n\n\t// NetParams contains the current bitcoin network parameters.\n\tNetParams *chaincfg.Params\n\n\t// Quit is the channel that is selected on to recognize if the main\n\t// server is shutting down.\n\tQuit chan struct{}\n}\n\n// Batcher is a type that can be used to perform an atomic funding of multiple\n// channels within a single on-chain transaction.",
+      "length": 982,
+      "tokens": 149,
+      "embedding": []
+    },
+    {
+      "slug": "type Batcher struct {",
+      "content": "type Batcher struct {\n\tcfg *BatchConfig\n\n\tchannels    []*batchChannel\n\tlockedUTXOs []*walletrpc.UtxoLease\n\n\tdidPublish bool\n}\n\n// NewBatcher returns a new batch channel funding helper.",
+      "length": 154,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBatcher(cfg *BatchConfig) *Batcher {",
+      "content": "func NewBatcher(cfg *BatchConfig) *Batcher {\n\treturn &Batcher{\n\t\tcfg: cfg,\n\t}\n}\n\n// BatchFund starts the atomic batch channel funding process.\n//\n// NOTE: This method should only be called once per instance.",
+      "length": 155,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Batcher) BatchFund(ctx context.Context,",
+      "content": "func (b *Batcher) BatchFund(ctx context.Context,\n\treq *lnrpc.BatchOpenChannelRequest) ([]*lnrpc.PendingUpdate, error) {\n\n\tlabel, err := labels.ValidateAPI(req.Label)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Parse and validate each individual channel.\n\tb.channels = make([]*batchChannel, 0, len(req.Channels))\n\tfor idx, rpcChannel := range req.Channels {\n\t\t// If the user specifies a channel ID, it must be exactly 32\n\t\t// bytes long.\n\t\tif len(rpcChannel.PendingChanId) > 0 &&\n\t\t\tlen(rpcChannel.PendingChanId) != 32 {\n\n\t\t\treturn nil, fmt.Errorf(\"invalid temp chan ID %x\",\n\t\t\t\trpcChannel.PendingChanId)\n\t\t}\n\n\t\tvar pendingChanID [32]byte\n\t\tif len(rpcChannel.PendingChanId) == 32 {\n\t\t\tcopy(pendingChanID[:], rpcChannel.PendingChanId)\n\n\t\t\t// Don't allow the user to be clever by just setting an\n\t\t\t// all zero channel ID, we need a \"real\" value here.\n\t\t\tif pendingChanID == emptyChannelID {\n\t\t\t\treturn nil, fmt.Errorf(\"invalid empty temp \" +\n\t\t\t\t\t\"chan ID\")\n\t\t\t}\n\t\t} else if _, err := rand.Read(pendingChanID[:]); err != nil {\n\t\t\treturn nil, fmt.Errorf(\"error making temp chan ID: %v\",\n\t\t\t\terr)\n\t\t}\n\n\t\tfundingReq, err := b.cfg.RequestParser(&lnrpc.OpenChannelRequest{\n\t\t\tSatPerVbyte:        uint64(req.SatPerVbyte),\n\t\t\tNodePubkey:         rpcChannel.NodePubkey,\n\t\t\tLocalFundingAmount: rpcChannel.LocalFundingAmount,\n\t\t\tPushSat:            rpcChannel.PushSat,\n\t\t\tTargetConf:         req.TargetConf,\n\t\t\tPrivate:            rpcChannel.Private,\n\t\t\tMinHtlcMsat:        rpcChannel.MinHtlcMsat,\n\t\t\tRemoteCsvDelay:     rpcChannel.RemoteCsvDelay,\n\t\t\tMinConfs:           req.MinConfs,\n\t\t\tSpendUnconfirmed:   req.SpendUnconfirmed,\n\t\t\tCloseAddress:       rpcChannel.CloseAddress,\n\t\t\tCommitmentType:     rpcChannel.CommitmentType,\n\t\t\tFundingShim: &lnrpc.FundingShim{\n\t\t\t\tShim: &lnrpc.FundingShim_PsbtShim{\n\t\t\t\t\tPsbtShim: &lnrpc.PsbtShim{\n\t\t\t\t\t\tPendingChanId: pendingChanID[:],\n\t\t\t\t\t\tNoPublish:     true,\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t},\n\t\t})\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"error parsing channel %d: %v\",\n\t\t\t\tidx, err)\n\t\t}\n\n\t\t// Prepare the stuff that we'll need for the internal PSBT\n\t\t// funding.\n\t\tfundingReq.PendingChanID = pendingChanID\n\t\tfundingReq.ChanFunder = chanfunding.NewPsbtAssembler(\n\t\t\tbtcutil.Amount(rpcChannel.LocalFundingAmount), nil,\n\t\t\tb.cfg.NetParams, false,\n\t\t)\n\n\t\tb.channels = append(b.channels, &batchChannel{\n\t\t\tpendingChanID: pendingChanID,\n\t\t\tfundingReq:    fundingReq,\n\t\t})\n\t}\n\n\t// From this point on we can fail for any of the channels and for any\n\t// number of reasons. This deferred function makes sure that the full\n\t// operation is actually atomic: We either succeed and publish a\n\t// transaction for the full batch or we clean up everything.\n\tdefer b.cleanup(ctx)\n\n\t// Now that we know the user input is sane, we need to kick off the\n\t// channel funding negotiation with the peers. Because we specified a\n\t// PSBT assembler, we'll get a special response in the channel once the\n\t// funding output script is known (which we need to craft the TX).\n\teg := &errgroup.Group{}\n\tfor _, channel := range b.channels {\n\t\tchannel.updateChan, channel.errChan = b.cfg.ChannelOpener(\n\t\t\tchannel.fundingReq,\n\t\t)\n\n\t\t// Launch a goroutine that waits for the initial response on\n\t\t// either the update or error chan.\n\t\tchannel := channel\n\t\teg.Go(func() error {\n\t\t\treturn b.waitForUpdate(channel, true)\n\t\t})\n\t}\n\n\t// Wait for all goroutines to report back. Any error at this stage means\n\t// we need to abort.\n\tif err := eg.Wait(); err != nil {\n\t\treturn nil, fmt.Errorf(\"error batch opening channel, initial \"+\n\t\t\t\"negotiation failed: %v\", err)\n\t}\n\n\t// We can now assemble all outputs that we're going to give to the PSBT\n\t// funding method of the wallet kit server.\n\ttxTemplate := &walletrpc.TxTemplate{\n\t\tOutputs: make(map[string]uint64),\n\t}\n\tfor _, channel := range b.channels {\n\t\ttxTemplate.Outputs[channel.fundingAddr] = uint64(\n\t\t\tchannel.fundingReq.LocalFundingAmt,\n\t\t)\n\t}\n\n\t// Great, we've now started the channel negotiation successfully with\n\t// all peers. This means we know the channel outputs for all channels\n\t// and can craft our PSBT now. We take the fee rate and min conf\n\t// settings from the first request as all of them should be equal\n\t// anyway.\n\tfirstReq := b.channels[0].fundingReq\n\tfeeRateSatPerKVByte := firstReq.FundingFeePerKw.FeePerKVByte()\n\tfundPsbtReq := &walletrpc.FundPsbtRequest{\n\t\tTemplate: &walletrpc.FundPsbtRequest_Raw{\n\t\t\tRaw: txTemplate,\n\t\t},\n\t\tFees: &walletrpc.FundPsbtRequest_SatPerVbyte{\n\t\t\tSatPerVbyte: uint64(feeRateSatPerKVByte) / 1000,\n\t\t},\n\t\tMinConfs:         firstReq.MinConfs,\n\t\tSpendUnconfirmed: firstReq.MinConfs == 0,\n\t}\n\tfundPsbtResp, err := b.cfg.WalletKitServer.FundPsbt(ctx, fundPsbtReq)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error funding PSBT for batch channel \"+\n\t\t\t\"open: %v\", err)\n\t}\n\n\t// Funding was successful. This means there are some UTXOs that are now\n\t// locked for us. We need to make sure we release them if we don't\n\t// complete the publish process.\n\tb.lockedUTXOs = fundPsbtResp.LockedUtxos\n\n\t// Parse and log the funded PSBT for debugging purposes.\n\tunsignedPacket, err := psbt.NewFromRawBytes(\n\t\tbytes.NewReader(fundPsbtResp.FundedPsbt), false,\n\t)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error parsing funded PSBT for batch \"+\n\t\t\t\"channel open: %v\", err)\n\t}\n\tlog.Tracef(\"[batchopenchannel] funded PSBT: %s\",\n\t\tbase64.StdEncoding.EncodeToString(fundPsbtResp.FundedPsbt))\n\n\t// With the funded PSBT we can now advance the funding state machine of\n\t// each of the channels.\n\tfor _, channel := range b.channels {\n\t\terr = b.cfg.Wallet.PsbtFundingVerify(\n\t\t\tchannel.pendingChanID, unsignedPacket, false,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"error verifying PSBT: %v\", err)\n\t\t}\n\t}\n\n\t// The funded PSBT was accepted by each of the assemblers, let's now\n\t// sign/finalize it.\n\tfinalizePsbtResp, err := b.cfg.WalletKitServer.FinalizePsbt(\n\t\tctx, &walletrpc.FinalizePsbtRequest{\n\t\t\tFundedPsbt: fundPsbtResp.FundedPsbt,\n\t\t},\n\t)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error finalizing PSBT for batch \"+\n\t\t\t\"channel open: %v\", err)\n\t}\n\tfinalTx := &wire.MsgTx{}\n\ttxReader := bytes.NewReader(finalizePsbtResp.RawFinalTx)\n\tif err := finalTx.Deserialize(txReader); err != nil {\n\t\treturn nil, fmt.Errorf(\"error parsing signed raw TX: %v\", err)\n\t}\n\tlog.Tracef(\"[batchopenchannel] signed PSBT: %s\",\n\t\tbase64.StdEncoding.EncodeToString(finalizePsbtResp.SignedPsbt))\n\n\t// Advance the funding state machine of each of the channels a last time\n\t// to complete the negotiation with the now signed funding TX.\n\tfor _, channel := range b.channels {\n\t\terr = b.cfg.Wallet.PsbtFundingFinalize(\n\t\t\tchannel.pendingChanID, nil, finalTx,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"error finalizing PSBT: %v\", err)\n\t\t}\n\t}\n\n\t// Now every channel should be ready for the funding transaction to be\n\t// broadcast. Let's wait for the updates that actually confirm this\n\t// state.\n\teg = &errgroup.Group{}\n\tfor _, channel := range b.channels {\n\t\t// Launch another goroutine that waits for the channel pending\n\t\t// response on the update chan.\n\t\tchannel := channel\n\t\teg.Go(func() error {\n\t\t\treturn b.waitForUpdate(channel, false)\n\t\t})\n\t}\n\n\t// Wait for all updates and make sure we're still good to proceed.\n\tif err := eg.Wait(); err != nil {\n\t\treturn nil, fmt.Errorf(\"error batch opening channel, final \"+\n\t\t\t\"negotiation failed: %v\", err)\n\t}\n\n\t// Great, we're now finally ready to publish the transaction.\n\terr = b.cfg.Wallet.PublishTransaction(finalTx, label)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error publishing final batch \"+\n\t\t\t\"transaction: %v\", err)\n\t}\n\tb.didPublish = true\n\n\trpcPoints := make([]*lnrpc.PendingUpdate, len(b.channels))\n\tfor idx, channel := range b.channels {\n\t\trpcPoints[idx] = &lnrpc.PendingUpdate{\n\t\t\tTxid:        channel.chanPoint.Hash.CloneBytes(),\n\t\t\tOutputIndex: channel.chanPoint.Index,\n\t\t}\n\t}\n\n\treturn rpcPoints, nil\n}\n\n// waitForUpdate waits for an incoming channel update (or error) for a single\n// channel.\n//\n// NOTE: Must be called in a goroutine as this blocks until an update or error\n// is received.",
+      "length": 7715,
+      "tokens": 1006,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Batcher) waitForUpdate(channel *batchChannel, firstUpdate bool) error {",
+      "content": "func (b *Batcher) waitForUpdate(channel *batchChannel, firstUpdate bool) error {\n\tselect {\n\t// If an error occurs then immediately return the error to the client.\n\tcase err := <-channel.errChan:\n\t\tlog.Errorf(\"unable to open channel to NodeKey(%x): %v\",\n\t\t\tchannel.fundingReq.TargetPubkey.SerializeCompressed(),\n\t\t\terr)\n\t\treturn err\n\n\t// Otherwise, wait for the next channel update. The first update sent\n\t// must be the signal to start the PSBT funding in our case since we\n\t// specified a PSBT shim. The second update will be the signal that the\n\t// channel is now pending.\n\tcase fundingUpdate := <-channel.updateChan:\n\t\tlog.Tracef(\"[batchopenchannel] received update: %v\",\n\t\t\tfundingUpdate)\n\n\t\t// Depending on what update we were waiting for the batch\n\t\t// channel knows what to do with it.\n\t\tif firstUpdate {\n\t\t\treturn channel.processPsbtUpdate(fundingUpdate)\n\t\t}\n\n\t\treturn channel.processPendingUpdate(fundingUpdate)\n\n\tcase <-b.cfg.Quit:\n\t\treturn errShuttingDown\n\t}\n}\n\n// cleanup tries to remove any pending state or UTXO locks in case we had to\n// abort before finalizing and publishing the funding transaction.",
+      "length": 1005,
+      "tokens": 143,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Batcher) cleanup(ctx context.Context) {",
+      "content": "func (b *Batcher) cleanup(ctx context.Context) {\n\t// Did we publish a transaction? Then there's nothing to clean up since\n\t// we succeeded.\n\tif b.didPublish {\n\t\treturn\n\t}\n\n\t// Make sure the error message doesn't sound too scary. These might be\n\t// logged quite frequently depending on where exactly things were\n\t// aborted. We could just not log any cleanup errors though it might be\n\t// helpful to debug things if something doesn't go as expected.\n\tconst errMsgTpl = \"Attempted to clean up after failed batch channel \" +\n\t\t\"open but could not %s: %v\"\n\n\t// If we failed, we clean up in reverse order. First, let's unlock the\n\t// leased outputs.\n\tfor _, lockedUTXO := range b.lockedUTXOs {\n\t\trpcOP := &lnrpc.OutPoint{\n\t\t\tOutputIndex: lockedUTXO.Outpoint.OutputIndex,\n\t\t\tTxidBytes:   lockedUTXO.Outpoint.TxidBytes,\n\t\t}\n\t\t_, err := b.cfg.WalletKitServer.ReleaseOutput(\n\t\t\tctx, &walletrpc.ReleaseOutputRequest{\n\t\t\t\tId:       lockedUTXO.Id,\n\t\t\t\tOutpoint: rpcOP,\n\t\t\t},\n\t\t)\n\t\tif err != nil {\n\t\t\tlog.Debugf(errMsgTpl, \"release locked output \"+\n\t\t\t\tlockedUTXO.Outpoint.String(), err)\n\t\t}\n\t}\n\n\t// Then go through all channels that ever got into a pending state and\n\t// remove the pending channel by abandoning them.\n\tfor _, channel := range b.channels {\n\t\tif !channel.isPending {\n\t\t\tcontinue\n\t\t}\n\n\t\terr := b.cfg.ChannelAbandoner(channel.chanPoint)\n\t\tif err != nil {\n\t\t\tlog.Debugf(errMsgTpl, \"abandon pending open channel\",\n\t\t\t\terr)\n\t\t}\n\t}\n\n\t// And finally clean up the funding shim for each channel that didn't\n\t// make it into a pending state.\n\tfor _, channel := range b.channels {\n\t\tif channel.isPending {\n\t\t\tcontinue\n\t\t}\n\n\t\terr := b.cfg.Wallet.CancelFundingIntent(channel.pendingChanID)\n\t\tif err != nil {\n\t\t\tlog.Debugf(errMsgTpl, \"cancel funding shim\", err)\n\t\t}\n\t}\n}\n",
+      "length": 1652,
+      "tokens": 244,
+      "embedding": []
+    }
+  ]
+}

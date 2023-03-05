@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/tor/cmd_info_test.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "func TestCheckOnionServiceFailOnServiceNotCreated(t *testing.T) {",
+      "content": "func TestCheckOnionServiceFailOnServiceNotCreated(t *testing.T) {\n\tt.Parallel()\n\n\t// Create a dummy tor controller.\n\tc := &Controller{}\n\n\t// Check that CheckOnionService returns an error when the service\n\t// hasn't been created.\n\trequire.Equal(t, ErrServiceNotCreated, c.CheckOnionService())\n}\n",
+      "length": 219,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCheckOnionServiceSucceed(t *testing.T) {",
+      "content": "func TestCheckOnionServiceSucceed(t *testing.T) {\n\tt.Parallel()\n\n\t// Create mock server and client connection.\n\tproxy := createTestProxy(t)\n\tt.Cleanup(proxy.cleanUp)\n\tserver := proxy.serverConn\n\n\t// Assign a fake service ID to the controller.\n\tc := &Controller{conn: proxy.clientConn, activeServiceID: \"fakeID\"}\n\n\t// Test a successful response.\n\tserverResp := \"250-onions/current=fakeID\\n250 OK\\n\"\n\n\t// Let the server mocks a given response.\n\t_, err := server.Write([]byte(serverResp))\n\trequire.NoError(t, err, \"server failed to write\")\n\n\t// For a successful response, we expect no error.\n\trequire.NoError(t, c.CheckOnionService())\n}\n",
+      "length": 564,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCheckOnionServiceFailOnServiceIDNotMatch(t *testing.T) {",
+      "content": "func TestCheckOnionServiceFailOnServiceIDNotMatch(t *testing.T) {\n\tt.Parallel()\n\n\t// Create mock server and client connection.\n\tproxy := createTestProxy(t)\n\tt.Cleanup(proxy.cleanUp)\n\tserver := proxy.serverConn\n\n\t// Assign a fake service ID to the controller.\n\tc := &Controller{conn: proxy.clientConn, activeServiceID: \"fakeID\"}\n\n\t// Mock a response with a different serviceID.\n\tserverResp := \"250-onions/current=unmatchedID\\n250 OK\\n\"\n\n\t// Let the server mocks a given response.\n\t_, err := server.Write([]byte(serverResp))\n\trequire.NoError(t, err, \"server failed to write\")\n\n\t// Check the error returned from GetServiceInfo is expected.\n\trequire.ErrorIs(t, c.CheckOnionService(), ErrServiceIDMismatch)\n}\n",
+      "length": 618,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCheckOnionServiceSucceedOnMultipleServices(t *testing.T) {",
+      "content": "func TestCheckOnionServiceSucceedOnMultipleServices(t *testing.T) {\n\tt.Parallel()\n\n\t// Create mock server and client connection.\n\tproxy := createTestProxy(t)\n\tt.Cleanup(proxy.cleanUp)\n\tserver := proxy.serverConn\n\n\t// Assign a fake service ID to the controller.\n\tc := &Controller{conn: proxy.clientConn, activeServiceID: \"fakeID\"}\n\n\t// Mock a response with a different serviceID.\n\tserverResp := \"250-onions/current=service1,fakeID,service2\\n250 OK\\n\"\n\n\t// Let the server mocks a given response.\n\t_, err := server.Write([]byte(serverResp))\n\trequire.NoError(t, err, \"server failed to write\")\n\n\t// No error is expected, the controller's ID is contained within the\n\t// list of active services.\n\trequire.NoError(t, c.CheckOnionService())\n}\n",
+      "length": 645,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCheckOnionServiceFailOnClosedConnection(t *testing.T) {",
+      "content": "func TestCheckOnionServiceFailOnClosedConnection(t *testing.T) {\n\tt.Parallel()\n\n\t// Create mock server and client connection.\n\tproxy := createTestProxy(t)\n\tt.Cleanup(proxy.cleanUp)\n\tserver := proxy.serverConn\n\n\t// Assign a fake service ID to the controller.\n\tc := &Controller{conn: proxy.clientConn, activeServiceID: \"fakeID\"}\n\n\t// Close the connection from the server side.\n\trequire.NoError(t, server.Close(), \"server failed to close conn\")\n\n\t// Check the error returned from GetServiceInfo is expected.\n\terr := c.CheckOnionService()\n\teof := errors.Is(err, io.EOF)\n\treset := errors.Is(err, syscall.ECONNRESET)\n\trequire.Truef(t, eof || reset,\n\t\t\"must of EOF or RESET error, instead got: %v\", err)\n}\n",
+      "length": 614,
+      "tokens": 80,
+      "embedding": []
+    }
+  ]
+}

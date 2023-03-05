@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/walletrpc_default.go",
-  "package": "!walletrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !walletrpc",
+      "content": "//go:build !walletrpc\n// +build !walletrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// walletCommands will return nil for non-walletrpc builds.",
+      "length": 121,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func walletCommands() []cli.Command {",
       "content": "func walletCommands() []cli.Command {\n\treturn nil\n}\n",

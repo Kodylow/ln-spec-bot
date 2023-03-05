@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/aezeed/cipherseed_integration.go",
+  "package": "aezeed",
+  "sections": [
+    {
+      "slug": "//go:build integration",
+      "content": "//go:build integration\n\npackage aezeed\n\nimport \"github.com/btcsuite/btcwallet/waddrmgr\"\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// For the purposes of our itest, we'll crank down the scrypt params a\n\t// bit.\n\tscryptN = waddrmgr.FastScryptOptions.N\n\tscryptR = waddrmgr.FastScryptOptions.R\n\tscryptP = waddrmgr.FastScryptOptions.P\n}\n",
+      "length": 197,
+      "tokens": 26,
+      "embedding": []
+    }
+  ]
+}

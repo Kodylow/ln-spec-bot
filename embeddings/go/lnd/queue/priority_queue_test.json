@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/queue/priority_queue_test.go",
+  "package": "queue",
+  "sections": [
+    {
+      "slug": "type testQueueItem struct {",
+      "content": "type testQueueItem struct {\n\tValue  int\n\tExpiry time.Time\n}\n",
+      "length": 29,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (e testQueueItem) Less(other PriorityQueueItem) bool {",
+      "content": "func (e testQueueItem) Less(other PriorityQueueItem) bool {\n\treturn e.Expiry.Before(other.(*testQueueItem).Expiry)\n}\n",
+      "length": 55,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func TestExpiryQueue(t *testing.T) {",
+      "content": "func TestExpiryQueue(t *testing.T) {\n\t// The number of elements we push to the queue.\n\tcount := 100\n\t// Generate a random permutation of a range [0, count)\n\tarray := rand.Perm(count)\n\t// t0 holds a reference time point.\n\tt0 := time.Date(1975, time.April, 5, 12, 0, 0, 0, time.UTC)\n\n\tvar testQueue PriorityQueue\n\n\tif testQueue.Len() != 0 && !testQueue.Empty() {\n\t\tt.Fatal(\"Expected the queue to be empty\")\n\t}\n\n\t// Create elements with expiry of t0 + value * second.\n\tfor _, value := range array {\n\t\ttestQueue.Push(&testQueueItem{\n\t\t\tValue:  value,\n\t\t\tExpiry: t0.Add(time.Duration(value) * time.Second),\n\t\t})\n\t}\n\n\t// Now expect that we can retrieve elements in order of their expiry.\n\tfor i := 0; i < count; i++ {\n\t\texpectedQueueLen := count - i\n\t\tif testQueue.Len() != expectedQueueLen {\n\t\t\tt.Fatalf(\"Expected the queue len %v, got %v\",\n\t\t\t\texpectedQueueLen, testQueue.Len())\n\t\t}\n\n\t\tif testQueue.Empty() {\n\t\t\tt.Fatalf(\"Did not expect the queue to be empty\")\n\t\t}\n\n\t\ttop := testQueue.Top().(*testQueueItem)\n\t\tif top.Value != i {\n\t\t\tt.Fatalf(\"Expected queue top %v, got %v\", i, top.Value)\n\t\t}\n\n\t\tpopped := testQueue.Pop().(*testQueueItem)\n\t\tif popped != top {\n\t\t\tt.Fatalf(\"Expected queue top %v equal to popped: %v\",\n\t\t\t\ttop, popped)\n\t\t}\n\t}\n\n\tif testQueue.Len() != 0 || !testQueue.Empty() {\n\t\tt.Fatalf(\"Expected the queue to be empty\")\n\t}\n}\n",
+      "length": 1251,
+      "tokens": 193,
+      "embedding": []
+    }
+  ]
+}

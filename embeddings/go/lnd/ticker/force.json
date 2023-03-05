@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/ticker/force.go",
+  "package": "ticker",
+  "sections": [
+    {
+      "slug": "type Force struct {",
+      "content": "type Force struct {\n\tisActive uint32 // used atomically\n\n\t// Force is used to force-feed a ticks into the ticker. Useful for\n\t// debugging when trying to wake an event.\n\tForce chan time.Time\n\n\tticker <-chan time.Time\n\tskip   chan struct{}\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// A compile-time constraint to ensure Force satisfies the Ticker interface.\nvar _ Ticker = (*Force)(nil)\n\n// NewForce returns a Force ticker, used for testing and debugging. It supports\n// the ability to force-feed events that get output by the",
+      "length": 492,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func NewForce(interval time.Duration) *Force {",
+      "content": "func NewForce(interval time.Duration) *Force {\n\tm := &Force{\n\t\tticker: time.NewTicker(interval).C,\n\t\tForce:  make(chan time.Time),\n\t\tskip:   make(chan struct{}),\n\t\tquit:   make(chan struct{}),\n\t}\n\n\t// Proxy the real ticks to our Force channel if we are active.\n\tm.wg.Add(1)\n\tgo func() {\n\t\tdefer m.wg.Done()\n\n\t\tfor {\n\t\t\tselect {\n\t\t\tcase t := <-m.ticker:\n\t\t\t\tif atomic.LoadUint32(&m.isActive) == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tselect {\n\t\t\t\tcase m.Force <- t:\n\t\t\t\tcase <-m.skip:\n\t\t\t\tcase <-m.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\n\t\t\tcase <-m.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}()\n\n\treturn m\n}\n\n// Ticks returns a receive-only channel that delivers times at the ticker's\n// prescribed interval when active. Force-fed ticks can be delivered at any\n// time.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 685,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Force) Ticks() <-chan time.Time {",
+      "content": "func (m *Force) Ticks() <-chan time.Time {\n\treturn m.Force\n}\n\n// Resume starts underlying time.Ticker and causes the ticker to begin\n// delivering scheduled events.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 157,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Force) Resume() {",
+      "content": "func (m *Force) Resume() {\n\tatomic.StoreUint32(&m.isActive, 1)\n}\n\n// Pause suspends the underlying ticker, such that Ticks() stops signaling at\n// regular intervals.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 174,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Force) Pause() {",
+      "content": "func (m *Force) Pause() {\n\tatomic.StoreUint32(&m.isActive, 0)\n\n\t// If the ticker fired and read isActive as true, it may still send the\n\t// tick. We'll try to send on the skip channel to drop it.\n\tselect {\n\tcase m.skip <- struct{}{}:\n\tdefault:\n\t}\n}\n\n// Stop suspends the underlying ticker, such that Ticks() stops signaling at\n// regular intervals, and permanently frees up any resources.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 391,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Force) Stop() {",
+      "content": "func (m *Force) Stop() {\n\tm.Pause()\n\tclose(m.quit)\n\tm.wg.Wait()\n}\n",
+      "length": 37,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/neutrino_default.go",
-  "package": "!neutrinorpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !neutrinorpc",
+      "content": "//go:build !neutrinorpc\n// +build !neutrinorpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// neutrinoCommands will return nil for non-neutrinorpc builds.",
+      "length": 127,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func neutrinoCommands() []cli.Command {",
       "content": "func neutrinoCommands() []cli.Command {\n\treturn nil\n}\n",

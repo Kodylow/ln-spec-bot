@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/neutrinorpc/neutrino_server.go",
+  "package": "neutrinorpc",
+  "sections": [
+    {
+      "slug": "//go:build neutrinorpc",
+      "content": "//go:build neutrinorpc\n// +build neutrinorpc\n\npackage neutrinorpc\n\nimport (\n\t\"context\"\n\t\"errors\"\n\t\"fmt\"\n\n\t\"github.com/btcsuite/btcd/blockchain\"\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/btcsuite/btcd/wire\"\n\t\"github.com/grpc-ecosystem/grpc-gateway/v2/runtime\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"google.golang.org/grpc\"\n\t\"gopkg.in/macaroon-bakery.v2/bakery\"\n)\n\nconst (\n\t// subServerName is the name of the sub rpc server. We'll use this name\n\t// to register ourselves, and we also require that the main\n\t// SubServerConfigDispatcher instance recognize it as the name of our\n\t// RPC service.\n\tsubServerName = \"NeutrinoKitRPC\"\n)\n\nvar (\n\t// macPermissions maps RPC calls to the permissions they require.\n\tmacPermissions = map[string][]bakery.Op{\n\t\t\"/neutrinorpc.NeutrinoKit/Status\": {{\n\t\t\tEntity: \"info\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/AddPeer\": {{\n\t\t\tEntity: \"peers\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/DisconnectPeer\": {{\n\t\t\tEntity: \"peers\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/IsBanned\": {{\n\t\t\tEntity: \"info\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/GetBlock\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/GetBlockHeader\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/GetCFilter\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/neutrinorpc.NeutrinoKit/GetBlockHash\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t}\n\n\t// ErrNeutrinoNotActive is an error returned when there is no running\n\t// neutrino light client instance.\n\tErrNeutrinoNotActive = errors.New(\"no active neutrino instance\")\n)\n\n// ServerShell is a shell struct holding a reference to the actual sub-server.\n// It is used to register the gRPC sub-server with the root server before we\n// have the necessary dependencies to populate the actual sub-server.",
+      "length": 1798,
+      "tokens": 195,
+      "embedding": []
+    },
+    {
+      "slug": "type ServerShell struct {",
+      "content": "type ServerShell struct {\n\tNeutrinoKitServer\n}\n\n// Server is a sub-server of the main RPC server: the neutrino RPC. This sub\n// RPC server allows external callers to access the status of the neutrino\n// currently active within lnd, as well as configuring it at runtime.",
+      "length": 238,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type Server struct {",
+      "content": "type Server struct {\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\t// Must be after the atomically used variables to not break struct\n\t// alignment.\n\tUnimplementedNeutrinoKitServer\n\n\tcfg *Config\n}\n\n// A compile time check to ensure that NeutrinoKit fully implements the\n// NeutrinoServer gRPC service.\nvar _ NeutrinoKitServer = (*Server)(nil)\n\n// New returns a new instance of the neutrinorpc Neutrino sub-server. We also\n// return the set of permissions for the macaroons that we may create within\n// this method. If the macaroons we need aren't found in the filepath, then\n// we'll create them on start up. If we're unable to locate, or create the\n// macaroons we need, then we'll return with an error.",
+      "length": 693,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {",
+      "content": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {\n\t// We don't create any new macaroons for this subserver, instead reuse\n\t// existing onchain/offchain permissions.\n\tserver := &Server{\n\t\tcfg: cfg,\n\t}\n\n\treturn server, macPermissions, nil\n}\n\n// Start launches any helper goroutines required for the Server to function.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 314,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Start() error {",
+      "content": "func (s *Server) Start() error {\n\treturn nil\n}\n\n// Stop signals any active goroutines for a graceful closure.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 130,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Stop() error {",
+      "content": "func (s *Server) Stop() error {\n\treturn nil\n}\n\n// Name returns a unique string representation of the sub-server. This can be\n// used to identify the sub-server and also de-duplicate them.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 208,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Name() string {",
+      "content": "func (s *Server) Name() string {\n\treturn subServerName\n}\n\n// RegisterWithRootServer will be called by the root gRPC server to direct a\n// sub RPC server to register itself with the main gRPC root server. Until this\n// is called, each sub-server won't be able to have\n// requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 317,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {",
+      "content": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {\n\t// We make sure that we register it with the main gRPC server to ensure\n\t// all our methods are routed properly.\n\tRegisterNeutrinoKitServer(grpcServer, r)\n\n\tlog.Debugf(\"Neutrino RPC server successfully register with root \" +\n\t\t\"gRPC server\")\n\n\treturn nil\n}\n\n// RegisterWithRestServer will be called by the root REST mux to direct a sub\n// RPC server to register itself with the main REST mux server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 538,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,",
+      "content": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,\n\tmux *runtime.ServeMux, dest string, opts []grpc.DialOption) error {\n\n\t// We make sure that we register it with the main REST server to ensure\n\t// all our methods are routed properly.\n\terr := RegisterNeutrinoKitHandlerFromEndpoint(ctx, mux, dest, opts)\n\tif err != nil {\n\t\tlog.Errorf(\"Could not register Neutrino REST server \"+\n\t\t\t\"with root REST server: %v\", err)\n\t\treturn err\n\t}\n\n\tlog.Debugf(\"Neutrino REST server successfully registered with \" +\n\t\t\"root REST server\")\n\treturn nil\n}\n\n// CreateSubServer populates the subserver's dependencies using the passed\n// SubServerConfigDispatcher. This method should fully initialize the\n// sub-server instance, making it ready for action. It returns the macaroon\n// permissions that the sub-server wishes to pass on to the root server for all\n// methods routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 854,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\tlnrpc.SubServer, lnrpc.MacaroonPerms, error) {\n\n\tsubServer, macPermissions, err := createNewSubServer(configRegistry)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tr.NeutrinoKitServer = subServer\n\treturn subServer, macPermissions, nil\n}\n\n// Status returns the current status, best block height and connected peers\n// of the neutrino node.\n//\n// NOTE: Part of the NeutrinoServer interface.",
+      "length": 374,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Status(ctx context.Context,",
+      "content": "func (s *Server) Status(ctx context.Context,\n\tin *StatusRequest) (*StatusResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tbestBlock, err := s.cfg.NeutrinoCS.BestBlock()\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not get best block: %v\", err)\n\t}\n\n\tpeers := s.cfg.NeutrinoCS.Peers()\n\tvar Peers = make([]string, len(peers))\n\tfor i, p := range peers {\n\t\tPeers[i] = p.Addr()\n\t}\n\n\treturn &StatusResponse{\n\t\tActive:      s.cfg.NeutrinoCS != nil,\n\t\tBlockHeight: bestBlock.Height,\n\t\tBlockHash:   bestBlock.Hash.String(),\n\t\tSynced:      s.cfg.NeutrinoCS.IsCurrent(),\n\t\tPeers:       Peers,\n\t}, nil\n}\n\n// AddPeer adds a new peer that has already been connected to the server.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 690,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) AddPeer(ctx context.Context,",
+      "content": "func (s *Server) AddPeer(ctx context.Context,\n\tin *AddPeerRequest) (*AddPeerResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tpeer := s.cfg.NeutrinoCS.PeerByAddr(in.PeerAddrs)\n\tif peer == nil {\n\t\treturn nil,\n\t\t\tfmt.Errorf(\"could not found peer: %s\", in.PeerAddrs)\n\t}\n\ts.cfg.NeutrinoCS.AddPeer(peer)\n\n\treturn &AddPeerResponse{}, nil\n}\n\n// DisconnectPeer disconnects a peer by target address. Both outbound and\n// inbound nodes will be searched for the target node. An error message will\n// be returned if the peer was not found.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 554,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) DisconnectPeer(ctx context.Context,",
+      "content": "func (s *Server) DisconnectPeer(ctx context.Context,\n\tin *DisconnectPeerRequest) (*DisconnectPeerResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tpeer := s.cfg.NeutrinoCS.PeerByAddr(in.PeerAddrs)\n\tif peer == nil {\n\t\treturn nil,\n\t\t\tfmt.Errorf(\"could not found peer: %s\", in.PeerAddrs)\n\t}\n\n\terr := s.cfg.NeutrinoCS.DisconnectNodeByAddr(peer.Addr())\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &DisconnectPeerResponse{}, nil\n}\n\n// IsBanned returns true if the peer is banned, otherwise false.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 511,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) IsBanned(ctx context.Context,",
+      "content": "func (s *Server) IsBanned(ctx context.Context,\n\tin *IsBannedRequest) (*IsBannedResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\treturn &IsBannedResponse{\n\t\tBanned: s.cfg.NeutrinoCS.IsBanned(in.PeerAddrs),\n\t}, nil\n}\n\n// GetBlockHeader returns a block header with a particular block hash. If the\n// block header is found in the cache, it will be returned immediately.\n// Otherwise a block will  be requested from the network, one peer at a time,\n// until one answers.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 496,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) GetBlockHeader(ctx context.Context,",
+      "content": "func (s *Server) GetBlockHeader(ctx context.Context,\n\tin *GetBlockHeaderRequest) (*GetBlockHeaderResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tvar hash chainhash.Hash\n\tif err := chainhash.Decode(&hash, in.Hash); err != nil {\n\t\treturn nil, err\n\t}\n\n\tresp, err := s.getBlock(hash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &GetBlockHeaderResponse{\n\t\tHash:              resp.Hash,\n\t\tConfirmations:     resp.Confirmations,\n\t\tStrippedSize:      resp.StrippedSize,\n\t\tSize:              resp.Size,\n\t\tWeight:            resp.Weight,\n\t\tHeight:            resp.Height,\n\t\tVersion:           resp.Version,\n\t\tVersionHex:        resp.VersionHex,\n\t\tMerkleroot:        resp.Merkleroot,\n\t\tTime:              resp.Time,\n\t\tNonce:             resp.Nonce,\n\t\tBits:              resp.Bits,\n\t\tNtx:               resp.Ntx,\n\t\tPreviousBlockHash: resp.PreviousBlockHash,\n\t\tRawHex:            resp.RawHex,\n\t}, nil\n}\n\n// GetBlock returns a block with a particular block hash. If the block is\n// found in the cache, it will be returned immediately. Otherwise a block will\n// be requested from the network, one peer at a time, until one answers.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 1122,
+      "tokens": 128,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) GetBlock(ctx context.Context,",
+      "content": "func (s *Server) GetBlock(ctx context.Context,\n\tin *GetBlockRequest) (*GetBlockResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tvar hash chainhash.Hash\n\tif err := chainhash.Decode(&hash, in.Hash); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn s.getBlock(hash)\n}\n\n// GetCFilter returns a compact filter of a particular block.\n// If found, only regular filters will be returned.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 403,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) GetCFilter(ctx context.Context,",
+      "content": "func (s *Server) GetCFilter(ctx context.Context,\n\tin *GetCFilterRequest) (*GetCFilterResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\tvar hash chainhash.Hash\n\tif err := chainhash.Decode(&hash, in.Hash); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// GetCFilter returns a compact filter from the database. If it is\n\t// missing, it requests the compact filter from the network.\n\tfilter, err := s.cfg.NeutrinoCS.GetCFilter(hash, wire.GCSFilterRegular)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tfilterlBytes, err := filter.Bytes()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &GetCFilterResponse{Filter: filterlBytes}, nil\n}\n",
+      "length": 580,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) getBlock(hash chainhash.Hash) (*GetBlockResponse, error) {",
+      "content": "func (s *Server) getBlock(hash chainhash.Hash) (*GetBlockResponse, error) {\n\tblock, err := s.cfg.NeutrinoCS.GetBlock(hash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\theader, _, err := s.cfg.NeutrinoCS.BlockHeaders.FetchHeader(&hash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tblockData, err := block.Bytes()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tstrippedData, err := block.BytesNoWitness()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tbestBlock, err := s.cfg.NeutrinoCS.BestBlock()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Convert txids to a string array.\n\ttransactions := block.Transactions()\n\ttx := make([]string, len(transactions))\n\tfor i := range transactions {\n\t\ttx[i] = transactions[i].Hash().String()\n\t}\n\n\treturn &GetBlockResponse{\n\t\tHash:          block.Hash().String(),\n\t\tConfirmations: int64(1 + bestBlock.Height - block.Height()),\n\t\tStrippedSize:  int64(len(strippedData)),\n\t\tSize:          int64(len(blockData)),\n\t\tWeight:        blockchain.GetBlockWeight(block),\n\t\tHeight:        block.Height(),\n\t\tVersion:       header.Version,\n\t\tVersionHex:    fmt.Sprintf(\"%0x\", header.Version),\n\t\tMerkleroot:    header.MerkleRoot.String(),\n\t\tTx:            tx,\n\t\tTime:          header.Timestamp.Unix(),\n\t\tNonce:         header.Nonce,\n\t\t// Format bits as a hex.\n\t\tBits:              fmt.Sprintf(\"%0x\", header.Bits),\n\t\tNtx:               int32(len(block.Transactions())),\n\t\tPreviousBlockHash: header.PrevBlock.String(),\n\t\tRawHex:            blockData,\n\t}, nil\n}\n\n// GetBlockHash returns the header hash of a block at a given height.\n//\n// NOTE: Part of the NeutrinoKitServer interface.",
+      "length": 1445,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) GetBlockHash(ctx context.Context,",
+      "content": "func (s *Server) GetBlockHash(ctx context.Context,\n\tin *GetBlockHashRequest) (*GetBlockHashResponse, error) {\n\n\tif s.cfg.NeutrinoCS == nil {\n\t\treturn nil, ErrNeutrinoNotActive\n\t}\n\n\thash, err := s.cfg.NeutrinoCS.GetBlockHash(int64(in.Height))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &GetBlockHashResponse{Hash: hash.String()}, nil\n}\n",
+      "length": 275,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/payments.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type FailureReason byte",
+      "content": "type FailureReason byte\n\nconst (\n\t// FailureReasonTimeout indicates that the payment did timeout before a\n\t// successful payment attempt was made.\n\tFailureReasonTimeout FailureReason = 0\n\n\t// FailureReasonNoRoute indicates no successful route to the\n\t// destination was found during path finding.\n\tFailureReasonNoRoute FailureReason = 1\n\n\t// FailureReasonError indicates that an unexpected error happened during\n\t// payment.\n\tFailureReasonError FailureReason = 2\n\n\t// FailureReasonPaymentDetails indicates that either the hash is unknown\n\t// or the final cltv delta or amount is incorrect.\n\tFailureReasonPaymentDetails FailureReason = 3\n\n\t// FailureReasonInsufficientBalance indicates that we didn't have enough\n\t// balance to complete the payment.\n\tFailureReasonInsufficientBalance FailureReason = 4\n\n\t// TODO(halseth): cancel state.\n\n\t// TODO(joostjager): Add failure reasons for:\n\t// LocalLiquidityInsufficient, RemoteCapacityInsufficient.\n)\n\n// Error returns a human readable error string for the FailureReason.",
+      "length": 963,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func (r FailureReason) Error() string {",
+      "content": "func (r FailureReason) Error() string {\n\treturn r.String()\n}\n\n// String returns a human readable FailureReason.",
+      "length": 68,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (r FailureReason) String() string {",
+      "content": "func (r FailureReason) String() string {\n\tswitch r {\n\tcase FailureReasonTimeout:\n\t\treturn \"timeout\"\n\tcase FailureReasonNoRoute:\n\t\treturn \"no_route\"\n\tcase FailureReasonError:\n\t\treturn \"error\"\n\tcase FailureReasonPaymentDetails:\n\t\treturn \"incorrect_payment_details\"\n\tcase FailureReasonInsufficientBalance:\n\t\treturn \"insufficient_balance\"\n\t}\n\n\treturn \"unknown\"\n}\n\n// PaymentCreationInfo is the information necessary to have ready when\n// initiating a payment, moving it into state InFlight.",
+      "length": 428,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "type PaymentCreationInfo struct {",
+      "content": "type PaymentCreationInfo struct {\n\t// PaymentIdentifier is the hash this payment is paying to in case of\n\t// non-AMP payments, and the SetID for AMP payments.\n\tPaymentIdentifier lntypes.Hash\n\n\t// Value is the amount we are paying.\n\tValue lnwire.MilliSatoshi\n\n\t// CreationTime is the time when this payment was initiated.\n\tCreationTime time.Time\n\n\t// PaymentRequest is the full payment request, if any.\n\tPaymentRequest []byte\n}\n\n// htlcBucketKey creates a composite key from prefix and id where the result is\n// simply the two concatenated.",
+      "length": 490,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func htlcBucketKey(prefix, id []byte) []byte {",
+      "content": "func htlcBucketKey(prefix, id []byte) []byte {\n\tkey := make([]byte, len(prefix)+len(id))\n\tcopy(key, prefix)\n\tcopy(key[len(prefix):], id)\n\treturn key\n}\n\n// FetchPayments returns all sent payments found in the DB.\n//\n// nolint: dupl",
+      "length": 175,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) FetchPayments() ([]*MPPayment, error) {",
+      "content": "func (d *DB) FetchPayments() ([]*MPPayment, error) {\n\tvar payments []*MPPayment\n\n\terr := kvdb.View(d, func(tx kvdb.RTx) error {\n\t\tpaymentsBucket := tx.ReadBucket(paymentsRootBucket)\n\t\tif paymentsBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn paymentsBucket.ForEach(func(k, v []byte) error {\n\t\t\tbucket := paymentsBucket.NestedReadBucket(k)\n\t\t\tif bucket == nil {\n\t\t\t\t// We only expect sub-buckets to be found in\n\t\t\t\t// this top-level bucket.\n\t\t\t\treturn fmt.Errorf(\"non bucket element in \" +\n\t\t\t\t\t\"payments bucket\")\n\t\t\t}\n\n\t\t\tp, err := fetchPayment(bucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tpayments = append(payments, p)\n\n\t\t\t// For older versions of lnd, duplicate payments to a\n\t\t\t// payment has was possible. These will be found in a\n\t\t\t// sub-bucket indexed by their sequence number if\n\t\t\t// available.\n\t\t\tduplicatePayments, err := fetchDuplicatePayments(bucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tpayments = append(payments, duplicatePayments...)\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\tpayments = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Before returning, sort the payments by their sequence number.\n\tsort.Slice(payments, func(i, j int) bool {\n\t\treturn payments[i].SequenceNum < payments[j].SequenceNum\n\t})\n\n\treturn payments, nil\n}\n",
+      "length": 1149,
+      "tokens": 165,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchCreationInfo(bucket kvdb.RBucket) (*PaymentCreationInfo, error) {",
+      "content": "func fetchCreationInfo(bucket kvdb.RBucket) (*PaymentCreationInfo, error) {\n\tb := bucket.Get(paymentCreationInfoKey)\n\tif b == nil {\n\t\treturn nil, fmt.Errorf(\"creation info not found\")\n\t}\n\n\tr := bytes.NewReader(b)\n\treturn deserializePaymentCreationInfo(r)\n}\n",
+      "length": 173,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchPayment(bucket kvdb.RBucket) (*MPPayment, error) {",
+      "content": "func fetchPayment(bucket kvdb.RBucket) (*MPPayment, error) {\n\tseqBytes := bucket.Get(paymentSequenceKey)\n\tif seqBytes == nil {\n\t\treturn nil, fmt.Errorf(\"sequence number not found\")\n\t}\n\n\tsequenceNum := binary.BigEndian.Uint64(seqBytes)\n\n\t// Get the PaymentCreationInfo.\n\tcreationInfo, err := fetchCreationInfo(bucket)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar htlcs []HTLCAttempt\n\thtlcsBucket := bucket.NestedReadBucket(paymentHtlcsBucket)\n\tif htlcsBucket != nil {\n\t\t// Get the payment attempts. This can be empty.\n\t\thtlcs, err = fetchHtlcAttempts(htlcsBucket)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Get failure reason if available.\n\tvar failureReason *FailureReason\n\tb := bucket.Get(paymentFailInfoKey)\n\tif b != nil {\n\t\treason := FailureReason(b[0])\n\t\tfailureReason = &reason\n\t}\n\n\t// Go through all HTLCs for this payment, noting whether we have any\n\t// settled HTLC, and any still in-flight.\n\tvar inflight, settled bool\n\tfor _, h := range htlcs {\n\t\tif h.Failure != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tif h.Settle != nil {\n\t\t\tsettled = true\n\t\t\tcontinue\n\t\t}\n\n\t\t// If any of the HTLCs are not failed nor settled, we\n\t\t// still have inflight HTLCs.\n\t\tinflight = true\n\t}\n\n\t// Use the DB state to determine the status of the payment.\n\tvar paymentStatus PaymentStatus\n\n\tswitch {\n\t// If any of the the HTLCs did succeed and there are no HTLCs in\n\t// flight, the payment succeeded.\n\tcase !inflight && settled:\n\t\tpaymentStatus = StatusSucceeded\n\n\t// If we have no in-flight HTLCs, and the payment failure is set, the\n\t// payment is considered failed.\n\tcase !inflight && failureReason != nil:\n\t\tpaymentStatus = StatusFailed\n\n\t// Otherwise it is still in flight.\n\tdefault:\n\t\tpaymentStatus = StatusInFlight\n\t}\n\n\treturn &MPPayment{\n\t\tSequenceNum:   sequenceNum,\n\t\tInfo:          creationInfo,\n\t\tHTLCs:         htlcs,\n\t\tFailureReason: failureReason,\n\t\tStatus:        paymentStatus,\n\t}, nil\n}\n\n// fetchHtlcAttempts retrieves all htlc attempts made for the payment found in\n// the given bucket.",
+      "length": 1840,
+      "tokens": 277,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchHtlcAttempts(bucket kvdb.RBucket) ([]HTLCAttempt, error) {",
+      "content": "func fetchHtlcAttempts(bucket kvdb.RBucket) ([]HTLCAttempt, error) {\n\thtlcsMap := make(map[uint64]*HTLCAttempt)\n\n\tattemptInfoCount := 0\n\terr := bucket.ForEach(func(k, v []byte) error {\n\t\taid := byteOrder.Uint64(k[len(k)-8:])\n\n\t\tif _, ok := htlcsMap[aid]; !ok {\n\t\t\thtlcsMap[aid] = &HTLCAttempt{}\n\t\t}\n\n\t\tvar err error\n\t\tswitch {\n\t\tcase bytes.HasPrefix(k, htlcAttemptInfoKey):\n\t\t\tattemptInfo, err := readHtlcAttemptInfo(v)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tattemptInfo.AttemptID = aid\n\t\t\thtlcsMap[aid].HTLCAttemptInfo = *attemptInfo\n\t\t\tattemptInfoCount++\n\n\t\tcase bytes.HasPrefix(k, htlcSettleInfoKey):\n\t\t\thtlcsMap[aid].Settle, err = readHtlcSettleInfo(v)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\tcase bytes.HasPrefix(k, htlcFailInfoKey):\n\t\t\thtlcsMap[aid].Failure, err = readHtlcFailInfo(v)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\tdefault:\n\t\t\treturn fmt.Errorf(\"unknown htlc attempt key\")\n\t\t}\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Sanity check that all htlcs have an attempt info.\n\tif attemptInfoCount != len(htlcsMap) {\n\t\treturn nil, errNoAttemptInfo\n\t}\n\n\tkeys := make([]uint64, len(htlcsMap))\n\ti := 0\n\tfor k := range htlcsMap {\n\t\tkeys[i] = k\n\t\ti++\n\t}\n\n\t// Sort HTLC attempts by their attempt ID. This is needed because in the\n\t// DB we store the attempts with keys prefixed by their status which\n\t// changes order (groups them together by status).\n\tsort.Slice(keys, func(i, j int) bool {\n\t\treturn keys[i] < keys[j]\n\t})\n\n\thtlcs := make([]HTLCAttempt, len(htlcsMap))\n\tfor i, key := range keys {\n\t\thtlcs[i] = *htlcsMap[key]\n\t}\n\n\treturn htlcs, nil\n}\n\n// readHtlcAttemptInfo reads the payment attempt info for this htlc.",
+      "length": 1508,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func readHtlcAttemptInfo(b []byte) (*HTLCAttemptInfo, error) {",
+      "content": "func readHtlcAttemptInfo(b []byte) (*HTLCAttemptInfo, error) {\n\tr := bytes.NewReader(b)\n\treturn deserializeHTLCAttemptInfo(r)\n}\n\n// readHtlcSettleInfo reads the settle info for the htlc. If the htlc isn't\n// settled, nil is returned.",
+      "length": 165,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func readHtlcSettleInfo(b []byte) (*HTLCSettleInfo, error) {",
+      "content": "func readHtlcSettleInfo(b []byte) (*HTLCSettleInfo, error) {\n\tr := bytes.NewReader(b)\n\treturn deserializeHTLCSettleInfo(r)\n}\n\n// readHtlcFailInfo reads the failure info for the htlc. If the htlc hasn't\n// failed, nil is returned.",
+      "length": 163,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func readHtlcFailInfo(b []byte) (*HTLCFailInfo, error) {",
+      "content": "func readHtlcFailInfo(b []byte) (*HTLCFailInfo, error) {\n\tr := bytes.NewReader(b)\n\treturn deserializeHTLCFailInfo(r)\n}\n\n// fetchFailedHtlcKeys retrieves the bucket keys of all failed HTLCs of a\n// payment bucket.",
+      "length": 150,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchFailedHtlcKeys(bucket kvdb.RBucket) ([][]byte, error) {",
+      "content": "func fetchFailedHtlcKeys(bucket kvdb.RBucket) ([][]byte, error) {\n\thtlcsBucket := bucket.NestedReadBucket(paymentHtlcsBucket)\n\n\tvar htlcs []HTLCAttempt\n\tvar err error\n\tif htlcsBucket != nil {\n\t\thtlcs, err = fetchHtlcAttempts(htlcsBucket)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Now iterate though them and save the bucket keys for the failed\n\t// HTLCs.\n\tvar htlcKeys [][]byte\n\tfor _, h := range htlcs {\n\t\tif h.Failure == nil {\n\t\t\tcontinue\n\t\t}\n\n\t\thtlcKeyBytes := make([]byte, 8)\n\t\tbinary.BigEndian.PutUint64(htlcKeyBytes, h.AttemptID)\n\n\t\thtlcKeys = append(htlcKeys, htlcKeyBytes)\n\t}\n\n\treturn htlcKeys, nil\n}\n\n// PaymentsQuery represents a query to the payments database starting or ending\n// at a certain offset index. The number of retrieved records can be limited.",
+      "length": 679,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "type PaymentsQuery struct {",
+      "content": "type PaymentsQuery struct {\n\t// IndexOffset determines the starting point of the payments query and\n\t// is always exclusive. In normal order, the query starts at the next\n\t// higher (available) index compared to IndexOffset. In reversed order,\n\t// the query ends at the next lower (available) index compared to the\n\t// IndexOffset. In the case of a zero index_offset, the query will start\n\t// with the oldest payment when paginating forwards, or will end with\n\t// the most recent payment when paginating backwards.\n\tIndexOffset uint64\n\n\t// MaxPayments is the maximal number of payments returned in the\n\t// payments query.\n\tMaxPayments uint64\n\n\t// Reversed gives a meaning to the IndexOffset. If reversed is set to\n\t// true, the query will fetch payments with indices lower than the\n\t// IndexOffset, otherwise, it will return payments with indices greater\n\t// than the IndexOffset.\n\tReversed bool\n\n\t// If IncludeIncomplete is true, then return payments that have not yet\n\t// fully completed. This means that pending payments, as well as failed\n\t// payments will show up if this field is set to true.\n\tIncludeIncomplete bool\n\n\t// CountTotal indicates that all payments currently present in the\n\t// payment index (complete and incomplete) should be counted.\n\tCountTotal bool\n\n\t// CreationDateStart, if set, filters out all payments with a creation\n\t// date greater than or euqal to it.\n\tCreationDateStart time.Time\n\n\t// CreationDateEnd, if set, filters out all payments with a creation\n\t// date less than or euqal to it.\n\tCreationDateEnd time.Time\n}\n\n// PaymentsResponse contains the result of a query to the payments database.\n// It includes the set of payments that match the query and integers which\n// represent the index of the first and last item returned in the series of\n// payments. These integers allow callers to resume their query in the event\n// that the query's response exceeds the max number of returnable events.",
+      "length": 1857,
+      "tokens": 307,
+      "embedding": []
+    },
+    {
+      "slug": "type PaymentsResponse struct {",
+      "content": "type PaymentsResponse struct {\n\t// Payments is the set of payments returned from the database for the\n\t// PaymentsQuery.\n\tPayments []*MPPayment\n\n\t// FirstIndexOffset is the index of the first element in the set of\n\t// returned MPPayments. Callers can use this to resume their query\n\t// in the event that the slice has too many events to fit into a single\n\t// response. The offset can be used to continue reverse pagination.\n\tFirstIndexOffset uint64\n\n\t// LastIndexOffset is the index of the last element in the set of\n\t// returned MPPayments. Callers can use this to resume their query\n\t// in the event that the slice has too many events to fit into a single\n\t// response. The offset can be used to continue forward pagination.\n\tLastIndexOffset uint64\n\n\t// TotalCount represents the total number of payments that are currently\n\t// stored in the payment database. This will only be set if the\n\t// CountTotal field in the query was set to true.\n\tTotalCount uint64\n}\n\n// QueryPayments is a query to the payments database which is restricted\n// to a subset of payments by the payments query, containing an offset\n// index and a maximum number of returned payments.",
+      "length": 1104,
+      "tokens": 194,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) QueryPayments(query PaymentsQuery) (PaymentsResponse, error) {",
+      "content": "func (d *DB) QueryPayments(query PaymentsQuery) (PaymentsResponse, error) {\n\tvar (\n\t\tresp         PaymentsResponse\n\t\tstartDateSet = !query.CreationDateStart.IsZero()\n\t\tendDateSet   = !query.CreationDateEnd.IsZero()\n\t)\n\n\tif err := kvdb.View(d, func(tx kvdb.RTx) error {\n\t\t// Get the root payments bucket.\n\t\tpaymentsBucket := tx.ReadBucket(paymentsRootBucket)\n\t\tif paymentsBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Get the index bucket which maps sequence number -> payment\n\t\t// hash and duplicate bool. If we have a payments bucket, we\n\t\t// should have an indexes bucket as well.\n\t\tindexes := tx.ReadBucket(paymentsIndexBucket)\n\t\tif indexes == nil {\n\t\t\treturn fmt.Errorf(\"index bucket does not exist\")\n\t\t}\n\n\t\t// accumulatePayments gets payments with the sequence number\n\t\t// and hash provided and adds them to our list of payments if\n\t\t// they meet the criteria of our query. It returns the number\n\t\t// of payments that were added.\n\t\taccumulatePayments := func(sequenceKey, hash []byte) (bool,\n\t\t\terror) {\n\n\t\t\tr := bytes.NewReader(hash)\n\t\t\tpaymentHash, err := deserializePaymentIndex(r)\n\t\t\tif err != nil {\n\t\t\t\treturn false, err\n\t\t\t}\n\n\t\t\tpayment, err := fetchPaymentWithSequenceNumber(\n\t\t\t\ttx, paymentHash, sequenceKey,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn false, err\n\t\t\t}\n\n\t\t\t// To keep compatibility with the old API, we only\n\t\t\t// return non-succeeded payments if requested.\n\t\t\tif payment.Status != StatusSucceeded &&\n\t\t\t\t!query.IncludeIncomplete {\n\n\t\t\t\treturn false, err\n\t\t\t}\n\n\t\t\t// Skip any payments that were created before the\n\t\t\t// specified time.\n\t\t\tif startDateSet && payment.Info.CreationTime.Before(\n\t\t\t\tquery.CreationDateStart,\n\t\t\t) {\n\n\t\t\t\treturn false, nil\n\t\t\t}\n\n\t\t\t// Skip any payments that were created after the\n\t\t\t// specified time.\n\t\t\tif endDateSet && payment.Info.CreationTime.After(\n\t\t\t\tquery.CreationDateEnd,\n\t\t\t) {\n\n\t\t\t\treturn false, nil\n\t\t\t}\n\n\t\t\t// At this point, we've exhausted the offset, so we'll\n\t\t\t// begin collecting invoices found within the range.\n\t\t\tresp.Payments = append(resp.Payments, payment)\n\t\t\treturn true, nil\n\t\t}\n\n\t\t// Create a paginator which reads from our sequence index bucket\n\t\t// with the parameters provided by the payments query.\n\t\tpaginator := newPaginator(\n\t\t\tindexes.ReadCursor(), query.Reversed, query.IndexOffset,\n\t\t\tquery.MaxPayments,\n\t\t)\n\n\t\t// Run a paginated query, adding payments to our response.\n\t\tif err := paginator.query(accumulatePayments); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Counting the total number of payments is expensive, since we\n\t\t// literally have to traverse the cursor linearly, which can\n\t\t// take quite a while. So it's an optional query parameter.\n\t\tif query.CountTotal {\n\t\t\tvar (\n\t\t\t\ttotalPayments uint64\n\t\t\t\terr           error\n\t\t\t)\n\t\t\tcountFn := func(_, _ []byte) error {\n\t\t\t\ttotalPayments++\n\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\t// In non-boltdb database backends, there's a faster\n\t\t\t// ForAll query that allows for batch fetching items.\n\t\t\tif fastBucket, ok := indexes.(kvdb.ExtendedRBucket); ok {\n\t\t\t\terr = fastBucket.ForAll(countFn)\n\t\t\t} else {\n\t\t\t\terr = indexes.ForEach(countFn)\n\t\t\t}\n\t\t\tif err != nil {\n\t\t\t\treturn fmt.Errorf(\"error counting payments: %v\",\n\t\t\t\t\terr)\n\t\t\t}\n\n\t\t\tresp.TotalCount = totalPayments\n\t\t}\n\n\t\treturn nil\n\t}, func() {\n\t\tresp = PaymentsResponse{}\n\t}); err != nil {\n\t\treturn resp, err\n\t}\n\n\t// Need to swap the payments slice order if reversed order.\n\tif query.Reversed {\n\t\tfor l, r := 0, len(resp.Payments)-1; l < r; l, r = l+1, r-1 {\n\t\t\tresp.Payments[l], resp.Payments[r] =\n\t\t\t\tresp.Payments[r], resp.Payments[l]\n\t\t}\n\t}\n\n\t// Set the first and last index of the returned payments so that the\n\t// caller can resume from this point later on.\n\tif len(resp.Payments) > 0 {\n\t\tresp.FirstIndexOffset = resp.Payments[0].SequenceNum\n\t\tresp.LastIndexOffset =\n\t\t\tresp.Payments[len(resp.Payments)-1].SequenceNum\n\t}\n\n\treturn resp, nil\n}\n\n// fetchPaymentWithSequenceNumber get the payment which matches the payment hash\n// *and* sequence number provided from the database. This is required because\n// we previously had more than one payment per hash, so we have multiple indexes\n// pointing to a single payment; we want to retrieve the correct one.",
+      "length": 3904,
+      "tokens": 555,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchPaymentWithSequenceNumber(tx kvdb.RTx, paymentHash lntypes.Hash,",
+      "content": "func fetchPaymentWithSequenceNumber(tx kvdb.RTx, paymentHash lntypes.Hash,\n\tsequenceNumber []byte) (*MPPayment, error) {\n\n\t// We can now lookup the payment keyed by its hash in\n\t// the payments root bucket.\n\tbucket, err := fetchPaymentBucket(tx, paymentHash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// A single payment hash can have multiple payments associated with it.\n\t// We lookup our sequence number first, to determine whether this is\n\t// the payment we are actually looking for.\n\tseqBytes := bucket.Get(paymentSequenceKey)\n\tif seqBytes == nil {\n\t\treturn nil, ErrNoSequenceNumber\n\t}\n\n\t// If this top level payment has the sequence number we are looking for,\n\t// return it.\n\tif bytes.Equal(seqBytes, sequenceNumber) {\n\t\treturn fetchPayment(bucket)\n\t}\n\n\t// If we were not looking for the top level payment, we are looking for\n\t// one of our duplicate payments. We need to iterate through the seq\n\t// numbers in this bucket to find the correct payments. If we do not\n\t// find a duplicate payments bucket here, something is wrong.\n\tdup := bucket.NestedReadBucket(duplicatePaymentsBucket)\n\tif dup == nil {\n\t\treturn nil, ErrNoDuplicateBucket\n\t}\n\n\tvar duplicatePayment *MPPayment\n\terr = dup.ForEach(func(k, v []byte) error {\n\t\tsubBucket := dup.NestedReadBucket(k)\n\t\tif subBucket == nil {\n\t\t\t// We one bucket for each duplicate to be found.\n\t\t\treturn ErrNoDuplicateNestedBucket\n\t\t}\n\n\t\tseqBytes := subBucket.Get(duplicatePaymentSequenceKey)\n\t\tif seqBytes == nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If this duplicate payment is not the sequence number we are\n\t\t// looking for, we can continue.\n\t\tif !bytes.Equal(seqBytes, sequenceNumber) {\n\t\t\treturn nil\n\t\t}\n\n\t\tduplicatePayment, err = fetchDuplicatePayment(subBucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If none of the duplicate payments matched our sequence number, we\n\t// failed to find the payment with this sequence number; something is\n\t// wrong.\n\tif duplicatePayment == nil {\n\t\treturn nil, ErrDuplicateNotFound\n\t}\n\n\treturn duplicatePayment, nil\n}\n\n// DeletePayment deletes a payment from the DB given its payment hash. If\n// failedHtlcsOnly is set, only failed HTLC attempts of the payment will be\n// deleted.",
+      "length": 2063,
+      "tokens": 326,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) DeletePayment(paymentHash lntypes.Hash,",
+      "content": "func (d *DB) DeletePayment(paymentHash lntypes.Hash,\n\tfailedHtlcsOnly bool) error {\n\n\treturn kvdb.Update(d, func(tx kvdb.RwTx) error {\n\t\tpayments := tx.ReadWriteBucket(paymentsRootBucket)\n\t\tif payments == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tbucket := payments.NestedReadWriteBucket(paymentHash[:])\n\t\tif bucket == nil {\n\t\t\treturn fmt.Errorf(\"non bucket element in payments \" +\n\t\t\t\t\"bucket\")\n\t\t}\n\n\t\t// If the status is InFlight, we cannot safely delete\n\t\t// the payment information, so we return early.\n\t\tpaymentStatus, err := fetchPaymentStatus(bucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If the status is InFlight, we cannot safely delete\n\t\t// the payment information, so we return an error.\n\t\tif paymentStatus == StatusInFlight {\n\t\t\treturn fmt.Errorf(\"payment '%v' has status InFlight \"+\n\t\t\t\t\"and therefore cannot be deleted\",\n\t\t\t\tpaymentHash.String())\n\t\t}\n\n\t\t// Delete the failed HTLC attempts we found.\n\t\tif failedHtlcsOnly {\n\t\t\ttoDelete, err := fetchFailedHtlcKeys(bucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\thtlcsBucket := bucket.NestedReadWriteBucket(\n\t\t\t\tpaymentHtlcsBucket,\n\t\t\t)\n\n\t\t\tfor _, htlcID := range toDelete {\n\t\t\t\terr = htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcAttemptInfoKey, htlcID),\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\terr = htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcFailInfoKey, htlcID),\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\terr = htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcSettleInfoKey, htlcID),\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\n\t\t\treturn nil\n\t\t}\n\n\t\tseqNrs, err := fetchSequenceNumbers(bucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif err := payments.DeleteNestedBucket(paymentHash[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tindexBucket := tx.ReadWriteBucket(paymentsIndexBucket)\n\t\tfor _, k := range seqNrs {\n\t\t\tif err := indexBucket.Delete(k); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n}\n\n// DeletePayments deletes all completed and failed payments from the DB. If\n// failedOnly is set, only failed payments will be considered for deletion. If\n// failedHtlsOnly is set, the payment itself won't be deleted, only failed HTLC\n// attempts.",
+      "length": 1998,
+      "tokens": 279,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) DeletePayments(failedOnly, failedHtlcsOnly bool) error {",
+      "content": "func (d *DB) DeletePayments(failedOnly, failedHtlcsOnly bool) error {\n\treturn kvdb.Update(d, func(tx kvdb.RwTx) error {\n\t\tpayments := tx.ReadWriteBucket(paymentsRootBucket)\n\t\tif payments == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tvar (\n\t\t\t// deleteBuckets is the set of payment buckets we need\n\t\t\t// to delete.\n\t\t\tdeleteBuckets [][]byte\n\n\t\t\t// deleteIndexes is the set of indexes pointing to these\n\t\t\t// payments that need to be deleted.\n\t\t\tdeleteIndexes [][]byte\n\n\t\t\t// deleteHtlcs maps a payment hash to the HTLC IDs we\n\t\t\t// want to delete for that payment.\n\t\t\tdeleteHtlcs = make(map[lntypes.Hash][][]byte)\n\t\t)\n\t\terr := payments.ForEach(func(k, _ []byte) error {\n\t\t\tbucket := payments.NestedReadBucket(k)\n\t\t\tif bucket == nil {\n\t\t\t\t// We only expect sub-buckets to be found in\n\t\t\t\t// this top-level bucket.\n\t\t\t\treturn fmt.Errorf(\"non bucket element in \" +\n\t\t\t\t\t\"payments bucket\")\n\t\t\t}\n\n\t\t\t// If the status is InFlight, we cannot safely delete\n\t\t\t// the payment information, so we return early.\n\t\t\tpaymentStatus, err := fetchPaymentStatus(bucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// If the status is InFlight, we cannot safely delete\n\t\t\t// the payment information, so we return early.\n\t\t\tif paymentStatus == StatusInFlight {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\t// If we requested to only delete failed payments, we\n\t\t\t// can return if this one is not.\n\t\t\tif failedOnly && paymentStatus != StatusFailed {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\t// If we are only deleting failed HTLCs, fetch them.\n\t\t\tif failedHtlcsOnly {\n\t\t\t\ttoDelete, err := fetchFailedHtlcKeys(bucket)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\thash, err := lntypes.MakeHash(k)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tdeleteHtlcs[hash] = toDelete\n\n\t\t\t\t// We return, we are only deleting attempts.\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\t// Add the bucket to the set of buckets we can delete.\n\t\t\tdeleteBuckets = append(deleteBuckets, k)\n\n\t\t\t// Get all the sequence number associated with the\n\t\t\t// payment, including duplicates.\n\t\t\tseqNrs, err := fetchSequenceNumbers(bucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tdeleteIndexes = append(deleteIndexes, seqNrs...)\n\t\t\treturn nil\n\t\t})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Delete the failed HTLC attempts we found.\n\t\tfor hash, htlcIDs := range deleteHtlcs {\n\t\t\tbucket := payments.NestedReadWriteBucket(hash[:])\n\t\t\thtlcsBucket := bucket.NestedReadWriteBucket(\n\t\t\t\tpaymentHtlcsBucket,\n\t\t\t)\n\n\t\t\tfor _, aid := range htlcIDs {\n\t\t\t\tif err := htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcAttemptInfoKey, aid),\n\t\t\t\t); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tif err := htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcFailInfoKey, aid),\n\t\t\t\t); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tif err := htlcsBucket.Delete(\n\t\t\t\t\thtlcBucketKey(htlcSettleInfoKey, aid),\n\t\t\t\t); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tfor _, k := range deleteBuckets {\n\t\t\tif err := payments.DeleteNestedBucket(k); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\t// Get our index bucket and delete all indexes pointing to the\n\t\t// payments we are deleting.\n\t\tindexBucket := tx.ReadWriteBucket(paymentsIndexBucket)\n\t\tfor _, k := range deleteIndexes {\n\t\t\tif err := indexBucket.Delete(k); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n}\n\n// fetchSequenceNumbers fetches all the sequence numbers associated with a\n// payment, including those belonging to any duplicate payments.",
+      "length": 3133,
+      "tokens": 461,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchSequenceNumbers(paymentBucket kvdb.RBucket) ([][]byte, error) {",
+      "content": "func fetchSequenceNumbers(paymentBucket kvdb.RBucket) ([][]byte, error) {\n\tseqNum := paymentBucket.Get(paymentSequenceKey)\n\tif seqNum == nil {\n\t\treturn nil, errors.New(\"expected sequence number\")\n\t}\n\n\tsequenceNumbers := [][]byte{seqNum}\n\n\t// Get the duplicate payments bucket, if it has no duplicates, just\n\t// return early with the payment sequence number.\n\tduplicates := paymentBucket.NestedReadBucket(duplicatePaymentsBucket)\n\tif duplicates == nil {\n\t\treturn sequenceNumbers, nil\n\t}\n\n\t// If we do have duplicated, they are keyed by sequence number, so we\n\t// iterate through the duplicates bucket and add them to our set of\n\t// sequence numbers.\n\tif err := duplicates.ForEach(func(k, v []byte) error {\n\t\tsequenceNumbers = append(sequenceNumbers, k)\n\t\treturn nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn sequenceNumbers, nil\n}\n\n// nolint: dupl",
+      "length": 751,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func serializePaymentCreationInfo(w io.Writer, c *PaymentCreationInfo) error {",
+      "content": "func serializePaymentCreationInfo(w io.Writer, c *PaymentCreationInfo) error {\n\tvar scratch [8]byte\n\n\tif _, err := w.Write(c.PaymentIdentifier[:]); err != nil {\n\t\treturn err\n\t}\n\n\tbyteOrder.PutUint64(scratch[:], uint64(c.Value))\n\tif _, err := w.Write(scratch[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := serializeTime(w, c.CreationTime); err != nil {\n\t\treturn err\n\t}\n\n\tbyteOrder.PutUint32(scratch[:4], uint32(len(c.PaymentRequest)))\n\tif _, err := w.Write(scratch[:4]); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := w.Write(c.PaymentRequest[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 482,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializePaymentCreationInfo(r io.Reader) (*PaymentCreationInfo, error) {",
+      "content": "func deserializePaymentCreationInfo(r io.Reader) (*PaymentCreationInfo, error) {\n\tvar scratch [8]byte\n\n\tc := &PaymentCreationInfo{}\n\n\tif _, err := io.ReadFull(r, c.PaymentIdentifier[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn nil, err\n\t}\n\tc.Value = lnwire.MilliSatoshi(byteOrder.Uint64(scratch[:]))\n\n\tcreationTime, err := deserializeTime(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tc.CreationTime = creationTime\n\n\tif _, err := io.ReadFull(r, scratch[:4]); err != nil {\n\t\treturn nil, err\n\t}\n\n\treqLen := uint32(byteOrder.Uint32(scratch[:4]))\n\tpayReq := make([]byte, reqLen)\n\tif reqLen > 0 {\n\t\tif _, err := io.ReadFull(r, payReq); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\tc.PaymentRequest = payReq\n\n\treturn c, nil\n}\n",
+      "length": 655,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeHTLCAttemptInfo(w io.Writer, a *HTLCAttemptInfo) error {",
+      "content": "func serializeHTLCAttemptInfo(w io.Writer, a *HTLCAttemptInfo) error {\n\tif err := WriteElements(w, a.sessionKey); err != nil {\n\t\treturn err\n\t}\n\n\tif err := SerializeRoute(w, a.Route); err != nil {\n\t\treturn err\n\t}\n\n\tif err := serializeTime(w, a.AttemptTime); err != nil {\n\t\treturn err\n\t}\n\n\t// If the hash is nil we can just return.\n\tif a.Hash == nil {\n\t\treturn nil\n\t}\n\n\tif _, err := w.Write(a.Hash[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 351,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeHTLCAttemptInfo(r io.Reader) (*HTLCAttemptInfo, error) {",
+      "content": "func deserializeHTLCAttemptInfo(r io.Reader) (*HTLCAttemptInfo, error) {\n\ta := &HTLCAttemptInfo{}\n\terr := ReadElements(r, &a.sessionKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\ta.Route, err = DeserializeRoute(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\ta.AttemptTime, err = deserializeTime(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thash := lntypes.Hash{}\n\t_, err = io.ReadFull(r, hash[:])\n\n\tswitch {\n\t// Older payment attempts wouldn't have the hash set, in which case we\n\t// can just return.\n\tcase err == io.EOF, err == io.ErrUnexpectedEOF:\n\t\treturn a, nil\n\n\tcase err != nil:\n\t\treturn nil, err\n\n\tdefault:\n\t}\n\n\ta.Hash = &hash\n\n\treturn a, nil\n}\n",
+      "length": 536,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeHop(w io.Writer, h *route.Hop) error {",
+      "content": "func serializeHop(w io.Writer, h *route.Hop) error {\n\tif err := WriteElements(w,\n\t\th.PubKeyBytes[:],\n\t\th.ChannelID,\n\t\th.OutgoingTimeLock,\n\t\th.AmtToForward,\n\t); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Write(w, byteOrder, h.LegacyPayload); err != nil {\n\t\treturn err\n\t}\n\n\t// For legacy payloads, we don't need to write any TLV records, so\n\t// we'll write a zero indicating the our serialized TLV map has no\n\t// records.\n\tif h.LegacyPayload {\n\t\treturn WriteElements(w, uint32(0))\n\t}\n\n\t// Gather all non-primitive TLV records so that they can be serialized\n\t// as a single blob.\n\t//\n\t// TODO(conner): add migration to unify all fields in a single TLV\n\t// blobs. The split approach will cause headaches down the road as more\n\t// fields are added, which we can avoid by having a single TLV stream\n\t// for all payload fields.\n\tvar records []tlv.Record\n\tif h.MPP != nil {\n\t\trecords = append(records, h.MPP.Record())\n\t}\n\n\tif h.Metadata != nil {\n\t\trecords = append(records, record.NewMetadataRecord(&h.Metadata))\n\t}\n\n\t// Final sanity check to absolutely rule out custom records that are not\n\t// custom and write into the standard range.\n\tif err := h.CustomRecords.Validate(); err != nil {\n\t\treturn err\n\t}\n\n\t// Convert custom records to tlv and add to the record list.\n\t// MapToRecords sorts the list, so adding it here will keep the list\n\t// canonical.\n\ttlvRecords := tlv.MapToRecords(h.CustomRecords)\n\trecords = append(records, tlvRecords...)\n\n\t// Otherwise, we'll transform our slice of records into a map of the\n\t// raw bytes, then serialize them in-line with a length (number of\n\t// elements) prefix.\n\tmapRecords, err := tlv.RecordsToMap(records)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tnumRecords := uint32(len(mapRecords))\n\tif err := WriteElements(w, numRecords); err != nil {\n\t\treturn err\n\t}\n\n\tfor recordType, rawBytes := range mapRecords {\n\t\tif err := WriteElements(w, recordType); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif err := wire.WriteVarBytes(w, 0, rawBytes); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// maxOnionPayloadSize is the largest Sphinx payload possible, so we don't need\n// to read/write a TLV stream larger than this.\nconst maxOnionPayloadSize = 1300\n",
+      "length": 2043,
+      "tokens": 331,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeHop(r io.Reader) (*route.Hop, error) {",
+      "content": "func deserializeHop(r io.Reader) (*route.Hop, error) {\n\th := &route.Hop{}\n\n\tvar pub []byte\n\tif err := ReadElements(r, &pub); err != nil {\n\t\treturn nil, err\n\t}\n\tcopy(h.PubKeyBytes[:], pub)\n\n\tif err := ReadElements(r,\n\t\t&h.ChannelID, &h.OutgoingTimeLock, &h.AmtToForward,\n\t); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// TODO(roasbeef): change field to allow LegacyPayload false to be the\n\t// legacy default?\n\terr := binary.Read(r, byteOrder, &h.LegacyPayload)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar numElements uint32\n\tif err := ReadElements(r, &numElements); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If there're no elements, then we can return early.\n\tif numElements == 0 {\n\t\treturn h, nil\n\t}\n\n\ttlvMap := make(map[uint64][]byte)\n\tfor i := uint32(0); i < numElements; i++ {\n\t\tvar tlvType uint64\n\t\tif err := ReadElements(r, &tlvType); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\trawRecordBytes, err := wire.ReadVarBytes(\n\t\t\tr, 0, maxOnionPayloadSize, \"tlv\",\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ttlvMap[tlvType] = rawRecordBytes\n\t}\n\n\t// If the MPP type is present, remove it from the generic TLV map and\n\t// parse it back into a proper MPP struct.\n\t//\n\t// TODO(conner): add migration to unify all fields in a single TLV\n\t// blobs. The split approach will cause headaches down the road as more\n\t// fields are added, which we can avoid by having a single TLV stream\n\t// for all payload fields.\n\tmppType := uint64(record.MPPOnionType)\n\tif mppBytes, ok := tlvMap[mppType]; ok {\n\t\tdelete(tlvMap, mppType)\n\n\t\tvar (\n\t\t\tmpp    = &record.MPP{}\n\t\t\tmppRec = mpp.Record()\n\t\t\tr      = bytes.NewReader(mppBytes)\n\t\t)\n\t\terr := mppRec.Decode(r, uint64(len(mppBytes)))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\th.MPP = mpp\n\t}\n\n\tmetadataType := uint64(record.MetadataOnionType)\n\tif metadata, ok := tlvMap[metadataType]; ok {\n\t\tdelete(tlvMap, metadataType)\n\n\t\th.Metadata = metadata\n\t}\n\n\th.CustomRecords = tlvMap\n\n\treturn h, nil\n}\n\n// SerializeRoute serializes a route.",
+      "length": 1811,
+      "tokens": 288,
+      "embedding": []
+    },
+    {
+      "slug": "func SerializeRoute(w io.Writer, r route.Route) error {",
+      "content": "func SerializeRoute(w io.Writer, r route.Route) error {\n\tif err := WriteElements(w,\n\t\tr.TotalTimeLock, r.TotalAmount, r.SourcePubKey[:],\n\t); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteElements(w, uint32(len(r.Hops))); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, h := range r.Hops {\n\t\tif err := serializeHop(w, h); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// DeserializeRoute deserializes a route.",
+      "length": 327,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func DeserializeRoute(r io.Reader) (route.Route, error) {",
+      "content": "func DeserializeRoute(r io.Reader) (route.Route, error) {\n\trt := route.Route{}\n\tif err := ReadElements(r,\n\t\t&rt.TotalTimeLock, &rt.TotalAmount,\n\t); err != nil {\n\t\treturn rt, err\n\t}\n\n\tvar pub []byte\n\tif err := ReadElements(r, &pub); err != nil {\n\t\treturn rt, err\n\t}\n\tcopy(rt.SourcePubKey[:], pub)\n\n\tvar numHops uint32\n\tif err := ReadElements(r, &numHops); err != nil {\n\t\treturn rt, err\n\t}\n\n\tvar hops []*route.Hop\n\tfor i := uint32(0); i < numHops; i++ {\n\t\thop, err := deserializeHop(r)\n\t\tif err != nil {\n\t\t\treturn rt, err\n\t\t}\n\t\thops = append(hops, hop)\n\t}\n\trt.Hops = hops\n\n\treturn rt, nil\n}\n",
+      "length": 501,
+      "tokens": 89,
+      "embedding": []
+    }
+  ]
+}

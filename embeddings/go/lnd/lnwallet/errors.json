@@ -1,0 +1,174 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/errors.go",
+  "package": "lnwallet",
+  "sections": [
+    {
+      "slug": "type ReservationError struct {",
+      "content": "type ReservationError struct {\n\terror\n}\n\n// A compile time check to ensure ReservationError implements the error\n// interface.\nvar _ error = (*ReservationError)(nil)\n\n// ErrZeroCapacity returns an error indicating the funder attempted to put zero\n// funds into the channel.",
+      "length": 234,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrZeroCapacity() ReservationError {",
+      "content": "func ErrZeroCapacity() ReservationError {\n\treturn ReservationError{\n\t\terrors.New(\"zero channel funds\"),\n\t}\n}\n\n// ErrChainMismatch returns an error indicating that the initiator tried to\n// open a channel for an unknown chain.",
+      "length": 177,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrChainMismatch(knownChain,",
+      "content": "func ErrChainMismatch(knownChain,\n\tunknownChain *chainhash.Hash) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"unknown chain=%v, supported chain=%v\",\n\t\t\tunknownChain, knownChain),\n\t}\n}\n\n// ErrFunderBalanceDust returns an error indicating the initial balance of the\n// funder is considered dust at the current commitment fee.",
+      "length": 295,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrFunderBalanceDust(commitFee, funderBalance,",
+      "content": "func ErrFunderBalanceDust(commitFee, funderBalance,\n\tminBalance int64) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"funder balance too small (%v) with fee=%v sat, \"+\n\t\t\t\"minimum=%v sat required\", funderBalance,\n\t\t\tcommitFee, minBalance),\n\t}\n}\n\n// ErrCsvDelayTooLarge returns an error indicating that the CSV delay was to\n// large to be accepted, along with the current max.",
+      "length": 326,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrCsvDelayTooLarge(remoteDelay, maxDelay uint16) ReservationError {",
+      "content": "func ErrCsvDelayTooLarge(remoteDelay, maxDelay uint16) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"CSV delay too large: %v, max is %v\",\n\t\t\tremoteDelay, maxDelay),\n\t}\n}\n\n// ErrChanReserveTooSmall returns an error indicating that the channel reserve\n// the remote is requiring is too small to be accepted.",
+      "length": 237,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrChanReserveTooSmall(reserve, dustLimit btcutil.Amount) ReservationError {",
+      "content": "func ErrChanReserveTooSmall(reserve, dustLimit btcutil.Amount) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"channel reserve of %v sat is too small, min is %v \"+\n\t\t\t\"sat\", int64(reserve), int64(dustLimit)),\n\t}\n}\n\n// ErrChanReserveTooLarge returns an error indicating that the chan reserve the\n// remote is requiring, is too large to be accepted.",
+      "length": 269,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrChanReserveTooLarge(reserve,",
+      "content": "func ErrChanReserveTooLarge(reserve,\n\tmaxReserve btcutil.Amount) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"channel reserve is too large: %v sat, max \"+\n\t\t\t\"is %v sat\", int64(reserve), int64(maxReserve)),\n\t}\n}\n\n// ErrNonZeroPushAmount is returned by a remote peer that receives a\n// FundingOpen request for a channel with non-zero push amount while\n// they have 'rejectpush' enabled.",
+      "length": 353,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrNonZeroPushAmount() ReservationError {",
+      "content": "func ErrNonZeroPushAmount() ReservationError {\n\treturn ReservationError{errors.New(\"non-zero push amounts are disabled\")}\n}\n\n// ErrMinHtlcTooLarge returns an error indicating that the MinHTLC value the\n// remote required is too large to be accepted.",
+      "length": 198,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrMinHtlcTooLarge(minHtlc,",
+      "content": "func ErrMinHtlcTooLarge(minHtlc,\n\tmaxMinHtlc lnwire.MilliSatoshi) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"minimum HTLC value is too large: %v, max is %v\",\n\t\t\tminHtlc, maxMinHtlc),\n\t}\n}\n\n// ErrMaxHtlcNumTooLarge returns an error indicating that the 'max HTLCs in\n// flight' value the remote required is too large to be accepted.",
+      "length": 305,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrMaxHtlcNumTooLarge(maxHtlc, maxMaxHtlc uint16) ReservationError {",
+      "content": "func ErrMaxHtlcNumTooLarge(maxHtlc, maxMaxHtlc uint16) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"maxHtlcs is too large: %d, max is %d\",\n\t\t\tmaxHtlc, maxMaxHtlc),\n\t}\n}\n\n// ErrMaxHtlcNumTooSmall returns an error indicating that the 'max HTLCs in\n// flight' value the remote required is too small to be accepted.",
+      "length": 244,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrMaxHtlcNumTooSmall(maxHtlc, minMaxHtlc uint16) ReservationError {",
+      "content": "func ErrMaxHtlcNumTooSmall(maxHtlc, minMaxHtlc uint16) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"maxHtlcs is too small: %d, min is %d\",\n\t\t\tmaxHtlc, minMaxHtlc),\n\t}\n}\n\n// ErrMaxValueInFlightTooSmall returns an error indicating that the 'max HTLC\n// value in flight' the remote required is too small to be accepted.",
+      "length": 249,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrMaxValueInFlightTooSmall(maxValInFlight,",
+      "content": "func ErrMaxValueInFlightTooSmall(maxValInFlight,\n\tminMaxValInFlight lnwire.MilliSatoshi) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"maxValueInFlight too small: %v, min is %v\",\n\t\t\tmaxValInFlight, minMaxValInFlight),\n\t}\n}\n\n// ErrNumConfsTooLarge returns an error indicating that the number of\n// confirmations required for a channel is too large.",
+      "length": 303,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrNumConfsTooLarge(numConfs, maxNumConfs uint32) error {",
+      "content": "func ErrNumConfsTooLarge(numConfs, maxNumConfs uint32) error {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"minimum depth of %d is too large, max is %d\",\n\t\t\tnumConfs, maxNumConfs),\n\t}\n}\n\n// ErrChanTooSmall returns an error indicating that an incoming channel request\n// was too small. We'll reject any incoming channels if they're below our\n// configured value for the min channel size we'll accept.",
+      "length": 323,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrChanTooSmall(chanSize, minChanSize btcutil.Amount) ReservationError {",
+      "content": "func ErrChanTooSmall(chanSize, minChanSize btcutil.Amount) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"chan size of %v is below min chan size of %v\",\n\t\t\tchanSize, minChanSize),\n\t}\n}\n\n// ErrChanTooLarge returns an error indicating that an incoming channel request\n// was too large. We'll reject any incoming channels if they're above our\n// configured value for the max channel size we'll accept.",
+      "length": 324,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrChanTooLarge(chanSize, maxChanSize btcutil.Amount) ReservationError {",
+      "content": "func ErrChanTooLarge(chanSize, maxChanSize btcutil.Amount) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"chan size of %v exceeds maximum chan size of %v\",\n\t\t\tchanSize, maxChanSize),\n\t}\n}\n\n// ErrInvalidDustLimit returns an error indicating that a proposed DustLimit\n// was rejected.",
+      "length": 209,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrInvalidDustLimit(dustLimit btcutil.Amount) ReservationError {",
+      "content": "func ErrInvalidDustLimit(dustLimit btcutil.Amount) ReservationError {\n\treturn ReservationError{\n\t\tfmt.Errorf(\"dust limit %v is invalid\", dustLimit),\n\t}\n}\n\n// ErrHtlcIndexAlreadyFailed is returned when the HTLC index has already been\n// failed, but has not been committed by our commitment state.",
+      "length": 219,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrHtlcIndexAlreadyFailed uint64",
+      "content": "type ErrHtlcIndexAlreadyFailed uint64\n\n// Error returns a message indicating the index that had already been failed.",
+      "length": 77,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrHtlcIndexAlreadyFailed) Error() string {",
+      "content": "func (e ErrHtlcIndexAlreadyFailed) Error() string {\n\treturn fmt.Sprintf(\"HTLC with ID %d has already been failed\", e)\n}\n\n// ErrHtlcIndexAlreadySettled is returned when the HTLC index has already been\n// settled, but has not been committed by our commitment state.",
+      "length": 207,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrHtlcIndexAlreadySettled uint64",
+      "content": "type ErrHtlcIndexAlreadySettled uint64\n\n// Error returns a message indicating the index that had already been settled.",
+      "length": 78,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrHtlcIndexAlreadySettled) Error() string {",
+      "content": "func (e ErrHtlcIndexAlreadySettled) Error() string {\n\treturn fmt.Sprintf(\"HTLC with ID %d has already been settled\", e)\n}\n\n// ErrInvalidSettlePreimage is returned when trying to settle an HTLC, but the\n// preimage does not correspond to the payment hash.",
+      "length": 197,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrInvalidSettlePreimage struct {",
+      "content": "type ErrInvalidSettlePreimage struct {\n\tpreimage []byte\n\trhash    []byte\n}\n\n// Error returns an error message with the offending preimage and intended\n// payment hash.",
+      "length": 123,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrInvalidSettlePreimage) Error() string {",
+      "content": "func (e ErrInvalidSettlePreimage) Error() string {\n\treturn fmt.Sprintf(\"Invalid payment preimage %x for hash %x\",\n\t\te.preimage, e.rhash)\n}\n\n// ErrUnknownHtlcIndex is returned when locally settling or failing an HTLC, but\n// the HTLC index is not known to the channel. This typically indicates that the\n// HTLC was already settled in a prior commitment.",
+      "length": 295,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrUnknownHtlcIndex struct {",
+      "content": "type ErrUnknownHtlcIndex struct {\n\tchanID lnwire.ShortChannelID\n\tindex  uint64\n}\n\n// Error returns an error logging the channel and HTLC index that was unknown.",
+      "length": 122,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrUnknownHtlcIndex) Error() string {",
+      "content": "func (e ErrUnknownHtlcIndex) Error() string {\n\treturn fmt.Sprintf(\"No HTLC with ID %d in channel %v\",\n\t\te.index, e.chanID)\n}\n",
+      "length": 76,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

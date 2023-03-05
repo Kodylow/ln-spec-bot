@@ -1,0 +1,664 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/walletunlocker.pb.go",
+  "package": "lnrpc",
+  "sections": [
+    {
+      "slug": "type GenSeedRequest struct {",
+      "content": "type GenSeedRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// aezeed_passphrase is an optional user provided passphrase that will be used\n\t// to encrypt the generated aezeed cipher seed. When using REST, this field\n\t// must be encoded as base64.\n\tAezeedPassphrase []byte `protobuf:\"bytes,1,opt,name=aezeed_passphrase,json=aezeedPassphrase,proto3\" json:\"aezeed_passphrase,omitempty\"`\n\t// seed_entropy is an optional 16-bytes generated via CSPRNG. If not\n\t// specified, then a fresh set of randomness will be used to create the seed.\n\t// When using REST, this field must be encoded as base64.\n\tSeedEntropy []byte `protobuf:\"bytes,2,opt,name=seed_entropy,json=seedEntropy,proto3\" json:\"seed_entropy,omitempty\"`\n}\n",
+      "length": 752,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedRequest) Reset() {",
+      "content": "func (x *GenSeedRequest) Reset() {\n\t*x = GenSeedRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 181,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedRequest) String() string {",
+      "content": "func (x *GenSeedRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GenSeedRequest) ProtoMessage() {}",
+      "content": "func (*GenSeedRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GenSeedRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GenSeedRequest.ProtoReflect.Descriptor instead.",
+      "length": 308,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GenSeedRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GenSeedRequest) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedRequest) GetAezeedPassphrase() []byte {",
+      "content": "func (x *GenSeedRequest) GetAezeedPassphrase() []byte {\n\tif x != nil {\n\t\treturn x.AezeedPassphrase\n\t}\n\treturn nil\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedRequest) GetSeedEntropy() []byte {",
+      "content": "func (x *GenSeedRequest) GetSeedEntropy() []byte {\n\tif x != nil {\n\t\treturn x.SeedEntropy\n\t}\n\treturn nil\n}\n",
+      "length": 50,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GenSeedResponse struct {",
+      "content": "type GenSeedResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed\n\t// cipher seed obtained by the user. This field is optional, as if not\n\t// provided, then the daemon will generate a new cipher seed for the user.\n\t// Otherwise, then the daemon will attempt to recover the wallet state linked\n\t// to this cipher seed.\n\tCipherSeedMnemonic []string `protobuf:\"bytes,1,rep,name=cipher_seed_mnemonic,json=cipherSeedMnemonic,proto3\" json:\"cipher_seed_mnemonic,omitempty\"`\n\t// enciphered_seed are the raw aezeed cipher seed bytes. This is the raw\n\t// cipher text before run through our mnemonic encoding scheme.\n\tEncipheredSeed []byte `protobuf:\"bytes,2,opt,name=enciphered_seed,json=encipheredSeed,proto3\" json:\"enciphered_seed,omitempty\"`\n}\n",
+      "length": 845,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedResponse) Reset() {",
+      "content": "func (x *GenSeedResponse) Reset() {\n\t*x = GenSeedResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 182,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedResponse) String() string {",
+      "content": "func (x *GenSeedResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GenSeedResponse) ProtoMessage() {}",
+      "content": "func (*GenSeedResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GenSeedResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GenSeedResponse.ProtoReflect.Descriptor instead.",
+      "length": 309,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GenSeedResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GenSeedResponse) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedResponse) GetCipherSeedMnemonic() []string {",
+      "content": "func (x *GenSeedResponse) GetCipherSeedMnemonic() []string {\n\tif x != nil {\n\t\treturn x.CipherSeedMnemonic\n\t}\n\treturn nil\n}\n",
+      "length": 57,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GenSeedResponse) GetEncipheredSeed() []byte {",
+      "content": "func (x *GenSeedResponse) GetEncipheredSeed() []byte {\n\tif x != nil {\n\t\treturn x.EncipheredSeed\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type InitWalletRequest struct {",
+      "content": "type InitWalletRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// wallet_password is the passphrase that should be used to encrypt the\n\t// wallet. This MUST be at least 8 chars in length. After creation, this\n\t// password is required to unlock the daemon. When using REST, this field\n\t// must be encoded as base64.\n\tWalletPassword []byte `protobuf:\"bytes,1,opt,name=wallet_password,json=walletPassword,proto3\" json:\"wallet_password,omitempty\"`\n\t// cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed\n\t// cipher seed obtained by the user. This may have been generated by the\n\t// GenSeed method, or be an existing seed.\n\tCipherSeedMnemonic []string `protobuf:\"bytes,2,rep,name=cipher_seed_mnemonic,json=cipherSeedMnemonic,proto3\" json:\"cipher_seed_mnemonic,omitempty\"`\n\t// aezeed_passphrase is an optional user provided passphrase that will be used\n\t// to encrypt the generated aezeed cipher seed. When using REST, this field\n\t// must be encoded as base64.\n\tAezeedPassphrase []byte `protobuf:\"bytes,3,opt,name=aezeed_passphrase,json=aezeedPassphrase,proto3\" json:\"aezeed_passphrase,omitempty\"`\n\t// recovery_window is an optional argument specifying the address lookahead\n\t// when restoring a wallet seed. The recovery window applies to each\n\t// individual branch of the BIP44 derivation paths. Supplying a recovery\n\t// window of zero indicates that no addresses should be recovered, such after\n\t// the first initialization of the wallet.\n\tRecoveryWindow int32 `protobuf:\"varint,4,opt,name=recovery_window,json=recoveryWindow,proto3\" json:\"recovery_window,omitempty\"`\n\t// channel_backups is an optional argument that allows clients to recover the\n\t// settled funds within a set of channels. This should be populated if the\n\t// user was unable to close out all channels and sweep funds before partial or\n\t// total data loss occurred. If specified, then after on-chain recovery of\n\t// funds, lnd begin to carry out the data loss recovery protocol in order to\n\t// recover the funds in each channel from a remote force closed transaction.\n\tChannelBackups *ChanBackupSnapshot `protobuf:\"bytes,5,opt,name=channel_backups,json=channelBackups,proto3\" json:\"channel_backups,omitempty\"`\n\t// stateless_init is an optional argument instructing the daemon NOT to create\n\t// any *.macaroon files in its filesystem. If this parameter is set, then the\n\t// admin macaroon returned in the response MUST be stored by the caller of the\n\t// RPC as otherwise all access to the daemon will be lost!\n\tStatelessInit bool `protobuf:\"varint,6,opt,name=stateless_init,json=statelessInit,proto3\" json:\"stateless_init,omitempty\"`\n\t// extended_master_key is an alternative to specifying cipher_seed_mnemonic and\n\t// aezeed_passphrase. Instead of deriving the master root key from the entropy\n\t// of an aezeed cipher seed, the given extended master root key is used\n\t// directly as the wallet's master key. This allows users to import/use a\n\t// master key from another wallet. When doing so, lnd still uses its default\n\t// SegWit only (BIP49/84) derivation paths and funds from custom/non-default\n\t// derivation paths will not automatically appear in the on-chain wallet. Using\n\t// an 'xprv' instead of an aezeed also has the disadvantage that the wallet's\n\t// birthday is not known as that is an information that's only encoded in the\n\t// aezeed, not the xprv. Therefore a birthday needs to be specified in\n\t// extended_master_key_birthday_timestamp or a \"safe\" default value will be\n\t// used.\n\tExtendedMasterKey string `protobuf:\"bytes,7,opt,name=extended_master_key,json=extendedMasterKey,proto3\" json:\"extended_master_key,omitempty\"`\n\t// extended_master_key_birthday_timestamp is the optional unix timestamp in\n\t// seconds to use as the wallet's birthday when using an extended master key\n\t// to restore the wallet. lnd will only start scanning for funds in blocks that\n\t// are after the birthday which can speed up the process significantly. If the\n\t// birthday is not known, this should be left at its default value of 0 in\n\t// which case lnd will start scanning from the first SegWit block (481824 on\n\t// mainnet).\n\tExtendedMasterKeyBirthdayTimestamp uint64 `protobuf:\"varint,8,opt,name=extended_master_key_birthday_timestamp,json=extendedMasterKeyBirthdayTimestamp,proto3\" json:\"extended_master_key_birthday_timestamp,omitempty\"`\n\t// watch_only is the third option of initializing a wallet: by importing\n\t// account xpubs only and therefore creating a watch-only wallet that does not\n\t// contain any private keys. That means the wallet won't be able to sign for\n\t// any of the keys and _needs_ to be run with a remote signer that has the\n\t// corresponding private keys and can serve signing RPC requests.\n\tWatchOnly *WatchOnly `protobuf:\"bytes,9,opt,name=watch_only,json=watchOnly,proto3\" json:\"watch_only,omitempty\"`\n\t// macaroon_root_key is an optional 32 byte macaroon root key that can be\n\t// provided when initializing the wallet rather than letting lnd generate one\n\t// on its own.\n\tMacaroonRootKey []byte `protobuf:\"bytes,10,opt,name=macaroon_root_key,json=macaroonRootKey,proto3\" json:\"macaroon_root_key,omitempty\"`\n}\n",
+      "length": 5102,
+      "tokens": 659,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) Reset() {",
+      "content": "func (x *InitWalletRequest) Reset() {\n\t*x = InitWalletRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[2]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 184,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) String() string {",
+      "content": "func (x *InitWalletRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*InitWalletRequest) ProtoMessage() {}",
+      "content": "func (*InitWalletRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *InitWalletRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[2]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use InitWalletRequest.ProtoReflect.Descriptor instead.",
+      "length": 311,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*InitWalletRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*InitWalletRequest) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{2}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetWalletPassword() []byte {",
+      "content": "func (x *InitWalletRequest) GetWalletPassword() []byte {\n\tif x != nil {\n\t\treturn x.WalletPassword\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetCipherSeedMnemonic() []string {",
+      "content": "func (x *InitWalletRequest) GetCipherSeedMnemonic() []string {\n\tif x != nil {\n\t\treturn x.CipherSeedMnemonic\n\t}\n\treturn nil\n}\n",
+      "length": 57,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetAezeedPassphrase() []byte {",
+      "content": "func (x *InitWalletRequest) GetAezeedPassphrase() []byte {\n\tif x != nil {\n\t\treturn x.AezeedPassphrase\n\t}\n\treturn nil\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetRecoveryWindow() int32 {",
+      "content": "func (x *InitWalletRequest) GetRecoveryWindow() int32 {\n\tif x != nil {\n\t\treturn x.RecoveryWindow\n\t}\n\treturn 0\n}\n",
+      "length": 51,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetChannelBackups() *ChanBackupSnapshot {",
+      "content": "func (x *InitWalletRequest) GetChannelBackups() *ChanBackupSnapshot {\n\tif x != nil {\n\t\treturn x.ChannelBackups\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetStatelessInit() bool {",
+      "content": "func (x *InitWalletRequest) GetStatelessInit() bool {\n\tif x != nil {\n\t\treturn x.StatelessInit\n\t}\n\treturn false\n}\n",
+      "length": 54,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetExtendedMasterKey() string {",
+      "content": "func (x *InitWalletRequest) GetExtendedMasterKey() string {\n\tif x != nil {\n\t\treturn x.ExtendedMasterKey\n\t}\n\treturn \"\"\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetExtendedMasterKeyBirthdayTimestamp() uint64 {",
+      "content": "func (x *InitWalletRequest) GetExtendedMasterKeyBirthdayTimestamp() uint64 {\n\tif x != nil {\n\t\treturn x.ExtendedMasterKeyBirthdayTimestamp\n\t}\n\treturn 0\n}\n",
+      "length": 71,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetWatchOnly() *WatchOnly {",
+      "content": "func (x *InitWalletRequest) GetWatchOnly() *WatchOnly {\n\tif x != nil {\n\t\treturn x.WatchOnly\n\t}\n\treturn nil\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletRequest) GetMacaroonRootKey() []byte {",
+      "content": "func (x *InitWalletRequest) GetMacaroonRootKey() []byte {\n\tif x != nil {\n\t\treturn x.MacaroonRootKey\n\t}\n\treturn nil\n}\n",
+      "length": 54,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type InitWalletResponse struct {",
+      "content": "type InitWalletResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The binary serialized admin macaroon that can be used to access the daemon\n\t// after creating the wallet. If the stateless_init parameter was set to true,\n\t// this is the ONLY copy of the macaroon and MUST be stored safely by the\n\t// caller. Otherwise a copy of this macaroon is also persisted on disk by the\n\t// daemon, together with other macaroon files.\n\tAdminMacaroon []byte `protobuf:\"bytes,1,opt,name=admin_macaroon,json=adminMacaroon,proto3\" json:\"admin_macaroon,omitempty\"`\n}\n",
+      "length": 590,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletResponse) Reset() {",
+      "content": "func (x *InitWalletResponse) Reset() {\n\t*x = InitWalletResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[3]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 185,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletResponse) String() string {",
+      "content": "func (x *InitWalletResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*InitWalletResponse) ProtoMessage() {}",
+      "content": "func (*InitWalletResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *InitWalletResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[3]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use InitWalletResponse.ProtoReflect.Descriptor instead.",
+      "length": 312,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*InitWalletResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*InitWalletResponse) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{3}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *InitWalletResponse) GetAdminMacaroon() []byte {",
+      "content": "func (x *InitWalletResponse) GetAdminMacaroon() []byte {\n\tif x != nil {\n\t\treturn x.AdminMacaroon\n\t}\n\treturn nil\n}\n",
+      "length": 52,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type WatchOnly struct {",
+      "content": "type WatchOnly struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The unix timestamp in seconds of when the master key was created. lnd will\n\t// only start scanning for funds in blocks that are after the birthday which\n\t// can speed up the process significantly. If the birthday is not known, this\n\t// should be left at its default value of 0 in which case lnd will start\n\t// scanning from the first SegWit block (481824 on mainnet).\n\tMasterKeyBirthdayTimestamp uint64 `protobuf:\"varint,1,opt,name=master_key_birthday_timestamp,json=masterKeyBirthdayTimestamp,proto3\" json:\"master_key_birthday_timestamp,omitempty\"`\n\t// The fingerprint of the root key (also known as the key with derivation path\n\t// m/) from which the account public keys were derived from. This may be\n\t// required by some hardware wallets for proper identification and signing. The\n\t// bytes must be in big-endian order.\n\tMasterKeyFingerprint []byte `protobuf:\"bytes,2,opt,name=master_key_fingerprint,json=masterKeyFingerprint,proto3\" json:\"master_key_fingerprint,omitempty\"`\n\t// The list of accounts to import. There _must_ be an account for all of lnd's\n\t// main key scopes: BIP49/BIP84 (m/49'/0'/0', m/84'/0'/0', note that the\n\t// coin type is always 0, even for testnet/regtest) and lnd's internal key\n\t// scope (m/1017'/<coin_type>'/<account>'), where account is the key family as\n\t// defined in `keychain/derivation.go` (currently indices 0 to 9).\n\tAccounts []*WatchOnlyAccount `protobuf:\"bytes,3,rep,name=accounts,proto3\" json:\"accounts,omitempty\"`\n}\n",
+      "length": 1556,
+      "tokens": 194,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) Reset() {",
+      "content": "func (x *WatchOnly) Reset() {\n\t*x = WatchOnly{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[4]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 176,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) String() string {",
+      "content": "func (x *WatchOnly) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*WatchOnly) ProtoMessage() {}",
+      "content": "func (*WatchOnly) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *WatchOnly) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[4]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use WatchOnly.ProtoReflect.Descriptor instead.",
+      "length": 303,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*WatchOnly) Descriptor() ([]byte, []int) {",
+      "content": "func (*WatchOnly) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{4}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) GetMasterKeyBirthdayTimestamp() uint64 {",
+      "content": "func (x *WatchOnly) GetMasterKeyBirthdayTimestamp() uint64 {\n\tif x != nil {\n\t\treturn x.MasterKeyBirthdayTimestamp\n\t}\n\treturn 0\n}\n",
+      "length": 63,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) GetMasterKeyFingerprint() []byte {",
+      "content": "func (x *WatchOnly) GetMasterKeyFingerprint() []byte {\n\tif x != nil {\n\t\treturn x.MasterKeyFingerprint\n\t}\n\treturn nil\n}\n",
+      "length": 59,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnly) GetAccounts() []*WatchOnlyAccount {",
+      "content": "func (x *WatchOnly) GetAccounts() []*WatchOnlyAccount {\n\tif x != nil {\n\t\treturn x.Accounts\n\t}\n\treturn nil\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type WatchOnlyAccount struct {",
+      "content": "type WatchOnlyAccount struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Purpose is the first number in the derivation path, must be either 49, 84\n\t// or 1017.\n\tPurpose uint32 `protobuf:\"varint,1,opt,name=purpose,proto3\" json:\"purpose,omitempty\"`\n\t// Coin type is the second number in the derivation path, this is _always_ 0\n\t// for purposes 49 and 84. It only needs to be set to 1 for purpose 1017 on\n\t// testnet or regtest.\n\tCoinType uint32 `protobuf:\"varint,2,opt,name=coin_type,json=coinType,proto3\" json:\"coin_type,omitempty\"`\n\t// Account is the third number in the derivation path. For purposes 49 and 84\n\t// at least the default account (index 0) needs to be created but optional\n\t// additional accounts are allowed. For purpose 1017 there needs to be exactly\n\t// one account for each of the key families defined in `keychain/derivation.go`\n\t// (currently indices 0 to 9)\n\tAccount uint32 `protobuf:\"varint,3,opt,name=account,proto3\" json:\"account,omitempty\"`\n\t// The extended public key at depth 3 for the given account.\n\tXpub string `protobuf:\"bytes,4,opt,name=xpub,proto3\" json:\"xpub,omitempty\"`\n}\n",
+      "length": 1131,
+      "tokens": 150,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) Reset() {",
+      "content": "func (x *WatchOnlyAccount) Reset() {\n\t*x = WatchOnlyAccount{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[5]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 183,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) String() string {",
+      "content": "func (x *WatchOnlyAccount) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*WatchOnlyAccount) ProtoMessage() {}",
+      "content": "func (*WatchOnlyAccount) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *WatchOnlyAccount) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[5]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use WatchOnlyAccount.ProtoReflect.Descriptor instead.",
+      "length": 310,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*WatchOnlyAccount) Descriptor() ([]byte, []int) {",
+      "content": "func (*WatchOnlyAccount) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{5}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) GetPurpose() uint32 {",
+      "content": "func (x *WatchOnlyAccount) GetPurpose() uint32 {\n\tif x != nil {\n\t\treturn x.Purpose\n\t}\n\treturn 0\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) GetCoinType() uint32 {",
+      "content": "func (x *WatchOnlyAccount) GetCoinType() uint32 {\n\tif x != nil {\n\t\treturn x.CoinType\n\t}\n\treturn 0\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) GetAccount() uint32 {",
+      "content": "func (x *WatchOnlyAccount) GetAccount() uint32 {\n\tif x != nil {\n\t\treturn x.Account\n\t}\n\treturn 0\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *WatchOnlyAccount) GetXpub() string {",
+      "content": "func (x *WatchOnlyAccount) GetXpub() string {\n\tif x != nil {\n\t\treturn x.Xpub\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type UnlockWalletRequest struct {",
+      "content": "type UnlockWalletRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// wallet_password should be the current valid passphrase for the daemon. This\n\t// will be required to decrypt on-disk material that the daemon requires to\n\t// function properly. When using REST, this field must be encoded as base64.\n\tWalletPassword []byte `protobuf:\"bytes,1,opt,name=wallet_password,json=walletPassword,proto3\" json:\"wallet_password,omitempty\"`\n\t// recovery_window is an optional argument specifying the address lookahead\n\t// when restoring a wallet seed. The recovery window applies to each\n\t// individual branch of the BIP44 derivation paths. Supplying a recovery\n\t// window of zero indicates that no addresses should be recovered, such after\n\t// the first initialization of the wallet.\n\tRecoveryWindow int32 `protobuf:\"varint,2,opt,name=recovery_window,json=recoveryWindow,proto3\" json:\"recovery_window,omitempty\"`\n\t// channel_backups is an optional argument that allows clients to recover the\n\t// settled funds within a set of channels. This should be populated if the\n\t// user was unable to close out all channels and sweep funds before partial or\n\t// total data loss occurred. If specified, then after on-chain recovery of\n\t// funds, lnd begin to carry out the data loss recovery protocol in order to\n\t// recover the funds in each channel from a remote force closed transaction.\n\tChannelBackups *ChanBackupSnapshot `protobuf:\"bytes,3,opt,name=channel_backups,json=channelBackups,proto3\" json:\"channel_backups,omitempty\"`\n\t// stateless_init is an optional argument instructing the daemon NOT to create\n\t// any *.macaroon files in its file system.\n\tStatelessInit bool `protobuf:\"varint,4,opt,name=stateless_init,json=statelessInit,proto3\" json:\"stateless_init,omitempty\"`\n}\n",
+      "length": 1785,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) Reset() {",
+      "content": "func (x *UnlockWalletRequest) Reset() {\n\t*x = UnlockWalletRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[6]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 186,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) String() string {",
+      "content": "func (x *UnlockWalletRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*UnlockWalletRequest) ProtoMessage() {}",
+      "content": "func (*UnlockWalletRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *UnlockWalletRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[6]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use UnlockWalletRequest.ProtoReflect.Descriptor instead.",
+      "length": 313,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*UnlockWalletRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*UnlockWalletRequest) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{6}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) GetWalletPassword() []byte {",
+      "content": "func (x *UnlockWalletRequest) GetWalletPassword() []byte {\n\tif x != nil {\n\t\treturn x.WalletPassword\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) GetRecoveryWindow() int32 {",
+      "content": "func (x *UnlockWalletRequest) GetRecoveryWindow() int32 {\n\tif x != nil {\n\t\treturn x.RecoveryWindow\n\t}\n\treturn 0\n}\n",
+      "length": 51,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) GetChannelBackups() *ChanBackupSnapshot {",
+      "content": "func (x *UnlockWalletRequest) GetChannelBackups() *ChanBackupSnapshot {\n\tif x != nil {\n\t\treturn x.ChannelBackups\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletRequest) GetStatelessInit() bool {",
+      "content": "func (x *UnlockWalletRequest) GetStatelessInit() bool {\n\tif x != nil {\n\t\treturn x.StatelessInit\n\t}\n\treturn false\n}\n",
+      "length": 54,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type UnlockWalletResponse struct {",
+      "content": "type UnlockWalletResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletResponse) Reset() {",
+      "content": "func (x *UnlockWalletResponse) Reset() {\n\t*x = UnlockWalletResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[7]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 187,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletResponse) String() string {",
+      "content": "func (x *UnlockWalletResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*UnlockWalletResponse) ProtoMessage() {}",
+      "content": "func (*UnlockWalletResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *UnlockWalletResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *UnlockWalletResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[7]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use UnlockWalletResponse.ProtoReflect.Descriptor instead.",
+      "length": 314,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*UnlockWalletResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*UnlockWalletResponse) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{7}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type ChangePasswordRequest struct {",
+      "content": "type ChangePasswordRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// current_password should be the current valid passphrase used to unlock the\n\t// daemon. When using REST, this field must be encoded as base64.\n\tCurrentPassword []byte `protobuf:\"bytes,1,opt,name=current_password,json=currentPassword,proto3\" json:\"current_password,omitempty\"`\n\t// new_password should be the new passphrase that will be needed to unlock the\n\t// daemon. When using REST, this field must be encoded as base64.\n\tNewPassword []byte `protobuf:\"bytes,2,opt,name=new_password,json=newPassword,proto3\" json:\"new_password,omitempty\"`\n\t// stateless_init is an optional argument instructing the daemon NOT to create\n\t// any *.macaroon files in its filesystem. If this parameter is set, then the\n\t// admin macaroon returned in the response MUST be stored by the caller of the\n\t// RPC as otherwise all access to the daemon will be lost!\n\tStatelessInit bool `protobuf:\"varint,3,opt,name=stateless_init,json=statelessInit,proto3\" json:\"stateless_init,omitempty\"`\n\t// new_macaroon_root_key is an optional argument instructing the daemon to\n\t// rotate the macaroon root key when set to true. This will invalidate all\n\t// previously generated macaroons.\n\tNewMacaroonRootKey bool `protobuf:\"varint,4,opt,name=new_macaroon_root_key,json=newMacaroonRootKey,proto3\" json:\"new_macaroon_root_key,omitempty\"`\n}\n",
+      "length": 1397,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) Reset() {",
+      "content": "func (x *ChangePasswordRequest) Reset() {\n\t*x = ChangePasswordRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[8]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 188,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) String() string {",
+      "content": "func (x *ChangePasswordRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChangePasswordRequest) ProtoMessage() {}",
+      "content": "func (*ChangePasswordRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[8]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.",
+      "length": 315,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{8}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) GetCurrentPassword() []byte {",
+      "content": "func (x *ChangePasswordRequest) GetCurrentPassword() []byte {\n\tif x != nil {\n\t\treturn x.CurrentPassword\n\t}\n\treturn nil\n}\n",
+      "length": 54,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) GetNewPassword() []byte {",
+      "content": "func (x *ChangePasswordRequest) GetNewPassword() []byte {\n\tif x != nil {\n\t\treturn x.NewPassword\n\t}\n\treturn nil\n}\n",
+      "length": 50,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) GetStatelessInit() bool {",
+      "content": "func (x *ChangePasswordRequest) GetStatelessInit() bool {\n\tif x != nil {\n\t\treturn x.StatelessInit\n\t}\n\treturn false\n}\n",
+      "length": 54,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordRequest) GetNewMacaroonRootKey() bool {",
+      "content": "func (x *ChangePasswordRequest) GetNewMacaroonRootKey() bool {\n\tif x != nil {\n\t\treturn x.NewMacaroonRootKey\n\t}\n\treturn false\n}\n",
+      "length": 59,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type ChangePasswordResponse struct {",
+      "content": "type ChangePasswordResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The binary serialized admin macaroon that can be used to access the daemon\n\t// after rotating the macaroon root key. If both the stateless_init and\n\t// new_macaroon_root_key parameter were set to true, this is the ONLY copy of\n\t// the macaroon that was created from the new root key and MUST be stored\n\t// safely by the caller. Otherwise a copy of this macaroon is also persisted on\n\t// disk by the daemon, together with other macaroon files.\n\tAdminMacaroon []byte `protobuf:\"bytes,1,opt,name=admin_macaroon,json=adminMacaroon,proto3\" json:\"admin_macaroon,omitempty\"`\n}\n",
+      "length": 675,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordResponse) Reset() {",
+      "content": "func (x *ChangePasswordResponse) Reset() {\n\t*x = ChangePasswordResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_walletunlocker_proto_msgTypes[9]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordResponse) String() string {",
+      "content": "func (x *ChangePasswordResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChangePasswordResponse) ProtoMessage() {}",
+      "content": "func (*ChangePasswordResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_walletunlocker_proto_msgTypes[9]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ChangePasswordResponse.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {\n\treturn file_walletunlocker_proto_rawDescGZIP(), []int{9}\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ChangePasswordResponse) GetAdminMacaroon() []byte {",
+      "content": "func (x *ChangePasswordResponse) GetAdminMacaroon() []byte {\n\tif x != nil {\n\t\treturn x.AdminMacaroon\n\t}\n\treturn nil\n}\n\nvar File_walletunlocker_proto protoreflect.FileDescriptor\n\nvar file_walletunlocker_proto_rawDesc = []byte{\n\t0x0a, 0x14, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x75, 0x6e, 0x6c, 0x6f, 0x63, 0x6b, 0x65, 0x72,\n\t0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x05, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x1a, 0x0f, 0x6c,\n\t0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x60,\n\t0x0a, 0x0e, 0x47, 0x65, 0x6e, 0x53, 0x65, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,\n\t0x12, 0x2b, 0x0a, 0x11, 0x61, 0x65, 0x7a, 0x65, 0x65, 0x64, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x70,\n\t0x68, 0x72, 0x61, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x10, 0x61, 0x65, 0x7a,\n\t0x65, 0x65, 0x64, 0x50, 0x61, 0x73, 0x73, 0x70, 0x68, 0x72, 0x61, 0x73, 0x65, 0x12, 0x21, 0x0a,\n\t0x0c, 0x73, 0x65, 0x65, 0x64, 0x5f, 0x65, 0x6e, 0x74, 0x72, 0x6f, 0x70, 0x79, 0x18, 0x02, 0x20,\n\t0x01, 0x28, 0x0c, 0x52, 0x0b, 0x73, 0x65, 0x65, 0x64, 0x45, 0x6e, 0x74, 0x72, 0x6f, 0x70, 0x79,\n\t0x22, 0x6c, 0x0a, 0x0f, 0x47, 0x65, 0x6e, 0x53, 0x65, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f,\n\t0x6e, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x14, 0x63, 0x69, 0x70, 0x68, 0x65, 0x72, 0x5f, 0x73, 0x65,\n\t0x65, 0x64, 0x5f, 0x6d, 0x6e, 0x65, 0x6d, 0x6f, 0x6e, 0x69, 0x63, 0x18, 0x01, 0x20, 0x03, 0x28,\n\t0x09, 0x52, 0x12, 0x63, 0x69, 0x70, 0x68, 0x65, 0x72, 0x53, 0x65, 0x65, 0x64, 0x4d, 0x6e, 0x65,\n\t0x6d, 0x6f, 0x6e, 0x69, 0x63, 0x12, 0x27, 0x0a, 0x0f, 0x65, 0x6e, 0x63, 0x69, 0x70, 0x68, 0x65,\n\t0x72, 0x65, 0x64, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e,\n\t0x65, 0x6e, 0x63, 0x69, 0x70, 0x68, 0x65, 0x72, 0x65, 0x64, 0x53, 0x65, 0x65, 0x64, 0x22, 0x90,\n\t0x04, 0x0a, 0x11, 0x49, 0x6e, 0x69, 0x74, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x71,\n\t0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x5f, 0x70,\n\t0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x77,\n\t0x61, 0x6c, 0x6c, 0x65, 0x74, 0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x30, 0x0a,\n\t0x14, 0x63, 0x69, 0x70, 0x68, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x5f, 0x6d, 0x6e, 0x65,\n\t0x6d, 0x6f, 0x6e, 0x69, 0x63, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x12, 0x63, 0x69, 0x70,\n\t0x68, 0x65, 0x72, 0x53, 0x65, 0x65, 0x64, 0x4d, 0x6e, 0x65, 0x6d, 0x6f, 0x6e, 0x69, 0x63, 0x12,\n\t0x2b, 0x0a, 0x11, 0x61, 0x65, 0x7a, 0x65, 0x65, 0x64, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x70, 0x68,\n\t0x72, 0x61, 0x73, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x10, 0x61, 0x65, 0x7a, 0x65,\n\t0x65, 0x64, 0x50, 0x61, 0x73, 0x73, 0x70, 0x68, 0x72, 0x61, 0x73, 0x65, 0x12, 0x27, 0x0a, 0x0f,\n\t0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18,\n\t0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0e, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x57,\n\t0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x42, 0x0a, 0x0f, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c,\n\t0x5f, 0x62, 0x61, 0x63, 0x6b, 0x75, 0x70, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,\n\t0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x42, 0x61, 0x63, 0x6b, 0x75,\n\t0x70, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x0e, 0x63, 0x68, 0x61, 0x6e, 0x6e,\n\t0x65, 0x6c, 0x42, 0x61, 0x63, 0x6b, 0x75, 0x70, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x74, 0x61,\n\t0x74, 0x65, 0x6c, 0x65, 0x73, 0x73, 0x5f, 0x69, 0x6e, 0x69, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28,\n\t0x08, 0x52, 0x0d, 0x73, 0x74, 0x61, 0x74, 0x65, 0x6c, 0x65, 0x73, 0x73, 0x49, 0x6e, 0x69, 0x74,\n\t0x12, 0x2e, 0x0a, 0x13, 0x65, 0x78, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x5f, 0x6d, 0x61, 0x73,\n\t0x74, 0x65, 0x72, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x11, 0x65,\n\t0x78, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x4d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x4b, 0x65, 0x79,\n\t0x12, 0x52, 0x0a, 0x26, 0x65, 0x78, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x5f, 0x6d, 0x61, 0x73,\n\t0x74, 0x65, 0x72, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x62, 0x69, 0x72, 0x74, 0x68, 0x64, 0x61, 0x79,\n\t0x5f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x08, 0x20, 0x01, 0x28, 0x04,\n\t0x52, 0x22, 0x65, 0x78, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x4d, 0x61, 0x73, 0x74, 0x65, 0x72,\n\t0x4b, 0x65, 0x79, 0x42, 0x69, 0x72, 0x74, 0x68, 0x64, 0x61, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x73,\n\t0x74, 0x61, 0x6d, 0x70, 0x12, 0x2f, 0x0a, 0x0a, 0x77, 0x61, 0x74, 0x63, 0x68, 0x5f, 0x6f, 0x6e,\n\t0x6c, 0x79, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63,\n\t0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x4f, 0x6e, 0x6c, 0x79, 0x52, 0x09, 0x77, 0x61, 0x74, 0x63,\n\t0x68, 0x4f, 0x6e, 0x6c, 0x79, 0x12, 0x2a, 0x0a, 0x11, 0x6d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f,\n\t0x6e, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0c,\n\t0x52, 0x0f, 0x6d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x52, 0x6f, 0x6f, 0x74, 0x4b, 0x65,\n\t0x79, 0x22, 0x3b, 0x0a, 0x12, 0x49, 0x6e, 0x69, 0x74, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52,\n\t0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x0e, 0x61, 0x64, 0x6d, 0x69, 0x6e,\n\t0x5f, 0x6d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,\n\t0x0d, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x4d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x22, 0xb9,\n\t0x01, 0x0a, 0x09, 0x57, 0x61, 0x74, 0x63, 0x68, 0x4f, 0x6e, 0x6c, 0x79, 0x12, 0x41, 0x0a, 0x1d,\n\t0x6d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x62, 0x69, 0x72, 0x74, 0x68,\n\t0x64, 0x61, 0x79, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x01, 0x20,\n\t0x01, 0x28, 0x04, 0x52, 0x1a, 0x6d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x4b, 0x65, 0x79, 0x42, 0x69,\n\t0x72, 0x74, 0x68, 0x64, 0x61, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x12,\n\t0x34, 0x0a, 0x16, 0x6d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x66, 0x69,\n\t0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,\n\t0x14, 0x6d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x4b, 0x65, 0x79, 0x46, 0x69, 0x6e, 0x67, 0x65, 0x72,\n\t0x70, 0x72, 0x69, 0x6e, 0x74, 0x12, 0x33, 0x0a, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,\n\t0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e,\n\t0x57, 0x61, 0x74, 0x63, 0x68, 0x4f, 0x6e, 0x6c, 0x79, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,\n\t0x52, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x77, 0x0a, 0x10, 0x57, 0x61,\n\t0x74, 0x63, 0x68, 0x4f, 0x6e, 0x6c, 0x79, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x18,\n\t0x0a, 0x07, 0x70, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52,\n\t0x07, 0x70, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x6f, 0x69, 0x6e,\n\t0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x63, 0x6f, 0x69,\n\t0x6e, 0x54, 0x79, 0x70, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,\n\t0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12,\n\t0x12, 0x0a, 0x04, 0x78, 0x70, 0x75, 0x62, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x78,\n\t0x70, 0x75, 0x62, 0x22, 0xd2, 0x01, 0x0a, 0x13, 0x55, 0x6e, 0x6c, 0x6f, 0x63, 0x6b, 0x57, 0x61,\n\t0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x77,\n\t0x61, 0x6c, 0x6c, 0x65, 0x74, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x01,\n\t0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x50, 0x61, 0x73, 0x73,\n\t0x77, 0x6f, 0x72, 0x64, 0x12, 0x27, 0x0a, 0x0f, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79,\n\t0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0e, 0x72,\n\t0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x42, 0x0a,\n\t0x0f, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x5f, 0x62, 0x61, 0x63, 0x6b, 0x75, 0x70, 0x73,\n\t0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43,\n\t0x68, 0x61, 0x6e, 0x42, 0x61, 0x63, 0x6b, 0x75, 0x70, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,\n\t0x74, 0x52, 0x0e, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x42, 0x61, 0x63, 0x6b, 0x75, 0x70,\n\t0x73, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x6c, 0x65, 0x73, 0x73, 0x5f, 0x69,\n\t0x6e, 0x69, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x73, 0x74, 0x61, 0x74, 0x65,\n\t0x6c, 0x65, 0x73, 0x73, 0x49, 0x6e, 0x69, 0x74, 0x22, 0x16, 0x0a, 0x14, 0x55, 0x6e, 0x6c, 0x6f,\n\t0x63, 0x6b, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,\n\t0x22, 0xbf, 0x01, 0x0a, 0x15, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x50, 0x61, 0x73, 0x73, 0x77,\n\t0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x63, 0x75,\n\t0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x01,\n\t0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x50, 0x61, 0x73,\n\t0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x6e, 0x65, 0x77, 0x5f, 0x70, 0x61, 0x73,\n\t0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0b, 0x6e, 0x65, 0x77,\n\t0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x74, 0x61, 0x74,\n\t0x65, 0x6c, 0x65, 0x73, 0x73, 0x5f, 0x69, 0x6e, 0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08,\n\t0x52, 0x0d, 0x73, 0x74, 0x61, 0x74, 0x65, 0x6c, 0x65, 0x73, 0x73, 0x49, 0x6e, 0x69, 0x74, 0x12,\n\t0x31, 0x0a, 0x15, 0x6e, 0x65, 0x77, 0x5f, 0x6d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x5f,\n\t0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x12,\n\t0x6e, 0x65, 0x77, 0x4d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x52, 0x6f, 0x6f, 0x74, 0x4b,\n\t0x65, 0x79, 0x22, 0x3f, 0x0a, 0x16, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x50, 0x61, 0x73, 0x73,\n\t0x77, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x0e,\n\t0x61, 0x64, 0x6d, 0x69, 0x6e, 0x5f, 0x6d, 0x61, 0x63, 0x61, 0x72, 0x6f, 0x6f, 0x6e, 0x18, 0x01,\n\t0x20, 0x01, 0x28, 0x0c, 0x52, 0x0d, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x4d, 0x61, 0x63, 0x61, 0x72,\n\t0x6f, 0x6f, 0x6e, 0x32, 0xa5, 0x02, 0x0a, 0x0e, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x55, 0x6e,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x65, 0x72, 0x12, 0x38, 0x0a, 0x07, 0x47, 0x65, 0x6e, 0x53, 0x65, 0x65,\n\t0x64, 0x12, 0x15, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x6e, 0x53, 0x65, 0x65,\n\t0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63,\n\t0x2e, 0x47, 0x65, 0x6e, 0x53, 0x65, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,\n\t0x12, 0x41, 0x0a, 0x0a, 0x49, 0x6e, 0x69, 0x74, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x12, 0x18,\n\t0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x57, 0x61, 0x6c, 0x6c, 0x65,\n\t0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63,\n\t0x2e, 0x49, 0x6e, 0x69, 0x74, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,\n\t0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x0c, 0x55, 0x6e, 0x6c, 0x6f, 0x63, 0x6b, 0x57, 0x61, 0x6c,\n\t0x6c, 0x65, 0x74, 0x12, 0x1a, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x6e, 0x6c, 0x6f,\n\t0x63, 0x6b, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,\n\t0x1b, 0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x6e, 0x6c, 0x6f, 0x63, 0x6b, 0x57, 0x61,\n\t0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0e,\n\t0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x1c,\n\t0x2e, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x50, 0x61, 0x73,\n\t0x73, 0x77, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x6c,\n\t0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x50, 0x61, 0x73, 0x73, 0x77,\n\t0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x27, 0x5a, 0x25, 0x67,\n\t0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e,\n\t0x69, 0x6e, 0x67, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c, 0x6e, 0x64, 0x2f, 0x6c,\n\t0x6e, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_walletunlocker_proto_rawDescOnce sync.Once\n\tfile_walletunlocker_proto_rawDescData = file_walletunlocker_proto_rawDesc\n)\n",
+      "length": 12261,
+      "tokens": 2023,
+      "embedding": []
+    },
+    {
+      "slug": "func file_walletunlocker_proto_rawDescGZIP() []byte {",
+      "content": "func file_walletunlocker_proto_rawDescGZIP() []byte {\n\tfile_walletunlocker_proto_rawDescOnce.Do(func() {\n\t\tfile_walletunlocker_proto_rawDescData = protoimpl.X.CompressGZIP(file_walletunlocker_proto_rawDescData)\n\t})\n\treturn file_walletunlocker_proto_rawDescData\n}\n\nvar file_walletunlocker_proto_msgTypes = make([]protoimpl.MessageInfo, 10)\nvar file_walletunlocker_proto_goTypes = []interface{}{\n\t(*GenSeedRequest)(nil),         // 0: lnrpc.GenSeedRequest\n\t(*GenSeedResponse)(nil),        // 1: lnrpc.GenSeedResponse\n\t(*InitWalletRequest)(nil),      // 2: lnrpc.InitWalletRequest\n\t(*InitWalletResponse)(nil),     // 3: lnrpc.InitWalletResponse\n\t(*WatchOnly)(nil),              // 4: lnrpc.WatchOnly\n\t(*WatchOnlyAccount)(nil),       // 5: lnrpc.WatchOnlyAccount\n\t(*UnlockWalletRequest)(nil),    // 6: lnrpc.UnlockWalletRequest\n\t(*UnlockWalletResponse)(nil),   // 7: lnrpc.UnlockWalletResponse\n\t(*ChangePasswordRequest)(nil),  // 8: lnrpc.ChangePasswordRequest\n\t(*ChangePasswordResponse)(nil), // 9: lnrpc.ChangePasswordResponse\n\t(*ChanBackupSnapshot)(nil),     // 10: lnrpc.ChanBackupSnapshot\n}\nvar file_walletunlocker_proto_depIdxs = []int32{\n\t10, // 0: lnrpc.InitWalletRequest.channel_backups:type_name -> lnrpc.ChanBackupSnapshot\n\t4,  // 1: lnrpc.InitWalletRequest.watch_only:type_name -> lnrpc.WatchOnly\n\t5,  // 2: lnrpc.WatchOnly.accounts:type_name -> lnrpc.WatchOnlyAccount\n\t10, // 3: lnrpc.UnlockWalletRequest.channel_backups:type_name -> lnrpc.ChanBackupSnapshot\n\t0,  // 4: lnrpc.WalletUnlocker.GenSeed:input_type -> lnrpc.GenSeedRequest\n\t2,  // 5: lnrpc.WalletUnlocker.InitWallet:input_type -> lnrpc.InitWalletRequest\n\t6,  // 6: lnrpc.WalletUnlocker.UnlockWallet:input_type -> lnrpc.UnlockWalletRequest\n\t8,  // 7: lnrpc.WalletUnlocker.ChangePassword:input_type -> lnrpc.ChangePasswordRequest\n\t1,  // 8: lnrpc.WalletUnlocker.GenSeed:output_type -> lnrpc.GenSeedResponse\n\t3,  // 9: lnrpc.WalletUnlocker.InitWallet:output_type -> lnrpc.InitWalletResponse\n\t7,  // 10: lnrpc.WalletUnlocker.UnlockWallet:output_type -> lnrpc.UnlockWalletResponse\n\t9,  // 11: lnrpc.WalletUnlocker.ChangePassword:output_type -> lnrpc.ChangePasswordResponse\n\t8,  // [8:12] is the sub-list for method output_type\n\t4,  // [4:8] is the sub-list for method input_type\n\t4,  // [4:4] is the sub-list for extension type_name\n\t4,  // [4:4] is the sub-list for extension extendee\n\t0,  // [0:4] is the sub-list for field type_name\n}\n",
+      "length": 2310,
+      "tokens": 185,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_walletunlocker_proto_init() }",
+      "content": "func init() { file_walletunlocker_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_walletunlocker_proto_init() {",
+      "content": "func file_walletunlocker_proto_init() {\n\tif File_walletunlocker_proto != nil {\n\t\treturn\n\t}\n\tfile_lightning_proto_init()\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_walletunlocker_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GenSeedRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GenSeedResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*InitWalletRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*InitWalletResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*WatchOnly); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*WatchOnlyAccount); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*UnlockWalletRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*UnlockWalletResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ChangePasswordRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_walletunlocker_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ChangePasswordResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_walletunlocker_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   10,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_walletunlocker_proto_goTypes,\n\t\tDependencyIndexes: file_walletunlocker_proto_depIdxs,\n\t\tMessageInfos:      file_walletunlocker_proto_msgTypes,\n\t}.Build()\n\tFile_walletunlocker_proto = out.File\n\tfile_walletunlocker_proto_rawDesc = nil\n\tfile_walletunlocker_proto_goTypes = nil\n\tfile_walletunlocker_proto_depIdxs = nil\n}\n",
+      "length": 3344,
+      "tokens": 363,
+      "embedding": []
+    }
+  ]
+}

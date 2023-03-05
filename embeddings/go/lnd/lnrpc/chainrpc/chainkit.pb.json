@@ -1,0 +1,321 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/chainrpc/chainkit.pb.go",
+  "package": "chainrpc",
+  "sections": [
+    {
+      "slug": "type GetBlockRequest struct {",
+      "content": "type GetBlockRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The hash of the requested block.\n\tBlockHash []byte `protobuf:\"bytes,1,opt,name=block_hash,json=blockHash,proto3\" json:\"block_hash,omitempty\"`\n}\n",
+      "length": 254,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) Reset() {",
+      "content": "func (x *GetBlockRequest) Reset() {\n\t*x = GetBlockRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 185,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) String() string {",
+      "content": "func (x *GetBlockRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockRequest) ProtoMessage() {}",
+      "content": "func (*GetBlockRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockRequest.ProtoReflect.Descriptor instead.",
+      "length": 312,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockRequest) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) GetBlockHash() []byte {",
+      "content": "func (x *GetBlockRequest) GetBlockHash() []byte {\n\tif x != nil {\n\t\treturn x.BlockHash\n\t}\n\treturn nil\n}\n\n// TODO(ffranr): The neutrino GetBlock response includes many\n// additional helpful fields. Consider adding them here also.",
+      "length": 170,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockResponse struct {",
+      "content": "type GetBlockResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The raw bytes of the requested block.\n\tRawBlock []byte `protobuf:\"bytes,1,opt,name=raw_block,json=rawBlock,proto3\" json:\"raw_block,omitempty\"`\n}\n",
+      "length": 255,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) Reset() {",
+      "content": "func (x *GetBlockResponse) Reset() {\n\t*x = GetBlockResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 186,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) String() string {",
+      "content": "func (x *GetBlockResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockResponse) ProtoMessage() {}",
+      "content": "func (*GetBlockResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockResponse.ProtoReflect.Descriptor instead.",
+      "length": 313,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockResponse) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetRawBlock() []byte {",
+      "content": "func (x *GetBlockResponse) GetRawBlock() []byte {\n\tif x != nil {\n\t\treturn x.RawBlock\n\t}\n\treturn nil\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBestBlockRequest struct {",
+      "content": "type GetBestBlockRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockRequest) Reset() {",
+      "content": "func (x *GetBestBlockRequest) Reset() {\n\t*x = GetBestBlockRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[2]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockRequest) String() string {",
+      "content": "func (x *GetBestBlockRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBestBlockRequest) ProtoMessage() {}",
+      "content": "func (*GetBestBlockRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBestBlockRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[2]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBestBlockRequest.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBestBlockRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBestBlockRequest) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{2}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBestBlockResponse struct {",
+      "content": "type GetBestBlockResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The hash of the best block.\n\tBlockHash []byte `protobuf:\"bytes,1,opt,name=block_hash,json=blockHash,proto3\" json:\"block_hash,omitempty\"`\n\t// The height of the best block.\n\tBlockHeight int32 `protobuf:\"varint,2,opt,name=block_height,json=blockHeight,proto3\" json:\"block_height,omitempty\"`\n}\n",
+      "length": 398,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockResponse) Reset() {",
+      "content": "func (x *GetBestBlockResponse) Reset() {\n\t*x = GetBestBlockResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[3]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 190,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockResponse) String() string {",
+      "content": "func (x *GetBestBlockResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBestBlockResponse) ProtoMessage() {}",
+      "content": "func (*GetBestBlockResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBestBlockResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[3]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBestBlockResponse.ProtoReflect.Descriptor instead.",
+      "length": 317,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBestBlockResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBestBlockResponse) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{3}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockResponse) GetBlockHash() []byte {",
+      "content": "func (x *GetBestBlockResponse) GetBlockHash() []byte {\n\tif x != nil {\n\t\treturn x.BlockHash\n\t}\n\treturn nil\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBestBlockResponse) GetBlockHeight() int32 {",
+      "content": "func (x *GetBestBlockResponse) GetBlockHeight() int32 {\n\tif x != nil {\n\t\treturn x.BlockHeight\n\t}\n\treturn 0\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHashRequest struct {",
+      "content": "type GetBlockHashRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Block height of the target best chain block.\n\tBlockHeight int64 `protobuf:\"varint,1,opt,name=block_height,json=blockHeight,proto3\" json:\"block_height,omitempty\"`\n}\n",
+      "length": 274,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) Reset() {",
+      "content": "func (x *GetBlockHashRequest) Reset() {\n\t*x = GetBlockHashRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[4]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) String() string {",
+      "content": "func (x *GetBlockHashRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashRequest) ProtoMessage() {}",
+      "content": "func (*GetBlockHashRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHashRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[4]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHashRequest.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHashRequest) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{4}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) GetBlockHeight() int64 {",
+      "content": "func (x *GetBlockHashRequest) GetBlockHeight() int64 {\n\tif x != nil {\n\t\treturn x.BlockHeight\n\t}\n\treturn 0\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHashResponse struct {",
+      "content": "type GetBlockHashResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The hash of the best block at the specified height.\n\tBlockHash []byte `protobuf:\"bytes,1,opt,name=block_hash,json=blockHash,proto3\" json:\"block_hash,omitempty\"`\n}\n",
+      "length": 273,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) Reset() {",
+      "content": "func (x *GetBlockHashResponse) Reset() {\n\t*x = GetBlockHashResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainkit_proto_msgTypes[5]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 190,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) String() string {",
+      "content": "func (x *GetBlockHashResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashResponse) ProtoMessage() {}",
+      "content": "func (*GetBlockHashResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHashResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainkit_proto_msgTypes[5]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHashResponse.ProtoReflect.Descriptor instead.",
+      "length": 317,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHashResponse) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainkit_proto_rawDescGZIP(), []int{5}\n}\n",
+      "length": 61,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) GetBlockHash() []byte {",
+      "content": "func (x *GetBlockHashResponse) GetBlockHash() []byte {\n\tif x != nil {\n\t\treturn x.BlockHash\n\t}\n\treturn nil\n}\n\nvar File_chainrpc_chainkit_proto protoreflect.FileDescriptor\n\nvar file_chainrpc_chainkit_proto_rawDesc = []byte{\n\t0x0a, 0x17, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x6b, 0x69, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x72, 0x70, 0x63, 0x22, 0x30, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52,\n\t0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,\n\t0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x48, 0x61, 0x73, 0x68, 0x22, 0x2f, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x72, 0x61, 0x77,\n\t0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x61,\n\t0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x15, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x42, 0x65, 0x73,\n\t0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x58, 0x0a,\n\t0x14, 0x47, 0x65, 0x74, 0x42, 0x65, 0x73, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x73,\n\t0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68,\n\t0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b,\n\t0x48, 0x61, 0x73, 0x68, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65,\n\t0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x38, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x42, 0x6c,\n\t0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21,\n\t0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01,\n\t0x20, 0x01, 0x28, 0x03, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68,\n\t0x74, 0x22, 0x35, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73,\n\t0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x6c, 0x6f,\n\t0x63, 0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x62,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x32, 0xeb, 0x01, 0x0a, 0x08, 0x43, 0x68, 0x61,\n\t0x69, 0x6e, 0x4b, 0x69, 0x74, 0x12, 0x41, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x12, 0x19, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74,\n\t0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x63,\n\t0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b,\n\t0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x42,\n\t0x65, 0x73, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x12, 0x1d, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x65, 0x73, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b,\n\t0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72,\n\t0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x65, 0x73, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52,\n\t0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x42, 0x6c,\n\t0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x1d, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72,\n\t0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x52,\n\t0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70,\n\t0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65,\n\t0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x30, 0x5a, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,\n\t0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x6e, 0x65,\n\t0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c, 0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2f,\n\t0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_chainrpc_chainkit_proto_rawDescOnce sync.Once\n\tfile_chainrpc_chainkit_proto_rawDescData = file_chainrpc_chainkit_proto_rawDesc\n)\n",
+      "length": 4232,
+      "tokens": 683,
+      "embedding": []
+    },
+    {
+      "slug": "func file_chainrpc_chainkit_proto_rawDescGZIP() []byte {",
+      "content": "func file_chainrpc_chainkit_proto_rawDescGZIP() []byte {\n\tfile_chainrpc_chainkit_proto_rawDescOnce.Do(func() {\n\t\tfile_chainrpc_chainkit_proto_rawDescData = protoimpl.X.CompressGZIP(file_chainrpc_chainkit_proto_rawDescData)\n\t})\n\treturn file_chainrpc_chainkit_proto_rawDescData\n}\n\nvar file_chainrpc_chainkit_proto_msgTypes = make([]protoimpl.MessageInfo, 6)\nvar file_chainrpc_chainkit_proto_goTypes = []interface{}{\n\t(*GetBlockRequest)(nil),      // 0: chainrpc.GetBlockRequest\n\t(*GetBlockResponse)(nil),     // 1: chainrpc.GetBlockResponse\n\t(*GetBestBlockRequest)(nil),  // 2: chainrpc.GetBestBlockRequest\n\t(*GetBestBlockResponse)(nil), // 3: chainrpc.GetBestBlockResponse\n\t(*GetBlockHashRequest)(nil),  // 4: chainrpc.GetBlockHashRequest\n\t(*GetBlockHashResponse)(nil), // 5: chainrpc.GetBlockHashResponse\n}\nvar file_chainrpc_chainkit_proto_depIdxs = []int32{\n\t0, // 0: chainrpc.ChainKit.GetBlock:input_type -> chainrpc.GetBlockRequest\n\t2, // 1: chainrpc.ChainKit.GetBestBlock:input_type -> chainrpc.GetBestBlockRequest\n\t4, // 2: chainrpc.ChainKit.GetBlockHash:input_type -> chainrpc.GetBlockHashRequest\n\t1, // 3: chainrpc.ChainKit.GetBlock:output_type -> chainrpc.GetBlockResponse\n\t3, // 4: chainrpc.ChainKit.GetBestBlock:output_type -> chainrpc.GetBestBlockResponse\n\t5, // 5: chainrpc.ChainKit.GetBlockHash:output_type -> chainrpc.GetBlockHashResponse\n\t3, // [3:6] is the sub-list for method output_type\n\t0, // [0:3] is the sub-list for method input_type\n\t0, // [0:0] is the sub-list for extension type_name\n\t0, // [0:0] is the sub-list for extension extendee\n\t0, // [0:0] is the sub-list for field type_name\n}\n",
+      "length": 1527,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_chainrpc_chainkit_proto_init() }",
+      "content": "func init() { file_chainrpc_chainkit_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_chainrpc_chainkit_proto_init() {",
+      "content": "func file_chainrpc_chainkit_proto_init() {\n\tif File_chainrpc_chainkit_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_chainrpc_chainkit_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainkit_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainkit_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBestBlockRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainkit_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBestBlockResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainkit_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHashRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainkit_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHashResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_chainrpc_chainkit_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   6,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_chainrpc_chainkit_proto_goTypes,\n\t\tDependencyIndexes: file_chainrpc_chainkit_proto_depIdxs,\n\t\tMessageInfos:      file_chainrpc_chainkit_proto_msgTypes,\n\t}.Build()\n\tFile_chainrpc_chainkit_proto = out.File\n\tfile_chainrpc_chainkit_proto_rawDesc = nil\n\tfile_chainrpc_chainkit_proto_goTypes = nil\n\tfile_chainrpc_chainkit_proto_depIdxs = nil\n}\n",
+      "length": 2310,
+      "tokens": 238,
+      "embedding": []
+    }
+  ]
+}

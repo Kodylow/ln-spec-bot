@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/buffer/read.go",
+  "package": "buffer",
+  "sections": [
+    {
+      "slug": "type Read [ReadSize]byte",
+      "content": "type Read [ReadSize]byte\n\n// Recycle zeroes the Read, making it fresh for another use.",
+      "length": 60,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Read) Recycle() {",
+      "content": "func (b *Read) Recycle() {\n\tRecycleSlice(b[:])\n}\n",
+      "length": 20,
+      "tokens": 2,
+      "embedding": []
+    }
+  ]
+}

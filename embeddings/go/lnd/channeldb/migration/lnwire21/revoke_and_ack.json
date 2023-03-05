@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/revoke_and_ack.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type RevokeAndAck struct {",
+      "content": "type RevokeAndAck struct {\n\t// ChanID uniquely identifies to which currently active channel this\n\t// RevokeAndAck applies to.\n\tChanID ChannelID\n\n\t// Revocation is the preimage to the revocation hash of the now prior\n\t// commitment transaction.\n\tRevocation [32]byte\n\n\t// NextRevocationKey is the next commitment point which should be used\n\t// for the next commitment transaction the remote peer creates for us.\n\t// This, in conjunction with revocation base point will be used to\n\t// create the proper revocation key used within the commitment\n\t// transaction.\n\tNextRevocationKey *btcec.PublicKey\n}\n\n// NewRevokeAndAck creates a new RevokeAndAck message.",
+      "length": 609,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRevokeAndAck() *RevokeAndAck {",
+      "content": "func NewRevokeAndAck() *RevokeAndAck {\n\treturn &RevokeAndAck{}\n}\n\n// A compile time check to ensure RevokeAndAck implements the lnwire.Message\n// interface.\nvar _ Message = (*RevokeAndAck)(nil)\n\n// Decode deserializes a serialized RevokeAndAck message stored in the\n// passed io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 330,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *RevokeAndAck) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *RevokeAndAck) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\tc.Revocation[:],\n\t\t&c.NextRevocationKey,\n\t)\n}\n\n// Encode serializes the target RevokeAndAck into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 243,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *RevokeAndAck) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (c *RevokeAndAck) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tc.ChanID,\n\t\tc.Revocation[:],\n\t\tc.NextRevocationKey,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 212,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *RevokeAndAck) MsgType() MessageType {",
+      "content": "func (c *RevokeAndAck) MsgType() MessageType {\n\treturn MsgRevokeAndAck\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a RevokeAndAck\n// complete message observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 214,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *RevokeAndAck) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (c *RevokeAndAck) MaxPayloadLength(uint32) uint32 {\n\t// 32 + 32 + 33\n\treturn 97\n}\n\n// TargetChanID returns the channel id of the link for which this message is\n// intended.\n//\n// NOTE: Part of peer.LinkUpdater interface.",
+      "length": 161,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *RevokeAndAck) TargetChanID() ChannelID {",
+      "content": "func (c *RevokeAndAck) TargetChanID() ChannelID {\n\treturn c.ChanID\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

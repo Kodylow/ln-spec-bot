@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/backend_mock_test.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "type mockBackend struct {",
+      "content": "type mockBackend struct {\n\tt *testing.T\n\n\tlock sync.Mutex\n\n\tnotifier *MockNotifier\n\n\tconfirmedSpendInputs map[wire.OutPoint]struct{}\n\n\tunconfirmedTxes        map[chainhash.Hash]*wire.MsgTx\n\tunconfirmedSpendInputs map[wire.OutPoint]struct{}\n\n\tpublishChan chan wire.MsgTx\n\n\twalletUtxos []*lnwallet.Utxo\n\tutxoCnt     int\n}\n",
+      "length": 278,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockBackend(t *testing.T, notifier *MockNotifier) *mockBackend {",
+      "content": "func newMockBackend(t *testing.T, notifier *MockNotifier) *mockBackend {\n\treturn &mockBackend{\n\t\tt:                      t,\n\t\tnotifier:               notifier,\n\t\tunconfirmedTxes:        make(map[chainhash.Hash]*wire.MsgTx),\n\t\tconfirmedSpendInputs:   make(map[wire.OutPoint]struct{}),\n\t\tunconfirmedSpendInputs: make(map[wire.OutPoint]struct{}),\n\t\tpublishChan:            make(chan wire.MsgTx, 2),\n\t}\n}\n",
+      "length": 319,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) publishTransaction(tx *wire.MsgTx) error {",
+      "content": "func (b *mockBackend) publishTransaction(tx *wire.MsgTx) error {\n\tb.lock.Lock()\n\tdefer b.lock.Unlock()\n\n\ttxHash := tx.TxHash()\n\tif _, ok := b.unconfirmedTxes[txHash]; ok {\n\t\t// Tx already exists\n\t\ttestLog.Tracef(\"mockBackend duplicate tx %v\", tx.TxHash())\n\t\treturn lnwallet.ErrDoubleSpend\n\t}\n\n\tfor _, in := range tx.TxIn {\n\t\tif _, ok := b.unconfirmedSpendInputs[in.PreviousOutPoint]; ok {\n\t\t\t// Double spend\n\t\t\ttestLog.Tracef(\"mockBackend double spend tx %v\", tx.TxHash())\n\t\t\treturn lnwallet.ErrDoubleSpend\n\t\t}\n\n\t\tif _, ok := b.confirmedSpendInputs[in.PreviousOutPoint]; ok {\n\t\t\t// Already included in block\n\t\t\ttestLog.Tracef(\"mockBackend already in block tx %v\", tx.TxHash())\n\t\t\treturn lnwallet.ErrDoubleSpend\n\t\t}\n\t}\n\n\tb.unconfirmedTxes[txHash] = tx\n\tfor _, in := range tx.TxIn {\n\t\tb.unconfirmedSpendInputs[in.PreviousOutPoint] = struct{}{}\n\t}\n\n\ttestLog.Tracef(\"mockBackend publish tx %v\", tx.TxHash())\n\n\treturn nil\n}\n",
+      "length": 821,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) PublishTransaction(tx *wire.MsgTx, _ string) error {",
+      "content": "func (b *mockBackend) PublishTransaction(tx *wire.MsgTx, _ string) error {\n\tlog.Tracef(\"Publishing tx %v\", tx.TxHash())\n\terr := b.publishTransaction(tx)\n\tselect {\n\tcase b.publishChan <- *tx:\n\tcase <-time.After(defaultTestTimeout):\n\t\tb.t.Fatalf(\"unexpected tx published\")\n\t}\n\treturn err\n}\n",
+      "length": 204,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) ListUnspentWitnessFromDefaultAccount(minConfs, maxConfs int32) (",
+      "content": "func (b *mockBackend) ListUnspentWitnessFromDefaultAccount(minConfs, maxConfs int32) (\n\t[]*lnwallet.Utxo, error) {\n\n\tb.lock.Lock()\n\tdefer b.lock.Unlock()\n\n\t// Each time we list output, we increment the utxo counter, to\n\t// ensure we don't return the same outpoint every time.\n\tb.utxoCnt++\n\n\tfor i := range b.walletUtxos {\n\t\tb.walletUtxos[i].OutPoint.Hash[0] = byte(b.utxoCnt)\n\t}\n\n\treturn b.walletUtxos, nil\n}\n",
+      "length": 307,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) WithCoinSelectLock(f func() error) error {",
+      "content": "func (b *mockBackend) WithCoinSelectLock(f func() error) error {\n\treturn f()\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) deleteUnconfirmed(txHash chainhash.Hash) {",
+      "content": "func (b *mockBackend) deleteUnconfirmed(txHash chainhash.Hash) {\n\tb.lock.Lock()\n\tdefer b.lock.Unlock()\n\n\ttx, ok := b.unconfirmedTxes[txHash]\n\tif !ok {\n\t\t// Tx already exists\n\t\ttestLog.Errorf(\"mockBackend delete tx not existing %v\", txHash)\n\t\treturn\n\t}\n\n\ttestLog.Tracef(\"mockBackend delete tx %v\", tx.TxHash())\n\tdelete(b.unconfirmedTxes, txHash)\n\tfor _, in := range tx.TxIn {\n\t\tdelete(b.unconfirmedSpendInputs, in.PreviousOutPoint)\n\t}\n}\n",
+      "length": 355,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) mine() {",
+      "content": "func (b *mockBackend) mine() {\n\tb.lock.Lock()\n\tdefer b.lock.Unlock()\n\n\tnotifications := make(map[wire.OutPoint]*wire.MsgTx)\n\tfor _, tx := range b.unconfirmedTxes {\n\t\ttestLog.Tracef(\"mockBackend mining tx %v\", tx.TxHash())\n\t\tfor _, in := range tx.TxIn {\n\t\t\tb.confirmedSpendInputs[in.PreviousOutPoint] = struct{}{}\n\t\t\tnotifications[in.PreviousOutPoint] = tx\n\t\t}\n\t}\n\tb.unconfirmedSpendInputs = make(map[wire.OutPoint]struct{})\n\tb.unconfirmedTxes = make(map[chainhash.Hash]*wire.MsgTx)\n\n\tfor outpoint, tx := range notifications {\n\t\ttestLog.Tracef(\"mockBackend delivering spend ntfn for %v\",\n\t\t\toutpoint)\n\t\tb.notifier.SpendOutpoint(outpoint, *tx)\n\t}\n}\n",
+      "length": 596,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) isDone() bool {",
+      "content": "func (b *mockBackend) isDone() bool {\n\treturn len(b.unconfirmedTxes) == 0\n}\n",
+      "length": 36,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) RemoveDescendants(*wire.MsgTx) error {",
+      "content": "func (b *mockBackend) RemoveDescendants(*wire.MsgTx) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *mockBackend) FetchTx(chainhash.Hash) (*wire.MsgTx, error) {",
+      "content": "func (b *mockBackend) FetchTx(chainhash.Hash) (*wire.MsgTx, error) {\n\treturn nil, nil\n}\n",
+      "length": 17,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

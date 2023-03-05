@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/channel_update.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ChanUpdateMsgFlags uint8",
+      "content": "type ChanUpdateMsgFlags uint8\n\nconst (\n\t// ChanUpdateRequiredMaxHtlc is a bit that indicates whether the\n\t// optional htlc_maximum_msat field is present in this ChannelUpdate.\n\tChanUpdateRequiredMaxHtlc ChanUpdateMsgFlags = 1 << iota\n)\n\n// String returns the bitfield flags as a string.",
+      "length": 249,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChanUpdateMsgFlags) String() string {",
+      "content": "func (c ChanUpdateMsgFlags) String() string {\n\treturn fmt.Sprintf(\"%08b\", c)\n}\n\n// HasMaxHtlc returns true if the htlc_maximum_msat option bit is set in the\n// message flags.",
+      "length": 124,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChanUpdateMsgFlags) HasMaxHtlc() bool {",
+      "content": "func (c ChanUpdateMsgFlags) HasMaxHtlc() bool {\n\treturn c&ChanUpdateRequiredMaxHtlc != 0\n}\n\n// ChanUpdateChanFlags is a bitfield that signals various options concerning a\n// particular channel edge. Each bit is to be examined in order to determine\n// how the ChannelUpdate message is to be interpreted.",
+      "length": 249,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "type ChanUpdateChanFlags uint8",
+      "content": "type ChanUpdateChanFlags uint8\n\nconst (\n\t// ChanUpdateDirection indicates the direction of a channel update. If\n\t// this bit is set to 0 if Node1 (the node with the \"smaller\" Node ID)\n\t// is updating the channel, and to 1 otherwise.\n\tChanUpdateDirection ChanUpdateChanFlags = 1 << iota\n\n\t// ChanUpdateDisabled is a bit that indicates if the channel edge\n\t// selected by the ChanUpdateDirection bit is to be treated as being\n\t// disabled.\n\tChanUpdateDisabled\n)\n\n// IsDisabled determines whether the channel flags has the disabled bit set.",
+      "length": 493,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChanUpdateChanFlags) IsDisabled() bool {",
+      "content": "func (c ChanUpdateChanFlags) IsDisabled() bool {\n\treturn c&ChanUpdateDisabled == ChanUpdateDisabled\n}\n\n// String returns the bitfield flags as a string.",
+      "length": 100,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChanUpdateChanFlags) String() string {",
+      "content": "func (c ChanUpdateChanFlags) String() string {\n\treturn fmt.Sprintf(\"%08b\", c)\n}\n\n// ChannelUpdate message is used after channel has been initially announced.\n// Each side independently announces its fees and minimum expiry for HTLCs and\n// other parameters. Also this message is used to redeclare initially set\n// channel parameters.",
+      "length": 280,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelUpdate struct {",
+      "content": "type ChannelUpdate struct {\n\t// Signature is used to validate the announced data and prove the\n\t// ownership of node id.\n\tSignature Sig\n\n\t// ChainHash denotes the target chain that this channel was opened\n\t// within. This value should be the genesis hash of the target chain.\n\t// Along with the short channel ID, this uniquely identifies the\n\t// channel globally in a blockchain.\n\tChainHash chainhash.Hash\n\n\t// ShortChannelID is the unique description of the funding transaction.\n\tShortChannelID ShortChannelID\n\n\t// Timestamp allows ordering in the case of multiple announcements. We\n\t// should ignore the message if timestamp is not greater than\n\t// the last-received.\n\tTimestamp uint32\n\n\t// MessageFlags is a bitfield that describes whether optional fields\n\t// are present in this update. Currently, the least-significant bit\n\t// must be set to 1 if the optional field MaxHtlc is present.\n\tMessageFlags ChanUpdateMsgFlags\n\n\t// ChannelFlags is a bitfield that describes additional meta-data\n\t// concerning how the update is to be interpreted. Currently, the\n\t// least-significant bit must be set to 0 if the creating node\n\t// corresponds to the first node in the previously sent channel\n\t// announcement and 1 otherwise. If the second bit is set, then the\n\t// channel is set to be disabled.\n\tChannelFlags ChanUpdateChanFlags\n\n\t// TimeLockDelta is the minimum number of blocks this node requires to\n\t// be added to the expiry of HTLCs. This is a security parameter\n\t// determined by the node operator. This value represents the required\n\t// gap between the time locks of the incoming and outgoing HTLC's set\n\t// to this node.\n\tTimeLockDelta uint16\n\n\t// HtlcMinimumMsat is the minimum HTLC value which will be accepted.\n\tHtlcMinimumMsat MilliSatoshi\n\n\t// BaseFee is the base fee that must be used for incoming HTLC's to\n\t// this particular channel. This value will be tacked onto the required\n\t// for a payment independent of the size of the payment.\n\tBaseFee uint32\n\n\t// FeeRate is the fee rate that will be charged per millionth of a\n\t// satoshi.\n\tFeeRate uint32\n\n\t// HtlcMaximumMsat is the maximum HTLC value which will be accepted.\n\tHtlcMaximumMsat MilliSatoshi\n\n\t// ExtraOpaqueData is the set of data that was appended to this\n\t// message, some of which we may not actually know how to iterate or\n\t// parse. By holding onto this data, we ensure that we're able to\n\t// properly validate the set of signatures that cover these new fields,\n\t// and ensure we're able to make upgrades to the network in a forwards\n\t// compatible manner.\n\tExtraOpaqueData []byte\n}\n\n// A compile time check to ensure ChannelUpdate implements the lnwire.Message\n// interface.\nvar _ Message = (*ChannelUpdate)(nil)\n\n// Decode deserializes a serialized ChannelUpdate stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 2774,
+      "tokens": 454,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelUpdate) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *ChannelUpdate) Decode(r io.Reader, pver uint32) error {\n\terr := ReadElements(r,\n\t\t&a.Signature,\n\t\ta.ChainHash[:],\n\t\t&a.ShortChannelID,\n\t\t&a.Timestamp,\n\t\t&a.MessageFlags,\n\t\t&a.ChannelFlags,\n\t\t&a.TimeLockDelta,\n\t\t&a.HtlcMinimumMsat,\n\t\t&a.BaseFee,\n\t\t&a.FeeRate,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now check whether the max HTLC field is present and read it if so.\n\tif a.MessageFlags.HasMaxHtlc() {\n\t\tif err := ReadElements(r, &a.HtlcMaximumMsat); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Now that we've read out all the fields that we explicitly know of,\n\t// we'll collect the remainder into the ExtraOpaqueData field. If there\n\t// aren't any bytes, then we'll snip off the slice to avoid carrying\n\t// around excess capacity.\n\ta.ExtraOpaqueData, err = ioutil.ReadAll(r)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif len(a.ExtraOpaqueData) == 0 {\n\t\ta.ExtraOpaqueData = nil\n\t}\n\n\treturn nil\n}\n\n// Encode serializes the target ChannelUpdate into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 954,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelUpdate) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (a *ChannelUpdate) Encode(w io.Writer, pver uint32) error {\n\terr := WriteElements(w,\n\t\ta.Signature,\n\t\ta.ChainHash[:],\n\t\ta.ShortChannelID,\n\t\ta.Timestamp,\n\t\ta.MessageFlags,\n\t\ta.ChannelFlags,\n\t\ta.TimeLockDelta,\n\t\ta.HtlcMinimumMsat,\n\t\ta.BaseFee,\n\t\ta.FeeRate,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now append optional fields if they are set. Currently, the only\n\t// optional field is max HTLC.\n\tif a.MessageFlags.HasMaxHtlc() {\n\t\tif err := WriteElements(w, a.HtlcMaximumMsat); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Finally, append any extra opaque data.\n\treturn WriteElements(w, a.ExtraOpaqueData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 646,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelUpdate) MsgType() MessageType {",
+      "content": "func (a *ChannelUpdate) MsgType() MessageType {\n\treturn MsgChannelUpdate\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for this message\n// observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 196,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelUpdate) MaxPayloadLength(pver uint32) uint32 {",
+      "content": "func (a *ChannelUpdate) MaxPayloadLength(pver uint32) uint32 {\n\treturn 65533\n}\n\n// DataToSign is used to retrieve part of the announcement message which should\n// be signed.",
+      "length": 106,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelUpdate) DataToSign() ([]byte, error) {",
+      "content": "func (a *ChannelUpdate) DataToSign() ([]byte, error) {\n\n\t// We should not include the signatures itself.\n\tvar w bytes.Buffer\n\terr := WriteElements(&w,\n\t\ta.ChainHash[:],\n\t\ta.ShortChannelID,\n\t\ta.Timestamp,\n\t\ta.MessageFlags,\n\t\ta.ChannelFlags,\n\t\ta.TimeLockDelta,\n\t\ta.HtlcMinimumMsat,\n\t\ta.BaseFee,\n\t\ta.FeeRate,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Now append optional fields if they are set. Currently, the only\n\t// optional field is max HTLC.\n\tif a.MessageFlags.HasMaxHtlc() {\n\t\tif err := WriteElements(&w, a.HtlcMaximumMsat); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Finally, append any extra opaque data.\n\tif err := WriteElements(&w, a.ExtraOpaqueData); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn w.Bytes(), nil\n}\n",
+      "length": 636,
+      "tokens": 92,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/txgenerator_test.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "func TestWeightEstimate(t *testing.T) {",
+      "content": "func TestWeightEstimate(t *testing.T) {\n\tt.Parallel()\n\n\tvar inputs []input.Input\n\tfor i, witnessType := range witnessTypes {\n\t\tinputs = append(inputs, input.NewBaseInput(\n\t\t\t&wire.OutPoint{\n\t\t\t\tHash:  chainhash.Hash{byte(i)},\n\t\t\t\tIndex: uint32(i) + 10,\n\t\t\t}, witnessType,\n\t\t\t&input.SignDescriptor{}, 0,\n\t\t))\n\t}\n\n\t// Create a sweep script that is always fed into the weight estimator,\n\t// regardless if it's actually included in the tx. It will be a P2WKH\n\t// script.\n\tchangePkScript := []byte{\n\t\t0x00, 0x14,\n\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t0x00, 0x00, 0x00, 0x00,\n\t}\n\n\t_, estimator, err := getWeightEstimate(inputs, nil, 0, changePkScript)\n\trequire.NoError(t, err)\n\n\tweight := int64(estimator.weight())\n\tif weight != expectedWeight {\n\t\tt.Fatalf(\"unexpected weight. expected %d but got %d.\",\n\t\t\texpectedWeight, weight)\n\t}\n\tsummary := inputTypeSummary(inputs)\n\tif summary != expectedSummary {\n\t\tt.Fatalf(\"unexpected summary. expected %s but got %s.\",\n\t\t\texpectedSummary, summary)\n\t}\n}\n\n// TestWeightEstimatorUnknownScript tests that the weight estimator fails when\n// given an unknown script and succeeds when given a known script.",
+      "length": 1120,
+      "tokens": 151,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWeightEstimatorUnknownScript(t *testing.T) {",
+      "content": "func TestWeightEstimatorUnknownScript(t *testing.T) {\n\ttests := []struct {\n\t\tname       string\n\t\tpkscript   []byte\n\t\texpectFail bool\n\t}{\n\t\t{\n\t\t\tname: \"p2tr output\",\n\t\t\tpkscript: []byte{\n\t\t\t\t0x51, 0x20,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"p2wsh output\",\n\t\t\tpkscript: []byte{\n\t\t\t\t0x00, 0x20,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"p2wkh output\",\n\t\t\tpkscript: []byte{\n\t\t\t\t0x00, 0x14,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"p2pkh output\",\n\t\t\tpkscript: []byte{\n\t\t\t\t0x76, 0xa9, 0x14,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x88, 0xac,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"p2sh output\",\n\t\t\tpkscript: []byte{\n\t\t\t\t0xa9, 0x14,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x00, 0x00, 0x00, 0x00,\n\t\t\t\t0x87,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname:       \"unknown script\",\n\t\t\tpkscript:   []byte{0x00},\n\t\t\texpectFail: true,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestUnknownScriptInner(\n\t\t\t\tt, test.pkscript, test.expectFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1502,
+      "tokens": 221,
+      "embedding": []
+    },
+    {
+      "slug": "func testUnknownScriptInner(t *testing.T, pkscript []byte, expectFail bool) {",
+      "content": "func testUnknownScriptInner(t *testing.T, pkscript []byte, expectFail bool) {\n\tvar inputs []input.Input\n\tfor i, witnessType := range witnessTypes {\n\t\tinputs = append(inputs, input.NewBaseInput(\n\t\t\t&wire.OutPoint{\n\t\t\t\tHash:  chainhash.Hash{byte(i)},\n\t\t\t\tIndex: uint32(i) + 10,\n\t\t\t}, witnessType,\n\t\t\t&input.SignDescriptor{}, 0,\n\t\t))\n\t}\n\n\t_, _, err := getWeightEstimate(inputs, nil, 0, pkscript)\n\tif expectFail {\n\t\trequire.Error(t, err)\n\t} else {\n\t\trequire.NoError(t, err)\n\t}\n}\n",
+      "length": 379,
+      "tokens": 47,
+      "embedding": []
+    }
+  ]
+}

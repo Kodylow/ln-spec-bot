@@ -1,5 +1,13 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/nodebug.go",
-  "package": "!dev",
-  "sections": []
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "//go:build !dev",
+      "content": "//go:build !dev\n// +build !dev\n\npackage kvdb\n\nconst (\n\t// Switch off extra debug code.\n\tetcdDebug = false\n)\n",
+      "length": 84,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
 }

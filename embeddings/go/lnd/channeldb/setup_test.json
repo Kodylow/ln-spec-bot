@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/setup_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func TestMain(m *testing.M) {",
+      "content": "func TestMain(m *testing.M) {\n\tkvdb.RunTests(m)\n}\n",
+      "length": 18,
+      "tokens": 2,
+      "embedding": []
+    }
+  ]
+}

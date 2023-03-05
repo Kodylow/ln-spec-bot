@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/autopilotrpc/autopilot_grpc.pb.go",
+  "package": "autopilotrpc",
+  "sections": [
+    {
+      "slug": "type AutopilotClient interface {",
+      "content": "type AutopilotClient interface {\n\t// Status returns whether the daemon's autopilot agent is active.\n\tStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)\n\t// ModifyStatus is used to modify the status of the autopilot agent, like\n\t// enabling or disabling it.\n\tModifyStatus(ctx context.Context, in *ModifyStatusRequest, opts ...grpc.CallOption) (*ModifyStatusResponse, error)\n\t// QueryScores queries all available autopilot heuristics, in addition to any\n\t// active combination of these heruristics, for the scores they would give to\n\t// the given nodes.\n\tQueryScores(ctx context.Context, in *QueryScoresRequest, opts ...grpc.CallOption) (*QueryScoresResponse, error)\n\t// SetScores attempts to set the scores used by the running autopilot agent,\n\t// if the external scoring heuristic is enabled.\n\tSetScores(ctx context.Context, in *SetScoresRequest, opts ...grpc.CallOption) (*SetScoresResponse, error)\n}\n",
+      "length": 902,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "type autopilotClient struct {",
+      "content": "type autopilotClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewAutopilotClient(cc grpc.ClientConnInterface) AutopilotClient {",
+      "content": "func NewAutopilotClient(cc grpc.ClientConnInterface) AutopilotClient {\n\treturn &autopilotClient{cc}\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *autopilotClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {",
+      "content": "func (c *autopilotClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {\n\tout := new(StatusResponse)\n\terr := c.cc.Invoke(ctx, \"/autopilotrpc.Autopilot/Status\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 155,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *autopilotClient) ModifyStatus(ctx context.Context, in *ModifyStatusRequest, opts ...grpc.CallOption) (*ModifyStatusResponse, error) {",
+      "content": "func (c *autopilotClient) ModifyStatus(ctx context.Context, in *ModifyStatusRequest, opts ...grpc.CallOption) (*ModifyStatusResponse, error) {\n\tout := new(ModifyStatusResponse)\n\terr := c.cc.Invoke(ctx, \"/autopilotrpc.Autopilot/ModifyStatus\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 167,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *autopilotClient) QueryScores(ctx context.Context, in *QueryScoresRequest, opts ...grpc.CallOption) (*QueryScoresResponse, error) {",
+      "content": "func (c *autopilotClient) QueryScores(ctx context.Context, in *QueryScoresRequest, opts ...grpc.CallOption) (*QueryScoresResponse, error) {\n\tout := new(QueryScoresResponse)\n\terr := c.cc.Invoke(ctx, \"/autopilotrpc.Autopilot/QueryScores\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 165,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *autopilotClient) SetScores(ctx context.Context, in *SetScoresRequest, opts ...grpc.CallOption) (*SetScoresResponse, error) {",
+      "content": "func (c *autopilotClient) SetScores(ctx context.Context, in *SetScoresRequest, opts ...grpc.CallOption) (*SetScoresResponse, error) {\n\tout := new(SetScoresResponse)\n\terr := c.cc.Invoke(ctx, \"/autopilotrpc.Autopilot/SetScores\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// AutopilotServer is the server API for Autopilot service.\n// All implementations must embed UnimplementedAutopilotServer\n// for forward compatibility",
+      "length": 310,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type AutopilotServer interface {",
+      "content": "type AutopilotServer interface {\n\t// Status returns whether the daemon's autopilot agent is active.\n\tStatus(context.Context, *StatusRequest) (*StatusResponse, error)\n\t// ModifyStatus is used to modify the status of the autopilot agent, like\n\t// enabling or disabling it.\n\tModifyStatus(context.Context, *ModifyStatusRequest) (*ModifyStatusResponse, error)\n\t// QueryScores queries all available autopilot heuristics, in addition to any\n\t// active combination of these heruristics, for the scores they would give to\n\t// the given nodes.\n\tQueryScores(context.Context, *QueryScoresRequest) (*QueryScoresResponse, error)\n\t// SetScores attempts to set the scores used by the running autopilot agent,\n\t// if the external scoring heuristic is enabled.\n\tSetScores(context.Context, *SetScoresRequest) (*SetScoresResponse, error)\n\tmustEmbedUnimplementedAutopilotServer()\n}\n\n// UnimplementedAutopilotServer must be embedded to have forward compatible implementations.",
+      "length": 906,
+      "tokens": 105,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedAutopilotServer struct {",
+      "content": "type UnimplementedAutopilotServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedAutopilotServer) Status(context.Context, *StatusRequest) (*StatusResponse, error) {",
+      "content": "func (UnimplementedAutopilotServer) Status(context.Context, *StatusRequest) (*StatusResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method Status not implemented\")\n}",
+      "length": 81,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedAutopilotServer) ModifyStatus(context.Context, *ModifyStatusRequest) (*ModifyStatusResponse, error) {",
+      "content": "func (UnimplementedAutopilotServer) ModifyStatus(context.Context, *ModifyStatusRequest) (*ModifyStatusResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method ModifyStatus not implemented\")\n}",
+      "length": 87,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedAutopilotServer) QueryScores(context.Context, *QueryScoresRequest) (*QueryScoresResponse, error) {",
+      "content": "func (UnimplementedAutopilotServer) QueryScores(context.Context, *QueryScoresRequest) (*QueryScoresResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method QueryScores not implemented\")\n}",
+      "length": 86,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedAutopilotServer) SetScores(context.Context, *SetScoresRequest) (*SetScoresResponse, error) {",
+      "content": "func (UnimplementedAutopilotServer) SetScores(context.Context, *SetScoresRequest) (*SetScoresResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SetScores not implemented\")\n}",
+      "length": 84,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedAutopilotServer) mustEmbedUnimplementedAutopilotServer() {}",
+      "content": "func (UnimplementedAutopilotServer) mustEmbedUnimplementedAutopilotServer() {}\n\n// UnsafeAutopilotServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to AutopilotServer will\n// result in compilation errors.",
+      "length": 211,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeAutopilotServer interface {",
+      "content": "type UnsafeAutopilotServer interface {\n\tmustEmbedUnimplementedAutopilotServer()\n}\n",
+      "length": 41,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterAutopilotServer(s grpc.ServiceRegistrar, srv AutopilotServer) {",
+      "content": "func RegisterAutopilotServer(s grpc.ServiceRegistrar, srv AutopilotServer) {\n\ts.RegisterService(&Autopilot_ServiceDesc, srv)\n}\n",
+      "length": 48,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Autopilot_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Autopilot_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(StatusRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(AutopilotServer).Status(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/autopilotrpc.Autopilot/Status\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(AutopilotServer).Status(ctx, req.(*StatusRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 433,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Autopilot_ModifyStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Autopilot_ModifyStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(ModifyStatusRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(AutopilotServer).ModifyStatus(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/autopilotrpc.Autopilot/ModifyStatus\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(AutopilotServer).ModifyStatus(ctx, req.(*ModifyStatusRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 463,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Autopilot_QueryScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Autopilot_QueryScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(QueryScoresRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(AutopilotServer).QueryScores(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/autopilotrpc.Autopilot/QueryScores\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(AutopilotServer).QueryScores(ctx, req.(*QueryScoresRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 458,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Autopilot_SetScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Autopilot_SetScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SetScoresRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(AutopilotServer).SetScores(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/autopilotrpc.Autopilot/SetScores\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(AutopilotServer).SetScores(ctx, req.(*SetScoresRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// Autopilot_ServiceDesc is the grpc.ServiceDesc for Autopilot service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar Autopilot_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"autopilotrpc.Autopilot\",\n\tHandlerType: (*AutopilotServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"Status\",\n\t\t\tHandler:    _Autopilot_Status_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"ModifyStatus\",\n\t\t\tHandler:    _Autopilot_ModifyStatus_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"QueryScores\",\n\t\t\tHandler:    _Autopilot_QueryScores_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SetScores\",\n\t\t\tHandler:    _Autopilot_SetScores_Handler,\n\t\t},\n\t},\n\tStreams:  []grpc.StreamDesc{},\n\tMetadata: \"autopilotrpc/autopilot.proto\",\n}\n",
+      "length": 1183,
+      "tokens": 120,
+      "embedding": []
+    }
+  ]
+}

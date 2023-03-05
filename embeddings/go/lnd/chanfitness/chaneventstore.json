@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/chanfitness/chaneventstore.go",
-  "package": "Package",
+  "package": "chanfitness",
   "sections": [
     {
       "slug": "type ChannelEventStore struct {",

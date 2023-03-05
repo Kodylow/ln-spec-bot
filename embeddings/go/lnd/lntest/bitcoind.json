@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lntest/bitcoind.go",
-  "package": "bitcoind",
+  "package": "lntest",
   "sections": [
+    {
+      "slug": "//go:build bitcoind && !notxindex && !rpcpolling",
+      "content": "//go:build bitcoind && !notxindex && !rpcpolling\n// +build bitcoind,!notxindex,!rpcpolling\n\npackage lntest\n\nimport (\n\t\"github.com/btcsuite/btcd/chaincfg\"\n)\n\n// NewBackend starts a bitcoind node with the txindex enabled and returns a\n// BitcoindBackendConfig for that node.",
+      "length": 214,
+      "tokens": 27,
+      "embedding": []
+    },
     {
       "slug": "func NewBackend(miner string, netParams *chaincfg.Params) (",
       "content": "func NewBackend(miner string, netParams *chaincfg.Params) (\n\t*BitcoindBackendConfig, func() error, error) {\n\n\textraArgs := []string{\n\t\t\"-debug\",\n\t\t\"-regtest\",\n\t\t\"-txindex\",\n\t\t\"-disablewallet\",\n\t}\n\n\treturn newBackend(miner, netParams, extraArgs, false)\n}\n",

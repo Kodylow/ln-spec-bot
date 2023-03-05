@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/neutrino.go",
+  "package": "lntest",
+  "sections": [
+    {
+      "slug": "//go:build neutrino",
+      "content": "//go:build neutrino\n// +build neutrino\n\npackage lntest\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/btcsuite/btcd/chaincfg\"\n\t\"github.com/lightningnetwork/lnd/lntest/node\"\n)\n\n// NeutrinoBackendConfig is an implementation of the BackendConfig interface\n// backed by a neutrino node.",
+      "length": 234,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type NeutrinoBackendConfig struct {",
+      "content": "type NeutrinoBackendConfig struct {\n\tminerAddr string\n}\n\n// A compile time assertion to ensure NeutrinoBackendConfig meets the\n// BackendConfig interface.\nvar _ node.BackendConfig = (*NeutrinoBackendConfig)(nil)\n\n// GenArgs returns the arguments needed to be passed to LND at startup for\n// using this node as a chain backend.",
+      "length": 282,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (b NeutrinoBackendConfig) GenArgs() []string {",
+      "content": "func (b NeutrinoBackendConfig) GenArgs() []string {\n\tvar args []string\n\targs = append(args, \"--bitcoin.node=neutrino\")\n\targs = append(args, \"--neutrino.connect=\"+b.minerAddr)\n\t// We enable validating channels so that we can obtain the outpoint for\n\t// channels within the graph and make certain assertions based on them.\n\targs = append(args, \"--neutrino.validatechannels\")\n\targs = append(args, \"--neutrino.broadcasttimeout=1s\")\n\treturn args\n}\n\n// ConnectMiner is called to establish a connection to the test miner.",
+      "length": 452,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (b NeutrinoBackendConfig) ConnectMiner() error {",
+      "content": "func (b NeutrinoBackendConfig) ConnectMiner() error {\n\treturn nil\n}\n\n// DisconnectMiner is called to disconnect the miner.",
+      "length": 65,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (b NeutrinoBackendConfig) DisconnectMiner() error {",
+      "content": "func (b NeutrinoBackendConfig) DisconnectMiner() error {\n\treturn fmt.Errorf(\"unimplemented\")\n}\n\n// Credentials returns the rpc username, password and host for the backend.\n// For neutrino, we return an error because there is no rpc client available.",
+      "length": 188,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (b NeutrinoBackendConfig) Credentials() (string, string, string, error) {",
+      "content": "func (b NeutrinoBackendConfig) Credentials() (string, string, string, error) {\n\treturn \"\", \"\", \"\", fmt.Errorf(\"unimplemented\")\n}\n\n// Name returns the name of the backend type.",
+      "length": 93,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b NeutrinoBackendConfig) Name() string {",
+      "content": "func (b NeutrinoBackendConfig) Name() string {\n\treturn NeutrinoBackendName\n}\n\n// NewBackend starts and returns a NeutrinoBackendConfig for the node.",
+      "length": 98,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBackend(miner string, _ *chaincfg.Params) (",
+      "content": "func NewBackend(miner string, _ *chaincfg.Params) (\n\t*NeutrinoBackendConfig, func() error, error) {\n\n\tbd := &NeutrinoBackendConfig{\n\t\tminerAddr: miner,\n\t}\n\n\tcleanUp := func() error { return nil }\n\treturn bd, cleanUp, nil\n}\n",
+      "length": 162,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

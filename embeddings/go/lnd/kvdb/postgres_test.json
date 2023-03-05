@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/postgres_test.go",
-  "package": "kvdb_postgres",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres",
+      "content": "//go:build kvdb_postgres\n// +build kvdb_postgres\n\npackage kvdb\n\nimport (\n\t\"testing\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/lightningnetwork/lnd/kvdb/postgres\"\n\t\"github.com/stretchr/testify/require\"\n)\n",
+      "length": 181,
+      "tokens": 12,
+      "embedding": []
+    },
     {
       "slug": "type m = map[string]interface{}",
       "content": "type m = map[string]interface{}\n",

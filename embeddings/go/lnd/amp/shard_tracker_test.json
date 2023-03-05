@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/amp/shard_tracker_test.go",
+  "package": "amp_test",
+  "sections": [
+    {
+      "slug": "func TestAMPShardTracker(t *testing.T) {",
+      "content": "func TestAMPShardTracker(t *testing.T) {\n\tvar root, setID, payAddr [32]byte\n\t_, err := rand.Read(root[:])\n\trequire.NoError(t, err)\n\n\t_, err = rand.Read(setID[:])\n\trequire.NoError(t, err)\n\n\t_, err = rand.Read(payAddr[:])\n\trequire.NoError(t, err)\n\n\tvar totalAmt lnwire.MilliSatoshi = 1000\n\n\t// Create an AMP shard tracker using the random data we just generated.\n\ttracker := amp.NewShardTracker(root, setID, payAddr, totalAmt)\n\n\t// Trying to retrieve a hash for id 0 should result in an error.\n\t_, err = tracker.GetHash(0)\n\trequire.Error(t, err)\n\n\t// We start by creating 20 shards.\n\tconst numShards = 20\n\n\tvar shards []shards.PaymentShard\n\tfor i := uint64(0); i < numShards; i++ {\n\t\ts, err := tracker.NewShard(i, i == numShards-1)\n\t\trequire.NoError(t, err)\n\n\t\t// Check that the shards have their payloads set as expected.\n\t\trequire.Equal(t, setID, s.AMP().SetID())\n\t\trequire.Equal(t, totalAmt, s.MPP().TotalMsat())\n\t\trequire.Equal(t, payAddr, s.MPP().PaymentAddr())\n\n\t\tshards = append(shards, s)\n\t}\n\n\t// Make sure we can retrieve the hash for all of them.\n\tfor i := uint64(0); i < numShards; i++ {\n\t\thash, err := tracker.GetHash(i)\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, shards[i].Hash(), hash)\n\t}\n\n\t// Now cancel half of the shards.\n\tj := 0\n\tfor i := uint64(0); i < numShards; i++ {\n\t\tif i%2 == 0 {\n\t\t\terr := tracker.CancelShard(i)\n\t\t\trequire.NoError(t, err)\n\t\t\tcontinue\n\t\t}\n\n\t\t// Keep shard.\n\t\tshards[j] = shards[i]\n\t\tj++\n\t}\n\tshards = shards[:j]\n\n\t// Get a new last shard.\n\ts, err := tracker.NewShard(numShards, true)\n\trequire.NoError(t, err)\n\tshards = append(shards, s)\n\n\t// Finally make sure these shards together can be used to reconstruct\n\t// the children.\n\tchildDescs := make([]amp.ChildDesc, len(shards))\n\tfor i, s := range shards {\n\t\tchildDescs[i] = amp.ChildDesc{\n\t\t\tShare: s.AMP().RootShare(),\n\t\t\tIndex: s.AMP().ChildIndex(),\n\t\t}\n\t}\n\n\t// Using the child descriptors, reconstruct the children.\n\tchildren := amp.ReconstructChildren(childDescs...)\n\n\t// Validate that the derived child preimages match the hash of each shard.\n\tfor i, child := range children {\n\t\trequire.Equal(t, shards[i].Hash(), child.Hash)\n\t}\n}\n",
+      "length": 2005,
+      "tokens": 285,
+      "embedding": []
+    }
+  ]
+}

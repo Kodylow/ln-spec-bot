@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/chanbackup/backupfile.go",
+  "package": "chanbackup",
+  "sections": [
+    {
+      "slug": "type MultiFile struct {",
+      "content": "type MultiFile struct {\n\t// fileName is the file name of the main back up file.\n\tfileName string\n\n\t// tempFileName is the name of the file that we'll use to stage a new\n\t// packed multi-chan backup, and the rename to the main back up file.\n\ttempFileName string\n\n\t// tempFile is an open handle to the temp back up file.\n\ttempFile *os.File\n}\n\n// NewMultiFile create a new multi-file instance at the target location on the\n// file system.",
+      "length": 399,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMultiFile(fileName string) *MultiFile {",
+      "content": "func NewMultiFile(fileName string) *MultiFile {\n\n\t// We'll our temporary backup file in the very same directory as the\n\t// main backup file.\n\tbackupFileDir := filepath.Dir(fileName)\n\ttempFileName := filepath.Join(\n\t\tbackupFileDir, DefaultTempBackupFileName,\n\t)\n\n\treturn &MultiFile{\n\t\tfileName:     fileName,\n\t\ttempFileName: tempFileName,\n\t}\n}\n\n// UpdateAndSwap will attempt write a new temporary backup file to disk with\n// the newBackup encoded, then atomically swap (via rename) the old file for\n// the new file by updating the name of the new file to the old.",
+      "length": 498,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *MultiFile) UpdateAndSwap(newBackup PackedMulti) error {",
+      "content": "func (b *MultiFile) UpdateAndSwap(newBackup PackedMulti) error {\n\t// If the main backup file isn't set, then we can't proceed.\n\tif b.fileName == \"\" {\n\t\treturn ErrNoBackupFileExists\n\t}\n\n\tlog.Infof(\"Updating backup file at %v\", b.fileName)\n\n\t// If the old back up file still exists, then we'll delete it before\n\t// proceeding.\n\tif _, err := os.Stat(b.tempFileName); err == nil {\n\t\tlog.Infof(\"Found old temp backup @ %v, removing before swap\",\n\t\t\tb.tempFileName)\n\n\t\terr = os.Remove(b.tempFileName)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to remove temp \"+\n\t\t\t\t\"backup file: %v\", err)\n\t\t}\n\t}\n\n\t// Now that we know the staging area is clear, we'll create the new\n\t// temporary back up file.\n\tvar err error\n\tb.tempFile, err = os.Create(b.tempFileName)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to create temp file: %v\", err)\n\t}\n\n\t// With the file created, we'll write the new packed multi backup and\n\t// remove the temporary file all together once this method exits.\n\t_, err = b.tempFile.Write([]byte(newBackup))\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to write backup to temp file: %v\", err)\n\t}\n\tif err := b.tempFile.Sync(); err != nil {\n\t\treturn fmt.Errorf(\"unable to sync temp file: %v\", err)\n\t}\n\tdefer os.Remove(b.tempFileName)\n\n\tlog.Infof(\"Swapping old multi backup file from %v to %v\",\n\t\tb.tempFileName, b.fileName)\n\n\t// Before we rename the swap (atomic name swap), we'll make\n\t// sure to close the current file as some OSes don't support\n\t// renaming a file that's already open (Windows).\n\tif err := b.tempFile.Close(); err != nil {\n\t\treturn fmt.Errorf(\"unable to close file: %v\", err)\n\t}\n\n\t// Finally, we'll attempt to atomically rename the temporary file to\n\t// the main back up file. If this succeeds, then we'll only have a\n\t// single file on disk once this method exits.\n\treturn os.Rename(b.tempFileName, b.fileName)\n}\n\n// ExtractMulti attempts to extract the packed multi backup we currently point\n// to into an unpacked version. This method will fail if no backup file\n// currently exists as the specified location.",
+      "length": 1917,
+      "tokens": 313,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *MultiFile) ExtractMulti(keyChain keychain.KeyRing) (*Multi, error) {",
+      "content": "func (b *MultiFile) ExtractMulti(keyChain keychain.KeyRing) (*Multi, error) {\n\tvar err error\n\n\t// We'll return an error if the main file isn't currently set.\n\tif b.fileName == \"\" {\n\t\treturn nil, ErrNoBackupFileExists\n\t}\n\n\t// Now that we've confirmed the target file is populated, we'll read\n\t// all the contents of the file. This function ensures that file is\n\t// always closed, even if we can't read the contents.\n\tmultiBytes, err := ioutil.ReadFile(b.fileName)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally, we'll attempt to unpack the file and return the unpack\n\t// version to the caller.\n\tpackedMulti := PackedMulti(multiBytes)\n\treturn packedMulti.Unpack(keyChain)\n}\n",
+      "length": 578,
+      "tokens": 95,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/aezeed/bench_test.go",
+  "package": "aezeed",
+  "sections": [
+    {
+      "slug": "func BenchmarkTomnemonic(b *testing.B) {",
+      "content": "func BenchmarkTomnemonic(b *testing.B) {\n\tscryptN = 32768\n\tscryptR = 8\n\tscryptP = 1\n\n\tpass := []byte(\"1234567890abcedfgh\")\n\tcipherSeed, err := New(0, nil, time.Now())\n\tif err != nil {\n\t\tb.Fatalf(\"unable to create seed: %v\", err)\n\t}\n\n\tvar r Mnemonic\n\tfor i := 0; i < b.N; i++ {\n\t\tr, err = cipherSeed.ToMnemonic(pass)\n\t\tif err != nil {\n\t\t\tb.Fatalf(\"unable to encipher: %v\", err)\n\t\t}\n\t}\n\n\tb.ReportAllocs()\n\n\tmnemonic = r\n}\n\n// BenchmarkToCipherSeed benchmarks the process of deciphering an existing\n// enciphered mnemonic.",
+      "length": 454,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkToCipherSeed(b *testing.B) {",
+      "content": "func BenchmarkToCipherSeed(b *testing.B) {\n\tscryptN = 32768\n\tscryptR = 8\n\tscryptP = 1\n\n\tpass := []byte(\"1234567890abcedfgh\")\n\tcipherSeed, err := New(0, nil, time.Now())\n\tif err != nil {\n\t\tb.Fatalf(\"unable to create seed: %v\", err)\n\t}\n\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\tif err != nil {\n\t\tb.Fatalf(\"unable to create mnemonic: %v\", err)\n\t}\n\n\tvar s *CipherSeed\n\tfor i := 0; i < b.N; i++ {\n\t\ts, err = mnemonic.ToCipherSeed(pass)\n\t\tif err != nil {\n\t\t\tb.Fatalf(\"unable to decipher: %v\", err)\n\t\t}\n\t}\n\n\tb.ReportAllocs()\n\n\tseed = s\n}\n",
+      "length": 467,
+      "tokens": 79,
+      "embedding": []
+    }
+  ]
+}

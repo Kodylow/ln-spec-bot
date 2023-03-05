@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration27/migration_test.go",
+  "package": "migration27",
+  "sections": [
+    {
+      "slug": "func TestMigrateHistoricalBalances(t *testing.T) {",
+      "content": "func TestMigrateHistoricalBalances(t *testing.T) {\n\ttestCases := []struct {\n\t\tname               string\n\t\tisAfterMigration25 bool\n\t\tisRestored         bool\n\t}{\n\t\t{\n\t\t\t// Test that when the restored historical channel\n\t\t\t// doesn't have the two new fields.\n\t\t\tname:               \"restored before migration25\",\n\t\t\tisAfterMigration25: false,\n\t\t\tisRestored:         true,\n\t\t},\n\t\t{\n\t\t\t// Test that when the restored historical channel have\n\t\t\t// the two new fields.\n\t\t\tname:               \"restored after migration25\",\n\t\t\tisAfterMigration25: true,\n\t\t\tisRestored:         true,\n\t\t},\n\t\t{\n\t\t\t// Test that when the historical channel with a default\n\t\t\t// channel status flag doesn't have the two new fields.\n\t\t\tname:               \"default before migration25\",\n\t\t\tisAfterMigration25: false,\n\t\t\tisRestored:         false,\n\t\t},\n\t\t{\n\t\t\t// Test that when the historical channel with a default\n\t\t\t// channel status flag have the two new fields.\n\t\t\tname:               \"default after migration25\",\n\t\t\tisAfterMigration25: true,\n\t\t\tisRestored:         false,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\t// testChannel is used to test the balance fields are correctly\n\t\t// set.\n\t\ttestChannel := &OpenChannel{}\n\t\ttestChannel.IdentityPub = dummyPubKey\n\t\ttestChannel.FundingOutpoint = dummyOp\n\t\ttestChannel.FundingTxn = commitTx1\n\t\ttestChannel.IsInitiator = true\n\n\t\t// Set the channel status flag is we are testing the restored\n\t\t// case.\n\t\tif tc.isRestored {\n\t\t\ttestChannel.ChanStatus = testChanStatus\n\t\t}\n\n\t\t// Create before and after migration functions.\n\t\tbeforeFn := genBeforeMigration(\n\t\t\ttestChannel, tc.isAfterMigration25,\n\t\t)\n\t\tafterFn := genAfterMigration(testChannel, tc.isRestored)\n\n\t\t// Run the test.\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt, beforeFn, afterFn,\n\t\t\t\tMigrateHistoricalBalances, false,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1731,
+      "tokens": 214,
+      "embedding": []
+    },
+    {
+      "slug": "func genBeforeMigration(c *OpenChannel, regression bool) func(kvdb.RwTx) error {",
+      "content": "func genBeforeMigration(c *OpenChannel, regression bool) func(kvdb.RwTx) error {\n\treturn func(tx kvdb.RwTx) error {\n\t\t// Create the channel bucket.\n\t\tchanBucket, err := createHistoricalBucket(tx, c)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Save the channel info using legacy format.\n\t\tif regression {\n\t\t\t// If test regression, then the historical channel\n\t\t\t// would have the two fields created. Thus we use the\n\t\t\t// method from migration26 which will save the two\n\t\t\t// fields for when legacy is true.\n\t\t\treturn mig26.PutChanInfo(\n\t\t\t\tchanBucket, &c.OpenChannel, true,\n\t\t\t)\n\t\t}\n\n\t\t// Otherwise we will save the channel without the new fields.\n\t\treturn PutChanInfo(chanBucket, c, true)\n\t}\n}\n",
+      "length": 590,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func genAfterMigration(c *OpenChannel, restored bool) func(kvdb.RwTx) error {",
+      "content": "func genAfterMigration(c *OpenChannel, restored bool) func(kvdb.RwTx) error {\n\treturn func(tx kvdb.RwTx) error {\n\t\tchanBucket, err := fetchHistoricalChanBucket(tx, c)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tnewChan := &OpenChannel{}\n\n\t\t// Fetch the channel info using the new format.\n\t\t//\n\t\t// NOTE: this is the main testing point where we check the\n\t\t// deserialization of the historical channel bucket is correct.\n\t\terr = FetchChanInfo(chanBucket, newChan, false)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Check our initial amount is correct.\n\t\tif newChan.InitialLocalBalance != 0 {\n\t\t\treturn fmt.Errorf(\"wrong local balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialLocalBalance,\n\t\t\t\tc.InitialLocalBalance)\n\t\t}\n\n\t\t// Check their initial amount is correct.\n\t\tif newChan.InitialRemoteBalance != 0 {\n\t\t\treturn fmt.Errorf(\"wrong remote balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialRemoteBalance,\n\t\t\t\tc.InitialRemoteBalance)\n\t\t}\n\n\t\t// We also check the relevant channel info fields stay the\n\t\t// same.\n\t\tif !newChan.IdentityPub.IsEqual(c.IdentityPub) {\n\t\t\treturn fmt.Errorf(\"wrong IdentityPub\")\n\t\t}\n\t\tif newChan.FundingOutpoint != c.FundingOutpoint {\n\t\t\treturn fmt.Errorf(\"wrong FundingOutpoint\")\n\t\t}\n\t\tif !newChan.IsInitiator {\n\t\t\treturn fmt.Errorf(\"wrong IsInitiator\")\n\t\t}\n\n\t\t// If it's restored, there should be no funding tx.\n\t\tif restored {\n\t\t\tif newChan.FundingTxn != nil {\n\t\t\t\treturn fmt.Errorf(\"expect nil FundingTxn\")\n\t\t\t}\n\t\t\treturn nil\n\t\t}\n\n\t\t// Otherwise check the funding tx is read as expected.\n\t\tif newChan.FundingTxn.TxHash() != commitTx1.TxHash() {\n\t\t\treturn fmt.Errorf(\"wrong FundingTxn\")\n\t\t}\n\n\t\treturn nil\n\t}\n}\n",
+      "length": 1494,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func createHistoricalBucket(tx kvdb.RwTx,",
+      "content": "func createHistoricalBucket(tx kvdb.RwTx,\n\tc *OpenChannel) (kvdb.RwBucket, error) {\n\n\t// First fetch the top level bucket which stores all data related to\n\t// historical channels.\n\trootBucket, err := tx.CreateTopLevelBucket(historicalChannelBucket)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar chanPointBuf bytes.Buffer\n\terr = mig.WriteOutpoint(&chanPointBuf, &c.FundingOutpoint)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Create the sub-bucket.\n\treturn rootBucket.CreateBucketIfNotExists(chanPointBuf.Bytes())\n}\n",
+      "length": 452,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchHistoricalChanBucket(tx kvdb.RTx,",
+      "content": "func fetchHistoricalChanBucket(tx kvdb.RTx,\n\tc *OpenChannel) (kvdb.RBucket, error) {\n\n\trootBucket := tx.ReadBucket(historicalChannelBucket)\n\tif rootBucket == nil {\n\t\treturn nil, fmt.Errorf(\"expected a rootBucket\")\n\t}\n\n\tvar chanPointBuf bytes.Buffer\n\terr := mig.WriteOutpoint(&chanPointBuf, &c.FundingOutpoint)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn rootBucket.NestedReadBucket(chanPointBuf.Bytes()), nil\n}\n",
+      "length": 355,
+      "tokens": 39,
+      "embedding": []
+    }
+  ]
+}

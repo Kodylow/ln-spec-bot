@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/msat.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type MilliSatoshi uint64",
+      "content": "type MilliSatoshi uint64\n\n// NewMSatFromSatoshis creates a new MilliSatoshi instance from a target amount\n// of satoshis.",
+      "length": 94,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMSatFromSatoshis(sat btcutil.Amount) MilliSatoshi {",
+      "content": "func NewMSatFromSatoshis(sat btcutil.Amount) MilliSatoshi {\n\treturn MilliSatoshi(uint64(sat) * mSatScale)\n}\n\n// ToBTC converts the target MilliSatoshi amount to its corresponding value\n// when expressed in BTC.",
+      "length": 146,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MilliSatoshi) ToBTC() float64 {",
+      "content": "func (m MilliSatoshi) ToBTC() float64 {\n\tsat := m.ToSatoshis()\n\treturn sat.ToBTC()\n}\n\n// ToSatoshis converts the target MilliSatoshi amount to satoshis. Simply, this\n// sheds a factor of 1000 from the mSAT amount in order to convert it to SAT.",
+      "length": 198,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MilliSatoshi) ToSatoshis() btcutil.Amount {",
+      "content": "func (m MilliSatoshi) ToSatoshis() btcutil.Amount {\n\treturn btcutil.Amount(uint64(m) / mSatScale)\n}\n\n// String returns the string representation of the mSAT amount.",
+      "length": 109,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MilliSatoshi) String() string {",
+      "content": "func (m MilliSatoshi) String() string {\n\treturn fmt.Sprintf(\"%v mSAT\", uint64(m))\n}\n\n// TODO(roasbeef): extend with arithmetic operations?\n",
+      "length": 95,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

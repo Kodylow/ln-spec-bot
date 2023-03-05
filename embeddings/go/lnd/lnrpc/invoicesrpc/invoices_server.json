@@ -1,0 +1,111 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/invoicesrpc/invoices_server.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "//go:build invoicesrpc",
+      "content": "//go:build invoicesrpc\n// +build invoicesrpc\n\npackage invoicesrpc\n\nimport (\n\t\"context\"\n\t\"errors\"\n\t\"fmt\"\n\t\"io/ioutil\"\n\t\"os\"\n\t\"path/filepath\"\n\n\t\"github.com/grpc-ecosystem/grpc-gateway/v2/runtime\"\n\t\"github.com/lightningnetwork/lnd/invoices\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"github.com/lightningnetwork/lnd/lntypes\"\n\t\"github.com/lightningnetwork/lnd/macaroons\"\n\t\"google.golang.org/grpc\"\n\t\"google.golang.org/grpc/codes\"\n\t\"google.golang.org/grpc/status\"\n\t\"gopkg.in/macaroon-bakery.v2/bakery\"\n)\n\nconst (\n\t// subServerName is the name of the sub rpc server. We'll use this name\n\t// to register ourselves, and we also require that the main\n\t// SubServerConfigDispatcher instance recognize it as the name of our\n\t// RPC service.\n\tsubServerName = \"InvoicesRPC\"\n)\n\nvar (\n\t// macaroonOps are the set of capabilities that our minted macaroon (if\n\t// it doesn't already exist) will have.\n\tmacaroonOps = []bakery.Op{\n\t\t{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"write\",\n\t\t},\n\t\t{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"read\",\n\t\t},\n\t}\n\n\t// macPermissions maps RPC calls to the permissions they require.\n\tmacPermissions = map[string][]bakery.Op{\n\t\t\"/invoicesrpc.Invoices/SubscribeSingleInvoice\": {{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/invoicesrpc.Invoices/SettleInvoice\": {{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/invoicesrpc.Invoices/CancelInvoice\": {{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/invoicesrpc.Invoices/AddHoldInvoice\": {{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/invoicesrpc.Invoices/LookupInvoiceV2\": {{\n\t\t\tEntity: \"invoices\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t}\n\n\t// DefaultInvoicesMacFilename is the default name of the invoices\n\t// macaroon that we expect to find via a file handle within the main\n\t// configuration file in this package.\n\tDefaultInvoicesMacFilename = \"invoices.macaroon\"\n)\n\n// ServerShell is a shell struct holding a reference to the actual sub-server.\n// It is used to register the gRPC sub-server with the root server before we\n// have the necessary dependencies to populate the actual sub-server.",
+      "length": 1962,
+      "tokens": 224,
+      "embedding": []
+    },
+    {
+      "slug": "type ServerShell struct {",
+      "content": "type ServerShell struct {\n\tInvoicesServer\n}\n\n// Server is a sub-server of the main RPC server: the invoices RPC. This sub\n// RPC server allows external callers to access the status of the invoices\n// currently active within lnd, as well as configuring it at runtime.",
+      "length": 235,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type Server struct {",
+      "content": "type Server struct {\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\tUnimplementedInvoicesServer\n\n\tquit chan struct{}\n\n\tcfg *Config\n}\n\n// A compile time check to ensure that Server fully implements the\n// InvoicesServer gRPC service.\nvar _ InvoicesServer = (*Server)(nil)\n\n// New returns a new instance of the invoicesrpc Invoices sub-server. We also\n// return the set of permissions for the macaroons that we may create within\n// this method. If the macaroons we need aren't found in the filepath, then\n// we'll create them on start up. If we're unable to locate, or create the\n// macaroons we need, then we'll return with an error.",
+      "length": 620,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {",
+      "content": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {\n\t// If the path of the invoices macaroon wasn't specified, then we'll\n\t// assume that it's found at the default network directory.\n\tmacFilePath := filepath.Join(\n\t\tcfg.NetworkDir, DefaultInvoicesMacFilename,\n\t)\n\n\t// Now that we know the full path of the invoices macaroon, we can\n\t// check to see if we need to create it or not. If stateless_init is set\n\t// then we don't write the macaroons.\n\tif cfg.MacService != nil && !cfg.MacService.StatelessInit &&\n\t\t!lnrpc.FileExists(macFilePath) {\n\n\t\tlog.Infof(\"Baking macaroons for invoices RPC Server at: %v\",\n\t\t\tmacFilePath)\n\n\t\t// At this point, we know that the invoices macaroon doesn't\n\t\t// yet, exist, so we need to create it with the help of the\n\t\t// main macaroon service.\n\t\tinvoicesMac, err := cfg.MacService.NewMacaroon(\n\t\t\tcontext.Background(), macaroons.DefaultRootKeyID,\n\t\t\tmacaroonOps...,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, nil, err\n\t\t}\n\t\tinvoicesMacBytes, err := invoicesMac.M().MarshalBinary()\n\t\tif err != nil {\n\t\t\treturn nil, nil, err\n\t\t}\n\t\terr = ioutil.WriteFile(macFilePath, invoicesMacBytes, 0644)\n\t\tif err != nil {\n\t\t\t_ = os.Remove(macFilePath)\n\t\t\treturn nil, nil, err\n\t\t}\n\t}\n\n\tserver := &Server{\n\t\tcfg:  cfg,\n\t\tquit: make(chan struct{}, 1),\n\t}\n\n\treturn server, macPermissions, nil\n}\n\n// Start launches any helper goroutines required for the Server to function.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 1340,
+      "tokens": 200,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Start() error {",
+      "content": "func (s *Server) Start() error {\n\treturn nil\n}\n\n// Stop signals any active goroutines for a graceful closure.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 130,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Stop() error {",
+      "content": "func (s *Server) Stop() error {\n\tclose(s.quit)\n\n\treturn nil\n}\n\n// Name returns a unique string representation of the sub-server. This can be\n// used to identify the sub-server and also de-duplicate them.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 222,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Name() string {",
+      "content": "func (s *Server) Name() string {\n\treturn subServerName\n}\n\n// RegisterWithRootServer will be called by the root gRPC server to direct a sub\n// RPC server to register itself with the main gRPC root server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 315,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {",
+      "content": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {\n\t// We make sure that we register it with the main gRPC server to ensure\n\t// all our methods are routed properly.\n\tRegisterInvoicesServer(grpcServer, r)\n\n\tlog.Debugf(\"Invoices RPC server successfully registered with root \" +\n\t\t\"gRPC server\")\n\n\treturn nil\n}\n\n// RegisterWithRestServer will be called by the root REST mux to direct a sub\n// RPC server to register itself with the main REST mux server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 537,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,",
+      "content": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,\n\tmux *runtime.ServeMux, dest string, opts []grpc.DialOption) error {\n\n\t// We make sure that we register it with the main REST server to ensure\n\t// all our methods are routed properly.\n\terr := RegisterInvoicesHandlerFromEndpoint(ctx, mux, dest, opts)\n\tif err != nil {\n\t\tlog.Errorf(\"Could not register Invoices REST server \"+\n\t\t\t\"with root REST server: %v\", err)\n\t\treturn err\n\t}\n\n\tlog.Debugf(\"Invoices REST server successfully registered with \" +\n\t\t\"root REST server\")\n\treturn nil\n}\n\n// CreateSubServer populates the subserver's dependencies using the passed\n// SubServerConfigDispatcher. This method should fully initialize the\n// sub-server instance, making it ready for action. It returns the macaroon\n// permissions that the sub-server wishes to pass on to the root server for all\n// methods routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 851,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\tlnrpc.SubServer, lnrpc.MacaroonPerms, error) {\n\n\tsubServer, macPermissions, err := createNewSubServer(configRegistry)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tr.InvoicesServer = subServer\n\treturn subServer, macPermissions, nil\n}\n\n// SubscribeSingleInvoice returns a uni-directional stream (server -> client)\n// for notifying the client of state changes for a specified invoice.",
+      "length": 370,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SubscribeSingleInvoice(req *SubscribeSingleInvoiceRequest,",
+      "content": "func (s *Server) SubscribeSingleInvoice(req *SubscribeSingleInvoiceRequest,\n\tupdateStream Invoices_SubscribeSingleInvoiceServer) error {\n\n\thash, err := lntypes.MakeHash(req.RHash)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tinvoiceClient, err := s.cfg.InvoiceRegistry.SubscribeSingleInvoice(hash)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer invoiceClient.Cancel()\n\n\tlog.Debugf(\"Created new single invoice(pay_hash=%v) subscription\", hash)\n\n\tfor {\n\t\tselect {\n\t\tcase newInvoice := <-invoiceClient.Updates:\n\t\t\trpcInvoice, err := CreateRPCInvoice(\n\t\t\t\tnewInvoice, s.cfg.ChainParams,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tif err := updateStream.Send(rpcInvoice); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// If we have reached a terminal state, close the\n\t\t\t// stream with no error.\n\t\t\tif newInvoice.State.IsFinal() {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\tcase <-updateStream.Context().Done():\n\t\t\treturn fmt.Errorf(\"subscription for \"+\n\t\t\t\t\"invoice(pay_hash=%v): %w\", hash,\n\t\t\t\tupdateStream.Context().Err())\n\n\t\tcase <-s.quit:\n\t\t\treturn nil\n\t\t}\n\t}\n}\n\n// SettleInvoice settles an accepted invoice. If the invoice is already settled,\n// this call will succeed.",
+      "length": 1006,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SettleInvoice(ctx context.Context,",
+      "content": "func (s *Server) SettleInvoice(ctx context.Context,\n\tin *SettleInvoiceMsg) (*SettleInvoiceResp, error) {\n\n\tpreimage, err := lntypes.MakePreimage(in.Preimage)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\terr = s.cfg.InvoiceRegistry.SettleHodlInvoice(preimage)\n\tif err != nil && !errors.Is(err, invoices.ErrInvoiceAlreadySettled) {\n\t\treturn nil, err\n\t}\n\n\treturn &SettleInvoiceResp{}, nil\n}\n\n// CancelInvoice cancels a currently open invoice. If the invoice is already\n// canceled, this call will succeed. If the invoice is already settled, it will\n// fail.",
+      "length": 480,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) CancelInvoice(ctx context.Context,",
+      "content": "func (s *Server) CancelInvoice(ctx context.Context,\n\tin *CancelInvoiceMsg) (*CancelInvoiceResp, error) {\n\n\tpaymentHash, err := lntypes.MakeHash(in.PaymentHash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\terr = s.cfg.InvoiceRegistry.CancelInvoice(paymentHash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tlog.Infof(\"Canceled invoice %v\", paymentHash)\n\n\treturn &CancelInvoiceResp{}, nil\n}\n\n// AddHoldInvoice attempts to add a new hold invoice to the invoice database.\n// Any duplicated invoices are rejected, therefore all invoices *must* have a\n// unique payment hash.",
+      "length": 487,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) AddHoldInvoice(ctx context.Context,",
+      "content": "func (s *Server) AddHoldInvoice(ctx context.Context,\n\tinvoice *AddHoldInvoiceRequest) (*AddHoldInvoiceResp, error) {\n\n\taddInvoiceCfg := &AddInvoiceConfig{\n\t\tAddInvoice:            s.cfg.InvoiceRegistry.AddInvoice,\n\t\tIsChannelActive:       s.cfg.IsChannelActive,\n\t\tChainParams:           s.cfg.ChainParams,\n\t\tNodeSigner:            s.cfg.NodeSigner,\n\t\tDefaultCLTVExpiry:     s.cfg.DefaultCLTVExpiry,\n\t\tChanDB:                s.cfg.ChanStateDB,\n\t\tGraph:                 s.cfg.GraphDB,\n\t\tGenInvoiceFeatures:    s.cfg.GenInvoiceFeatures,\n\t\tGenAmpInvoiceFeatures: s.cfg.GenAmpInvoiceFeatures,\n\t\tGetAlias:              s.cfg.GetAlias,\n\t}\n\n\thash, err := lntypes.MakeHash(invoice.Hash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvalue, err := lnrpc.UnmarshallAmt(invoice.Value, invoice.ValueMsat)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Convert the passed routing hints to the required format.\n\trouteHints, err := CreateZpay32HopHints(invoice.RouteHints)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\taddInvoiceData := &AddInvoiceData{\n\t\tMemo:            invoice.Memo,\n\t\tHash:            &hash,\n\t\tValue:           value,\n\t\tDescriptionHash: invoice.DescriptionHash,\n\t\tExpiry:          invoice.Expiry,\n\t\tFallbackAddr:    invoice.FallbackAddr,\n\t\tCltvExpiry:      invoice.CltvExpiry,\n\t\tPrivate:         invoice.Private,\n\t\tHodlInvoice:     true,\n\t\tPreimage:        nil,\n\t\tRouteHints:      routeHints,\n\t}\n\n\t_, dbInvoice, err := AddInvoice(ctx, addInvoiceCfg, addInvoiceData)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &AddHoldInvoiceResp{\n\t\tAddIndex:       dbInvoice.AddIndex,\n\t\tPaymentRequest: string(dbInvoice.PaymentRequest),\n\t\tPaymentAddr:    dbInvoice.Terms.PaymentAddr[:],\n\t}, nil\n}\n\n// LookupInvoiceV2 attempts to look up at invoice. An invoice can be referenced\n// using either its payment hash, payment address, or set ID.",
+      "length": 1704,
+      "tokens": 156,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) LookupInvoiceV2(ctx context.Context,",
+      "content": "func (s *Server) LookupInvoiceV2(ctx context.Context,\n\treq *LookupInvoiceMsg) (*lnrpc.Invoice, error) {\n\n\tvar invoiceRef invoices.InvoiceRef\n\n\t// First, we'll attempt to parse out the invoice ref from the proto\n\t// oneof.  If none of the three currently supported types was\n\t// specified, then we'll exit with an error.\n\tswitch {\n\tcase req.GetPaymentHash() != nil:\n\t\tpayHash, err := lntypes.MakeHash(req.GetPaymentHash())\n\t\tif err != nil {\n\t\t\treturn nil, status.Error(\n\t\t\t\tcodes.InvalidArgument,\n\t\t\t\tfmt.Sprintf(\"unable to parse pay hash: %v\", err),\n\t\t\t)\n\t\t}\n\n\t\tinvoiceRef = invoices.InvoiceRefByHash(payHash)\n\n\tcase req.GetPaymentAddr() != nil &&\n\t\treq.LookupModifier == LookupModifier_HTLC_SET_BLANK:\n\n\t\tvar payAddr [32]byte\n\t\tcopy(payAddr[:], req.GetPaymentAddr())\n\n\t\tinvoiceRef = invoices.InvoiceRefByAddrBlankHtlc(payAddr)\n\n\tcase req.GetPaymentAddr() != nil:\n\t\tvar payAddr [32]byte\n\t\tcopy(payAddr[:], req.GetPaymentAddr())\n\n\t\tinvoiceRef = invoices.InvoiceRefByAddr(payAddr)\n\n\tcase req.GetSetId() != nil &&\n\t\treq.LookupModifier == LookupModifier_HTLC_SET_ONLY:\n\n\t\tvar setID [32]byte\n\t\tcopy(setID[:], req.GetSetId())\n\n\t\tinvoiceRef = invoices.InvoiceRefBySetIDFiltered(setID)\n\n\tcase req.GetSetId() != nil:\n\t\tvar setID [32]byte\n\t\tcopy(setID[:], req.GetSetId())\n\n\t\tinvoiceRef = invoices.InvoiceRefBySetID(setID)\n\n\tdefault:\n\t\treturn nil, status.Error(codes.InvalidArgument,\n\t\t\t\"invoice ref must be set\")\n\t}\n\n\t// Attempt to locate the invoice, returning a nice \"not found\" error if\n\t// we can't find it in the database.\n\tinvoice, err := s.cfg.InvoiceRegistry.LookupInvoiceByRef(invoiceRef)\n\tswitch {\n\tcase errors.Is(err, invoices.ErrInvoiceNotFound):\n\t\treturn nil, status.Error(codes.NotFound, err.Error())\n\tcase err != nil:\n\t\treturn nil, err\n\t}\n\n\treturn CreateRPCInvoice(&invoice, s.cfg.ChainParams)\n}\n",
+      "length": 1683,
+      "tokens": 183,
+      "embedding": []
+    }
+  ]
+}

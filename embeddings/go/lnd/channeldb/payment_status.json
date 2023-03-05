@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/payment_status.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type PaymentStatus byte",
+      "content": "type PaymentStatus byte\n\nconst (\n\t// StatusUnknown is the status where a payment has never been initiated\n\t// and hence is unknown.\n\tStatusUnknown PaymentStatus = 0\n\n\t// StatusInFlight is the status where a payment has been initiated, but\n\t// a response has not been received.\n\tStatusInFlight PaymentStatus = 1\n\n\t// StatusSucceeded is the status where a payment has been initiated and\n\t// the payment was completed successfully.\n\tStatusSucceeded PaymentStatus = 2\n\n\t// StatusFailed is the status where a payment has been initiated and a\n\t// failure result has come back.\n\tStatusFailed PaymentStatus = 3\n)\n\n// String returns readable representation of payment status.",
+      "length": 623,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func (ps PaymentStatus) String() string {",
+      "content": "func (ps PaymentStatus) String() string {\n\tswitch ps {\n\tcase StatusUnknown:\n\t\treturn \"Unknown\"\n\n\tcase StatusInFlight:\n\t\treturn \"In Flight\"\n\n\tcase StatusSucceeded:\n\t\treturn \"Succeeded\"\n\n\tcase StatusFailed:\n\t\treturn \"Failed\"\n\n\tdefault:\n\t\treturn \"Unknown\"\n\t}\n}\n",
+      "length": 199,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

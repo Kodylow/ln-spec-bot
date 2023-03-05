@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/config.go",
-  "package": "Copyright",
+  "package": "lnd",
   "sections": [
     {
       "slug": "type Config struct {",

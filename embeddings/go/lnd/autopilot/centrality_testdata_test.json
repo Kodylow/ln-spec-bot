@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/centrality_testdata_test.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type testGraphDesc struct {",
+      "content": "type testGraphDesc struct {\n\tnodes int\n\tedges map[int][]int\n}\n\nvar centralityTestGraph = testGraphDesc{\n\tnodes: 9,\n\tedges: map[int][]int{\n\t\t0: {1, 2, 3},\n\t\t1: {2},\n\t\t2: {3},\n\t\t3: {4, 5},\n\t\t4: {5, 6, 7},\n\t\t5: {6, 7},\n\t\t6: {7, 8},\n\t},\n}\n\nvar testGraphCentrality = []float64{\n\t3.0, 0.0, 3.0, 15.0, 6.0, 6.0, 7.0, 0.0, 0.0,\n}\n\nvar normalizedTestGraphCentrality = []float64{\n\t0.2, 0.0, 0.2, 1.0, 0.4, 0.4, 7.0 / 15.0, 0.0, 0.0,\n}\n\n// buildTestGraph builds a test graph from a passed graph descriptor.",
+      "length": 442,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func buildTestGraph(t *testing.T,",
+      "content": "func buildTestGraph(t *testing.T,\n\tgraph testGraph, desc testGraphDesc) map[int]*btcec.PublicKey {\n\n\tnodes := make(map[int]*btcec.PublicKey)\n\n\tfor i := 0; i < desc.nodes; i++ {\n\t\tkey, err := graph.addRandNode()\n\t\trequire.NoError(t, err, \"cannot create random node\")\n\n\t\tnodes[i] = key\n\t}\n\n\tconst chanCapacity = btcutil.SatoshiPerBitcoin\n\tfor u, neighbors := range desc.edges {\n\t\tfor _, v := range neighbors {\n\t\t\t_, _, err := graph.addRandChannel(\n\t\t\t\tnodes[u], nodes[v], chanCapacity,\n\t\t\t)\n\t\t\trequire.NoError(t, err,\n\t\t\t\t\"unexpected error adding random channel\",\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unexpected error adding\"+\n\t\t\t\t\t\"random channel: %v\", err)\n\t\t\t}\n\t\t}\n\t}\n\n\treturn nodes\n}\n",
+      "length": 624,
+      "tokens": 85,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/driver_test.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"testing\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/stretchr/testify/require\"\n)\n",
+      "length": 129,
+      "tokens": 11,
+      "embedding": []
+    },
     {
       "slug": "func TestOpenCreateFailure(t *testing.T) {",
       "content": "func TestOpenCreateFailure(t *testing.T) {\n\tt.Parallel()\n\n\tdb, err := walletdb.Open(dbType)\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Open(dbType, \"wrong\")\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Create(dbType)\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Create(dbType, \"wrong\")\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n}\n",

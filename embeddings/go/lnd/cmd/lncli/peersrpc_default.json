@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/peersrpc_default.go",
-  "package": "!peersrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !peersrpc",
+      "content": "//go:build !peersrpc\n// +build !peersrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// peersCommands will return nil for non-peersrpc builds.",
+      "length": 118,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func peersCommands() []cli.Command {",
       "content": "func peersCommands() []cli.Command {\n\treturn nil\n}\n",

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/watchtower_default.go",
-  "package": "!watchtowerrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !watchtowerrpc",
+      "content": "//go:build !watchtowerrpc\n// +build !watchtowerrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// watchtowerCommands will return nil for non-watchtowerrpc builds.",
+      "length": 133,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func watchtowerCommands() []cli.Command {",
       "content": "func watchtowerCommands() []cli.Command {\n\treturn nil\n}\n",

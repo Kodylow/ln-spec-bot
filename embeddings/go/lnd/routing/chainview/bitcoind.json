@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/routing/chainview/bitcoind.go",
+  "package": "chainview",
+  "sections": [
+    {
+      "slug": "type BitcoindFilteredChainView struct {",
+      "content": "type BitcoindFilteredChainView struct {\n\tstarted int32 // To be used atomically.\n\tstopped int32 // To be used atomically.\n\n\t// bestHeight is the height of the latest block added to the\n\t// blockQueue from the onFilteredConnectedMethod. It is used to\n\t// determine up to what height we would need to rescan in case\n\t// of a filter update.\n\tbestHeightMtx sync.Mutex\n\tbestHeight    uint32\n\n\t// TODO: Factor out common logic between bitcoind and btcd into a\n\t// NodeFilteredView interface.\n\tchainClient *chain.BitcoindClient\n\n\t// blockEventQueue is the ordered queue used to keep the order\n\t// of connected and disconnected blocks sent to the reader of the\n\t// chainView.\n\tblockQueue *blockEventQueue\n\n\t// blockCache is an LRU block cache.\n\tblockCache *blockcache.BlockCache\n\n\t// filterUpdates is a channel in which updates to the utxo filter\n\t// attached to this instance are sent over.\n\tfilterUpdates chan filterUpdate\n\n\t// chainFilter is the set of utox's that we're currently watching\n\t// spends for within the chain.\n\tfilterMtx   sync.RWMutex\n\tchainFilter map[wire.OutPoint]struct{}\n\n\t// filterBlockReqs is a channel in which requests to filter select\n\t// blocks will be sent over.\n\tfilterBlockReqs chan *filterBlockReq\n\n\tquit chan struct{}\n\twg   sync.WaitGroup\n}\n\n// A compile time check to ensure BitcoindFilteredChainView implements the\n// chainview.FilteredChainView.\nvar _ FilteredChainView = (*BitcoindFilteredChainView)(nil)\n\n// NewBitcoindFilteredChainView creates a new instance of a FilteredChainView\n// from RPC credentials and a ZMQ socket address for a bitcoind instance.",
+      "length": 1501,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBitcoindFilteredChainView(",
+      "content": "func NewBitcoindFilteredChainView(\n\tchainConn *chain.BitcoindConn,\n\tblockCache *blockcache.BlockCache) *BitcoindFilteredChainView {\n\n\tchainView := &BitcoindFilteredChainView{\n\t\tchainFilter:     make(map[wire.OutPoint]struct{}),\n\t\tfilterUpdates:   make(chan filterUpdate),\n\t\tfilterBlockReqs: make(chan *filterBlockReq),\n\t\tblockCache:      blockCache,\n\t\tquit:            make(chan struct{}),\n\t}\n\n\tchainView.chainClient = chainConn.NewBitcoindClient()\n\tchainView.blockQueue = newBlockEventQueue()\n\n\treturn chainView\n}\n\n// Start starts all goroutines necessary for normal operation.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 585,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) Start() error {",
+      "content": "func (b *BitcoindFilteredChainView) Start() error {\n\t// Already started?\n\tif atomic.AddInt32(&b.started, 1) != 1 {\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"FilteredChainView starting\")\n\n\terr := b.chainClient.Start()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\terr = b.chainClient.NotifyBlocks()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t_, bestHeight, err := b.chainClient.GetBestBlock()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tb.bestHeightMtx.Lock()\n\tb.bestHeight = uint32(bestHeight)\n\tb.bestHeightMtx.Unlock()\n\n\tb.blockQueue.Start()\n\n\tb.wg.Add(1)\n\tgo b.chainFilterer()\n\n\treturn nil\n}\n\n// Stop stops all goroutines which we launched by the prior call to the Start\n// method.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 614,
+      "tokens": 88,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) Stop() error {",
+      "content": "func (b *BitcoindFilteredChainView) Stop() error {\n\t// Already shutting down?\n\tif atomic.AddInt32(&b.stopped, 1) != 1 {\n\t\treturn nil\n\t}\n\n\t// Shutdown the rpc client, this gracefully disconnects from bitcoind's\n\t// zmq socket, and cleans up all related resources.\n\tb.chainClient.Stop()\n\n\tb.blockQueue.Stop()\n\n\tlog.Infof(\"FilteredChainView stopping\")\n\n\tclose(b.quit)\n\tb.wg.Wait()\n\n\treturn nil\n}\n\n// onFilteredBlockConnected is called for each block that's connected to the\n// end of the main chain. Based on our current chain filter, the block may or\n// may not include any relevant transactions.",
+      "length": 522,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) onFilteredBlockConnected(height int32,",
+      "content": "func (b *BitcoindFilteredChainView) onFilteredBlockConnected(height int32,\n\thash chainhash.Hash, txns []*wtxmgr.TxRecord) {\n\n\tmtxs := make([]*wire.MsgTx, len(txns))\n\tb.filterMtx.Lock()\n\tfor i, tx := range txns {\n\t\tmtxs[i] = &tx.MsgTx\n\n\t\tfor _, txIn := range mtxs[i].TxIn {\n\t\t\t// We can delete this outpoint from the chainFilter, as\n\t\t\t// we just received a block where it was spent. In case\n\t\t\t// of a reorg, this outpoint might get \"un-spent\", but\n\t\t\t// that's okay since it would never be wise to consider\n\t\t\t// the channel open again (since a spending transaction\n\t\t\t// exists on the network).\n\t\t\tdelete(b.chainFilter, txIn.PreviousOutPoint)\n\t\t}\n\n\t}\n\tb.filterMtx.Unlock()\n\n\t// We record the height of the last connected block added to the\n\t// blockQueue such that we can scan up to this height in case of\n\t// a rescan. It must be protected by a mutex since a filter update\n\t// might be trying to read it concurrently.\n\tb.bestHeightMtx.Lock()\n\tb.bestHeight = uint32(height)\n\tb.bestHeightMtx.Unlock()\n\n\tblock := &FilteredBlock{\n\t\tHash:         hash,\n\t\tHeight:       uint32(height),\n\t\tTransactions: mtxs,\n\t}\n\n\tb.blockQueue.Add(&blockEvent{\n\t\teventType: connected,\n\t\tblock:     block,\n\t})\n}\n\n// onFilteredBlockDisconnected is a callback which is executed once a block is\n// disconnected from the end of the main chain.",
+      "length": 1201,
+      "tokens": 181,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) onFilteredBlockDisconnected(height int32,",
+      "content": "func (b *BitcoindFilteredChainView) onFilteredBlockDisconnected(height int32,\n\thash chainhash.Hash) {\n\n\tlog.Debugf(\"got disconnected block at height %d: %v\", height,\n\t\thash)\n\n\tfilteredBlock := &FilteredBlock{\n\t\tHash:   hash,\n\t\tHeight: uint32(height),\n\t}\n\n\tb.blockQueue.Add(&blockEvent{\n\t\teventType: disconnected,\n\t\tblock:     filteredBlock,\n\t})\n}\n\n// FilterBlock takes a block hash, and returns a FilteredBlocks which is the\n// result of applying the current registered UTXO sub-set on the block\n// corresponding to that block hash. If any watched UTOX's are spent by the\n// selected lock, then the internal chainFilter will also be updated.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 603,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) FilterBlock(blockHash *chainhash.Hash) (*FilteredBlock, error) {",
+      "content": "func (b *BitcoindFilteredChainView) FilterBlock(blockHash *chainhash.Hash) (*FilteredBlock, error) {\n\treq := &filterBlockReq{\n\t\tblockHash: blockHash,\n\t\tresp:      make(chan *FilteredBlock, 1),\n\t\terr:       make(chan error, 1),\n\t}\n\n\tselect {\n\tcase b.filterBlockReqs <- req:\n\tcase <-b.quit:\n\t\treturn nil, fmt.Errorf(\"FilteredChainView shutting down\")\n\t}\n\n\treturn <-req.resp, <-req.err\n}\n\n// chainFilterer is the primary goroutine which: listens for new blocks coming\n// and dispatches the relevant FilteredBlock notifications, updates the filter\n// due to requests by callers, and finally is able to perform targeted block\n// filtration.\n//\n// TODO(roasbeef): change to use loadfilter RPC's",
+      "length": 567,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) chainFilterer() {",
+      "content": "func (b *BitcoindFilteredChainView) chainFilterer() {\n\tdefer b.wg.Done()\n\n\t// filterBlock is a helper function that scans the given block, and\n\t// notes which transactions spend outputs which are currently being\n\t// watched. Additionally, the chain filter will also be updated by\n\t// removing any spent outputs.\n\tfilterBlock := func(blk *wire.MsgBlock) []*wire.MsgTx {\n\t\tb.filterMtx.Lock()\n\t\tdefer b.filterMtx.Unlock()\n\n\t\tvar filteredTxns []*wire.MsgTx\n\t\tfor _, tx := range blk.Transactions {\n\t\t\tvar txAlreadyFiltered bool\n\t\t\tfor _, txIn := range tx.TxIn {\n\t\t\t\tprevOp := txIn.PreviousOutPoint\n\t\t\t\tif _, ok := b.chainFilter[prevOp]; !ok {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tdelete(b.chainFilter, prevOp)\n\n\t\t\t\t// Only add this txn to our list of filtered\n\t\t\t\t// txns if it is the first previous outpoint to\n\t\t\t\t// cause a match.\n\t\t\t\tif txAlreadyFiltered {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tfilteredTxns = append(filteredTxns, tx)\n\t\t\t\ttxAlreadyFiltered = true\n\t\t\t}\n\t\t}\n\n\t\treturn filteredTxns\n\t}\n\n\tdecodeJSONBlock := func(block *btcjson.RescannedBlock,\n\t\theight uint32) (*FilteredBlock, error) {\n\t\thash, err := chainhash.NewHashFromStr(block.Hash)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\n\t\t}\n\t\ttxs := make([]*wire.MsgTx, 0, len(block.Transactions))\n\t\tfor _, str := range block.Transactions {\n\t\t\tb, err := hex.DecodeString(str)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\ttx := &wire.MsgTx{}\n\t\t\terr = tx.Deserialize(bytes.NewReader(b))\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\ttxs = append(txs, tx)\n\t\t}\n\t\treturn &FilteredBlock{\n\t\t\tHash:         *hash,\n\t\t\tHeight:       height,\n\t\t\tTransactions: txs,\n\t\t}, nil\n\t}\n\n\tfor {\n\t\tselect {\n\t\t// The caller has just sent an update to the current chain\n\t\t// filter, so we'll apply the update, possibly rewinding our\n\t\t// state partially.\n\t\tcase update := <-b.filterUpdates:\n\t\t\t// First, we'll add all the new UTXO's to the set of\n\t\t\t// watched UTXO's, eliminating any duplicates in the\n\t\t\t// process.\n\t\t\tlog.Tracef(\"Updating chain filter with new UTXO's: %v\",\n\t\t\t\tupdate.newUtxos)\n\n\t\t\tb.filterMtx.Lock()\n\t\t\tfor _, newOp := range update.newUtxos {\n\t\t\t\tb.chainFilter[newOp] = struct{}{}\n\t\t\t}\n\t\t\tb.filterMtx.Unlock()\n\n\t\t\t// Apply the new TX filter to the chain client, which\n\t\t\t// will cause all following notifications from and\n\t\t\t// calls to it return blocks filtered with the new\n\t\t\t// filter.\n\t\t\terr := b.chainClient.LoadTxFilter(false, update.newUtxos)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Unable to update filter: %v\", err)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// All blocks gotten after we loaded the filter will\n\t\t\t// have the filter applied, but we will need to rescan\n\t\t\t// the blocks up to the height of the block we last\n\t\t\t// added to the blockQueue.\n\t\t\tb.bestHeightMtx.Lock()\n\t\t\tbestHeight := b.bestHeight\n\t\t\tb.bestHeightMtx.Unlock()\n\n\t\t\t// If the update height matches our best known height,\n\t\t\t// then we don't need to do any rewinding.\n\t\t\tif update.updateHeight == bestHeight {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Otherwise, we'll rewind the state to ensure the\n\t\t\t// caller doesn't miss any relevant notifications.\n\t\t\t// Starting from the height _after_ the update height,\n\t\t\t// we'll walk forwards, rescanning one block at a time\n\t\t\t// with the chain client applying the newly loaded\n\t\t\t// filter to each block.\n\t\t\tfor i := update.updateHeight + 1; i < bestHeight+1; i++ {\n\t\t\t\tblockHash, err := b.chainClient.GetBlockHash(int64(i))\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Warnf(\"Unable to get block hash \"+\n\t\t\t\t\t\t\"for block at height %d: %v\",\n\t\t\t\t\t\ti, err)\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\t// To avoid dealing with the case where a reorg\n\t\t\t\t// is happening while we rescan, we scan one\n\t\t\t\t// block at a time, skipping blocks that might\n\t\t\t\t// have gone missing.\n\t\t\t\trescanned, err := b.chainClient.RescanBlocks(\n\t\t\t\t\t[]chainhash.Hash{*blockHash},\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Warnf(\"Unable to rescan block \"+\n\t\t\t\t\t\t\"with hash %v at height %d: %v\",\n\t\t\t\t\t\tblockHash, i, err)\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\t// If no block was returned from the rescan, it\n\t\t\t\t// means no matching transactions were found.\n\t\t\t\tif len(rescanned) != 1 {\n\t\t\t\t\tlog.Tracef(\"rescan of block %v at \"+\n\t\t\t\t\t\t\"height=%d yielded no \"+\n\t\t\t\t\t\t\"transactions\", blockHash, i)\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tdecoded, err := decodeJSONBlock(\n\t\t\t\t\t&rescanned[0], i,\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Errorf(\"Unable to decode block: %v\",\n\t\t\t\t\t\terr)\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tb.blockQueue.Add(&blockEvent{\n\t\t\t\t\teventType: connected,\n\t\t\t\t\tblock:     decoded,\n\t\t\t\t})\n\t\t\t}\n\n\t\t// We've received a new request to manually filter a block.\n\t\tcase req := <-b.filterBlockReqs:\n\t\t\t// First we'll fetch the block itself as well as some\n\t\t\t// additional information including its height.\n\t\t\tblock, err := b.GetBlock(req.blockHash)\n\t\t\tif err != nil {\n\t\t\t\treq.err <- err\n\t\t\t\treq.resp <- nil\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\theader, err := b.chainClient.GetBlockHeaderVerbose(\n\t\t\t\treq.blockHash)\n\t\t\tif err != nil {\n\t\t\t\treq.err <- err\n\t\t\t\treq.resp <- nil\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Once we have this info, we can directly filter the\n\t\t\t// block and dispatch the proper notification.\n\t\t\treq.resp <- &FilteredBlock{\n\t\t\t\tHash:         *req.blockHash,\n\t\t\t\tHeight:       uint32(header.Height),\n\t\t\t\tTransactions: filterBlock(block),\n\t\t\t}\n\t\t\treq.err <- err\n\n\t\t// We've received a new event from the chain client.\n\t\tcase event := <-b.chainClient.Notifications():\n\t\t\tswitch e := event.(type) {\n\n\t\t\tcase chain.FilteredBlockConnected:\n\t\t\t\tb.onFilteredBlockConnected(\n\t\t\t\t\te.Block.Height, e.Block.Hash, e.RelevantTxs,\n\t\t\t\t)\n\n\t\t\tcase chain.BlockDisconnected:\n\t\t\t\tb.onFilteredBlockDisconnected(e.Height, e.Hash)\n\t\t\t}\n\n\t\tcase <-b.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// UpdateFilter updates the UTXO filter which is to be consulted when creating\n// FilteredBlocks to be sent to subscribed clients. This method is cumulative\n// meaning repeated calls to this method should _expand_ the size of the UTXO\n// sub-set currently being watched.  If the set updateHeight is _lower_ than\n// the best known height of the implementation, then the state should be\n// rewound to ensure all relevant notifications are dispatched.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 5800,
+      "tokens": 822,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) UpdateFilter(ops []channeldb.EdgePoint,",
+      "content": "func (b *BitcoindFilteredChainView) UpdateFilter(ops []channeldb.EdgePoint,\n\tupdateHeight uint32) error {\n\n\tnewUtxos := make([]wire.OutPoint, len(ops))\n\tfor i, op := range ops {\n\t\tnewUtxos[i] = op.OutPoint\n\t}\n\n\tselect {\n\n\tcase b.filterUpdates <- filterUpdate{\n\t\tnewUtxos:     newUtxos,\n\t\tupdateHeight: updateHeight,\n\t}:\n\t\treturn nil\n\n\tcase <-b.quit:\n\t\treturn fmt.Errorf(\"chain filter shutting down\")\n\t}\n}\n\n// FilteredBlocks returns the channel that filtered blocks are to be sent over.\n// Each time a block is connected to the end of a main chain, and appropriate\n// FilteredBlock which contains the transactions which mutate our watched UTXO\n// set is to be returned.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 628,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) FilteredBlocks() <-chan *FilteredBlock {",
+      "content": "func (b *BitcoindFilteredChainView) FilteredBlocks() <-chan *FilteredBlock {\n\treturn b.blockQueue.newBlocks\n}\n\n// DisconnectedBlocks returns a receive only channel which will be sent upon\n// with the empty filtered blocks of blocks which are disconnected from the\n// main chain in the case of a re-org.\n//\n// NOTE: This is part of the FilteredChainView interface.",
+      "length": 279,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) DisconnectedBlocks() <-chan *FilteredBlock {",
+      "content": "func (b *BitcoindFilteredChainView) DisconnectedBlocks() <-chan *FilteredBlock {\n\treturn b.blockQueue.staleBlocks\n}\n\n// GetBlock is used to retrieve the block with the given hash. This function\n// wraps the blockCache's GetBlock function.",
+      "length": 153,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BitcoindFilteredChainView) GetBlock(hash *chainhash.Hash) (",
+      "content": "func (b *BitcoindFilteredChainView) GetBlock(hash *chainhash.Hash) (\n\t*wire.MsgBlock, error) {\n\n\treturn b.blockCache.GetBlock(hash, b.chainClient.GetBlock)\n}\n",
+      "length": 85,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

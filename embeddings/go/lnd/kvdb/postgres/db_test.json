@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/postgres/db_test.go",
-  "package": "kvdb_postgres",
+  "package": "postgres",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres",
+      "content": "//go:build kvdb_postgres\n\npackage postgres\n\nimport (\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/btcsuite/btcwallet/walletdb/walletdbtest\"\n\t\"github.com/stretchr/testify/require\"\n\t\"golang.org/x/net/context\"\n)\n\n// TestInterface performs all interfaces tests for this database driver.",
+      "length": 274,
+      "tokens": 21,
+      "embedding": []
+    },
     {
       "slug": "func TestInterface(t *testing.T) {",
       "content": "func TestInterface(t *testing.T) {\n\tstop, err := StartEmbeddedPostgres()\n\trequire.NoError(t, err)\n\tdefer stop()\n\n\tf, err := NewFixture(\"\")\n\trequire.NoError(t, err)\n\n\t// dbType is the database type name for this driver.\n\tconst dbType = \"postgres\"\n\n\tctx := context.Background()\n\tcfg := &Config{\n\t\tDsn: f.Dsn,\n\t}\n\n\twalletdbtest.TestInterface(t, dbType, ctx, cfg, prefix)\n}\n\n// TestPanic tests recovery from panic conditions.",

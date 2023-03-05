@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/feature/deps.go",
+  "package": "feature",
+  "sections": [
+    {
+      "slug": "type (",
+      "content": "type (\n\t// featureSet contains a set of feature bits.\n\tfeatureSet map[lnwire.FeatureBit]struct{}\n\n\t// supportedFeatures maps the feature bit from a feature vector to a\n\t// boolean indicating if this features dependencies have already been\n\t// verified. This allows us to short circuit verification if multiple\n\t// features have common dependencies, or map traversal starts verifying\n\t// from the bottom up.\n\tsupportedFeatures map[lnwire.FeatureBit]bool\n\n\t// depDesc maps a features to its set of dependent features, which must\n\t// also be present for the vector to be valid. This can be used to\n\t// recursively check the dependency chain for features in a feature\n\t// vector.\n\tdepDesc map[lnwire.FeatureBit]featureSet\n)\n\n// ErrMissingFeatureDep is an error signaling that a transitive dependency in a\n// feature vector is not set properly.",
+      "length": 814,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrMissingFeatureDep struct {",
+      "content": "type ErrMissingFeatureDep struct {\n\tdep lnwire.FeatureBit\n}\n\n// NewErrMissingFeatureDep creates a new ErrMissingFeatureDep error.",
+      "length": 91,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewErrMissingFeatureDep(dep lnwire.FeatureBit) ErrMissingFeatureDep {",
+      "content": "func NewErrMissingFeatureDep(dep lnwire.FeatureBit) ErrMissingFeatureDep {\n\treturn ErrMissingFeatureDep{dep: dep}\n}\n\n// Error returns a human-readable description of the missing dep error.",
+      "length": 110,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrMissingFeatureDep) Error() string {",
+      "content": "func (e ErrMissingFeatureDep) Error() string {\n\treturn fmt.Sprintf(\"missing feature dependency: %v\", e.dep)\n}\n\n// deps is the default set of dependencies for assigned feature bits. If a\n// feature is not present in the depDesc it is assumed to have no dependencies.\n//\n// NOTE: For proper functioning, only the optional variant of feature bits\n// should be used in the following descriptor. In the future it may be necessary\n// to distinguish the dependencies for optional and required bits, but for now\n// the validation code maps required bits to optional ones since it simplifies\n// the number of constraints.\nvar deps = depDesc{\n\tlnwire.PaymentAddrOptional: {\n\t\tlnwire.TLVOnionPayloadOptional: {},\n\t},\n\tlnwire.MPPOptional: {\n\t\tlnwire.PaymentAddrOptional: {},\n\t},\n\tlnwire.AnchorsOptional: {\n\t\tlnwire.StaticRemoteKeyOptional: {},\n\t},\n\tlnwire.AnchorsZeroFeeHtlcTxOptional: {\n\t\tlnwire.StaticRemoteKeyOptional: {},\n\t},\n\tlnwire.AMPOptional: {\n\t\tlnwire.PaymentAddrOptional: {},\n\t},\n\tlnwire.ExplicitChannelTypeOptional: {},\n\tlnwire.ScriptEnforcedLeaseOptional: {\n\t\tlnwire.ExplicitChannelTypeOptional:  {},\n\t\tlnwire.AnchorsZeroFeeHtlcTxOptional: {},\n\t},\n\tlnwire.KeysendOptional: {\n\t\tlnwire.TLVOnionPayloadOptional: {},\n\t},\n\tlnwire.ZeroConfOptional: {\n\t\tlnwire.ScidAliasOptional: {},\n\t},\n}\n\n// ValidateDeps asserts that a feature vector sets all features and their\n// transitive dependencies properly. It assumes that the dependencies between\n// optional and required features are identical, e.g. if a feature is required\n// but its dependency is optional, that is sufficient.",
+      "length": 1480,
+      "tokens": 188,
+      "embedding": []
+    },
+    {
+      "slug": "func ValidateDeps(fv *lnwire.FeatureVector) error {",
+      "content": "func ValidateDeps(fv *lnwire.FeatureVector) error {\n\tfeatures := fv.Features()\n\tsupported := initSupported(features)\n\n\treturn validateDeps(features, supported)\n}\n\n// validateDeps is a subroutine that recursively checks that the passed features\n// have all of their associated dependencies in the supported map.",
+      "length": 251,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func validateDeps(features featureSet, supported supportedFeatures) error {",
+      "content": "func validateDeps(features featureSet, supported supportedFeatures) error {\n\tfor bit := range features {\n\t\t// Convert any required bits to optional.\n\t\tbit = mapToOptional(bit)\n\n\t\t// If the supported features doesn't contain the dependency, this\n\t\t// vector is invalid.\n\t\tchecked, ok := supported[bit]\n\t\tif !ok {\n\t\t\treturn NewErrMissingFeatureDep(bit)\n\t\t}\n\n\t\t// Alternatively, if we know that this dependency is valid, we\n\t\t// can short circuit and continue verifying other bits.\n\t\tif checked {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Recursively validate dependencies, since this method ranges\n\t\t// over the subDeps. This method will return true even if\n\t\t// subDeps is nil.\n\t\tsubDeps := deps[bit]\n\t\tif err := validateDeps(subDeps, supported); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Once we've confirmed that this feature's dependencies, if\n\t\t// any, are sound, we record this so other paths taken through\n\t\t// `bit` return early when inspecting the supported map.\n\t\tsupported[bit] = true\n\t}\n\n\treturn nil\n}\n\n// initSupported sets all bits from the feature vector as supported but not\n// checked. This signals that the validity of their dependencies has not been\n// verified. All required bits are mapped to optional to simplify the DAG.",
+      "length": 1104,
+      "tokens": 179,
+      "embedding": []
+    },
+    {
+      "slug": "func initSupported(features featureSet) supportedFeatures {",
+      "content": "func initSupported(features featureSet) supportedFeatures {\n\tsupported := make(supportedFeatures)\n\tfor bit := range features {\n\t\tbit = mapToOptional(bit)\n\t\tsupported[bit] = false\n\t}\n\n\treturn supported\n}\n\n// mapToOptional returns the optional variant of a given feature bit pair. Our\n// dependendency graph is described using only optional feature bits, which\n// reduces the number of constraints we need to express in the descriptor.",
+      "length": 362,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func mapToOptional(bit lnwire.FeatureBit) lnwire.FeatureBit {",
+      "content": "func mapToOptional(bit lnwire.FeatureBit) lnwire.FeatureBit {\n\tif bit.IsRequired() {\n\t\tbit ^= 0x01\n\t}\n\treturn bit\n}\n",
+      "length": 49,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

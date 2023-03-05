@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/autopilotrpc/autopilot_server.go",
+  "package": "autopilotrpc",
+  "sections": [
+    {
+      "slug": "//go:build autopilotrpc",
+      "content": "//go:build autopilotrpc\n// +build autopilotrpc\n\npackage autopilotrpc\n\nimport (\n\t\"context\"\n\t\"encoding/hex\"\n\t\"sync/atomic\"\n\n\t\"github.com/btcsuite/btcd/btcec/v2\"\n\t\"github.com/grpc-ecosystem/grpc-gateway/v2/runtime\"\n\t\"github.com/lightningnetwork/lnd/autopilot\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"google.golang.org/grpc\"\n\t\"gopkg.in/macaroon-bakery.v2/bakery\"\n)\n\nconst (\n\t// subServerName is the name of the sub rpc server. We'll use this name\n\t// to register ourselves, and we also require that the main\n\t// SubServerConfigDispatcher instance recognize tt as the name of our\n\t// RPC service.\n\tsubServerName = \"AutopilotRPC\"\n)\n\nvar (\n\t// macPermissions maps RPC calls to the permissions they require.\n\tmacPermissions = map[string][]bakery.Op{\n\t\t\"/autopilotrpc.Autopilot/Status\": {{\n\t\t\tEntity: \"info\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/autopilotrpc.Autopilot/ModifyStatus\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"write\",\n\t\t}, {\n\t\t\tEntity: \"offchain\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t\t\"/autopilotrpc.Autopilot/QueryScores\": {{\n\t\t\tEntity: \"info\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t\t\"/autopilotrpc.Autopilot/SetScores\": {{\n\t\t\tEntity: \"onchain\",\n\t\t\tAction: \"write\",\n\t\t}, {\n\t\t\tEntity: \"offchain\",\n\t\t\tAction: \"write\",\n\t\t}},\n\t}\n)\n\n// ServerShell is a shell struct holding a reference to the actual sub-server.\n// It is used to register the gRPC sub-server with the root server before we\n// have the necessary dependencies to populate the actual sub-server.",
+      "length": 1351,
+      "tokens": 156,
+      "embedding": []
+    },
+    {
+      "slug": "type ServerShell struct {",
+      "content": "type ServerShell struct {\n\tAutopilotServer\n}\n\n// Server is a sub-server of the main RPC server: the autopilot RPC. This sub\n// RPC server allows external callers to access the status of the autopilot\n// currently active within lnd, as well as configuring it at runtime.",
+      "length": 238,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type Server struct {",
+      "content": "type Server struct {\n\tstarted  int32 // To be used atomically.\n\tshutdown int32 // To be used atomically.\n\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\t// Must be after the atomically used variables to not break struct\n\t// alignment.\n\tUnimplementedAutopilotServer\n\n\tcfg *Config\n\n\tmanager *autopilot.Manager\n}\n\n// A compile time check to ensure that Server fully implements the\n// AutopilotServer gRPC service.\nvar _ AutopilotServer = (*Server)(nil)\n\n// New returns a new instance of the autopilotrpc Autopilot sub-server. We also\n// return the set of permissions for the macaroons that we may create within\n// this method. If the macaroons we need aren't found in the filepath, then\n// we'll create them on start up. If we're unable to locate, or create the\n// macaroons we need, then we'll return with an error.",
+      "length": 796,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {",
+      "content": "func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {\n\t// We don't create any new macaroons for this subserver, instead reuse\n\t// existing onchain/offchain permissions.\n\tserver := &Server{\n\t\tcfg:     cfg,\n\t\tmanager: cfg.Manager,\n\t}\n\n\treturn server, macPermissions, nil\n}\n\n// Start launches any helper goroutines required for the Server to function.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 341,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Start() error {",
+      "content": "func (s *Server) Start() error {\n\tif atomic.AddInt32(&s.started, 1) != 1 {\n\t\treturn nil\n\t}\n\n\treturn s.manager.Start()\n}\n\n// Stop signals any active goroutines for a graceful closure.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 199,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Stop() error {",
+      "content": "func (s *Server) Stop() error {\n\tif atomic.AddInt32(&s.shutdown, 1) != 1 {\n\t\treturn nil\n\t}\n\n\treturn s.manager.Stop()\n}\n\n// Name returns a unique string representation of the sub-server. This can be\n// used to identify the sub-server and also de-duplicate them.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 277,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Name() string {",
+      "content": "func (s *Server) Name() string {\n\treturn subServerName\n}\n\n// RegisterWithRootServer will be called by the root gRPC server to direct a\n// sub RPC server to register itself with the main gRPC root server. Until this\n// is called, each sub-server won't be able to have\n// requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 317,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {",
+      "content": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {\n\t// We make sure that we register it with the main gRPC server to ensure\n\t// all our methods are routed properly.\n\tRegisterAutopilotServer(grpcServer, r)\n\n\tlog.Debugf(\"Autopilot RPC server successfully register with root \" +\n\t\t\"gRPC server\")\n\n\treturn nil\n}\n\n// RegisterWithRestServer will be called by the root REST mux to direct a sub\n// RPC server to register itself with the main REST mux server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 537,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,",
+      "content": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,\n\tmux *runtime.ServeMux, dest string, opts []grpc.DialOption) error {\n\n\t// We make sure that we register it with the main REST server to ensure\n\t// all our methods are routed properly.\n\terr := RegisterAutopilotHandlerFromEndpoint(ctx, mux, dest, opts)\n\tif err != nil {\n\t\tlog.Errorf(\"Could not register Autopilot REST server \"+\n\t\t\t\"with root REST server: %v\", err)\n\t\treturn err\n\t}\n\n\tlog.Debugf(\"Autopilot REST server successfully registered with \" +\n\t\t\"root REST server\")\n\treturn nil\n}\n\n// CreateSubServer populates the subserver's dependencies using the passed\n// SubServerConfigDispatcher. This method should fully initialize the\n// sub-server instance, making it ready for action. It returns the macaroon\n// permissions that the sub-server wishes to pass on to the root server for all\n// methods routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 854,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\tlnrpc.SubServer, lnrpc.MacaroonPerms, error) {\n\n\tsubServer, macPermissions, err := createNewSubServer(configRegistry)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tr.AutopilotServer = subServer\n\treturn subServer, macPermissions, nil\n}\n\n// Status returns the current status of the autopilot agent.\n//\n// NOTE: Part of the AutopilotServer interface.",
+      "length": 334,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Status(ctx context.Context,",
+      "content": "func (s *Server) Status(ctx context.Context,\n\tin *StatusRequest) (*StatusResponse, error) {\n\n\treturn &StatusResponse{\n\t\tActive: s.manager.IsActive(),\n\t}, nil\n}\n\n// ModifyStatus activates the current autopilot agent, if active.\n//\n// NOTE: Part of the AutopilotServer interface.",
+      "length": 223,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) ModifyStatus(ctx context.Context,",
+      "content": "func (s *Server) ModifyStatus(ctx context.Context,\n\tin *ModifyStatusRequest) (*ModifyStatusResponse, error) {\n\n\tlog.Debugf(\"Setting agent enabled=%v\", in.Enable)\n\n\tvar err error\n\tif in.Enable {\n\t\terr = s.manager.StartAgent()\n\t} else {\n\t\terr = s.manager.StopAgent()\n\t}\n\treturn &ModifyStatusResponse{}, err\n}\n\n// QueryScores queries all available autopilot heuristics, in addition to any\n// active combination of these heruristics, for the scores they would give to\n// the given nodes.\n//\n// NOTE: Part of the AutopilotServer interface.",
+      "length": 466,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) QueryScores(ctx context.Context, in *QueryScoresRequest) (",
+      "content": "func (s *Server) QueryScores(ctx context.Context, in *QueryScoresRequest) (\n\t*QueryScoresResponse, error) {\n\n\tvar nodes []autopilot.NodeID\n\tfor _, pubStr := range in.Pubkeys {\n\t\tpubHex, err := hex.DecodeString(pubStr)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tpubKey, err := btcec.ParsePubKey(pubHex)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tnID := autopilot.NewNodeID(pubKey)\n\t\tnodes = append(nodes, nID)\n\t}\n\n\t// Query the heuristics.\n\theuristicScores, err := s.manager.QueryHeuristics(\n\t\tnodes, !in.IgnoreLocalState,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tresp := &QueryScoresResponse{}\n\tfor heuristic, scores := range heuristicScores {\n\t\tresult := &QueryScoresResponse_HeuristicResult{\n\t\t\tHeuristic: heuristic,\n\t\t\tScores:    make(map[string]float64),\n\t\t}\n\n\t\tfor pub, score := range scores {\n\t\t\tpubkeyHex := hex.EncodeToString(pub[:])\n\t\t\tresult.Scores[pubkeyHex] = score\n\t\t}\n\n\t\t// Since a node not being part of the internally returned\n\t\t// scores imply a zero score, we add these before we return the\n\t\t// RPC results.\n\t\tfor _, node := range nodes {\n\t\t\tif _, ok := scores[node]; ok {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tpubkeyHex := hex.EncodeToString(node[:])\n\t\t\tresult.Scores[pubkeyHex] = 0.0\n\t\t}\n\n\t\tresp.Results = append(resp.Results, result)\n\t}\n\n\treturn resp, nil\n}\n\n// SetScores sets the scores of the external score heuristic, if active.\n//\n// NOTE: Part of the AutopilotServer interface.",
+      "length": 1258,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SetScores(ctx context.Context,",
+      "content": "func (s *Server) SetScores(ctx context.Context,\n\tin *SetScoresRequest) (*SetScoresResponse, error) {\n\n\tscores := make(map[autopilot.NodeID]float64)\n\tfor pubStr, score := range in.Scores {\n\t\tpubHex, err := hex.DecodeString(pubStr)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tpubKey, err := btcec.ParsePubKey(pubHex)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tnID := autopilot.NewNodeID(pubKey)\n\t\tscores[nID] = score\n\t}\n\n\tif err := s.manager.SetNodeScores(in.Heuristic, scores); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &SetScoresResponse{}, nil\n}\n",
+      "length": 477,
+      "tokens": 65,
+      "embedding": []
+    }
+  ]
+}

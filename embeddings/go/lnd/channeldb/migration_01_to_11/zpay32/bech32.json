@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/zpay32/bech32.go",
+  "package": "zpay32",
+  "sections": [
+    {
+      "slug": "func decodeBech32(bech string) (string, []byte, error) {",
+      "content": "func decodeBech32(bech string) (string, []byte, error) {\n\t// The maximum allowed length for a bech32 string is 90. It must also\n\t// be at least 8 characters, since it needs a non-empty HRP, a\n\t// separator, and a 6 character checksum.\n\t// NB: The 90 character check specified in BIP173 is skipped here, to\n\t// allow strings longer than 90 characters.\n\tif len(bech) < 8 {\n\t\treturn \"\", nil, fmt.Errorf(\"invalid bech32 string length %d\",\n\t\t\tlen(bech))\n\t}\n\t// Only\tASCII characters between 33 and 126 are allowed.\n\tfor i := 0; i < len(bech); i++ {\n\t\tif bech[i] < 33 || bech[i] > 126 {\n\t\t\treturn \"\", nil, fmt.Errorf(\"invalid character in \"+\n\t\t\t\t\"string: '%c'\", bech[i])\n\t\t}\n\t}\n\n\t// The characters must be either all lowercase or all uppercase.\n\tlower := strings.ToLower(bech)\n\tupper := strings.ToUpper(bech)\n\tif bech != lower && bech != upper {\n\t\treturn \"\", nil, fmt.Errorf(\"string not all lowercase or all \" +\n\t\t\t\"uppercase\")\n\t}\n\n\t// We'll work with the lowercase string from now on.\n\tbech = lower\n\n\t// The string is invalid if the last '1' is non-existent, it is the\n\t// first character of the string (no human-readable part) or one of the\n\t// last 6 characters of the string (since checksum cannot contain '1'),\n\t// or if the string is more than 90 characters in total.\n\tone := strings.LastIndexByte(bech, '1')\n\tif one < 1 || one+7 > len(bech) {\n\t\treturn \"\", nil, fmt.Errorf(\"invalid index of 1\")\n\t}\n\n\t// The human-readable part is everything before the last '1'.\n\thrp := bech[:one]\n\tdata := bech[one+1:]\n\n\t// Each character corresponds to the byte with value of the index in\n\t// 'charset'.\n\tdecoded, err := toBytes(data)\n\tif err != nil {\n\t\treturn \"\", nil, fmt.Errorf(\"failed converting data to bytes: \"+\n\t\t\t\"%v\", err)\n\t}\n\n\tif !bech32VerifyChecksum(hrp, decoded) {\n\t\tmoreInfo := \"\"\n\t\tchecksum := bech[len(bech)-6:]\n\t\texpected, err := toChars(bech32Checksum(hrp,\n\t\t\tdecoded[:len(decoded)-6]))\n\t\tif err == nil {\n\t\t\tmoreInfo = fmt.Sprintf(\"Expected %v, got %v.\",\n\t\t\t\texpected, checksum)\n\t\t}\n\t\treturn \"\", nil, fmt.Errorf(\"checksum failed. \" + moreInfo)\n\t}\n\n\t// We exclude the last 6 bytes, which is the checksum.\n\treturn hrp, decoded[:len(decoded)-6], nil\n}\n\n// toBytes converts each character in the string 'chars' to the value of the\n// index of the corresponding character in 'charset'.",
+      "length": 2160,
+      "tokens": 361,
+      "embedding": []
+    },
+    {
+      "slug": "func toBytes(chars string) ([]byte, error) {",
+      "content": "func toBytes(chars string) ([]byte, error) {\n\tdecoded := make([]byte, 0, len(chars))\n\tfor i := 0; i < len(chars); i++ {\n\t\tindex := strings.IndexByte(charset, chars[i])\n\t\tif index < 0 {\n\t\t\treturn nil, fmt.Errorf(\"invalid character not part of \"+\n\t\t\t\t\"charset: %v\", chars[i])\n\t\t}\n\t\tdecoded = append(decoded, byte(index))\n\t}\n\treturn decoded, nil\n}\n\n// toChars converts the byte slice 'data' to a string where each byte in 'data'\n// encodes the index of a character in 'charset'.",
+      "length": 417,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func toChars(data []byte) (string, error) {",
+      "content": "func toChars(data []byte) (string, error) {\n\tresult := make([]byte, 0, len(data))\n\tfor _, b := range data {\n\t\tif int(b) >= len(charset) {\n\t\t\treturn \"\", fmt.Errorf(\"invalid data byte: %v\", b)\n\t\t}\n\t\tresult = append(result, charset[b])\n\t}\n\treturn string(result), nil\n}\n\n// For more details on the checksum calculation, please refer to BIP 173.",
+      "length": 286,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func bech32Checksum(hrp string, data []byte) []byte {",
+      "content": "func bech32Checksum(hrp string, data []byte) []byte {\n\t// Convert the bytes to list of integers, as this is needed for the\n\t// checksum calculation.\n\tintegers := make([]int, len(data))\n\tfor i, b := range data {\n\t\tintegers[i] = int(b)\n\t}\n\tvalues := append(bech32HrpExpand(hrp), integers...)\n\tvalues = append(values, []int{0, 0, 0, 0, 0, 0}...)\n\tpolymod := bech32Polymod(values) ^ 1\n\tvar res []byte\n\tfor i := 0; i < 6; i++ {\n\t\tres = append(res, byte((polymod>>uint(5*(5-i)))&31))\n\t}\n\treturn res\n}\n\n// For more details on the polymod calculation, please refer to BIP 173.",
+      "length": 498,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func bech32Polymod(values []int) int {",
+      "content": "func bech32Polymod(values []int) int {\n\tchk := 1\n\tfor _, v := range values {\n\t\tb := chk >> 25\n\t\tchk = (chk&0x1ffffff)<<5 ^ v\n\t\tfor i := 0; i < 5; i++ {\n\t\t\tif (b>>uint(i))&1 == 1 {\n\t\t\t\tchk ^= gen[i]\n\t\t\t}\n\t\t}\n\t}\n\treturn chk\n}\n\n// For more details on HRP expansion, please refer to BIP 173.",
+      "length": 235,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func bech32HrpExpand(hrp string) []int {",
+      "content": "func bech32HrpExpand(hrp string) []int {\n\tv := make([]int, 0, len(hrp)*2+1)\n\tfor i := 0; i < len(hrp); i++ {\n\t\tv = append(v, int(hrp[i]>>5))\n\t}\n\tv = append(v, 0)\n\tfor i := 0; i < len(hrp); i++ {\n\t\tv = append(v, int(hrp[i]&31))\n\t}\n\treturn v\n}\n\n// For more details on the checksum verification, please refer to BIP 173.",
+      "length": 265,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func bech32VerifyChecksum(hrp string, data []byte) bool {",
+      "content": "func bech32VerifyChecksum(hrp string, data []byte) bool {\n\tintegers := make([]int, len(data))\n\tfor i, b := range data {\n\t\tintegers[i] = int(b)\n\t}\n\tconcat := append(bech32HrpExpand(hrp), integers...)\n\treturn bech32Polymod(concat) == 1\n}\n",
+      "length": 171,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

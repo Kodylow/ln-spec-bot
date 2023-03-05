@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/routing/validation_barrier_test.go",
+  "package": "routing_test",
+  "sections": [
+    {
+      "slug": "func TestValidationBarrierSemaphore(t *testing.T) {",
+      "content": "func TestValidationBarrierSemaphore(t *testing.T) {\n\tt.Parallel()\n\n\tconst (\n\t\tnumTasks        = 8\n\t\tnumPendingTasks = 8\n\t\ttimeout         = 50 * time.Millisecond\n\t)\n\n\tquit := make(chan struct{})\n\tbarrier := routing.NewValidationBarrier(numTasks, quit)\n\n\t// Saturate the semaphore with jobs.\n\tfor i := 0; i < numTasks; i++ {\n\t\tbarrier.InitJobDependencies(nil)\n\t}\n\n\t// Spawn additional tasks that will signal completion when added.\n\tjobAdded := make(chan struct{})\n\tfor i := 0; i < numPendingTasks; i++ {\n\t\tgo func() {\n\t\t\tbarrier.InitJobDependencies(nil)\n\t\t\tjobAdded <- struct{}{}\n\t\t}()\n\t}\n\n\t// Check that no jobs are added while semaphore is full.\n\tselect {\n\tcase <-time.After(timeout):\n\t\t// Expected since no slots open.\n\tcase <-jobAdded:\n\t\tt.Fatalf(\"job should not have been added\")\n\t}\n\n\t// Complete jobs one at a time and verify that they get added.\n\tfor i := 0; i < numPendingTasks; i++ {\n\t\tbarrier.CompleteJob()\n\n\t\tselect {\n\t\tcase <-time.After(timeout):\n\t\t\tt.Fatalf(\"timeout waiting for job to be added\")\n\t\tcase <-jobAdded:\n\t\t\t// Expected since one slot opened up.\n\t\t}\n\t}\n}\n\n// TestValidationBarrierQuit checks that pending validation tasks will return an\n// error from WaitForDependants if the barrier's quit signal is canceled.",
+      "length": 1134,
+      "tokens": 169,
+      "embedding": []
+    },
+    {
+      "slug": "func TestValidationBarrierQuit(t *testing.T) {",
+      "content": "func TestValidationBarrierQuit(t *testing.T) {\n\tt.Parallel()\n\n\tconst (\n\t\tnumTasks = 8\n\t\ttimeout  = 50 * time.Millisecond\n\t)\n\n\tquit := make(chan struct{})\n\tbarrier := routing.NewValidationBarrier(2*numTasks, quit)\n\n\t// Create a set of unique channel announcements that we will prep for\n\t// validation.\n\tanns := make([]*lnwire.ChannelAnnouncement, 0, numTasks)\n\tfor i := 0; i < numTasks; i++ {\n\t\tanns = append(anns, &lnwire.ChannelAnnouncement{\n\t\t\tShortChannelID: lnwire.NewShortChanIDFromInt(uint64(i)),\n\t\t\tNodeID1:        nodeIDFromInt(uint64(2 * i)),\n\t\t\tNodeID2:        nodeIDFromInt(uint64(2*i + 1)),\n\t\t})\n\t\tbarrier.InitJobDependencies(anns[i])\n\t}\n\n\t// Create a set of channel updates, that must wait until their\n\t// associated channel announcement has been verified.\n\tchanUpds := make([]*lnwire.ChannelUpdate, 0, numTasks)\n\tfor i := 0; i < numTasks; i++ {\n\t\tchanUpds = append(chanUpds, &lnwire.ChannelUpdate{\n\t\t\tShortChannelID: lnwire.NewShortChanIDFromInt(uint64(i)),\n\t\t})\n\t\tbarrier.InitJobDependencies(chanUpds[i])\n\t}\n\n\t// Spawn additional tasks that will send the error returned after\n\t// waiting for the announcements to finish. In the background, we will\n\t// iteratively queue the channel updates, which will send back the error\n\t// returned from waiting.\n\tjobErrs := make(chan error)\n\tfor i := 0; i < numTasks; i++ {\n\t\tgo func(ii int) {\n\t\t\tjobErrs <- barrier.WaitForDependants(chanUpds[ii])\n\t\t}(i)\n\t}\n\n\t// Check that no jobs are added while semaphore is full.\n\tselect {\n\tcase <-time.After(timeout):\n\t\t// Expected since no slots open.\n\tcase <-jobErrs:\n\t\tt.Fatalf(\"job should not have been signaled\")\n\t}\n\n\t// Complete the first half of jobs, one at a time, verifying that they\n\t// get signaled. Then, quit the barrier and check that all others exit\n\t// with the correct error.\n\tfor i := 0; i < numTasks; i++ {\n\t\tswitch {\n\t\t// Signal completion for the first half of tasks, but only allow\n\t\t// dependents to be processed as well for the second quarter.\n\t\tcase i < numTasks/4:\n\t\t\tbarrier.SignalDependants(anns[i], false)\n\t\t\tbarrier.CompleteJob()\n\n\t\tcase i < numTasks/2:\n\t\t\tbarrier.SignalDependants(anns[i], true)\n\t\t\tbarrier.CompleteJob()\n\n\t\t// At midpoint, quit the validation barrier.\n\t\tcase i == numTasks/2:\n\t\t\tclose(quit)\n\t\t}\n\n\t\tvar err error\n\t\tselect {\n\t\tcase <-time.After(timeout):\n\t\t\tt.Fatalf(\"timeout waiting for job to be signaled\")\n\t\tcase err = <-jobErrs:\n\t\t}\n\n\t\tswitch {\n\t\t// First half should return without failure.\n\t\tcase i < numTasks/4 && !routing.IsError(\n\t\t\terr, routing.ErrParentValidationFailed,\n\t\t):\n\t\t\tt.Fatalf(\"unexpected failure while waiting: %v\", err)\n\n\t\tcase i >= numTasks/4 && i < numTasks/2 && err != nil:\n\t\t\tt.Fatalf(\"unexpected failure while waiting: %v\", err)\n\n\t\t// Last half should return the shutdown error.\n\t\tcase i >= numTasks/2 && !routing.IsError(\n\t\t\terr, routing.ErrVBarrierShuttingDown,\n\t\t):\n\t\t\tt.Fatalf(\"expected failure after quitting: want %v, \"+\n\t\t\t\t\"got %v\", routing.ErrVBarrierShuttingDown, err)\n\t\t}\n\t}\n}\n\n// nodeIDFromInt creates a node ID by writing a uint64 to the first 8 bytes.",
+      "length": 2886,
+      "tokens": 399,
+      "embedding": []
+    },
+    {
+      "slug": "func nodeIDFromInt(i uint64) [33]byte {",
+      "content": "func nodeIDFromInt(i uint64) [33]byte {\n\tvar nodeID [33]byte\n\tbinary.BigEndian.PutUint64(nodeID[:8], i)\n\treturn nodeID\n}\n",
+      "length": 77,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

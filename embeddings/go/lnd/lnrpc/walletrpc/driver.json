@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/walletrpc/driver.go",
+  "package": "walletrpc",
+  "sections": [
+    {
+      "slug": "//go:build walletrpc",
+      "content": "//go:build walletrpc\n// +build walletrpc\n\npackage walletrpc\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n)\n\n// createNewSubServer is a helper method that will create the new WalletKit RPC\n// sub server given the main config dispatcher method. If we're unable to find\n// the config that is meant for us in the config dispatcher, then we'll exit\n// with an error.",
+      "length": 341,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\t*WalletKit, lnrpc.MacaroonPerms, error) {\n\n\t// We'll attempt to look up the config that we expect, according to our\n\t// SubServerName name. If we can't find this, then we'll exit with an\n\t// error, as we're unable to properly initialize ourselves without this\n\t// config.\n\twalletKitServerConf, ok := configRegistry.FetchConfig(SubServerName)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"unable to find config for \"+\n\t\t\t\"subserver type %s\", SubServerName)\n\t}\n\n\t// Now that we've found an object mapping to our service name, we'll\n\t// ensure that it's the type we need.\n\tconfig, ok := walletKitServerConf.(*Config)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"wrong type of config for \"+\n\t\t\t\"subserver %s, expected %T got %T\", SubServerName,\n\t\t\t&Config{}, walletKitServerConf)\n\t}\n\n\t// Before we try to make the new WalletKit service instance, we'll\n\t// perform some sanity checks on the arguments to ensure that they're\n\t// usable.\n\tswitch {\n\tcase config.MacService != nil && config.NetworkDir == \"\":\n\t\treturn nil, nil, fmt.Errorf(\"NetworkDir must be set to \" +\n\t\t\t\"create WalletKit RPC server\")\n\n\tcase config.FeeEstimator == nil:\n\t\treturn nil, nil, fmt.Errorf(\"FeeEstimator must be set to \" +\n\t\t\t\"create WalletKit RPC server\")\n\n\tcase config.Wallet == nil:\n\t\treturn nil, nil, fmt.Errorf(\"Wallet must be set to create \" +\n\t\t\t\"WalletKit RPC server\")\n\n\tcase config.KeyRing == nil:\n\t\treturn nil, nil, fmt.Errorf(\"KeyRing must be set to create \" +\n\t\t\t\"WalletKit RPC server\")\n\n\tcase config.Sweeper == nil:\n\t\treturn nil, nil, fmt.Errorf(\"Sweeper must be set to create \" +\n\t\t\t\"WalletKit RPC server\")\n\n\tcase config.Chain == nil:\n\t\treturn nil, nil, fmt.Errorf(\"Chain must be set to create \" +\n\t\t\t\"WalletKit RPC server\")\n\t}\n\n\treturn New(config)\n}\n",
+      "length": 1675,
+      "tokens": 256,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\tsubServer := &lnrpc.SubServerDriver{\n\t\tSubServerName: SubServerName,\n\t\tNewGrpcHandler: func() lnrpc.GrpcHandler {\n\t\t\treturn &ServerShell{}\n\t\t},\n\t}\n\n\t// If the build tag is active, then we'll register ourselves as a\n\t// sub-RPC server within the global lnrpc package namespace.\n\tif err := lnrpc.RegisterSubServer(subServer); err != nil {\n\t\tpanic(fmt.Sprintf(\"failed to register sub server driver '%s': %v\",\n\t\t\tSubServerName, err))\n\t}\n}\n",
+      "length": 422,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

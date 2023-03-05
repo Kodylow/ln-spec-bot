@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/devrpc_active.go",
-  "package": "dev",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage main\n\nimport (\n\t\"bytes\"\n\t\"fmt\"\n\t\"io/ioutil\"\n\n\t\"github.com/lightninglabs/protobuf-hex-display/jsonpb\"\n\t\"github.com/lightningnetwork/lnd/lncfg\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"github.com/lightningnetwork/lnd/lnrpc/devrpc\"\n\t\"github.com/urfave/cli\"\n)\n\n// devCommands will return the set of commands to enable for devrpc builds.",
+      "length": 341,
+      "tokens": 29,
+      "embedding": []
+    },
     {
       "slug": "func devCommands() []cli.Command {",
       "content": "func devCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:        \"importgraph\",\n\t\t\tCategory:    \"Development\",\n\t\t\tDescription: \"Imports graph from describegraph JSON\",\n\t\t\tUsage:       \"Import the network graph.\",\n\t\t\tArgsUsage:   \"graph-json-file\",\n\t\t\tAction:      actionDecorator(importGraph),\n\t\t},\n\t}\n}\n",

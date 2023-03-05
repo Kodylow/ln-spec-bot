@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/create_tlb.go",
+  "package": "migration",
+  "sections": [
+    {
+      "slug": "func CreateTLB(bucket []byte) func(kvdb.RwTx) error {",
+      "content": "func CreateTLB(bucket []byte) func(kvdb.RwTx) error {\n\treturn func(tx kvdb.RwTx) error {\n\t\tlog.Infof(\"Creating top-level bucket: \\\"%s\\\" ...\", bucket)\n\n\t\tif tx.ReadBucket(bucket) != nil {\n\t\t\treturn fmt.Errorf(\"top-level bucket \\\"%s\\\" \"+\n\t\t\t\t\"already exists\", bucket)\n\t\t}\n\n\t\t_, err := tx.CreateTopLevelBucket(bucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tlog.Infof(\"Created top-level bucket: \\\"%s\\\"\", bucket)\n\t\treturn nil\n\t}\n}\n",
+      "length": 355,
+      "tokens": 46,
+      "embedding": []
+    }
+  ]
+}

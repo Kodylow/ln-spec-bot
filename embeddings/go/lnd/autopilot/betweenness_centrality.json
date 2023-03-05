@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/betweenness_centrality.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type stack struct {",
+      "content": "type stack struct {\n\tstack []int\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stack) push(v int) {",
+      "content": "func (s *stack) push(v int) {\n\ts.stack = append(s.stack, v)\n}\n",
+      "length": 30,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stack) top() int {",
+      "content": "func (s *stack) top() int {\n\treturn s.stack[len(s.stack)-1]\n}\n",
+      "length": 32,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stack) pop() {",
+      "content": "func (s *stack) pop() {\n\ts.stack = s.stack[:len(s.stack)-1]\n}\n",
+      "length": 36,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stack) empty() bool {",
+      "content": "func (s *stack) empty() bool {\n\treturn len(s.stack) == 0\n}\n\n// queue is a simple int queue to help with readability of Brandes'\n// betweenness centrality implementation below.",
+      "length": 140,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type queue struct {",
+      "content": "type queue struct {\n\tqueue []int\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *queue) push(v int) {",
+      "content": "func (q *queue) push(v int) {\n\tq.queue = append(q.queue, v)\n}\n",
+      "length": 30,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *queue) front() int {",
+      "content": "func (q *queue) front() int {\n\treturn q.queue[0]\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *queue) pop() {",
+      "content": "func (q *queue) pop() {\n\tq.queue = q.queue[1:]\n}\n",
+      "length": 23,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *queue) empty() bool {",
+      "content": "func (q *queue) empty() bool {\n\treturn len(q.queue) == 0\n}\n\n// BetweennessCentrality is a NodeMetric that calculates node betweenness\n// centrality using Brandes' algorithm. Betweenness centrality for each node\n// is the number of shortest paths passing through that node, not counting\n// shortest paths starting or ending at that node. This is a useful metric\n// to measure control of individual nodes over the whole network.",
+      "length": 388,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "type BetweennessCentrality struct {",
+      "content": "type BetweennessCentrality struct {\n\t// workers number of goroutines are used to parallelize\n\t// centrality calculation.\n\tworkers int\n\n\t// centrality stores original (not normalized) centrality values for\n\t// each node in the graph.\n\tcentrality map[NodeID]float64\n\n\t// min is the minimum centrality in the graph.\n\tmin float64\n\n\t// max is the maximum centrality in the graph.\n\tmax float64\n}\n\n// NewBetweennessCentralityMetric creates a new BetweennessCentrality instance.\n// Users can specify the number of workers to use for calculating centrality.",
+      "length": 496,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBetweennessCentralityMetric(workers int) (*BetweennessCentrality, error) {",
+      "content": "func NewBetweennessCentralityMetric(workers int) (*BetweennessCentrality, error) {\n\t// There should be at least one worker.\n\tif workers < 1 {\n\t\treturn nil, fmt.Errorf(\"workers must be positive\")\n\t}\n\treturn &BetweennessCentrality{\n\t\tworkers: workers,\n\t}, nil\n}\n\n// Name returns the name of the metric.",
+      "length": 208,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (bc *BetweennessCentrality) Name() string {",
+      "content": "func (bc *BetweennessCentrality) Name() string {\n\treturn \"betweenness_centrality\"\n}\n\n// betweennessCentrality is the core of Brandes' algorithm.\n// We first calculate the shortest paths from the start node s to all other\n// nodes with BFS, then update the betweenness centrality values by using\n// Brandes' dependency trick.\n// For detailed explanation please read:\n// https://www.cl.cam.ac.uk/teaching/1617/MLRD/handbook/brandes.html",
+      "length": 377,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func betweennessCentrality(g *SimpleGraph, s int, centrality []float64) {",
+      "content": "func betweennessCentrality(g *SimpleGraph, s int, centrality []float64) {\n\t// pred[w] is the list of nodes that immediately precede w on a\n\t// shortest path from s to t for each node t.\n\tpred := make([][]int, len(g.Nodes))\n\n\t// sigma[t] is the number of shortest paths between nodes s and t\n\t// for each node t.\n\tsigma := make([]int, len(g.Nodes))\n\tsigma[s] = 1\n\n\t// dist[t] holds the distance between s and t for each node t.\n\t// We initialize this to -1 (meaning infinity) for each t != s.\n\tdist := make([]int, len(g.Nodes))\n\tfor i := range dist {\n\t\tdist[i] = -1\n\t}\n\n\tdist[s] = 0\n\n\tvar (\n\t\tst stack\n\t\tq  queue\n\t)\n\tq.push(s)\n\n\t// BFS to calculate the shortest paths (sigma and pred)\n\t// from s to t for each node t.\n\tfor !q.empty() {\n\t\tv := q.front()\n\t\tq.pop()\n\t\tst.push(v)\n\n\t\tfor _, w := range g.Adj[v] {\n\t\t\t// If distance from s to w is infinity (-1)\n\t\t\t// then set it and enqueue w.\n\t\t\tif dist[w] < 0 {\n\t\t\t\tdist[w] = dist[v] + 1\n\t\t\t\tq.push(w)\n\t\t\t}\n\n\t\t\t// If w is on a shortest path the update\n\t\t\t// sigma and add v to w's predecessor list.\n\t\t\tif dist[w] == dist[v]+1 {\n\t\t\t\tsigma[w] += sigma[v]\n\t\t\t\tpred[w] = append(pred[w], v)\n\t\t\t}\n\t\t}\n\t}\n\n\t// delta[v] is the ratio of the shortest paths between s and t that go\n\t// through v and the total number of shortest paths between s and t.\n\t// If we have delta then the betweenness centrality is simply the sum\n\t// of delta[w] for each w != s.\n\tdelta := make([]float64, len(g.Nodes))\n\n\tfor !st.empty() {\n\t\tw := st.top()\n\t\tst.pop()\n\n\t\t// pred[w] is the list of nodes that immediately precede w on a\n\t\t// shortest path from s.\n\t\tfor _, v := range pred[w] {\n\t\t\t// Update delta using Brandes' equation.\n\t\t\tdelta[v] += (float64(sigma[v]) / float64(sigma[w])) * (1.0 + delta[w])\n\t\t}\n\n\t\tif w != s {\n\t\t\t// As noted above centrality is simply the sum\n\t\t\t// of delta[w] for each w != s.\n\t\t\tcentrality[w] += delta[w]\n\t\t}\n\t}\n}\n\n// Refresh recalculates and stores centrality values.",
+      "length": 1768,
+      "tokens": 338,
+      "embedding": []
+    },
+    {
+      "slug": "func (bc *BetweennessCentrality) Refresh(graph ChannelGraph) error {",
+      "content": "func (bc *BetweennessCentrality) Refresh(graph ChannelGraph) error {\n\tcache, err := NewSimpleGraph(graph)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar wg sync.WaitGroup\n\twork := make(chan int)\n\tpartials := make(chan []float64, bc.workers)\n\n\t// Each worker will compute a partial result.\n\t// This partial result is a sum of centrality updates\n\t// on roughly N / workers nodes.\n\tworker := func() {\n\t\tdefer wg.Done()\n\t\tpartial := make([]float64, len(cache.Nodes))\n\n\t\t// Consume the next node, update centrality\n\t\t// parital to avoid unnecessary synchronization.\n\t\tfor node := range work {\n\t\t\tbetweennessCentrality(cache, node, partial)\n\t\t}\n\t\tpartials <- partial\n\t}\n\n\t// Now start the N workers.\n\twg.Add(bc.workers)\n\tfor i := 0; i < bc.workers; i++ {\n\t\tgo worker()\n\t}\n\n\t// Distribute work amongst workers.\n\t// Should be fair when the graph is sufficiently large.\n\tfor node := range cache.Nodes {\n\t\twork <- node\n\t}\n\n\tclose(work)\n\twg.Wait()\n\tclose(partials)\n\n\t// Collect and sum partials for final result.\n\tcentrality := make([]float64, len(cache.Nodes))\n\tfor partial := range partials {\n\t\tfor i := 0; i < len(partial); i++ {\n\t\t\tcentrality[i] += partial[i]\n\t\t}\n\t}\n\n\t// Get min/max to be able to normalize\n\t// centrality values between 0 and 1.\n\tbc.min = 0\n\tbc.max = 0\n\tif len(centrality) > 0 {\n\t\tfor _, v := range centrality {\n\t\t\tif v < bc.min {\n\t\t\t\tbc.min = v\n\t\t\t} else if v > bc.max {\n\t\t\t\tbc.max = v\n\t\t\t}\n\t\t}\n\t}\n\n\t// Divide by two as this is an undirected graph.\n\tbc.min /= 2.0\n\tbc.max /= 2.0\n\n\tbc.centrality = make(map[NodeID]float64)\n\tfor u, value := range centrality {\n\t\t// Divide by two as this is an undirected graph.\n\t\tbc.centrality[cache.Nodes[u]] = value / 2.0\n\t}\n\n\treturn nil\n}\n\n// GetMetric returns the current centrality values for each node indexed\n// by node id.",
+      "length": 1620,
+      "tokens": 279,
+      "embedding": []
+    },
+    {
+      "slug": "func (bc *BetweennessCentrality) GetMetric(normalize bool) map[NodeID]float64 {",
+      "content": "func (bc *BetweennessCentrality) GetMetric(normalize bool) map[NodeID]float64 {\n\t// Normalization factor.\n\tvar z float64\n\tif (bc.max - bc.min) > 0 {\n\t\tz = 1.0 / (bc.max - bc.min)\n\t}\n\n\tcentrality := make(map[NodeID]float64)\n\tfor k, v := range bc.centrality {\n\t\tif normalize {\n\t\t\tv = (v - bc.min) * z\n\t\t}\n\t\tcentrality[k] = v\n\t}\n\n\treturn centrality\n}\n",
+      "length": 252,
+      "tokens": 49,
+      "embedding": []
+    }
+  ]
+}

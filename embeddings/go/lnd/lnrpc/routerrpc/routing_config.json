@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/routing_config.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "type RoutingConfig struct {",
+      "content": "type RoutingConfig struct {\n\t// ProbabilityEstimatorType sets the estimator to use.\n\tProbabilityEstimatorType string `long:\"estimator\" choice:\"apriori\" choice:\"bimodal\" description:\"Probability estimator used for pathfinding.\" `\n\n\t// MinRouteProbability is the minimum required route success probability\n\t// to attempt the payment.\n\tMinRouteProbability float64 `long:\"minrtprob\" description:\"Minimum required route success probability to attempt the payment\"`\n\n\t// AttemptCost is the fixed virtual cost in path finding of a failed\n\t// payment attempt. It is used to trade off potentially better routes\n\t// against their probability of succeeding.\n\tAttemptCost btcutil.Amount `long:\"attemptcost\" description:\"The fixed (virtual) cost in sats of a failed payment attempt\"`\n\n\t// AttemptCostPPM is the proportional virtual cost in path finding of a\n\t// failed payment attempt. It is used to trade off potentially better\n\t// routes against their probability of succeeding. This parameter is\n\t// expressed in parts per million of the total payment amount.\n\tAttemptCostPPM int64 `long:\"attemptcostppm\" description:\"The proportional (virtual) cost in sats of a failed payment attempt expressed in parts per million of the total payment amount\"`\n\n\t// MaxMcHistory defines the maximum number of payment results that\n\t// are held on disk by mission control.\n\tMaxMcHistory int `long:\"maxmchistory\" description:\"the maximum number of payment results that are held on disk by mission control\"`\n\n\t// McFlushInterval defines the timer interval to use to flush mission\n\t// control state to the DB.\n\tMcFlushInterval time.Duration `long:\"mcflushinterval\" description:\"the timer interval to use to flush mission control state to the DB\"`\n\n\t// AprioriConfig defines parameters for the apriori probability.\n\tAprioriConfig *AprioriConfig `group:\"apriori\" namespace:\"apriori\" description:\"configuration for the apriori pathfinding probability estimator\"`\n\n\t// BimodalConfig defines parameters for the bimodal probability.\n\tBimodalConfig *BimodalConfig `group:\"bimodal\" namespace:\"bimodal\" description:\"configuration for the bimodal pathfinding probability estimator\"`\n}\n\n// AprioriConfig defines parameters for the apriori probability.\n//\n//nolint:lll",
+      "length": 2164,
+      "tokens": 275,
+      "embedding": []
+    },
+    {
+      "slug": "type AprioriConfig struct {",
+      "content": "type AprioriConfig struct {\n\t// HopProbability is the assumed success probability of a hop in a route\n\t// when no other information is available.\n\tHopProbability float64 `long:\"hopprob\" description:\"Assumed success probability of a hop in a route when no other information is available.\"`\n\n\t// Weight is a value in the range [0, 1] that defines to what extent\n\t// historical results should be extrapolated to untried connections.\n\t// Setting it to one will completely ignore historical results and\n\t// always assume the configured a priori probability for untried\n\t// connections. A value of zero will ignore the a priori probability\n\t// completely and only base the probability on historical results,\n\t// unless there are none available.\n\tWeight float64 `long:\"weight\" description:\"Weight of the a priori probability in success probability estimation. Valid values are in [0, 1].\"`\n\n\t// PenaltyHalfLife defines after how much time a penalized node or\n\t// channel is back at 50% probability.\n\tPenaltyHalfLife time.Duration `long:\"penaltyhalflife\" description:\"Defines the duration after which a penalized node or channel is back at 50% probability\"`\n\n\t// CapacityFraction defines the fraction of channels' capacities that is considered liquid.\n\tCapacityFraction float64 `long:\"capacityfraction\" description:\"Defines the fraction of channels' capacities that is considered liquid. Valid values are in [0.75, 1].\"`\n}\n\n// BimodalConfig defines parameters for the bimodal probability.\n//\n//nolint:lll",
+      "length": 1445,
+      "tokens": 208,
+      "embedding": []
+    },
+    {
+      "slug": "type BimodalConfig struct {",
+      "content": "type BimodalConfig struct {\n\t// Scale describes the scale over which channels still have some\n\t// liquidity left on both channel ends. A value of 0 means that we\n\t// assume perfectly unbalanced channels, a very high value means\n\t// randomly balanced channels.\n\tScale int64 `long:\"scale\" description:\"Defines the unbalancedness assumed for the network, the amount defined in msat.\"`\n\n\t// NodeWeight defines how strongly non-routed channels should be taken\n\t// into account for probability estimation. Valid values are in [0,1].\n\tNodeWeight float64 `long:\"nodeweight\" description:\"Defines how strongly non-routed channels should be taken into account for probability estimation. Valid values are in [0, 1].\"`\n\n\t// DecayTime is the scale for the exponential information decay over\n\t// time for previous successes or failures.\n\tDecayTime time.Duration `long:\"decaytime\" description:\"Describes the information decay of knowledge about previous successes and failures in channels.\"`\n}\n",
+      "length": 937,
+      "tokens": 132,
+      "embedding": []
+    }
+  ]
+}

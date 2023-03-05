@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/watchtowerrpc/interface.go",
+  "package": "watchtowerrpc",
+  "sections": [
+    {
+      "slug": "type WatchtowerBackend interface {",
+      "content": "type WatchtowerBackend interface {\n\t// PubKey returns the public key for the watchtower used to\n\t// authentication and encrypt traffic with clients.\n\tPubKey() *btcec.PublicKey\n\n\t// ListeningAddrs returns the listening addresses where the watchtower\n\t// server can accept client connections.\n\tListeningAddrs() []net.Addr\n\n\t// ExternalIPs returns the addresses where the watchtower can be reached\n\t// by clients externally.\n\tExternalIPs() []net.Addr\n}\n",
+      "length": 403,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration29/migration_test.go",
+  "package": "migration29",
+  "sections": [
+    {
+      "slug": "func TestMigrateChannelIDIndex(t *testing.T) {",
+      "content": "func TestMigrateChannelIDIndex(t *testing.T) {\n\t// Prime the database with the populated outpoint bucket. We create the\n\t// ChannelID bucket since the prior migration creates it anyways.\n\tbefore := func(tx kvdb.RwTx) error {\n\t\terr := migtest.RestoreDB(tx, outpointBucket, outpointData)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn migtest.RestoreDB(tx, chanIDBucket, chanIDBefore)\n\t}\n\n\t// After the migration, ensure that the ChannelID bucket is properly\n\t// populated.\n\tafter := func(tx kvdb.RwTx) error {\n\t\terr := migtest.VerifyDB(tx, outpointBucket, outpointData)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn migtest.VerifyDB(tx, chanIDBucket, post)\n\t}\n\n\tmigtest.ApplyMigration(t, before, after, MigrateChanID, false)\n}\n",
+      "length": 654,
+      "tokens": 89,
+      "embedding": []
+    }
+  ]
+}

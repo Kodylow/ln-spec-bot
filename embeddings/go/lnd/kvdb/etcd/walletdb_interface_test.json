@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/walletdb_interface_test.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"context\"\n\t\"testing\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb/walletdbtest\"\n)\n\n// TestWalletDBInterface performs the WalletDB interface test suite for the\n// etcd database driver.",
+      "length": 213,
+      "tokens": 25,
+      "embedding": []
+    },
     {
       "slug": "func TestWalletDBInterface(t *testing.T) {",
       "content": "func TestWalletDBInterface(t *testing.T) {\n\tf := NewEtcdTestFixture(t)\n\tcfg := f.BackendConfig()\n\twalletdbtest.TestInterface(t, dbType, context.TODO(), &cfg)\n}\n",

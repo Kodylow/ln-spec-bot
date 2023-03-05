@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/db.go",
-  "package": "kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n\nimport (\n\t\"context\"\n\t\"database/sql\"\n\t\"errors\"\n\t\"fmt\"\n\t\"io\"\n\t\"sync\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\nconst (\n\t// kvTableName is the name of the table that will contain all the kv\n\t// pairs.\n\tkvTableName = \"kv\"\n)\n\n// Config holds a set of configuration options of a sql database connection.",
+      "length": 306,
+      "tokens": 48,
+      "embedding": []
+    },
     {
       "slug": "type Config struct {",
       "content": "type Config struct {\n\t// DriverName is the string that defines the registered sql driver that\n\t// is to be used.\n\tDriverName string\n\n\t// Dsn is the database connection string that will be used to connect\n\t// to the db.\n\tDsn string\n\n\t// Timeout is the time after which a query to the db will be canceled if\n\t// it has not yet completed.\n\tTimeout time.Duration\n\n\t// Schema is the name of the schema under which the sql tables should be\n\t// created. It should be left empty for backends like sqlite that do not\n\t// support having more than one schema.\n\tSchema string\n\n\t// TableNamePrefix is the name that should be used as a table name\n\t// prefix when constructing the KV style table.\n\tTableNamePrefix string\n\n\t// SQLiteCmdReplacements define a one-to-one string mapping of sql\n\t// keywords to the strings that should replace those keywords in any\n\t// commands. Note that the sqlite keywords to be replaced are\n\t// case-sensitive.\n\tSQLiteCmdReplacements SQLiteCmdReplacements\n\n\t// WithTxLevelLock when set will ensure that there is a transaction\n\t// level lock.\n\tWithTxLevelLock bool\n}\n\n// db holds a reference to the sql db connection.",

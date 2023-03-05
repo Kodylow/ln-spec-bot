@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/watchtowerrpc/watchtower.pb.go",
+  "package": "watchtowerrpc",
+  "sections": [
+    {
+      "slug": "type GetInfoRequest struct {",
+      "content": "type GetInfoRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoRequest) Reset() {",
+      "content": "func (x *GetInfoRequest) Reset() {\n\t*x = GetInfoRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_watchtowerrpc_watchtower_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 191,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoRequest) String() string {",
+      "content": "func (x *GetInfoRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetInfoRequest) ProtoMessage() {}",
+      "content": "func (*GetInfoRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetInfoRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_watchtowerrpc_watchtower_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetInfoRequest.ProtoReflect.Descriptor instead.",
+      "length": 318,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetInfoRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetInfoRequest) Descriptor() ([]byte, []int) {\n\treturn file_watchtowerrpc_watchtower_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 68,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type GetInfoResponse struct {",
+      "content": "type GetInfoResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The public key of the watchtower.\n\tPubkey []byte `protobuf:\"bytes,1,opt,name=pubkey,proto3\" json:\"pubkey,omitempty\"`\n\t// The listening addresses of the watchtower.\n\tListeners []string `protobuf:\"bytes,2,rep,name=listeners,proto3\" json:\"listeners,omitempty\"`\n\t// The URIs of the watchtower.\n\tUris []string `protobuf:\"bytes,3,rep,name=uris,proto3\" json:\"uris,omitempty\"`\n}\n",
+      "length": 477,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) Reset() {",
+      "content": "func (x *GetInfoResponse) Reset() {\n\t*x = GetInfoResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_watchtowerrpc_watchtower_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 192,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) String() string {",
+      "content": "func (x *GetInfoResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetInfoResponse) ProtoMessage() {}",
+      "content": "func (*GetInfoResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetInfoResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_watchtowerrpc_watchtower_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetInfoResponse.ProtoReflect.Descriptor instead.",
+      "length": 319,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetInfoResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetInfoResponse) Descriptor() ([]byte, []int) {\n\treturn file_watchtowerrpc_watchtower_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 68,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) GetPubkey() []byte {",
+      "content": "func (x *GetInfoResponse) GetPubkey() []byte {\n\tif x != nil {\n\t\treturn x.Pubkey\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) GetListeners() []string {",
+      "content": "func (x *GetInfoResponse) GetListeners() []string {\n\tif x != nil {\n\t\treturn x.Listeners\n\t}\n\treturn nil\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetInfoResponse) GetUris() []string {",
+      "content": "func (x *GetInfoResponse) GetUris() []string {\n\tif x != nil {\n\t\treturn x.Uris\n\t}\n\treturn nil\n}\n\nvar File_watchtowerrpc_watchtower_proto protoreflect.FileDescriptor\n\nvar file_watchtowerrpc_watchtower_proto_rawDesc = []byte{\n\t0x0a, 0x1e, 0x77, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f, 0x77, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2f,\n\t0x77, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f, 0x77, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,\n\t0x12, 0x0d, 0x77, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f, 0x77, 0x65, 0x72, 0x72, 0x70, 0x63, 0x22,\n\t0x10, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,\n\t0x74, 0x22, 0x5b, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70,\n\t0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x18, 0x01,\n\t0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x12, 0x1c, 0x0a, 0x09,\n\t0x6c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52,\n\t0x09, 0x6c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x75, 0x72,\n\t0x69, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x75, 0x72, 0x69, 0x73, 0x32, 0x56,\n\t0x0a, 0x0a, 0x57, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f, 0x77, 0x65, 0x72, 0x12, 0x48, 0x0a, 0x07,\n\t0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1d, 0x2e, 0x77, 0x61, 0x74, 0x63, 0x68, 0x74,\n\t0x6f, 0x77, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52,\n\t0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x77, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f,\n\t0x77, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65,\n\t0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,\n\t0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x6e, 0x65,\n\t0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c, 0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2f,\n\t0x77, 0x61, 0x74, 0x63, 0x68, 0x74, 0x6f, 0x77, 0x65, 0x72, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70,\n\t0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_watchtowerrpc_watchtower_proto_rawDescOnce sync.Once\n\tfile_watchtowerrpc_watchtower_proto_rawDescData = file_watchtowerrpc_watchtower_proto_rawDesc\n)\n",
+      "length": 2180,
+      "tokens": 336,
+      "embedding": []
+    },
+    {
+      "slug": "func file_watchtowerrpc_watchtower_proto_rawDescGZIP() []byte {",
+      "content": "func file_watchtowerrpc_watchtower_proto_rawDescGZIP() []byte {\n\tfile_watchtowerrpc_watchtower_proto_rawDescOnce.Do(func() {\n\t\tfile_watchtowerrpc_watchtower_proto_rawDescData = protoimpl.X.CompressGZIP(file_watchtowerrpc_watchtower_proto_rawDescData)\n\t})\n\treturn file_watchtowerrpc_watchtower_proto_rawDescData\n}\n\nvar file_watchtowerrpc_watchtower_proto_msgTypes = make([]protoimpl.MessageInfo, 2)\nvar file_watchtowerrpc_watchtower_proto_goTypes = []interface{}{\n\t(*GetInfoRequest)(nil),  // 0: watchtowerrpc.GetInfoRequest\n\t(*GetInfoResponse)(nil), // 1: watchtowerrpc.GetInfoResponse\n}\nvar file_watchtowerrpc_watchtower_proto_depIdxs = []int32{\n\t0, // 0: watchtowerrpc.Watchtower.GetInfo:input_type -> watchtowerrpc.GetInfoRequest\n\t1, // 1: watchtowerrpc.Watchtower.GetInfo:output_type -> watchtowerrpc.GetInfoResponse\n\t1, // [1:2] is the sub-list for method output_type\n\t0, // [0:1] is the sub-list for method input_type\n\t0, // [0:0] is the sub-list for extension type_name\n\t0, // [0:0] is the sub-list for extension extendee\n\t0, // [0:0] is the sub-list for field type_name\n}\n",
+      "length": 996,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_watchtowerrpc_watchtower_proto_init() }",
+      "content": "func init() { file_watchtowerrpc_watchtower_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_watchtowerrpc_watchtower_proto_init() {",
+      "content": "func file_watchtowerrpc_watchtower_proto_init() {\n\tif File_watchtowerrpc_watchtower_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_watchtowerrpc_watchtower_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetInfoRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_watchtowerrpc_watchtower_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetInfoResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_watchtowerrpc_watchtower_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   2,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_watchtowerrpc_watchtower_proto_goTypes,\n\t\tDependencyIndexes: file_watchtowerrpc_watchtower_proto_depIdxs,\n\t\tMessageInfos:      file_watchtowerrpc_watchtower_proto_msgTypes,\n\t}.Build()\n\tFile_watchtowerrpc_watchtower_proto = out.File\n\tfile_watchtowerrpc_watchtower_proto_rawDesc = nil\n\tfile_watchtowerrpc_watchtower_proto_goTypes = nil\n\tfile_watchtowerrpc_watchtower_proto_depIdxs = nil\n}\n",
+      "length": 1307,
+      "tokens": 114,
+      "embedding": []
+    }
+  ]
+}

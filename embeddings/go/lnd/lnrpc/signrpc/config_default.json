@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/signrpc/config_default.go",
+  "package": "signrpc",
+  "sections": [
+    {
+      "slug": "//go:build !signrpc",
+      "content": "//go:build !signrpc\n// +build !signrpc\n\npackage signrpc\n\n// Config is empty for non-signrpc builds.",
+      "length": 75,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type Config struct{}",
+      "content": "type Config struct{}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

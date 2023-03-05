@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/kvdb_sqlite.go",
-  "package": "kvdb_sqlite",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64))",
+      "content": "//go:build kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64))\n\npackage kvdb\n\nimport (\n\t\"context\"\n\t\"os\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/lightningnetwork/lnd/kvdb/sqlbase\"\n\t\"github.com/lightningnetwork/lnd/kvdb/sqlite\"\n)\n\nconst (\n\t// SqliteBackend is conditionally set to true when the kvdb_sqlite build\n\t// tag is defined. This will allow testing of other database backends.\n\tSqliteBackend = true\n\n\ttestMaxConnections = 50\n)\n\n// StartSqliteTestBackend starts a sqlite backed wallet.DB instance",
+      "length": 441,
+      "tokens": 51,
+      "embedding": []
+    },
     {
       "slug": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {",
       "content": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {\n\tif !fileExists(path) {\n\t\terr := os.Mkdir(path, 0700)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tsqlbase.Init(testMaxConnections)\n\treturn sqlite.NewSqliteBackend(\n\t\tcontext.Background(), &sqlite.Config{\n\t\t\tTimeout:     time.Second * 30,\n\t\t\tBusyTimeout: time.Second * 5,\n\t\t}, path, name, table,\n\t)\n}\n",

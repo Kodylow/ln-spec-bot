@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/walletrpc/config_default.go",
+  "package": "walletrpc",
+  "sections": [
+    {
+      "slug": "//go:build !walletrpc",
+      "content": "//go:build !walletrpc\n// +build !walletrpc\n\npackage walletrpc\n\nconst (\n\t// SubServerName is the name of the sub rpc server. We'll use this name\n\t// to register ourselves, and we also require that the main\n\t// SubServerConfigDispatcher instance recognize as the name of our\n\tSubServerName = \"WalletKitRPC\"\n)\n\n// Config is the primary configuration struct for the WalletKit RPC server.\n// When the server isn't active (via the build flag), callers outside this\n// package will see this shell of a config file.",
+      "length": 472,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "type Config struct{}",
+      "content": "type Config struct{}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

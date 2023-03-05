@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnmock/clock.go",
+  "package": "lnmock",
+  "sections": [
+    {
+      "slug": "type MockClock struct {",
+      "content": "type MockClock struct {\n\tmock.Mock\n}\n\n// Compile time assertion that MockClock implements clock.Clock.\nvar _ clock.Clock = (*MockClock)(nil)\n",
+      "length": 112,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockClock) Now() time.Time {",
+      "content": "func (m *MockClock) Now() time.Time {\n\targs := m.Called()\n\n\treturn args.Get(0).(time.Time)\n}\n",
+      "length": 51,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockClock) TickAfter(d time.Duration) <-chan time.Time {",
+      "content": "func (m *MockClock) TickAfter(d time.Duration) <-chan time.Time {\n\targs := m.Called(d)\n\n\treturn args.Get(0).(chan time.Time)\n}\n",
+      "length": 57,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

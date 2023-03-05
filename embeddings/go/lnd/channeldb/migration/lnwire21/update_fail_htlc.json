@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/update_fail_htlc.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type OpaqueReason []byte",
+      "content": "type OpaqueReason []byte\n\n// UpdateFailHTLC is sent by Alice to Bob in order to remove a previously added\n// HTLC. Upon receipt of an UpdateFailHTLC the HTLC should be removed from the\n// next commitment transaction, with the UpdateFailHTLC propagated backwards in\n// the route to fully undo the HTLC.",
+      "length": 272,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type UpdateFailHTLC struct {",
+      "content": "type UpdateFailHTLC struct {\n\t// ChanID is the particular active channel that this\n\t// UpdateFailHTLC is bound to.\n\tChanID ChannelID\n\n\t// ID references which HTLC on the remote node's commitment transaction\n\t// has timed out.\n\tID uint64\n\n\t// Reason is an onion-encrypted blob that details why the HTLC was\n\t// failed. This blob is only fully decryptable by the initiator of the\n\t// HTLC message.\n\tReason OpaqueReason\n}\n\n// A compile time check to ensure UpdateFailHTLC implements the lnwire.Message\n// interface.\nvar _ Message = (*UpdateFailHTLC)(nil)\n\n// Decode deserializes a serialized UpdateFailHTLC message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 689,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailHTLC) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *UpdateFailHTLC) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.ID,\n\t\t&c.Reason,\n\t)\n}\n\n// Encode serializes the target UpdateFailHTLC into the passed io.Writer observing\n// the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 224,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailHTLC) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (c *UpdateFailHTLC) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tc.ChanID,\n\t\tc.ID,\n\t\tc.Reason,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 190,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailHTLC) MsgType() MessageType {",
+      "content": "func (c *UpdateFailHTLC) MsgType() MessageType {\n\treturn MsgUpdateFailHTLC\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for an UpdateFailHTLC\n// complete message observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 219,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailHTLC) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (c *UpdateFailHTLC) MaxPayloadLength(uint32) uint32 {\n\tvar length uint32\n\n\t// Length of the ChanID\n\tlength += 32\n\n\t// Length of the ID\n\tlength += 8\n\n\t// Length of the length opaque reason\n\tlength += 2\n\n\t// Length of the Reason\n\tlength += 292\n\n\treturn length\n}\n\n// TargetChanID returns the channel id of the link for which this message is\n// intended.\n//\n// NOTE: Part of peer.LinkUpdater interface.",
+      "length": 324,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailHTLC) TargetChanID() ChannelID {",
+      "content": "func (c *UpdateFailHTLC) TargetChanID() ChannelID {\n\treturn c.ChanID\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

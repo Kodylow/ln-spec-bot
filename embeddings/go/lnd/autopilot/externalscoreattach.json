@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/externalscoreattach.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type ExternalScoreAttachment struct {",
+      "content": "type ExternalScoreAttachment struct {\n\t// TODO(halseth): persist across restarts.\n\tnodeScores map[NodeID]float64\n\n\tsync.Mutex\n}\n\n// NewExternalScoreAttachment creates a new instance of an\n// ExternalScoreAttachment.",
+      "length": 170,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func NewExternalScoreAttachment() *ExternalScoreAttachment {",
+      "content": "func NewExternalScoreAttachment() *ExternalScoreAttachment {\n\treturn &ExternalScoreAttachment{}\n}\n\n// A compile time assertion to ensure ExternalScoreAttachment meets the\n// AttachmentHeuristic and ScoreSettable interfaces.\nvar _ AttachmentHeuristic = (*ExternalScoreAttachment)(nil)\nvar _ ScoreSettable = (*ExternalScoreAttachment)(nil)\n\n// Name returns the name of this heuristic.\n//\n// NOTE: This is a part of the AttachmentHeuristic interface.",
+      "length": 376,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ExternalScoreAttachment) Name() string {",
+      "content": "func (s *ExternalScoreAttachment) Name() string {\n\treturn \"externalscore\"\n}\n\n// SetNodeScores is used to set the internal map from NodeIDs to scores. The\n// passed scores must be in the range [0, 1.0]. The fist parameter is the name\n// of the targeted heuristic, to allow recursively target specific\n// sub-heuristics. The returned boolean indicates whether the targeted\n// heuristic was found.\n//\n// NOTE: This is a part of the ScoreSettable interface.",
+      "length": 394,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ExternalScoreAttachment) SetNodeScores(targetHeuristic string,",
+      "content": "func (s *ExternalScoreAttachment) SetNodeScores(targetHeuristic string,\n\tnewScores map[NodeID]float64) (bool, error) {\n\n\t// Return if this heuristic wasn't targeted.\n\tif targetHeuristic != s.Name() {\n\t\treturn false, nil\n\t}\n\n\t// Since there's a requirement that all score are in the range [0,\n\t// 1.0], we validate them before setting the internal list.\n\tfor nID, s := range newScores {\n\t\tif s < 0 || s > 1.0 {\n\t\t\treturn false, fmt.Errorf(\"invalid score %v for \"+\n\t\t\t\t\"nodeID %v\", s, nID)\n\t\t}\n\t}\n\n\ts.Lock()\n\tdefer s.Unlock()\n\n\ts.nodeScores = newScores\n\tlog.Tracef(\"Setting %v external scores\", len(s.nodeScores))\n\n\treturn true, nil\n}\n\n// NodeScores is a method that given the current channel graph and current set\n// of local channels, scores the given nodes according to the preference of\n// opening a channel of the given size with them. The returned channel\n// candidates maps the NodeID to a NodeScore for the node.\n//\n// The returned scores will be in the range [0, 1.0], where 0 indicates no\n// improvement in connectivity if a channel is opened to this node, while 1.0\n// is the maximum possible improvement in connectivity.\n//\n// The scores are determined by checking the internal node scores list. Nodes\n// not known will get a score of 0.\n//\n// NOTE: This is a part of the AttachmentHeuristic interface.",
+      "length": 1203,
+      "tokens": 211,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ExternalScoreAttachment) NodeScores(g ChannelGraph, chans []LocalChannel,",
+      "content": "func (s *ExternalScoreAttachment) NodeScores(g ChannelGraph, chans []LocalChannel,\n\tchanSize btcutil.Amount, nodes map[NodeID]struct{}) (\n\tmap[NodeID]*NodeScore, error) {\n\n\texistingPeers := make(map[NodeID]struct{})\n\tfor _, c := range chans {\n\t\texistingPeers[c.Node] = struct{}{}\n\t}\n\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tlog.Tracef(\"External scoring %v nodes, from %v set scores\",\n\t\tlen(nodes), len(s.nodeScores))\n\n\t// Fill the map of candidates to return.\n\tcandidates := make(map[NodeID]*NodeScore)\n\tfor nID := range nodes {\n\t\tvar score float64\n\t\tif nodeScore, ok := s.nodeScores[nID]; ok {\n\t\t\tscore = nodeScore\n\t\t}\n\n\t\t// If the node is among or existing channel peers, we don't\n\t\t// need another channel.\n\t\tif _, ok := existingPeers[nID]; ok {\n\t\t\tlog.Tracef(\"Skipping existing peer %x from external \"+\n\t\t\t\t\"score results\", nID[:])\n\t\t\tcontinue\n\t\t}\n\n\t\tlog.Tracef(\"External score %v given to node %x\", score, nID[:])\n\n\t\t// Instead of adding a node with score 0 to the returned set,\n\t\t// we just skip it.\n\t\tif score == 0 {\n\t\t\tcontinue\n\t\t}\n\n\t\tcandidates[nID] = &NodeScore{\n\t\t\tNodeID: nID,\n\t\t\tScore:  score,\n\t\t}\n\t}\n\n\treturn candidates, nil\n}\n",
+      "length": 1002,
+      "tokens": 148,
+      "embedding": []
+    }
+  ]
+}

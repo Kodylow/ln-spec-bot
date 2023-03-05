@@ -7,7 +7,7 @@ def extract_sections(file_contents):
     lines = file_contents.split("\n")
     current_section = None
     for i, line in enumerate(lines):
-        if line.startswith("func ") or line.startswith("type "):
+        if line.startswith("func ") or line.startswith("type ") or (i == 0 and line.startswith("//go:build")):
             if current_section:
                 current_section["content"] = "\n".join(
                     current_section["content"])
@@ -30,13 +30,39 @@ def extract_sections(file_contents):
 
 
 def parse_go_file(file_path):
-    with open(file_path, "r") as f:
-        file_contents = f.read()
+    try:
+        with open(file_path, "r") as f:
+            file_contents = f.read()
+    except UnicodeDecodeError:
+        print(f"Skipping file: {file_path} (not a text file)")
+        return None
 
-    print(f"Parsing file: {file_path}")
-    print(f"File contents: {file_contents}")
+    if not file_path.endswith(".go"):
+        print(f"Skipping file: {file_path} (not a .go file)")
+        return None
 
-    package_name = file_contents.split("\n")[0].split(" ")[1]
+    package_line_index = -1
+    for i, line in enumerate(file_contents.split("\n")):
+        if line.startswith("package "):
+            package_line_index = i
+            break
+        elif i == 0 and line.startswith("//go:build"):
+            for j, line2 in enumerate(file_contents.split("\n")[1:]):
+                if line2.startswith("package "):
+                    package_line_index = j + 1
+                    break
+            break
+
+    if package_line_index == -1:
+        print(f"Skipping file: {file_path} (no package declaration)")
+        return None
+
+    try:
+        package_name = file_contents.split(
+            "\n")[package_line_index].split(" ")[1]
+    except IndexError:
+        print(f"Skipping file: {file_path} (invalid package declaration)")
+        return None
 
     sections = extract_sections(file_contents)
 
@@ -60,17 +86,16 @@ def parse_directory(directory_path, output_directory):
 
     for root, dirs, files in os.walk(directory_path):
         for file in files:
-            if file.endswith(".go"):
-                go_file_path = os.path.join(root, file)
-                output_subdirectory = os.path.join(
-                    output_directory, os.path.relpath(root, directory_path))
-                if not os.path.exists(output_subdirectory):
-                    os.makedirs(output_subdirectory)
-                json_file_path = os.path.join(
-                    output_subdirectory, file[:-2] + "json")
+            go_file_path = os.path.join(root, file)
+            output_subdirectory = os.path.join(
+                output_directory, os.path.relpath(root, directory_path))
+            if not os.path.exists(output_subdirectory):
+                os.makedirs(output_subdirectory)
+            json_file_path = os.path.join(
+                output_subdirectory, file[:-2] + "json")
 
-                output_data = parse_go_file(go_file_path)
-
+            output_data = parse_go_file(go_file_path)
+            if output_data is not None:
                 write_json_file(json_file_path, output_data)
 
 

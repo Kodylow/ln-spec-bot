@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_cursor.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\n// readWriteCursor holds a reference to the cursors bucket, the value\n// prefix and the current key used while iterating.",
+      "length": 151,
+      "tokens": 25,
+      "embedding": []
+    },
     {
       "slug": "type readWriteCursor struct {",
       "content": "type readWriteCursor struct {\n\t// bucket holds the reference to the parent bucket.\n\tbucket *readWriteBucket\n\n\t// prefix holds the value prefix which is in front of each\n\t// value key in the bucket.\n\tprefix string\n\n\t// currKey holds the current key of the cursor.\n\tcurrKey string\n}\n",

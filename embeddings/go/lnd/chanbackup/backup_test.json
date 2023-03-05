@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/chanbackup/backup_test.go",
+  "package": "chanbackup",
+  "sections": [
+    {
+      "slug": "type mockChannelSource struct {",
+      "content": "type mockChannelSource struct {\n\tchans map[wire.OutPoint]*channeldb.OpenChannel\n\n\tfailQuery bool\n\n\taddrs map[[33]byte][]net.Addr\n}\n",
+      "length": 93,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockChannelSource() *mockChannelSource {",
+      "content": "func newMockChannelSource() *mockChannelSource {\n\treturn &mockChannelSource{\n\t\tchans: make(map[wire.OutPoint]*channeldb.OpenChannel),\n\t\taddrs: make(map[[33]byte][]net.Addr),\n\t}\n}\n",
+      "length": 125,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelSource) FetchAllChannels() ([]*channeldb.OpenChannel, error) {",
+      "content": "func (m *mockChannelSource) FetchAllChannels() ([]*channeldb.OpenChannel, error) {\n\tif m.failQuery {\n\t\treturn nil, fmt.Errorf(\"fail\")\n\t}\n\n\tchans := make([]*channeldb.OpenChannel, 0, len(m.chans))\n\tfor _, channel := range m.chans {\n\t\tchans = append(chans, channel)\n\t}\n\n\treturn chans, nil\n}\n",
+      "length": 195,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelSource) FetchChannel(_ kvdb.RTx, chanPoint wire.OutPoint) (",
+      "content": "func (m *mockChannelSource) FetchChannel(_ kvdb.RTx, chanPoint wire.OutPoint) (\n\t*channeldb.OpenChannel, error) {\n\n\tif m.failQuery {\n\t\treturn nil, fmt.Errorf(\"fail\")\n\t}\n\n\tchannel, ok := m.chans[chanPoint]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"can't find chan\")\n\t}\n\n\treturn channel, nil\n}\n",
+      "length": 193,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelSource) addAddrsForNode(nodePub *btcec.PublicKey, addrs []net.Addr) {",
+      "content": "func (m *mockChannelSource) addAddrsForNode(nodePub *btcec.PublicKey, addrs []net.Addr) {\n\tvar nodeKey [33]byte\n\tcopy(nodeKey[:], nodePub.SerializeCompressed())\n\n\tm.addrs[nodeKey] = addrs\n}\n",
+      "length": 95,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelSource) AddrsForNode(nodePub *btcec.PublicKey) ([]net.Addr, error) {",
+      "content": "func (m *mockChannelSource) AddrsForNode(nodePub *btcec.PublicKey) ([]net.Addr, error) {\n\tif m.failQuery {\n\t\treturn nil, fmt.Errorf(\"fail\")\n\t}\n\n\tvar nodeKey [33]byte\n\tcopy(nodeKey[:], nodePub.SerializeCompressed())\n\n\taddrs, ok := m.addrs[nodeKey]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"can't find addr\")\n\t}\n\n\treturn addrs, nil\n}\n\n// TestFetchBackupForChan tests that we're able to construct a single channel\n// backup for channels that are known, unknown, and also channels in which we\n// can find addresses for and otherwise.",
+      "length": 417,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFetchBackupForChan(t *testing.T) {",
+      "content": "func TestFetchBackupForChan(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll make two channels, only one of them will have all the\n\t// information we need to construct set of backups for them.\n\trandomChan1, err := genRandomOpenChannelShell()\n\trequire.NoError(t, err, \"unable to generate chan\")\n\trandomChan2, err := genRandomOpenChannelShell()\n\trequire.NoError(t, err, \"unable to generate chan\")\n\n\tchanSource := newMockChannelSource()\n\tchanSource.chans[randomChan1.FundingOutpoint] = randomChan1\n\tchanSource.chans[randomChan2.FundingOutpoint] = randomChan2\n\n\tchanSource.addAddrsForNode(randomChan1.IdentityPub, []net.Addr{addr1})\n\n\ttestCases := []struct {\n\t\tchanPoint wire.OutPoint\n\n\t\tpass bool\n\t}{\n\t\t// Able to find channel, and addresses, should pass.\n\t\t{\n\t\t\tchanPoint: randomChan1.FundingOutpoint,\n\t\t\tpass:      true,\n\t\t},\n\n\t\t// Able to find channel, not able to find addrs, should fail.\n\t\t{\n\t\t\tchanPoint: randomChan2.FundingOutpoint,\n\t\t\tpass:      false,\n\t\t},\n\n\t\t// Not able to find channel, should fail.\n\t\t{\n\t\t\tchanPoint: op,\n\t\t\tpass:      false,\n\t\t},\n\t}\n\tfor i, testCase := range testCases {\n\t\t_, err := FetchBackupForChan(\n\t\t\ttestCase.chanPoint, chanSource, chanSource,\n\t\t)\n\t\tswitch {\n\t\t// If this is a valid test case, and we failed, then we'll\n\t\t// return an error.\n\t\tcase err != nil && testCase.pass:\n\t\t\tt.Fatalf(\"#%v, unable to make chan  backup: %v\", i, err)\n\n\t\t// If this is an invalid test case, and we passed it, then\n\t\t// we'll return an error.\n\t\tcase err == nil && !testCase.pass:\n\t\t\tt.Fatalf(\"#%v got nil error for invalid req: %v\",\n\t\t\t\ti, err)\n\t\t}\n\t}\n}\n\n// TestFetchStaticChanBackups tests that we're able to properly query the\n// channel source for all channels and construct a Single for each channel.",
+      "length": 1618,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFetchStaticChanBackups(t *testing.T) {",
+      "content": "func TestFetchStaticChanBackups(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll make the set of channels that we want to seed the\n\t// channel source with. Both channels will be fully populated in the\n\t// channel source.\n\tconst numChans = 2\n\trandomChan1, err := genRandomOpenChannelShell()\n\trequire.NoError(t, err, \"unable to generate chan\")\n\trandomChan2, err := genRandomOpenChannelShell()\n\trequire.NoError(t, err, \"unable to generate chan\")\n\n\tchanSource := newMockChannelSource()\n\tchanSource.chans[randomChan1.FundingOutpoint] = randomChan1\n\tchanSource.chans[randomChan2.FundingOutpoint] = randomChan2\n\tchanSource.addAddrsForNode(randomChan1.IdentityPub, []net.Addr{addr1})\n\tchanSource.addAddrsForNode(randomChan2.IdentityPub, []net.Addr{addr2})\n\n\t// With the channel source populated, we'll now attempt to create a set\n\t// of backups for all the channels. This should succeed, as all items\n\t// are populated within the channel source.\n\tbackups, err := FetchStaticChanBackups(chanSource, chanSource)\n\trequire.NoError(t, err, \"unable to create chan back ups\")\n\n\tif len(backups) != numChans {\n\t\tt.Fatalf(\"expected %v chans, instead got %v\", numChans,\n\t\t\tlen(backups))\n\t}\n\n\t// We'll attempt to create a set up backups again, but this time the\n\t// second channel will have missing information, which should cause the\n\t// query to fail.\n\tvar n [33]byte\n\tcopy(n[:], randomChan2.IdentityPub.SerializeCompressed())\n\tdelete(chanSource.addrs, n)\n\n\t_, err = FetchStaticChanBackups(chanSource, chanSource)\n\tif err == nil {\n\t\tt.Fatalf(\"query with incomplete information should fail\")\n\t}\n\n\t// To wrap up, we'll ensure that if we're unable to query the channel\n\t// source at all, then we'll fail as well.\n\tchanSource = newMockChannelSource()\n\tchanSource.failQuery = true\n\t_, err = FetchStaticChanBackups(chanSource, chanSource)\n\tif err == nil {\n\t\tt.Fatalf(\"query should fail\")\n\t}\n}\n",
+      "length": 1771,
+      "tokens": 224,
+      "embedding": []
+    }
+  ]
+}

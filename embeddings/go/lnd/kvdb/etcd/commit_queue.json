@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/commit_queue.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"container/list\"\n\t\"context\"\n\t\"sync\"\n)\n\n// commitQueue is a simple execution queue to manage conflicts for transactions\n// and thereby reduce the number of times conflicting transactions need to be\n// retried. When a new transaction is added to the queue, we first upgrade the\n// read/write counts in the queue's own accounting to decide whether the new\n// transaction has any conflicting dependencies. If the transaction does not\n// conflict with any other, then it is comitted immediately, otherwise it'll be\n// queued up for later exection.\n// The algorithm is described in: http://www.cs.umd.edu/~abadi/papers/vll-vldb13.pdf",
+      "length": 655,
+      "tokens": 101,
+      "embedding": []
+    },
     {
       "slug": "type commitQueue struct {",
       "content": "type commitQueue struct {\n\tctx       context.Context\n\tmx        sync.Mutex\n\treaderMap map[string]int\n\twriterMap map[string]int\n\n\tqueue     *list.List\n\tqueueMx   sync.Mutex\n\tqueueCond *sync.Cond\n\n\tshutdown chan struct{}\n}\n",

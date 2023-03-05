@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/stm.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"math\"\n\t\"strings\"\n\n\t\"github.com/google/btree\"\n\tpb \"go.etcd.io/etcd/api/v3/etcdserverpb\"\n\tv3 \"go.etcd.io/etcd/client/v3\"\n)\n",
+      "length": 171,
+      "tokens": 17,
+      "embedding": []
+    },
     {
       "slug": "type CommitStats struct {",
       "content": "type CommitStats struct {\n\tRset    int\n\tWset    int\n\tRetries int\n}\n\n// KV stores a key/value pair.",

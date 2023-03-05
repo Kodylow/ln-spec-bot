@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/loglevel_debug.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build dev && debug",
+      "content": "//go:build dev && debug\n// +build dev,debug\n\npackage build\n\n// LogLevel specifies a debug log level.\nvar LogLevel = \"debug\"\n",
+      "length": 94,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

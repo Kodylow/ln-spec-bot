@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/sigpool.go",
+  "package": "lnwallet",
+  "sections": [
+    {
+      "slug": "type VerifyJob struct {",
+      "content": "type VerifyJob struct {\n\t// PubKey is the public key that was used to generate the purported\n\t// valid signature. Note that with the current channel construction,\n\t// this public key will likely have been tweaked using the current per\n\t// commitment point for a particular commitment transactions.\n\tPubKey *btcec.PublicKey\n\n\t// Sig is the raw signature generated using the above public key.  This\n\t// is the signature to be verified.\n\tSig *ecdsa.Signature\n\n\t// SigHash is a function closure generates the sighashes that the\n\t// passed signature is known to have signed.\n\tSigHash func() ([]byte, error)\n\n\t// HtlcIndex is the index of the HTLC from the PoV of the remote\n\t// party's update log.\n\tHtlcIndex uint64\n\n\t// Cancel is a channel that should be closed if the caller wishes to\n\t// cancel all pending verification jobs part of a single batch. This\n\t// channel is to be closed in the case that a single signature in a\n\t// batch has been returned as invalid, as there is no need to verify\n\t// the remainder of the signatures.\n\tCancel chan struct{}\n\n\t// ErrResp is the channel that the result of the signature verification\n\t// is to be sent over. In the see that the signature is valid, a nil\n\t// error will be passed. Otherwise, a concrete error detailing the\n\t// issue will be passed.\n\tErrResp chan *HtlcIndexErr\n}\n\n// HtlcIndexErr is a special type of error that also includes a pointer to the\n// original validation job. This error message allows us to craft more detailed\n// errors at upper layers.",
+      "length": 1446,
+      "tokens": 256,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcIndexErr struct {",
+      "content": "type HtlcIndexErr struct {\n\terror\n\n\t*VerifyJob\n}\n\n// SignJob is a job sent to the sigPool sig pool to generate a valid\n// signature according to the passed SignDescriptor for the passed transaction.\n// Jobs are intended to be sent in batches in order to parallelize the job of\n// generating signatures for a new commitment transaction.",
+      "length": 300,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type SignJob struct {",
+      "content": "type SignJob struct {\n\t// SignDesc is intended to be a full populated SignDescriptor which\n\t// encodes the necessary material (keys, witness script, etc) required\n\t// to generate a valid signature for the specified input.\n\tSignDesc input.SignDescriptor\n\n\t// Tx is the transaction to be signed. This is required to generate the\n\t// proper sighash for the input to be signed.\n\tTx *wire.MsgTx\n\n\t// OutputIndex is the output index of the HTLC on the commitment\n\t// transaction being signed.\n\tOutputIndex int32\n\n\t// Cancel is a channel that should be closed if the caller wishes to\n\t// abandon all pending sign jobs part of a single batch.\n\tCancel chan struct{}\n\n\t// Resp is the channel that the response to this particular SignJob\n\t// will be sent over.\n\t//\n\t// TODO(roasbeef): actually need to allow caller to set, need to retain\n\t// order mark commit sig as special\n\tResp chan SignJobResp\n}\n\n// SignJobResp is the response to a sign job. Both channels are to be read in\n// order to ensure no unnecessary goroutine blocking occurs. Additionally, both\n// channels should be buffered.",
+      "length": 1030,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "type SignJobResp struct {",
+      "content": "type SignJobResp struct {\n\t// Sig is the generated signature for a particular SignJob In the case\n\t// of an error during signature generation, then this value sent will\n\t// be nil.\n\tSig lnwire.Sig\n\n\t// Err is the error that occurred when executing the specified\n\t// signature job. In the case that no error occurred, this value will\n\t// be nil.\n\tErr error\n}\n\n// TODO(roasbeef); fix description\n\n// SigPool is a struct that is meant to allow the current channel state\n// machine to parallelize all signature generation and verification. This\n// struct is needed as _each_ HTLC when creating a commitment transaction\n// requires a signature, and similarly a receiver of a new commitment must\n// verify all the HTLC signatures included within the CommitSig message. A pool\n// of workers will be maintained by the sigPool. Batches of jobs (either\n// to sign or verify) can be sent to the pool of workers which will\n// asynchronously perform the specified job.",
+      "length": 909,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "type SigPool struct {",
+      "content": "type SigPool struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tsigner input.Signer\n\n\tverifyJobs chan VerifyJob\n\tsignJobs   chan SignJob\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n\n\tnumWorkers int\n}\n\n// NewSigPool creates a new signature pool with the specified number of\n// workers. The recommended parameter for the number of works is the number of\n// physical CPU cores available on the target machine.",
+      "length": 364,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSigPool(numWorkers int, signer input.Signer) *SigPool {",
+      "content": "func NewSigPool(numWorkers int, signer input.Signer) *SigPool {\n\treturn &SigPool{\n\t\tsigner:     signer,\n\t\tnumWorkers: numWorkers,\n\t\tverifyJobs: make(chan VerifyJob, jobBuffer),\n\t\tsignJobs:   make(chan SignJob, jobBuffer),\n\t\tquit:       make(chan struct{}),\n\t}\n}\n\n// Start starts of all goroutines that the sigPool sig pool needs to\n// carry out its duties.",
+      "length": 282,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SigPool) Start() error {",
+      "content": "func (s *SigPool) Start() error {\n\ts.started.Do(func() {\n\t\twalletLog.Info(\"SigPool starting\")\n\t\tfor i := 0; i < s.numWorkers; i++ {\n\t\t\ts.wg.Add(1)\n\t\t\tgo s.poolWorker()\n\t\t}\n\t})\n\treturn nil\n}\n\n// Stop signals any active workers carrying out jobs to exit so the sigPool can\n// gracefully shutdown.",
+      "length": 249,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SigPool) Stop() error {",
+      "content": "func (s *SigPool) Stop() error {\n\ts.stopped.Do(func() {\n\t\tclose(s.quit)\n\t\ts.wg.Wait()\n\t})\n\treturn nil\n}\n\n// poolWorker is the main worker goroutine within the sigPool sig pool.\n// Individual batches are distributed amongst each of the active workers. The\n// workers then execute the task based on the type of job, and return the\n// result back to caller.",
+      "length": 311,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SigPool) poolWorker() {",
+      "content": "func (s *SigPool) poolWorker() {\n\tdefer s.wg.Done()\n\n\tfor {\n\t\tselect {\n\n\t\t// We've just received a new signature job. Given the items\n\t\t// contained within the message, we'll craft a signature and\n\t\t// send the result along with a possible error back to the\n\t\t// caller.\n\t\tcase sigMsg := <-s.signJobs:\n\t\t\trawSig, err := s.signer.SignOutputRaw(\n\t\t\t\tsigMsg.Tx, &sigMsg.SignDesc,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tselect {\n\t\t\t\tcase sigMsg.Resp <- SignJobResp{\n\t\t\t\t\tSig: lnwire.Sig{},\n\t\t\t\t\tErr: err,\n\t\t\t\t}:\n\t\t\t\t\tcontinue\n\t\t\t\tcase <-sigMsg.Cancel:\n\t\t\t\t\tcontinue\n\t\t\t\tcase <-s.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tsig, err := lnwire.NewSigFromSignature(rawSig)\n\t\t\tselect {\n\t\t\tcase sigMsg.Resp <- SignJobResp{\n\t\t\t\tSig: sig,\n\t\t\t\tErr: err,\n\t\t\t}:\n\t\t\tcase <-sigMsg.Cancel:\n\t\t\t\tcontinue\n\t\t\tcase <-s.quit:\n\t\t\t\treturn\n\t\t\t}\n\n\t\t// We've just received a new verification job from the outside\n\t\t// world. We'll attempt to construct the sighash, parse the\n\t\t// signature, and finally verify the signature.\n\t\tcase verifyMsg := <-s.verifyJobs:\n\t\t\tsigHash, err := verifyMsg.SigHash()\n\t\t\tif err != nil {\n\t\t\t\tselect {\n\t\t\t\tcase verifyMsg.ErrResp <- &HtlcIndexErr{\n\t\t\t\t\terror:     err,\n\t\t\t\t\tVerifyJob: &verifyMsg,\n\t\t\t\t}:\n\t\t\t\t\tcontinue\n\t\t\t\tcase <-verifyMsg.Cancel:\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t}\n\n\t\t\trawSig := verifyMsg.Sig\n\n\t\t\tif !rawSig.Verify(sigHash, verifyMsg.PubKey) {\n\t\t\t\terr := fmt.Errorf(\"invalid signature \"+\n\t\t\t\t\t\"sighash: %x, sig: %x\", sigHash,\n\t\t\t\t\trawSig.Serialize())\n\n\t\t\t\tselect {\n\t\t\t\tcase verifyMsg.ErrResp <- &HtlcIndexErr{\n\t\t\t\t\terror:     err,\n\t\t\t\t\tVerifyJob: &verifyMsg,\n\t\t\t\t}:\n\t\t\t\tcase <-verifyMsg.Cancel:\n\t\t\t\tcase <-s.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\tselect {\n\t\t\t\tcase verifyMsg.ErrResp <- nil:\n\t\t\t\tcase <-verifyMsg.Cancel:\n\t\t\t\tcase <-s.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t}\n\n\t\t// The sigPool sig pool is exiting, so we will as well.\n\t\tcase <-s.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// SubmitSignBatch submits a batch of signature jobs to the sigPool.  The\n// response and cancel channels for each of the SignJob's are expected to be\n// fully populated, as the response for each job will be sent over the\n// response channel within the job itself.",
+      "length": 1986,
+      "tokens": 273,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SigPool) SubmitSignBatch(signJobs []SignJob) {",
+      "content": "func (s *SigPool) SubmitSignBatch(signJobs []SignJob) {\n\tfor _, job := range signJobs {\n\t\tselect {\n\t\tcase s.signJobs <- job:\n\t\tcase <-job.Cancel:\n\t\t\t// TODO(roasbeef): return error?\n\t\tcase <-s.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// SubmitVerifyBatch submits a batch of verification jobs to the sigPool. For\n// each job submitted, an error will be passed into the returned channel\n// denoting if signature verification was valid or not. The passed cancelChan\n// allows the caller to cancel all pending jobs in the case that they wish to\n// bail early.",
+      "length": 469,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SigPool) SubmitVerifyBatch(verifyJobs []VerifyJob,",
+      "content": "func (s *SigPool) SubmitVerifyBatch(verifyJobs []VerifyJob,\n\tcancelChan chan struct{}) <-chan *HtlcIndexErr {\n\n\terrChan := make(chan *HtlcIndexErr, len(verifyJobs))\n\n\tfor _, job := range verifyJobs {\n\t\tjob.Cancel = cancelChan\n\t\tjob.ErrResp = errChan\n\n\t\tselect {\n\t\tcase s.verifyJobs <- job:\n\t\tcase <-job.Cancel:\n\t\t\treturn errChan\n\t\t}\n\t}\n\n\treturn errChan\n}\n",
+      "length": 278,
+      "tokens": 39,
+      "embedding": []
+    }
+  ]
+}

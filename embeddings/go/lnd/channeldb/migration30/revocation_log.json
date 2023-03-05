@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration30/revocation_log.go",
+  "package": "migration30",
+  "sections": [
+    {
+      "slug": "type HTLCEntry struct {",
+      "content": "type HTLCEntry struct {\n\t// RHash is the payment hash of the HTLC.\n\tRHash [32]byte\n\n\t// RefundTimeout is the absolute timeout on the HTLC that the sender\n\t// must wait before reclaiming the funds in limbo.\n\tRefundTimeout uint32\n\n\t// OutputIndex is the output index for this particular HTLC output\n\t// within the commitment transaction.\n\t//\n\t// NOTE: we use uint16 instead of int32 here to save us 2 bytes, which\n\t// gives us a max number of HTLCs of 65K.\n\tOutputIndex uint16\n\n\t// Incoming denotes whether we're the receiver or the sender of this\n\t// HTLC.\n\t//\n\t// NOTE: this field is the memory representation of the field\n\t// incomingUint.\n\tIncoming bool\n\n\t// Amt is the amount of satoshis this HTLC escrows.\n\t//\n\t// NOTE: this field is the memory representation of the field amtUint.\n\tAmt btcutil.Amount\n\n\t// amtTlv is the uint64 format of Amt. This field is created so we can\n\t// easily make it into a tlv record and save it to disk.\n\t//\n\t// NOTE: we keep this field for accounting purpose only. If the disk\n\t// space becomes an issue, we could delete this field to save us extra\n\t// 8 bytes.\n\tamtTlv uint64\n\n\t// incomingTlv is the uint8 format of Incoming. This field is created\n\t// so we can easily make it into a tlv record and save it to disk.\n\tincomingTlv uint8\n}\n\n// RHashLen is used by MakeDynamicRecord to return the size of the RHash.\n//\n// NOTE: for zero hash, we return a length 0.",
+      "length": 1330,
+      "tokens": 249,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HTLCEntry) RHashLen() uint64 {",
+      "content": "func (h *HTLCEntry) RHashLen() uint64 {\n\tif h.RHash == lntypes.ZeroHash {\n\t\treturn 0\n\t}\n\treturn 32\n}\n\n// RHashEncoder is the customized encoder which skips encoding the empty hash.",
+      "length": 134,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func RHashEncoder(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func RHashEncoder(w io.Writer, val interface{}, buf *[8]byte) error {\n\tv, ok := val.(*[32]byte)\n\tif !ok {\n\t\treturn tlv.NewTypeForEncodingErr(val, \"RHash\")\n\t}\n\n\t// If the value is an empty hash, we will skip encoding it.\n\tif *v == lntypes.ZeroHash {\n\t\treturn nil\n\t}\n\n\treturn tlv.EBytes32(w, v, buf)\n}\n\n// RHashDecoder is the customized decoder which skips decoding the empty hash.",
+      "length": 296,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func RHashDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func RHashDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tv, ok := val.(*[32]byte)\n\tif !ok {\n\t\treturn tlv.NewTypeForEncodingErr(val, \"RHash\")\n\t}\n\n\t// If the length is zero, we will skip encoding the empty hash.\n\tif l == 0 {\n\t\treturn nil\n\t}\n\n\treturn tlv.DBytes32(r, v, buf, 32)\n}\n\n// toTlvStream converts an HTLCEntry record into a tlv representation.",
+      "length": 280,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HTLCEntry) toTlvStream() (*tlv.Stream, error) {",
+      "content": "func (h *HTLCEntry) toTlvStream() (*tlv.Stream, error) {\n\tconst (\n\t\t// A set of tlv type definitions used to serialize htlc entries\n\t\t// to the database. We define it here instead of the head of\n\t\t// the file to avoid naming conflicts.\n\t\t//\n\t\t// NOTE: A migration should be added whenever this list\n\t\t// changes.\n\t\trHashType         tlv.Type = 0\n\t\trefundTimeoutType tlv.Type = 1\n\t\toutputIndexType   tlv.Type = 2\n\t\tincomingType      tlv.Type = 3\n\t\tamtType           tlv.Type = 4\n\t)\n\n\treturn tlv.NewStream(\n\t\ttlv.MakeDynamicRecord(\n\t\t\trHashType, &h.RHash, h.RHashLen,\n\t\t\tRHashEncoder, RHashDecoder,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trefundTimeoutType, &h.RefundTimeout,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\toutputIndexType, &h.OutputIndex,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(incomingType, &h.incomingTlv),\n\t\t// We will save 3 bytes if the amount is less or equal to\n\t\t// 4,294,967,295 msat, or roughly 0.043 bitcoin.\n\t\ttlv.MakeBigSizeRecord(amtType, &h.amtTlv),\n\t)\n}\n\n// RevocationLog stores the info needed to construct a breach retribution. Its\n// fields can be viewed as a subset of a ChannelCommitment's. In the database,\n// all historical versions of the RevocationLog are saved using the\n// CommitHeight as the key.",
+      "length": 1122,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "type RevocationLog struct {",
+      "content": "type RevocationLog struct {\n\t// OurOutputIndex specifies our output index in this commitment. In a\n\t// remote commitment transaction, this is the to remote output index.\n\tOurOutputIndex uint16\n\n\t// TheirOutputIndex specifies their output index in this commitment. In\n\t// a remote commitment transaction, this is the to local output index.\n\tTheirOutputIndex uint16\n\n\t// CommitTxHash is the hash of the latest version of the commitment\n\t// state, broadcast able by us.\n\tCommitTxHash [32]byte\n\n\t// HTLCEntries is the set of HTLCEntry's that are pending at this\n\t// particular commitment height.\n\tHTLCEntries []*HTLCEntry\n\n\t// OurBalance is the current available balance within the channel\n\t// directly spendable by us. In other words, it is the value of the\n\t// to_remote output on the remote parties' commitment transaction.\n\t//\n\t// NOTE: this is a pointer so that it is clear if the value is zero or\n\t// nil. Since migration 30 of the channeldb initially did not include\n\t// this field, it could be the case that the field is not present for\n\t// all revocation logs.\n\tOurBalance *lnwire.MilliSatoshi\n\n\t// TheirBalance is the current available balance within the channel\n\t// directly spendable by the remote node. In other words, it is the\n\t// value of the to_local output on the remote parties' commitment.\n\t//\n\t// NOTE: this is a pointer so that it is clear if the value is zero or\n\t// nil. Since migration 30 of the channeldb initially did not include\n\t// this field, it could be the case that the field is not present for\n\t// all revocation logs.\n\tTheirBalance *lnwire.MilliSatoshi\n}\n\n// putRevocationLog uses the fields `CommitTx` and `Htlcs` from a\n// ChannelCommitment to construct a revocation log entry and saves them to\n// disk. It also saves our output index and their output index, which are\n// useful when creating breach retribution.",
+      "length": 1777,
+      "tokens": 298,
+      "embedding": []
+    },
+    {
+      "slug": "func putRevocationLog(bucket kvdb.RwBucket, commit *mig.ChannelCommitment,",
+      "content": "func putRevocationLog(bucket kvdb.RwBucket, commit *mig.ChannelCommitment,\n\tourOutputIndex, theirOutputIndex uint32, noAmtData bool) error {\n\n\t// Sanity check that the output indexes can be safely converted.\n\tif ourOutputIndex > math.MaxUint16 {\n\t\treturn ErrOutputIndexTooBig\n\t}\n\tif theirOutputIndex > math.MaxUint16 {\n\t\treturn ErrOutputIndexTooBig\n\t}\n\n\trl := &RevocationLog{\n\t\tOurOutputIndex:   uint16(ourOutputIndex),\n\t\tTheirOutputIndex: uint16(theirOutputIndex),\n\t\tCommitTxHash:     commit.CommitTx.TxHash(),\n\t\tHTLCEntries:      make([]*HTLCEntry, 0, len(commit.Htlcs)),\n\t}\n\n\tif !noAmtData {\n\t\trl.OurBalance = &commit.LocalBalance\n\t\trl.TheirBalance = &commit.RemoteBalance\n\t}\n\n\tfor _, htlc := range commit.Htlcs {\n\t\t// Skip dust HTLCs.\n\t\tif htlc.OutputIndex < 0 {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Sanity check that the output indexes can be safely\n\t\t// converted.\n\t\tif htlc.OutputIndex > math.MaxUint16 {\n\t\t\treturn ErrOutputIndexTooBig\n\t\t}\n\n\t\tentry := &HTLCEntry{\n\t\t\tRHash:         htlc.RHash,\n\t\t\tRefundTimeout: htlc.RefundTimeout,\n\t\t\tIncoming:      htlc.Incoming,\n\t\t\tOutputIndex:   uint16(htlc.OutputIndex),\n\t\t\tAmt:           htlc.Amt.ToSatoshis(),\n\t\t}\n\t\trl.HTLCEntries = append(rl.HTLCEntries, entry)\n\t}\n\n\tvar b bytes.Buffer\n\terr := serializeRevocationLog(&b, rl)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tlogEntrykey := mig24.MakeLogKey(commit.CommitHeight)\n\treturn bucket.Put(logEntrykey[:], b.Bytes())\n}\n\n// fetchRevocationLog queries the revocation log bucket to find an log entry.\n// Return an error if not found.",
+      "length": 1375,
+      "tokens": 156,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchRevocationLog(log kvdb.RBucket,",
+      "content": "func fetchRevocationLog(log kvdb.RBucket,\n\tupdateNum uint64) (RevocationLog, error) {\n\n\tlogEntrykey := mig24.MakeLogKey(updateNum)\n\tcommitBytes := log.Get(logEntrykey[:])\n\tif commitBytes == nil {\n\t\treturn RevocationLog{}, ErrLogEntryNotFound\n\t}\n\n\tcommitReader := bytes.NewReader(commitBytes)\n\n\treturn deserializeRevocationLog(commitReader)\n}\n\n// serializeRevocationLog serializes a RevocationLog record based on tlv\n// format.",
+      "length": 370,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeRevocationLog(w io.Writer, rl *RevocationLog) error {",
+      "content": "func serializeRevocationLog(w io.Writer, rl *RevocationLog) error {\n\t// Add the tlv records for all non-optional fields.\n\trecords := []tlv.Record{\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogOurOutputIndexType, &rl.OurOutputIndex,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogTheirOutputIndexType, &rl.TheirOutputIndex,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogCommitTxHashType, &rl.CommitTxHash,\n\t\t),\n\t}\n\n\t// Now we add any optional fields that are non-nil.\n\tif rl.OurBalance != nil {\n\t\tlb := uint64(*rl.OurBalance)\n\t\trecords = append(records, tlv.MakeBigSizeRecord(\n\t\t\trevLogOurBalanceType, &lb,\n\t\t))\n\t}\n\n\tif rl.TheirBalance != nil {\n\t\trb := uint64(*rl.TheirBalance)\n\t\trecords = append(records, tlv.MakeBigSizeRecord(\n\t\t\trevLogTheirBalanceType, &rb,\n\t\t))\n\t}\n\n\t// Create the tlv stream.\n\ttlvStream, err := tlv.NewStream(records...)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write the tlv stream.\n\tif err := writeTlvStream(w, tlvStream); err != nil {\n\t\treturn err\n\t}\n\n\t// Write the HTLCs.\n\treturn serializeHTLCEntries(w, rl.HTLCEntries)\n}\n\n// serializeHTLCEntries serializes a list of HTLCEntry records based on tlv\n// format.",
+      "length": 998,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeHTLCEntries(w io.Writer, htlcs []*HTLCEntry) error {",
+      "content": "func serializeHTLCEntries(w io.Writer, htlcs []*HTLCEntry) error {\n\tfor _, htlc := range htlcs {\n\t\t// Patch the incomingTlv field.\n\t\tif htlc.Incoming {\n\t\t\thtlc.incomingTlv = 1\n\t\t}\n\n\t\t// Patch the amtTlv field.\n\t\thtlc.amtTlv = uint64(htlc.Amt)\n\n\t\t// Create the tlv stream.\n\t\ttlvStream, err := htlc.toTlvStream()\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Write the tlv stream.\n\t\tif err := writeTlvStream(w, tlvStream); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// deserializeRevocationLog deserializes a RevocationLog based on tlv format.",
+      "length": 453,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeRevocationLog(r io.Reader) (RevocationLog, error) {",
+      "content": "func deserializeRevocationLog(r io.Reader) (RevocationLog, error) {\n\tvar (\n\t\trl            RevocationLog\n\t\tlocalBalance  uint64\n\t\tremoteBalance uint64\n\t)\n\n\t// Create the tlv stream.\n\ttlvStream, err := tlv.NewStream(\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogOurOutputIndexType, &rl.OurOutputIndex,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogTheirOutputIndexType, &rl.TheirOutputIndex,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(\n\t\t\trevLogCommitTxHashType, &rl.CommitTxHash,\n\t\t),\n\t\ttlv.MakeBigSizeRecord(revLogOurBalanceType, &localBalance),\n\t\ttlv.MakeBigSizeRecord(\n\t\t\trevLogTheirBalanceType, &remoteBalance,\n\t\t),\n\t)\n\tif err != nil {\n\t\treturn rl, err\n\t}\n\n\t// Read the tlv stream.\n\tparsedTypes, err := readTlvStream(r, tlvStream)\n\tif err != nil {\n\t\treturn rl, err\n\t}\n\n\tif t, ok := parsedTypes[revLogOurBalanceType]; ok && t == nil {\n\t\tlb := lnwire.MilliSatoshi(localBalance)\n\t\trl.OurBalance = &lb\n\t}\n\n\tif t, ok := parsedTypes[revLogTheirBalanceType]; ok && t == nil {\n\t\trb := lnwire.MilliSatoshi(remoteBalance)\n\t\trl.TheirBalance = &rb\n\t}\n\n\t// Read the HTLC entries.\n\trl.HTLCEntries, err = deserializeHTLCEntries(r)\n\n\treturn rl, err\n}\n\n// deserializeHTLCEntries deserializes a list of HTLC entries based on tlv\n// format.",
+      "length": 1082,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeHTLCEntries(r io.Reader) ([]*HTLCEntry, error) {",
+      "content": "func deserializeHTLCEntries(r io.Reader) ([]*HTLCEntry, error) {\n\tvar htlcs []*HTLCEntry\n\n\tfor {\n\t\tvar htlc HTLCEntry\n\n\t\t// Create the tlv stream.\n\t\ttlvStream, err := htlc.toTlvStream()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Read the HTLC entry.\n\t\tif _, err := readTlvStream(r, tlvStream); err != nil {\n\t\t\t// We've reached the end when hitting an EOF.\n\t\t\tif err == io.ErrUnexpectedEOF {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Patch the Incoming field.\n\t\tif htlc.incomingTlv == 1 {\n\t\t\thtlc.Incoming = true\n\t\t}\n\n\t\t// Patch the Amt field.\n\t\thtlc.Amt = btcutil.Amount(htlc.amtTlv)\n\n\t\t// Append the entry.\n\t\thtlcs = append(htlcs, &htlc)\n\t}\n\n\treturn htlcs, nil\n}\n\n// writeTlvStream is a helper function that encodes the tlv stream into the\n// writer.",
+      "length": 656,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func writeTlvStream(w io.Writer, s *tlv.Stream) error {",
+      "content": "func writeTlvStream(w io.Writer, s *tlv.Stream) error {\n\tvar b bytes.Buffer\n\tif err := s.Encode(&b); err != nil {\n\t\treturn err\n\t}\n\t// Write the stream's length as a varint.\n\terr := tlv.WriteVarInt(w, uint64(b.Len()), &[8]byte{})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif _, err = w.Write(b.Bytes()); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// readTlvStream is a helper function that decodes the tlv stream from the\n// reader.",
+      "length": 352,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func readTlvStream(r io.Reader, s *tlv.Stream) (tlv.TypeMap, error) {",
+      "content": "func readTlvStream(r io.Reader, s *tlv.Stream) (tlv.TypeMap, error) {\n\tvar bodyLen uint64\n\n\t// Read the stream's length.\n\tbodyLen, err := tlv.ReadVarInt(r, &[8]byte{})\n\tswitch {\n\t// We'll convert any EOFs to ErrUnexpectedEOF, since this results in an\n\t// invalid record.\n\tcase err == io.EOF:\n\t\treturn nil, io.ErrUnexpectedEOF\n\n\t// Other unexpected errors.\n\tcase err != nil:\n\t\treturn nil, err\n\t}\n\n\t// TODO(yy): add overflow check.\n\tlr := io.LimitReader(r, int64(bodyLen))\n\n\treturn s.DecodeWithParsedTypes(lr)\n}\n\n// fetchLogBucket returns a read bucket by visiting both the new and the old\n// bucket.",
+      "length": 506,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchLogBucket(chanBucket kvdb.RBucket) (kvdb.RBucket, error) {",
+      "content": "func fetchLogBucket(chanBucket kvdb.RBucket) (kvdb.RBucket, error) {\n\tlogBucket := chanBucket.NestedReadBucket(revocationLogBucket)\n\tif logBucket == nil {\n\t\tlogBucket = chanBucket.NestedReadBucket(\n\t\t\trevocationLogBucketDeprecated,\n\t\t)\n\t\tif logBucket == nil {\n\t\t\treturn nil, mig25.ErrNoPastDeltas\n\t\t}\n\t}\n\n\treturn logBucket, nil\n}\n\n// putOldRevocationLog saves a revocation log using the old format.",
+      "length": 316,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func putOldRevocationLog(log kvdb.RwBucket,",
+      "content": "func putOldRevocationLog(log kvdb.RwBucket,\n\tcommit *mig.ChannelCommitment) error {\n\n\tvar b bytes.Buffer\n\tif err := mig.SerializeChanCommit(&b, commit); err != nil {\n\t\treturn err\n\t}\n\n\tlogEntrykey := mig24.MakeLogKey(commit.CommitHeight)\n\treturn log.Put(logEntrykey[:], b.Bytes())\n}\n",
+      "length": 228,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func putChanRevocationState(chanBucket kvdb.RwBucket,",
+      "content": "func putChanRevocationState(chanBucket kvdb.RwBucket,\n\tchannel *mig26.OpenChannel) error {\n\n\tvar b bytes.Buffer\n\terr := mig.WriteElements(\n\t\t&b, channel.RemoteCurrentRevocation, channel.RevocationProducer,\n\t\tchannel.RevocationStore,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// TODO(roasbeef): don't keep producer on disk\n\n\t// If the next revocation is present, which is only the case after the\n\t// FundingLocked message has been sent, then we'll write it to disk.\n\tif channel.RemoteNextRevocation != nil {\n\t\terr = mig.WriteElements(&b, channel.RemoteNextRevocation)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn chanBucket.Put(revocationStateKey, b.Bytes())\n}\n",
+      "length": 581,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchChanRevocationState(chanBucket kvdb.RBucket,",
+      "content": "func fetchChanRevocationState(chanBucket kvdb.RBucket,\n\tc *mig26.OpenChannel) error {\n\n\trevBytes := chanBucket.Get(revocationStateKey)\n\tif revBytes == nil {\n\t\treturn ErrNoRevocationsFound\n\t}\n\tr := bytes.NewReader(revBytes)\n\n\terr := mig.ReadElements(\n\t\tr, &c.RemoteCurrentRevocation, &c.RevocationProducer,\n\t\t&c.RevocationStore,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// If there aren't any bytes left in the buffer, then we don't yet have\n\t// the next remote revocation, so we can exit early here.\n\tif r.Len() == 0 {\n\t\treturn nil\n\t}\n\n\t// Otherwise we'll read the next revocation for the remote party which\n\t// is always the last item within the buffer.\n\treturn mig.ReadElements(r, &c.RemoteNextRevocation)\n}\n",
+      "length": 626,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func findOutputIndexes(chanState *mig26.OpenChannel,",
+      "content": "func findOutputIndexes(chanState *mig26.OpenChannel,\n\toldLog *mig.ChannelCommitment) (uint32, uint32, error) {\n\n\t// With the state number broadcast known, we can now derive/restore the\n\t// proper revocation preimage necessary to sweep the remote party's\n\t// output.\n\trevocationPreimage, err := chanState.RevocationStore.LookUp(\n\t\toldLog.CommitHeight,\n\t)\n\tif err != nil {\n\t\treturn 0, 0, err\n\t}\n\n\treturn findOutputIndexesFromRemote(\n\t\trevocationPreimage, chanState, oldLog,\n\t)\n}\n",
+      "length": 408,
+      "tokens": 53,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/zpay32/invoice.go",
+  "package": "zpay32",
+  "sections": [
+    {
+      "slug": "type MessageSigner struct {",
+      "content": "type MessageSigner struct {\n\t// SignCompact signs the hash of the passed msg with the node's privkey.\n\t// The returned signature should be 65 bytes, where the last 64 are the\n\t// compact signature, and the first one is a header byte. This is the\n\t// format returned by ecdsa.SignCompact.\n\tSignCompact func(msg []byte) ([]byte, error)\n}\n\n// Invoice represents a decoded invoice, or to-be-encoded invoice. Some of the\n// fields are optional, and will only be non-nil if the invoice this was parsed\n// from contains that field. When encoding, only the non-nil fields will be\n// added to the encoded invoice.",
+      "length": 566,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "type Invoice struct {",
+      "content": "type Invoice struct {\n\t// Net specifies what network this Lightning invoice is meant for.\n\tNet *chaincfg.Params\n\n\t// MilliSat specifies the amount of this invoice in millisatoshi.\n\t// Optional.\n\tMilliSat *lnwire.MilliSatoshi\n\n\t// Timestamp specifies the time this invoice was created.\n\t// Mandatory\n\tTimestamp time.Time\n\n\t// PaymentHash is the payment hash to be used for a payment to this\n\t// invoice.\n\tPaymentHash *[32]byte\n\n\t// PaymentAddr is the payment address to be used by payments to prevent\n\t// probing of the destination.\n\tPaymentAddr *[32]byte\n\n\t// Destination is the public key of the target node. This will always\n\t// be set after decoding, and can optionally be set before encoding to\n\t// include the pubkey as an 'n' field. If this is not set before\n\t// encoding then the destination pubkey won't be added as an 'n' field,\n\t// and the pubkey will be extracted from the signature during decoding.\n\tDestination *btcec.PublicKey\n\n\t// minFinalCLTVExpiry is the value that the creator of the invoice\n\t// expects to be used for the CLTV expiry of the HTLC extended to it in\n\t// the last hop.\n\t//\n\t// NOTE: This value is optional, and should be set to nil if the\n\t// invoice creator doesn't have a strong requirement on the CLTV expiry\n\t// of the final HTLC extended to it.\n\t//\n\t// This field is un-exported and can only be read by the\n\t// MinFinalCLTVExpiry() method. By forcing callers to read via this\n\t// method, we can easily enforce the default if not specified.\n\tminFinalCLTVExpiry *uint64\n\n\t// Description is a short description of the purpose of this invoice.\n\t// Optional. Non-nil iff DescriptionHash is nil.\n\tDescription *string\n\n\t// DescriptionHash is the SHA256 hash of a description of the purpose of\n\t// this invoice.\n\t// Optional. Non-nil iff Description is nil.\n\tDescriptionHash *[32]byte\n\n\t// expiry specifies the timespan this invoice will be valid.\n\t// Optional. If not set, a default expiry of 60 min will be implied.\n\t//\n\t// This field is unexported and can be read by the Expiry() method. This\n\t// method makes sure the default expiry time is returned in case the\n\t// field is not set.\n\texpiry *time.Duration\n\n\t// FallbackAddr is an on-chain address that can be used for payment in\n\t// case the Lightning payment fails.\n\t// Optional.\n\tFallbackAddr btcutil.Address\n\n\t// RouteHints represents one or more different route hints. Each route\n\t// hint can be individually used to reach the destination. These usually\n\t// represent private routes.\n\t//\n\t// NOTE: This is optional.\n\tRouteHints [][]HopHint\n\n\t// Features represents an optional field used to signal optional or\n\t// required support for features by the receiver.\n\tFeatures *lnwire.FeatureVector\n\n\t// Metadata is additional data that is sent along with the payment to\n\t// the payee.\n\tMetadata []byte\n}\n\n// Amount is a functional option that allows callers of NewInvoice to set the\n// amount in millisatoshis that the Invoice should encode.",
+      "length": 2824,
+      "tokens": 473,
+      "embedding": []
+    },
+    {
+      "slug": "func Amount(milliSat lnwire.MilliSatoshi) func(*Invoice) {",
+      "content": "func Amount(milliSat lnwire.MilliSatoshi) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.MilliSat = &milliSat\n\t}\n}\n\n// Destination is a functional option that allows callers of NewInvoice to\n// explicitly set the pubkey of the Invoice's destination node.",
+      "length": 190,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func Destination(destination *btcec.PublicKey) func(*Invoice) {",
+      "content": "func Destination(destination *btcec.PublicKey) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.Destination = destination\n\t}\n}\n\n// Description is a functional option that allows callers of NewInvoice to set\n// the payment description of the created Invoice.\n//\n// NOTE: Must be used if and only if DescriptionHash is not used.",
+      "length": 253,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func Description(description string) func(*Invoice) {",
+      "content": "func Description(description string) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.Description = &description\n\t}\n}\n\n// CLTVExpiry is an optional value which allows the receiver of the payment to\n// specify the delta between the current height and the HTLC extended to the\n// receiver.",
+      "length": 225,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func CLTVExpiry(delta uint64) func(*Invoice) {",
+      "content": "func CLTVExpiry(delta uint64) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.minFinalCLTVExpiry = &delta\n\t}\n}\n\n// DescriptionHash is a functional option that allows callers of NewInvoice to\n// set the payment description hash of the created Invoice.\n//\n// NOTE: Must be used if and only if Description is not used.",
+      "length": 260,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func DescriptionHash(descriptionHash [32]byte) func(*Invoice) {",
+      "content": "func DescriptionHash(descriptionHash [32]byte) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.DescriptionHash = &descriptionHash\n\t}\n}\n\n// Expiry is a functional option that allows callers of NewInvoice to set the\n// expiry of the created Invoice. If not set, a default expiry of 60 min will\n// be implied.",
+      "length": 235,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func Expiry(expiry time.Duration) func(*Invoice) {",
+      "content": "func Expiry(expiry time.Duration) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.expiry = &expiry\n\t}\n}\n\n// FallbackAddr is a functional option that allows callers of NewInvoice to set\n// the Invoice's fallback on-chain address that can be used for payment in case\n// the Lightning payment fails",
+      "length": 237,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func FallbackAddr(fallbackAddr btcutil.Address) func(*Invoice) {",
+      "content": "func FallbackAddr(fallbackAddr btcutil.Address) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.FallbackAddr = fallbackAddr\n\t}\n}\n\n// RouteHint is a functional option that allows callers of NewInvoice to add\n// one or more hop hints that represent a private route to the destination.",
+      "length": 211,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func RouteHint(routeHint []HopHint) func(*Invoice) {",
+      "content": "func RouteHint(routeHint []HopHint) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.RouteHints = append(i.RouteHints, routeHint)\n\t}\n}\n\n// Features is a functional option that allows callers of NewInvoice to set the\n// desired feature bits that are advertised on the invoice. If this option is\n// not used, an empty feature vector will automatically be populated.",
+      "length": 302,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func Features(features *lnwire.FeatureVector) func(*Invoice) {",
+      "content": "func Features(features *lnwire.FeatureVector) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.Features = features\n\t}\n}\n\n// PaymentAddr is a functional option that allows callers of NewInvoice to set\n// the desired payment address that is advertised on the invoice.",
+      "length": 195,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func PaymentAddr(addr [32]byte) func(*Invoice) {",
+      "content": "func PaymentAddr(addr [32]byte) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.PaymentAddr = &addr\n\t}\n}\n\n// Metadata is a functional option that allows callers of NewInvoice to set\n// the desired payment Metadata tht is advertised on the invoice.",
+      "length": 192,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func Metadata(metadata []byte) func(*Invoice) {",
+      "content": "func Metadata(metadata []byte) func(*Invoice) {\n\treturn func(i *Invoice) {\n\t\ti.Metadata = metadata\n\t}\n}\n\n// NewInvoice creates a new Invoice object. The last parameter is a set of\n// variadic arguments for setting optional fields of the invoice.\n//\n// NOTE: Either Description  or DescriptionHash must be provided for the Invoice\n// to be considered valid.",
+      "length": 299,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInvoice(net *chaincfg.Params, paymentHash [32]byte,",
+      "content": "func NewInvoice(net *chaincfg.Params, paymentHash [32]byte,\n\ttimestamp time.Time, options ...func(*Invoice)) (*Invoice, error) {\n\n\tinvoice := &Invoice{\n\t\tNet:         net,\n\t\tPaymentHash: &paymentHash,\n\t\tTimestamp:   timestamp,\n\t}\n\n\tfor _, option := range options {\n\t\toption(invoice)\n\t}\n\n\t// If no features were set, we'll populate an empty feature vector.\n\tif invoice.Features == nil {\n\t\tinvoice.Features = lnwire.NewFeatureVector(\n\t\t\tnil, lnwire.Features,\n\t\t)\n\t}\n\n\tif err := validateInvoice(invoice); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn invoice, nil\n}\n\n// Expiry returns the expiry time for this invoice. If expiry time is not set\n// explicitly, the default 3600 second expiry will be returned.",
+      "length": 615,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func (invoice *Invoice) Expiry() time.Duration {",
+      "content": "func (invoice *Invoice) Expiry() time.Duration {\n\tif invoice.expiry != nil {\n\t\treturn *invoice.expiry\n\t}\n\n\t// If no expiry is set for this invoice, default is 3600 seconds.\n\treturn DefaultInvoiceExpiry\n}\n\n// MinFinalCLTVExpiry returns the minimum final CLTV expiry delta as specified\n// by the creator of the invoice. This value specifies the delta between the\n// current height and the expiry height of the HTLC extended in the last hop.",
+      "length": 379,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (invoice *Invoice) MinFinalCLTVExpiry() uint64 {",
+      "content": "func (invoice *Invoice) MinFinalCLTVExpiry() uint64 {\n\tif invoice.minFinalCLTVExpiry != nil {\n\t\treturn *invoice.minFinalCLTVExpiry\n\t}\n\n\treturn DefaultAssumedFinalCLTVDelta\n}\n\n// validateInvoice does a sanity check of the provided Invoice, making sure it\n// has all the necessary fields set for it to be considered valid by BOLT-0011.",
+      "length": 271,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func validateInvoice(invoice *Invoice) error {",
+      "content": "func validateInvoice(invoice *Invoice) error {\n\t// The net must be set.\n\tif invoice.Net == nil {\n\t\treturn fmt.Errorf(\"net params not set\")\n\t}\n\n\t// The invoice must contain a payment hash.\n\tif invoice.PaymentHash == nil {\n\t\treturn fmt.Errorf(\"no payment hash found\")\n\t}\n\n\t// Either Description or DescriptionHash must be set, not both.\n\tif invoice.Description != nil && invoice.DescriptionHash != nil {\n\t\treturn fmt.Errorf(\"both description and description hash set\")\n\t}\n\tif invoice.Description == nil && invoice.DescriptionHash == nil {\n\t\treturn fmt.Errorf(\"neither description nor description hash set\")\n\t}\n\n\t// Check that we support the field lengths.\n\tif len(invoice.PaymentHash) != 32 {\n\t\treturn fmt.Errorf(\"unsupported payment hash length: %d\",\n\t\t\tlen(invoice.PaymentHash))\n\t}\n\n\tif invoice.DescriptionHash != nil && len(invoice.DescriptionHash) != 32 {\n\t\treturn fmt.Errorf(\"unsupported description hash length: %d\",\n\t\t\tlen(invoice.DescriptionHash))\n\t}\n\n\tif invoice.Destination != nil &&\n\t\tlen(invoice.Destination.SerializeCompressed()) != 33 {\n\t\treturn fmt.Errorf(\"unsupported pubkey length: %d\",\n\t\t\tlen(invoice.Destination.SerializeCompressed()))\n\t}\n\n\t// Ensure that all invoices have feature vectors.\n\tif invoice.Features == nil {\n\t\treturn fmt.Errorf(\"missing feature vector\")\n\t}\n\n\treturn nil\n}\n",
+      "length": 1213,
+      "tokens": 155,
+      "embedding": []
+    }
+  ]
+}

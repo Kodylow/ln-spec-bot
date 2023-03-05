@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/db_test.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"testing\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/stretchr/testify/require\"\n)\n\n// TestDump tests that the Dump() method creates a one-to-one copy of the\n// database content.",
+      "length": 240,
+      "tokens": 29,
+      "embedding": []
+    },
     {
       "slug": "func TestDump(t *testing.T) {",
       "content": "func TestDump(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tdb, err := newEtcdBackend(context.TODO(), f.BackendConfig())\n\trequire.NoError(t, err)\n\n\terr = db.Update(func(tx walletdb.ReadWriteTx) error {\n\t\t// \"apple\"\n\t\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, apple)\n\n\t\trequire.NoError(t, apple.Put([]byte(\"key\"), []byte(\"val\")))\n\t\treturn nil\n\t}, func() {})\n\n\t// Expect non-zero copy.\n\tvar buf bytes.Buffer\n\n\trequire.NoError(t, db.Copy(&buf))\n\trequire.Greater(t, buf.Len(), 0)\n\trequire.Nil(t, err)\n\n\texpected := map[string]string{\n\t\tBucketKey(\"apple\"):       BucketVal(\"apple\"),\n\t\tValueKey(\"key\", \"apple\"): \"val\",\n\t}\n\trequire.Equal(t, expected, f.Dump())\n}\n\n// TestAbortContext tests that an update on the database is aborted if the\n// database's main context in cancelled.",

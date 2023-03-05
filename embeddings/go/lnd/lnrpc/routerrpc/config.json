@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/config.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\tRoutingConfig\n\n\t// RouterMacPath is the path for the router macaroon. If unspecified\n\t// then we assume that the macaroon will be found under the network\n\t// directory, named DefaultRouterMacFilename.\n\tRouterMacPath string `long:\"routermacaroonpath\" description:\"Path to the router macaroon\"`\n\n\t// NetworkDir is the main network directory wherein the router rpc\n\t// server will find the macaroon named DefaultRouterMacFilename.\n\tNetworkDir string\n\n\t// MacService is the main macaroon service that we'll use to handle\n\t// authentication for the Router rpc server.\n\tMacService *macaroons.Service\n\n\t// Router is the main channel router instance that backs this RPC\n\t// server.\n\t//\n\t// TODO(roasbeef): make into pkg lvl interface?\n\t//\n\t// TODO(roasbeef): assumes router handles saving payment state\n\tRouter *routing.ChannelRouter\n\n\t// RouterBackend contains shared logic between this sub server and the\n\t// main rpc server.\n\tRouterBackend *RouterBackend\n}\n\n// DefaultConfig defines the config defaults.",
+      "length": 971,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultConfig() *Config {",
+      "content": "func DefaultConfig() *Config {\n\tdefaultRoutingConfig := RoutingConfig{\n\t\tProbabilityEstimatorType: routing.DefaultEstimator,\n\t\tMinRouteProbability:      routing.DefaultMinRouteProbability,\n\n\t\tAttemptCost:     routing.DefaultAttemptCost.ToSatoshis(),\n\t\tAttemptCostPPM:  routing.DefaultAttemptCostPPM,\n\t\tMaxMcHistory:    routing.DefaultMaxMcHistory,\n\t\tMcFlushInterval: routing.DefaultMcFlushInterval,\n\t\tAprioriConfig: &AprioriConfig{\n\t\t\tHopProbability:   routing.DefaultAprioriHopProbability,\n\t\t\tWeight:           routing.DefaultAprioriWeight,\n\t\t\tPenaltyHalfLife:  routing.DefaultPenaltyHalfLife,\n\t\t\tCapacityFraction: routing.DefaultCapacityFraction,\n\t\t},\n\t\tBimodalConfig: &BimodalConfig{\n\t\t\tScale:      int64(routing.DefaultBimodalScaleMsat),\n\t\t\tNodeWeight: routing.DefaultBimodalNodeWeight,\n\t\t\tDecayTime:  routing.DefaultBimodalDecayTime,\n\t\t},\n\t}\n\n\treturn &Config{\n\t\tRoutingConfig: defaultRoutingConfig,\n\t}\n}\n\n// GetRoutingConfig returns the routing config based on this sub server config.",
+      "length": 932,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func GetRoutingConfig(cfg *Config) *RoutingConfig {",
+      "content": "func GetRoutingConfig(cfg *Config) *RoutingConfig {\n\treturn &RoutingConfig{\n\t\tProbabilityEstimatorType: cfg.ProbabilityEstimatorType,\n\t\tMinRouteProbability:      cfg.MinRouteProbability,\n\t\tAttemptCost:              cfg.AttemptCost,\n\t\tAttemptCostPPM:           cfg.AttemptCostPPM,\n\t\tMaxMcHistory:             cfg.MaxMcHistory,\n\t\tMcFlushInterval:          cfg.McFlushInterval,\n\t\tAprioriConfig: &AprioriConfig{\n\t\t\tHopProbability:   cfg.AprioriConfig.HopProbability,\n\t\t\tWeight:           cfg.AprioriConfig.Weight,\n\t\t\tPenaltyHalfLife:  cfg.AprioriConfig.PenaltyHalfLife,\n\t\t\tCapacityFraction: cfg.AprioriConfig.CapacityFraction,\n\t\t},\n\t\tBimodalConfig: &BimodalConfig{\n\t\t\tScale:      cfg.BimodalConfig.Scale,\n\t\t\tNodeWeight: cfg.BimodalConfig.NodeWeight,\n\t\t\tDecayTime:  cfg.BimodalConfig.DecayTime,\n\t\t},\n\t}\n}\n",
+      "length": 728,
+      "tokens": 36,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cluster/etcd_elector.go",
-  "package": "kvdb_etcd",
+  "package": "cluster",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage cluster\n\nimport (\n\t\"context\"\n\t\"time\"\n\n\t\"github.com/lightningnetwork/lnd/kvdb/etcd\"\n\t\"go.etcd.io/etcd/client/pkg/v3/transport\"\n\tclientv3 \"go.etcd.io/etcd/client/v3\"\n\t\"go.etcd.io/etcd/client/v3/concurrency\"\n\t\"go.etcd.io/etcd/client/v3/namespace\"\n)\n\nconst (\n\t// etcdConnectionTimeout is the timeout until successful connection to\n\t// the etcd instance.\n\tetcdConnectionTimeout = 10 * time.Second\n)\n\n// Enforce that etcdLeaderElector implements the LeaderElector interface.\nvar _ LeaderElector = (*etcdLeaderElector)(nil)\n\n// etcdLeaderElector is an implementation of LeaderElector using etcd as the\n// election governor.",
+      "length": 620,
+      "tokens": 64,
+      "embedding": []
+    },
     {
       "slug": "type etcdLeaderElector struct {",
       "content": "type etcdLeaderElector struct {\n\tid       string\n\tctx      context.Context\n\tcli      *clientv3.Client\n\tsession  *concurrency.Session\n\telection *concurrency.Election\n}\n\n// newEtcdLeaderElector constructs a new etcdLeaderElector.",

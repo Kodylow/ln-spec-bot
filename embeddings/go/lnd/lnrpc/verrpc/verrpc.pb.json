@@ -1,0 +1,174 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/verrpc/verrpc.pb.go",
+  "package": "verrpc",
+  "sections": [
+    {
+      "slug": "type VersionRequest struct {",
+      "content": "type VersionRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *VersionRequest) Reset() {",
+      "content": "func (x *VersionRequest) Reset() {\n\t*x = VersionRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_verrpc_verrpc_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 180,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *VersionRequest) String() string {",
+      "content": "func (x *VersionRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*VersionRequest) ProtoMessage() {}",
+      "content": "func (*VersionRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *VersionRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *VersionRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_verrpc_verrpc_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use VersionRequest.ProtoReflect.Descriptor instead.",
+      "length": 307,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*VersionRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*VersionRequest) Descriptor() ([]byte, []int) {\n\treturn file_verrpc_verrpc_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 57,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type Version struct {",
+      "content": "type Version struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// A verbose description of the daemon's commit.\n\tCommit string `protobuf:\"bytes,1,opt,name=commit,proto3\" json:\"commit,omitempty\"`\n\t// The SHA1 commit hash that the daemon is compiled with.\n\tCommitHash string `protobuf:\"bytes,2,opt,name=commit_hash,json=commitHash,proto3\" json:\"commit_hash,omitempty\"`\n\t// The semantic version.\n\tVersion string `protobuf:\"bytes,3,opt,name=version,proto3\" json:\"version,omitempty\"`\n\t// The major application version.\n\tAppMajor uint32 `protobuf:\"varint,4,opt,name=app_major,json=appMajor,proto3\" json:\"app_major,omitempty\"`\n\t// The minor application version.\n\tAppMinor uint32 `protobuf:\"varint,5,opt,name=app_minor,json=appMinor,proto3\" json:\"app_minor,omitempty\"`\n\t// The application patch number.\n\tAppPatch uint32 `protobuf:\"varint,6,opt,name=app_patch,json=appPatch,proto3\" json:\"app_patch,omitempty\"`\n\t// The application pre-release modifier, possibly empty.\n\tAppPreRelease string `protobuf:\"bytes,7,opt,name=app_pre_release,json=appPreRelease,proto3\" json:\"app_pre_release,omitempty\"`\n\t// The list of build tags that were supplied during compilation.\n\tBuildTags []string `protobuf:\"bytes,8,rep,name=build_tags,json=buildTags,proto3\" json:\"build_tags,omitempty\"`\n\t// The version of go that compiled the executable.\n\tGoVersion string `protobuf:\"bytes,9,opt,name=go_version,json=goVersion,proto3\" json:\"go_version,omitempty\"`\n}\n",
+      "length": 1454,
+      "tokens": 108,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) Reset() {",
+      "content": "func (x *Version) Reset() {\n\t*x = Version{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_verrpc_verrpc_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 173,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) String() string {",
+      "content": "func (x *Version) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Version) ProtoMessage() {}",
+      "content": "func (*Version) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *Version) ProtoReflect() protoreflect.Message {\n\tmi := &file_verrpc_verrpc_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use Version.ProtoReflect.Descriptor instead.",
+      "length": 300,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Version) Descriptor() ([]byte, []int) {",
+      "content": "func (*Version) Descriptor() ([]byte, []int) {\n\treturn file_verrpc_verrpc_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 57,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetCommit() string {",
+      "content": "func (x *Version) GetCommit() string {\n\tif x != nil {\n\t\treturn x.Commit\n\t}\n\treturn \"\"\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetCommitHash() string {",
+      "content": "func (x *Version) GetCommitHash() string {\n\tif x != nil {\n\t\treturn x.CommitHash\n\t}\n\treturn \"\"\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetVersion() string {",
+      "content": "func (x *Version) GetVersion() string {\n\tif x != nil {\n\t\treturn x.Version\n\t}\n\treturn \"\"\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetAppMajor() uint32 {",
+      "content": "func (x *Version) GetAppMajor() uint32 {\n\tif x != nil {\n\t\treturn x.AppMajor\n\t}\n\treturn 0\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetAppMinor() uint32 {",
+      "content": "func (x *Version) GetAppMinor() uint32 {\n\tif x != nil {\n\t\treturn x.AppMinor\n\t}\n\treturn 0\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetAppPatch() uint32 {",
+      "content": "func (x *Version) GetAppPatch() uint32 {\n\tif x != nil {\n\t\treturn x.AppPatch\n\t}\n\treturn 0\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetAppPreRelease() string {",
+      "content": "func (x *Version) GetAppPreRelease() string {\n\tif x != nil {\n\t\treturn x.AppPreRelease\n\t}\n\treturn \"\"\n}\n",
+      "length": 51,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetBuildTags() []string {",
+      "content": "func (x *Version) GetBuildTags() []string {\n\tif x != nil {\n\t\treturn x.BuildTags\n\t}\n\treturn nil\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Version) GetGoVersion() string {",
+      "content": "func (x *Version) GetGoVersion() string {\n\tif x != nil {\n\t\treturn x.GoVersion\n\t}\n\treturn \"\"\n}\n\nvar File_verrpc_verrpc_proto protoreflect.FileDescriptor\n\nvar file_verrpc_verrpc_proto_rawDesc = []byte{\n\t0x0a, 0x13, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2f, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2e,\n\t0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x06, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x22, 0x10, 0x0a,\n\t0x0e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,\n\t0x99, 0x02, 0x0a, 0x07, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x63,\n\t0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x6f, 0x6d,\n\t0x6d, 0x69, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x5f, 0x68, 0x61,\n\t0x73, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,\n\t0x48, 0x61, 0x73, 0x68, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,\n\t0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1b,\n\t0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28,\n\t0x0d, 0x52, 0x08, 0x61, 0x70, 0x70, 0x4d, 0x61, 0x6a, 0x6f, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x61,\n\t0x70, 0x70, 0x5f, 0x6d, 0x69, 0x6e, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08,\n\t0x61, 0x70, 0x70, 0x4d, 0x69, 0x6e, 0x6f, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x70, 0x70, 0x5f,\n\t0x70, 0x61, 0x74, 0x63, 0x68, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x61, 0x70, 0x70,\n\t0x50, 0x61, 0x74, 0x63, 0x68, 0x12, 0x26, 0x0a, 0x0f, 0x61, 0x70, 0x70, 0x5f, 0x70, 0x72, 0x65,\n\t0x5f, 0x72, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,\n\t0x61, 0x70, 0x70, 0x50, 0x72, 0x65, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x12, 0x1d, 0x0a,\n\t0x0a, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x74, 0x61, 0x67, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28,\n\t0x09, 0x52, 0x09, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x67, 0x73, 0x12, 0x1d, 0x0a, 0x0a,\n\t0x67, 0x6f, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09,\n\t0x52, 0x09, 0x67, 0x6f, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x32, 0x42, 0x0a, 0x09, 0x56,\n\t0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x65, 0x72, 0x12, 0x35, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x56,\n\t0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x2e, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2e,\n\t0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f,\n\t0x2e, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x2e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x42,\n\t0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69,\n\t0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c,\n\t0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2f, 0x76, 0x65, 0x72, 0x72, 0x70, 0x63, 0x62,\n\t0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_verrpc_verrpc_proto_rawDescOnce sync.Once\n\tfile_verrpc_verrpc_proto_rawDescData = file_verrpc_verrpc_proto_rawDesc\n)\n",
+      "length": 3005,
+      "tokens": 482,
+      "embedding": []
+    },
+    {
+      "slug": "func file_verrpc_verrpc_proto_rawDescGZIP() []byte {",
+      "content": "func file_verrpc_verrpc_proto_rawDescGZIP() []byte {\n\tfile_verrpc_verrpc_proto_rawDescOnce.Do(func() {\n\t\tfile_verrpc_verrpc_proto_rawDescData = protoimpl.X.CompressGZIP(file_verrpc_verrpc_proto_rawDescData)\n\t})\n\treturn file_verrpc_verrpc_proto_rawDescData\n}\n\nvar file_verrpc_verrpc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)\nvar file_verrpc_verrpc_proto_goTypes = []interface{}{\n\t(*VersionRequest)(nil), // 0: verrpc.VersionRequest\n\t(*Version)(nil),        // 1: verrpc.Version\n}\nvar file_verrpc_verrpc_proto_depIdxs = []int32{\n\t0, // 0: verrpc.Versioner.GetVersion:input_type -> verrpc.VersionRequest\n\t1, // 1: verrpc.Versioner.GetVersion:output_type -> verrpc.Version\n\t1, // [1:2] is the sub-list for method output_type\n\t0, // [0:1] is the sub-list for method input_type\n\t0, // [0:0] is the sub-list for extension type_name\n\t0, // [0:0] is the sub-list for extension extendee\n\t0, // [0:0] is the sub-list for field type_name\n}\n",
+      "length": 863,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_verrpc_verrpc_proto_init() }",
+      "content": "func init() { file_verrpc_verrpc_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_verrpc_verrpc_proto_init() {",
+      "content": "func file_verrpc_verrpc_proto_init() {\n\tif File_verrpc_verrpc_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_verrpc_verrpc_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*VersionRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_verrpc_verrpc_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*Version); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_verrpc_verrpc_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   2,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_verrpc_verrpc_proto_goTypes,\n\t\tDependencyIndexes: file_verrpc_verrpc_proto_depIdxs,\n\t\tMessageInfos:      file_verrpc_verrpc_proto_msgTypes,\n\t}.Build()\n\tFile_verrpc_verrpc_proto = out.File\n\tfile_verrpc_verrpc_proto_rawDesc = nil\n\tfile_verrpc_verrpc_proto_goTypes = nil\n\tfile_verrpc_verrpc_proto_depIdxs = nil\n}\n",
+      "length": 1178,
+      "tokens": 114,
+      "embedding": []
+    }
+  ]
+}

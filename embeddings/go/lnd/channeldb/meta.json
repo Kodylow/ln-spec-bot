@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/meta.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type Meta struct {",
+      "content": "type Meta struct {\n\t// DbVersionNumber is the current schema version of the database.\n\tDbVersionNumber uint32\n}\n\n// FetchMeta fetches the metadata from boltdb and returns filled meta structure.",
+      "length": 170,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) FetchMeta() (*Meta, error) {",
+      "content": "func (d *DB) FetchMeta() (*Meta, error) {\n\tvar meta *Meta\n\n\terr := kvdb.View(d, func(tx kvdb.RTx) error {\n\t\treturn FetchMeta(meta, tx)\n\t}, func() {\n\t\tmeta = &Meta{}\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn meta, nil\n}\n\n// FetchMeta is a helper function used in order to allow callers to re-use a\n// database transaction.",
+      "length": 273,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func FetchMeta(meta *Meta, tx kvdb.RTx) error {",
+      "content": "func FetchMeta(meta *Meta, tx kvdb.RTx) error {\n\tmetaBucket := tx.ReadBucket(metaBucket)\n\tif metaBucket == nil {\n\t\treturn ErrMetaNotFound\n\t}\n\n\tdata := metaBucket.Get(dbVersionKey)\n\tif data == nil {\n\t\tmeta.DbVersionNumber = getLatestDBVersion(dbVersions)\n\t} else {\n\t\tmeta.DbVersionNumber = byteOrder.Uint32(data)\n\t}\n\n\treturn nil\n}\n\n// PutMeta writes the passed instance of the database met-data struct to disk.",
+      "length": 346,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) PutMeta(meta *Meta) error {",
+      "content": "func (d *DB) PutMeta(meta *Meta) error {\n\treturn kvdb.Update(d, func(tx kvdb.RwTx) error {\n\t\treturn putMeta(meta, tx)\n\t}, func() {})\n}\n\n// putMeta is an internal helper function used in order to allow callers to\n// re-use a database transaction. See the publicly exported PutMeta method for\n// more information.",
+      "length": 263,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func putMeta(meta *Meta, tx kvdb.RwTx) error {",
+      "content": "func putMeta(meta *Meta, tx kvdb.RwTx) error {\n\tmetaBucket, err := tx.CreateTopLevelBucket(metaBucket)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn putDbVersion(metaBucket, meta)\n}\n",
+      "length": 124,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func putDbVersion(metaBucket kvdb.RwBucket, meta *Meta) error {",
+      "content": "func putDbVersion(metaBucket kvdb.RwBucket, meta *Meta) error {\n\tscratch := make([]byte, 4)\n\tbyteOrder.PutUint32(scratch, meta.DbVersionNumber)\n\treturn metaBucket.Put(dbVersionKey, scratch)\n}\n\n// OptionalMeta structure holds the database optional migration information.",
+      "length": 200,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "type OptionalMeta struct {",
+      "content": "type OptionalMeta struct {\n\t// Versions is a set that contains the versions that have been applied.\n\t// When saved to disk, only the indexes are stored.\n\tVersions map[uint64]string\n}\n",
+      "length": 152,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (om *OptionalMeta) String() string {",
+      "content": "func (om *OptionalMeta) String() string {\n\ts := \"\"\n\tfor index, name := range om.Versions {\n\t\ts += fmt.Sprintf(\"%d: %s\", index, name)\n\t}\n\tif s == \"\" {\n\t\ts = \"empty\"\n\t}\n\treturn s\n}\n\n// fetchOptionalMeta reads the optional meta from the database.",
+      "length": 191,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) fetchOptionalMeta() (*OptionalMeta, error) {",
+      "content": "func (d *DB) fetchOptionalMeta() (*OptionalMeta, error) {\n\tom := &OptionalMeta{\n\t\tVersions: make(map[uint64]string),\n\t}\n\n\terr := kvdb.View(d, func(tx kvdb.RTx) error {\n\t\tmetaBucket := tx.ReadBucket(metaBucket)\n\t\tif metaBucket == nil {\n\t\t\treturn ErrMetaNotFound\n\t\t}\n\n\t\tvBytes := metaBucket.Get(optionalVersionKey)\n\t\t// Exit early if nothing found.\n\t\tif vBytes == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Read the versions' length.\n\t\tr := bytes.NewReader(vBytes)\n\t\tvLen, err := tlv.ReadVarInt(r, &[8]byte{})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Write the version index.\n\t\tfor i := uint64(0); i < vLen; i++ {\n\t\t\tversion, err := tlv.ReadVarInt(r, &[8]byte{})\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tom.Versions[version] = optionalVersions[i].name\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn om, nil\n}\n\n// putOptionalMeta writes an optional meta to the database.",
+      "length": 790,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) putOptionalMeta(om *OptionalMeta) error {",
+      "content": "func (d *DB) putOptionalMeta(om *OptionalMeta) error {\n\treturn kvdb.Update(d, func(tx kvdb.RwTx) error {\n\t\tmetaBucket, err := tx.CreateTopLevelBucket(metaBucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tvar b bytes.Buffer\n\n\t\t// Write the total length.\n\t\terr = tlv.WriteVarInt(&b, uint64(len(om.Versions)), &[8]byte{})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Write the version indexes.\n\t\tfor v := range om.Versions {\n\t\t\terr := tlv.WriteVarInt(&b, v, &[8]byte{})\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn metaBucket.Put(optionalVersionKey, b.Bytes())\n\t}, func() {})\n}\n\n// CheckMarkerPresent returns the marker under the requested key or\n// ErrMarkerNotFound if either the root bucket or the marker key within that\n// bucket does not exist.",
+      "length": 665,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func CheckMarkerPresent(tx kvdb.RTx, markerKey []byte) ([]byte, error) {",
+      "content": "func CheckMarkerPresent(tx kvdb.RTx, markerKey []byte) ([]byte, error) {\n\tmarkerBucket := tx.ReadBucket(markerKey)\n\tif markerBucket == nil {\n\t\treturn nil, ErrMarkerNotPresent\n\t}\n\n\tval := markerBucket.Get(markerKey)\n\n\t// If we wrote the marker correctly, we created a bucket _and_ created a\n\t// key with a non-empty value. It doesn't matter to us whether the key\n\t// exists or whether its value is empty, to us, it just means the marker\n\t// isn't there.\n\tif len(val) == 0 {\n\t\treturn nil, ErrMarkerNotPresent\n\t}\n\n\treturn val, nil\n}\n\n// EnsureNoTombstone returns an error if there is a tombstone marker in the DB\n// of the given transaction.",
+      "length": 546,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func EnsureNoTombstone(tx kvdb.RTx) error {",
+      "content": "func EnsureNoTombstone(tx kvdb.RTx) error {\n\tmarker, err := CheckMarkerPresent(tx, TombstoneKey)\n\tif err == ErrMarkerNotPresent {\n\t\t// No marker present, so no tombstone. The DB is still alive.\n\t\treturn nil\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// There was no error so there is a tombstone marker/tag. We cannot use\n\t// this DB anymore.\n\treturn fmt.Errorf(\"refusing to use db, it was marked with a tombstone \"+\n\t\t\"after successful data migration; tombstone reads: %s\",\n\t\tstring(marker))\n}\n\n// AddMarker adds the marker with the given key into a top level bucket with the\n// same name. So the structure will look like:\n//\n//\tmarker-key (top level bucket)\n//\t    |->   marker-key:marker-value (key/value pair)",
+      "length": 644,
+      "tokens": 108,
+      "embedding": []
+    },
+    {
+      "slug": "func AddMarker(tx kvdb.RwTx, markerKey, markerValue []byte) error {",
+      "content": "func AddMarker(tx kvdb.RwTx, markerKey, markerValue []byte) error {\n\tif len(markerValue) == 0 {\n\t\treturn fmt.Errorf(\"marker value cannot be empty\")\n\t}\n\n\tmarkerBucket, err := tx.CreateTopLevelBucket(markerKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn markerBucket.Put(markerKey, markerValue)\n}\n",
+      "length": 215,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

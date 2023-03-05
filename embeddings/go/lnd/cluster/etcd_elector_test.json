@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cluster/etcd_elector_test.go",
-  "package": "kvdb_etcd",
+  "package": "cluster",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage cluster\n\nimport (\n\t\"context\"\n\t\"os\"\n\t\"runtime/pprof\"\n\t\"sync\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/lightningnetwork/lnd/kvdb/etcd\"\n\t\"github.com/stretchr/testify/require\"\n)\n\n// GuardTimeout implements a test level timeout guard.",
+      "length": 234,
+      "tokens": 24,
+      "embedding": []
+    },
     {
       "slug": "func GuardTimeout(t *testing.T, timeout time.Duration) func() {",
       "content": "func GuardTimeout(t *testing.T, timeout time.Duration) func() {\n\tdone := make(chan struct{})\n\tgo func() {\n\t\tselect {\n\t\tcase <-time.After(timeout):\n\t\t\terr := pprof.Lookup(\"goroutine\").WriteTo(os.Stdout, 1)\n\t\t\trequire.NoError(t, err)\n\t\t\tpanic(\"test timeout\")\n\n\t\tcase <-done:\n\t\t}\n\t}()\n\n\treturn func() {\n\t\tclose(done)\n\t}\n}\n\n// TestEtcdElector tests that two candidates competing for leadership works as\n// expected and that elected leader can resign and allow others to take on.",

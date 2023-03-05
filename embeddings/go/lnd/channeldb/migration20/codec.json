@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration20/codec.go",
+  "package": "migration20",
+  "sections": [
+    {
+      "slug": "func writeOutpoint(w io.Writer, o *wire.OutPoint) error {",
+      "content": "func writeOutpoint(w io.Writer, o *wire.OutPoint) error {\n\tif _, err := w.Write(o.Hash[:]); err != nil {\n\t\treturn err\n\t}\n\tif err := binary.Write(w, byteOrder, o.Index); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// readOutpoint reads an outpoint from the passed reader.",
+      "length": 203,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func readOutpoint(r io.Reader, o *wire.OutPoint) error {",
+      "content": "func readOutpoint(r io.Reader, o *wire.OutPoint) error {\n\tif _, err := io.ReadFull(r, o.Hash[:]); err != nil {\n\t\treturn err\n\t}\n\tif err := binary.Read(r, byteOrder, &o.Index); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 153,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

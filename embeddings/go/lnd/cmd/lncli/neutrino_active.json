@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/neutrino_active.go",
-  "package": "neutrinorpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build neutrinorpc",
+      "content": "//go:build neutrinorpc\n// +build neutrinorpc\n\npackage main\n\nimport (\n\t\"github.com/lightningnetwork/lnd/lnrpc/neutrinorpc\"\n\t\"github.com/urfave/cli\"\n)\n",
+      "length": 118,
+      "tokens": 10,
+      "embedding": []
+    },
     {
       "slug": "func getNeutrinoKitClient(ctx *cli.Context) (neutrinorpc.NeutrinoKitClient, func()) {",
       "content": "func getNeutrinoKitClient(ctx *cli.Context) (neutrinorpc.NeutrinoKitClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn neutrinorpc.NewNeutrinoKitClient(conn), cleanUp\n}\n\nvar getNeutrinoStatusCommand = cli.Command{\n\tName:     \"status\",\n\tUsage:    \"Returns the status of the running neutrino instance.\",\n\tCategory: \"Neutrino\",\n\tDescription: \"Returns the status of the light client neutrino \" +\n\t\t\"instance, along with height and hash of the best block, and \" +\n\t\t\"a list of connected peers.\",\n\tAction: actionDecorator(getNeutrinoStatus),\n}\n",

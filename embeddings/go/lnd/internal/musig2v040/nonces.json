@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/internal/musig2v040/nonces.go",
-  "package": "Copyright",
+  "package": "musig2v040",
   "sections": [
     {
       "slug": "type Nonces struct {",

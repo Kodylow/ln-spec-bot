@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/feature/manager_internal_test.go",
+  "package": "feature",
+  "sections": [
+    {
+      "slug": "type managerTest struct {",
+      "content": "type managerTest struct {\n\tname string\n\tcfg  Config\n}\n\nconst unknownFeature lnwire.FeatureBit = 30\n\nvar testSetDesc = setDesc{\n\tlnwire.DataLossProtectRequired: {\n\t\tSetNodeAnn: {}, // I\n\t},\n\tlnwire.TLVOnionPayloadOptional: {\n\t\tSetInit:    {}, // I\n\t\tSetNodeAnn: {}, // N\n\t},\n\tlnwire.StaticRemoteKeyOptional: {\n\t\tSetInit:    {}, // I\n\t\tSetNodeAnn: {}, // N\n\t},\n}\n\nvar managerTests = []managerTest{\n\t{\n\t\tname: \"default\",\n\t\tcfg:  Config{},\n\t},\n\t{\n\t\tname: \"no tlv\",\n\t\tcfg: Config{\n\t\t\tNoTLVOnion: true,\n\t\t},\n\t},\n\t{\n\t\tname: \"no static remote key\",\n\t\tcfg: Config{\n\t\t\tNoStaticRemoteKey: true,\n\t\t},\n\t},\n\t{\n\t\tname: \"no tlv or static remote key\",\n\t\tcfg: Config{\n\t\t\tNoTLVOnion:        true,\n\t\t\tNoStaticRemoteKey: true,\n\t\t},\n\t},\n\t{\n\t\tname: \"anchors should disable anything dependent on it\",\n\t\tcfg: Config{\n\t\t\tNoAnchors: true,\n\t\t},\n\t},\n}\n\n// TestManager asserts basic initialazation and operation of a feature manager,\n// including that the proper features are removed in response to config changes.",
+      "length": 905,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func TestManager(t *testing.T) {",
+      "content": "func TestManager(t *testing.T) {\n\tfor _, test := range managerTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestManager(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 119,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func testManager(t *testing.T, test managerTest) {",
+      "content": "func testManager(t *testing.T, test managerTest) {\n\tm, err := newManager(test.cfg, testSetDesc)\n\trequire.NoError(t, err, \"unable to create feature manager\")\n\n\tsets := []Set{\n\t\tSetInit,\n\t\tSetLegacyGlobal,\n\t\tSetNodeAnn,\n\t\tSetInvoice,\n\t}\n\n\tfor _, set := range sets {\n\t\traw := m.GetRaw(set)\n\t\tfv := m.Get(set)\n\n\t\tfv2 := lnwire.NewFeatureVector(raw, lnwire.Features)\n\n\t\tif !reflect.DeepEqual(fv, fv2) {\n\t\t\tt.Fatalf(\"mismatch Get vs GetRaw, raw: %v vs fv: %v\",\n\t\t\t\tfv2, fv)\n\t\t}\n\n\t\tassertUnset := func(bit lnwire.FeatureBit) {\n\t\t\thasBit := fv.HasFeature(bit) || fv.HasFeature(bit^1)\n\t\t\tif hasBit {\n\t\t\t\tt.Fatalf(\"bit %v or %v is set\", bit, bit^1)\n\t\t\t}\n\t\t}\n\n\t\t// Assert that the manager properly unset the configured feature\n\t\t// bits from all sets.\n\t\tif test.cfg.NoTLVOnion {\n\t\t\tassertUnset(lnwire.TLVOnionPayloadOptional)\n\t\t}\n\t\tif test.cfg.NoStaticRemoteKey {\n\t\t\tassertUnset(lnwire.StaticRemoteKeyOptional)\n\t\t}\n\t\tif test.cfg.NoAnchors {\n\t\t\tassertUnset(lnwire.ScriptEnforcedLeaseRequired)\n\t\t\tassertUnset(lnwire.ScriptEnforcedLeaseOptional)\n\t\t}\n\n\t\tassertUnset(unknownFeature)\n\t}\n\n\t// Do same basic sanity checks on features that are always present.\n\tnodeFeatures := m.Get(SetNodeAnn)\n\n\tassertSet := func(bit lnwire.FeatureBit) {\n\t\thas := nodeFeatures.HasFeature(bit)\n\t\tif !has {\n\t\t\tt.Fatalf(\"node features don't advertised %v\", bit)\n\t\t}\n\t}\n\n\tassertSet(lnwire.DataLossProtectOptional)\n\tif !test.cfg.NoTLVOnion {\n\t\tassertSet(lnwire.TLVOnionPayloadRequired)\n\t}\n\tif !test.cfg.NoStaticRemoteKey {\n\t\tassertSet(lnwire.StaticRemoteKeyOptional)\n\t}\n}\n",
+      "length": 1419,
+      "tokens": 155,
+      "embedding": []
+    }
+  ]
+}

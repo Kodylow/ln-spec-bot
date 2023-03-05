@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/routing/shards/shard_tracker_test.go",
+  "package": "shards_test",
+  "sections": [
+    {
+      "slug": "func TestSimpleShardTracker(t *testing.T) {",
+      "content": "func TestSimpleShardTracker(t *testing.T) {\n\tvar testHashes [2]lntypes.Hash\n\tfor i := range testHashes {\n\t\t_, err := rand.Read(testHashes[i][:])\n\t\trequire.NoError(t, err)\n\t}\n\n\tstartAttempts := map[uint64]lntypes.Hash{\n\t\t1: testHashes[1],\n\t}\n\n\ttracker := shards.NewSimpleShardTracker(testHashes[0], startAttempts)\n\n\t// Trying to retrieve a hash for id 0 should result in an error.\n\t_, err := tracker.GetHash(0)\n\trequire.Error(t, err)\n\n\t// Getting id 1 should work.\n\thash1, err := tracker.GetHash(1)\n\trequire.NoError(t, err)\n\n\trequire.Equal(t, testHashes[1], hash1)\n\n\t// Finally, create a new shard and immediately retrieve the hash.\n\tshard, err := tracker.NewShard(2, false)\n\trequire.NoError(t, err)\n\n\t// It's hash should be the tracker's overall payment hash.\n\thash2, err := tracker.GetHash(2)\n\trequire.NoError(t, err)\n\n\trequire.Equal(t, testHashes[0], shard.Hash())\n\trequire.Equal(t, testHashes[0], hash2)\n}\n",
+      "length": 832,
+      "tokens": 102,
+      "embedding": []
+    }
+  ]
+}

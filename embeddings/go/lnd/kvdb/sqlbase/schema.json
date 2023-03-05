@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/schema.go",
-  "package": "kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\n// SQLiteCmdReplacements is a one to one mapping of sqlite keywords that should\n// be replaced by the mapped strings in any command. Note that the sqlite\n// keywords to be replaced are case-sensitive.",
+      "length": 238,
+      "tokens": 41,
+      "embedding": []
+    },
     {
       "slug": "type SQLiteCmdReplacements map[string]string",
       "content": "type SQLiteCmdReplacements map[string]string\n",

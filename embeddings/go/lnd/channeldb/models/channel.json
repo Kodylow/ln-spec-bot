@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/models/channel.go",
+  "package": "models",
+  "sections": [
+    {
+      "slug": "type CircuitKey struct {",
+      "content": "type CircuitKey struct {\n\t// ChanID is the short chanid indicating the HTLC's origin.\n\t//\n\t// NOTE: It is fine for this value to be blank, as this indicates a\n\t// locally-sourced payment.\n\tChanID lnwire.ShortChannelID\n\n\t// HtlcID is the unique htlc index predominately assigned by links,\n\t// though can also be assigned by switch in the case of locally-sourced\n\t// payments.\n\tHtlcID uint64\n}\n\n// SetBytes deserializes the given bytes into this CircuitKey.",
+      "length": 418,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (k *CircuitKey) SetBytes(bs []byte) error {",
+      "content": "func (k *CircuitKey) SetBytes(bs []byte) error {\n\tif len(bs) != serializedCircuitKeyLen {\n\t\treturn ErrInvalidCircuitKeyLen\n\t}\n\n\tk.ChanID = lnwire.NewShortChanIDFromInt(\n\t\tbinary.BigEndian.Uint64(bs[:8]))\n\tk.HtlcID = binary.BigEndian.Uint64(bs[8:])\n\n\treturn nil\n}\n\n// Bytes returns the serialized bytes for this circuit key.",
+      "length": 263,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (k CircuitKey) Bytes() []byte {",
+      "content": "func (k CircuitKey) Bytes() []byte {\n\tbs := make([]byte, serializedCircuitKeyLen)\n\tbinary.BigEndian.PutUint64(bs[:8], k.ChanID.ToUint64())\n\tbinary.BigEndian.PutUint64(bs[8:], k.HtlcID)\n\n\treturn bs\n}\n\n// Encode writes a CircuitKey to the provided io.Writer.",
+      "length": 212,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (k *CircuitKey) Encode(w io.Writer) error {",
+      "content": "func (k *CircuitKey) Encode(w io.Writer) error {\n\tvar scratch [serializedCircuitKeyLen]byte\n\tbinary.BigEndian.PutUint64(scratch[:8], k.ChanID.ToUint64())\n\tbinary.BigEndian.PutUint64(scratch[8:], k.HtlcID)\n\n\t_, err := w.Write(scratch[:])\n\n\treturn err\n}\n\n// Decode reads a CircuitKey from the provided io.Reader.",
+      "length": 252,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (k *CircuitKey) Decode(r io.Reader) error {",
+      "content": "func (k *CircuitKey) Decode(r io.Reader) error {\n\tvar scratch [serializedCircuitKeyLen]byte\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn err\n\t}\n\tk.ChanID = lnwire.NewShortChanIDFromInt(\n\t\tbinary.BigEndian.Uint64(scratch[:8]))\n\tk.HtlcID = binary.BigEndian.Uint64(scratch[8:])\n\n\treturn nil\n}\n\n// String returns a string representation of the CircuitKey.",
+      "length": 310,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (k CircuitKey) String() string {",
+      "content": "func (k CircuitKey) String() string {\n\treturn fmt.Sprintf(\"(Chan ID=%s, HTLC ID=%d)\", k.ChanID, k.HtlcID)\n}\n",
+      "length": 68,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

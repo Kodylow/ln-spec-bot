@@ -1,0 +1,153 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/wallet_kit.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "type (",
+      "content": "type (\n\tSignReq    *walletrpc.SignMessageWithAddrResponse\n\tVerifyResp *walletrpc.VerifyMessageWithAddrResponse\n)\n\n// FinalizePsbt makes a RPC call to node's ListUnspent and asserts.",
+      "length": 170,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListUnspent(",
+      "content": "func (h *HarnessRPC) ListUnspent(\n\treq *walletrpc.ListUnspentRequest) *walletrpc.ListUnspentResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.ListUnspent(ctxt, req)\n\th.NoError(err, \"ListUnspent\")\n\n\treturn resp\n}\n\n// DeriveKey makes a RPC call to the DeriveKey and asserts.",
+      "length": 295,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DeriveKey(kl *signrpc.KeyLocator) *signrpc.KeyDescriptor {",
+      "content": "func (h *HarnessRPC) DeriveKey(kl *signrpc.KeyLocator) *signrpc.KeyDescriptor {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tkey, err := h.WalletKit.DeriveKey(ctxt, kl)\n\th.NoError(err, \"DeriveKey\")\n\n\treturn key\n}\n\n// SendOutputs makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 235,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendOutputs(",
+      "content": "func (h *HarnessRPC) SendOutputs(\n\treq *walletrpc.SendOutputsRequest) *walletrpc.SendOutputsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.SendOutputs(ctxt, req)\n\th.NoError(err, \"SendOutputs\")\n\n\treturn resp\n}\n\n// FundPsbt makes a RPC call to node's FundPsbt and asserts.",
+      "length": 296,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) FundPsbt(",
+      "content": "func (h *HarnessRPC) FundPsbt(\n\treq *walletrpc.FundPsbtRequest) *walletrpc.FundPsbtResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.FundPsbt(ctxt, req)\n\th.NoError(err, \"FundPsbt\")\n\n\treturn resp\n}\n\n// FinalizePsbt makes a RPC call to node's FinalizePsbt and asserts.",
+      "length": 292,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) FinalizePsbt(",
+      "content": "func (h *HarnessRPC) FinalizePsbt(\n\treq *walletrpc.FinalizePsbtRequest) *walletrpc.FinalizePsbtResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.FinalizePsbt(ctxt, req)\n\th.NoError(err, \"FinalizePsbt\")\n\n\treturn resp\n}\n\n// LabelTransactionAssertErr makes a RPC call to the node's LabelTransaction\n// and asserts an error is returned. It then returns the error.",
+      "length": 379,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) LabelTransactionAssertErr(",
+      "content": "func (h *HarnessRPC) LabelTransactionAssertErr(\n\treq *walletrpc.LabelTransactionRequest) error {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.WalletKit.LabelTransaction(ctxt, req)\n\trequire.Error(h, err, \"expected error returned\")\n\n\treturn err\n}\n\n// LabelTransaction makes a RPC call to the node's LabelTransaction\n// and asserts no error is returned.",
+      "length": 339,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) LabelTransaction(req *walletrpc.LabelTransactionRequest) {",
+      "content": "func (h *HarnessRPC) LabelTransaction(req *walletrpc.LabelTransactionRequest) {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.WalletKit.LabelTransaction(ctxt, req)\n\th.NoError(err, \"LabelTransaction\")\n}\n\n// DeriveNextKey makes a RPC call to the DeriveNextKey and asserts.",
+      "length": 230,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DeriveNextKey(",
+      "content": "func (h *HarnessRPC) DeriveNextKey(\n\treq *walletrpc.KeyReq) *signrpc.KeyDescriptor {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tkey, err := h.WalletKit.DeriveNextKey(ctxt, req)\n\th.NoError(err, \"DeriveNextKey\")\n\n\treturn key\n}\n\n// ListAddresses makes a RPC call to the ListAddresses and asserts.",
+      "length": 285,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListAddresses(",
+      "content": "func (h *HarnessRPC) ListAddresses(\n\treq *walletrpc.ListAddressesRequest) *walletrpc.ListAddressesResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tkey, err := h.WalletKit.ListAddresses(ctxt, req)\n\th.NoError(err, \"ListAddresses\")\n\n\treturn key\n}\n\n// SignMessageWithAddr makes a RPC call to the SignMessageWithAddr and asserts.",
+      "length": 321,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignMessageWithAddr(",
+      "content": "func (h *HarnessRPC) SignMessageWithAddr(\n\treq *walletrpc.SignMessageWithAddrRequest) SignReq {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tkey, err := h.WalletKit.SignMessageWithAddr(ctxt, req)\n\th.NoError(err, \"SignMessageWithAddr\")\n\n\treturn key\n}\n\n// VerifyMessageWithAddr makes a RPC call to\n// the VerifyMessageWithAddr and asserts.",
+      "length": 320,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) VerifyMessageWithAddr(",
+      "content": "func (h *HarnessRPC) VerifyMessageWithAddr(\n\treq *walletrpc.VerifyMessageWithAddrRequest) VerifyResp {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tkey, err := h.WalletKit.VerifyMessageWithAddr(ctxt, req)\n\th.NoError(err, \"VerifyMessageWithAddr\")\n\n\treturn key\n}\n\n// ListSweeps makes a ListSweeps RPC call to the node's WalletKit client.",
+      "length": 317,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListSweeps(verbose bool) *walletrpc.ListSweepsResponse {",
+      "content": "func (h *HarnessRPC) ListSweeps(verbose bool) *walletrpc.ListSweepsResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &walletrpc.ListSweepsRequest{Verbose: verbose}\n\tresp, err := h.WalletKit.ListSweeps(ctxt, req)\n\th.NoError(err, \"ListSweeps\")\n\n\treturn resp\n}\n\n// PendingSweeps makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 296,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) PendingSweeps() *walletrpc.PendingSweepsResponse {",
+      "content": "func (h *HarnessRPC) PendingSweeps() *walletrpc.PendingSweepsResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &walletrpc.PendingSweepsRequest{}\n\n\tresp, err := h.WalletKit.PendingSweeps(ctxt, req)\n\th.NoError(err, \"PendingSweeps\")\n\n\treturn resp\n}\n\n// PublishTransaction makes an RPC call to the node's WalletKitClient and\n// asserts.",
+      "length": 297,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) PublishTransaction(",
+      "content": "func (h *HarnessRPC) PublishTransaction(\n\treq *walletrpc.Transaction) *walletrpc.PublishResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.PublishTransaction(ctxt, req)\n\th.NoError(err, \"PublishTransaction\")\n\n\treturn resp\n}\n\n// BumpFee makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 309,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) BumpFee(",
+      "content": "func (h *HarnessRPC) BumpFee(\n\treq *walletrpc.BumpFeeRequest) *walletrpc.BumpFeeResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.BumpFee(ctxt, req)\n\th.NoError(err, \"BumpFee\")\n\n\treturn resp\n}\n\n// ListAccounts makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 295,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListAccounts(",
+      "content": "func (h *HarnessRPC) ListAccounts(\n\treq *walletrpc.ListAccountsRequest) *walletrpc.ListAccountsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.ListAccounts(ctxt, req)\n\th.NoError(err, \"ListAccounts\")\n\n\treturn resp\n}\n\n// ImportAccount makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 316,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ImportAccount(",
+      "content": "func (h *HarnessRPC) ImportAccount(\n\treq *walletrpc.ImportAccountRequest) *walletrpc.ImportAccountResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.ImportAccount(ctxt, req)\n\th.NoError(err, \"ImportAccount\")\n\n\treturn resp\n}\n\n// ImportPublicKey makes a RPC call to the node's WalletKitClient and asserts.\n//\n//nolint:lll",
+      "length": 336,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ImportPublicKey(",
+      "content": "func (h *HarnessRPC) ImportPublicKey(\n\treq *walletrpc.ImportPublicKeyRequest) *walletrpc.ImportPublicKeyResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.ImportPublicKey(ctxt, req)\n\th.NoError(err, \"ImportPublicKey\")\n\n\treturn resp\n}\n\n// SignPsbt makes a RPC call to the node's WalletKitClient and asserts.",
+      "length": 323,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignPsbt(",
+      "content": "func (h *HarnessRPC) SignPsbt(\n\treq *walletrpc.SignPsbtRequest) *walletrpc.SignPsbtResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.SignPsbt(ctxt, req)\n\th.NoError(err, \"SignPsbt\")\n\n\treturn resp\n}\n\n// ImportTapscript makes a RPC call to the node's WalletKitClient and asserts.\n//\n//nolint:lll",
+      "length": 316,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ImportTapscript(",
+      "content": "func (h *HarnessRPC) ImportTapscript(\n\treq *walletrpc.ImportTapscriptRequest) *walletrpc.ImportTapscriptResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WalletKit.ImportTapscript(ctxt, req)\n\th.NoError(err, \"ImportTapscript\")\n\n\treturn resp\n}\n",
+      "length": 252,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

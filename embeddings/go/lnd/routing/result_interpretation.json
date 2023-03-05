@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/routing/result_interpretation.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type pairResult struct {",
+      "content": "type pairResult struct {\n\t// amt is the amount that was forwarded for this pair. Can be set to\n\t// zero for failures that are amount independent.\n\tamt lnwire.MilliSatoshi\n\n\t// success indicates whether the payment attempt was successful through\n\t// this pair.\n\tsuccess bool\n}\n\n// failPairResult creates a new result struct for a failure.",
+      "length": 303,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func failPairResult(minPenalizeAmt lnwire.MilliSatoshi) pairResult {",
+      "content": "func failPairResult(minPenalizeAmt lnwire.MilliSatoshi) pairResult {\n\treturn pairResult{\n\t\tamt: minPenalizeAmt,\n\t}\n}\n\n// newSuccessPairResult creates a new result struct for a success.",
+      "length": 110,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func successPairResult(successAmt lnwire.MilliSatoshi) pairResult {",
+      "content": "func successPairResult(successAmt lnwire.MilliSatoshi) pairResult {\n\treturn pairResult{\n\t\tsuccess: true,\n\t\tamt:     successAmt,\n\t}\n}\n\n// String returns the human-readable representation of a pair result.",
+      "length": 129,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (p pairResult) String() string {",
+      "content": "func (p pairResult) String() string {\n\tvar resultType string\n\tif p.success {\n\t\tresultType = \"success\"\n\t} else {\n\t\tresultType = \"failed\"\n\t}\n\n\treturn fmt.Sprintf(\"%v (amt=%v)\", resultType, p.amt)\n}\n\n// interpretedResult contains the result of the interpretation of a payment\n// attempt.",
+      "length": 235,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "type interpretedResult struct {",
+      "content": "type interpretedResult struct {\n\t// nodeFailure points to a node pubkey if all channels of that node are\n\t// responsible for the result.\n\tnodeFailure *route.Vertex\n\n\t// pairResults contains a map of node pairs for which we have a result.\n\tpairResults map[DirectedNodePair]pairResult\n\n\t// finalFailureReason is set to a non-nil value if it makes no more\n\t// sense to start another payment attempt. It will contain the reason\n\t// why.\n\tfinalFailureReason *channeldb.FailureReason\n\n\t// policyFailure is set to a node pair if there is a policy failure on\n\t// that connection. This is used to control the second chance logic for\n\t// policy failures.\n\tpolicyFailure *DirectedNodePair\n}\n\n// interpretResult interprets a payment outcome and returns an object that\n// contains information required to update mission control.",
+      "length": 764,
+      "tokens": 119,
+      "embedding": []
+    },
+    {
+      "slug": "func interpretResult(rt *route.Route, success bool, failureSrcIdx *int,",
+      "content": "func interpretResult(rt *route.Route, success bool, failureSrcIdx *int,\n\tfailure lnwire.FailureMessage) *interpretedResult {\n\n\ti := &interpretedResult{\n\t\tpairResults: make(map[DirectedNodePair]pairResult),\n\t}\n\n\tif success {\n\t\ti.processSuccess(rt)\n\t} else {\n\t\ti.processFail(rt, failureSrcIdx, failure)\n\t}\n\treturn i\n}\n\n// processSuccess processes a successful payment attempt.",
+      "length": 288,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processSuccess(route *route.Route) {",
+      "content": "func (i *interpretedResult) processSuccess(route *route.Route) {\n\t// For successes, all nodes must have acted in the right way. Therefore\n\t// we mark all of them with a success result.\n\ti.successPairRange(route, 0, len(route.Hops)-1)\n}\n\n// processFail processes a failed payment attempt.",
+      "length": 217,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processFail(",
+      "content": "func (i *interpretedResult) processFail(\n\trt *route.Route, errSourceIdx *int,\n\tfailure lnwire.FailureMessage) {\n\n\tif errSourceIdx == nil {\n\t\ti.processPaymentOutcomeUnknown(rt)\n\t\treturn\n\t}\n\n\tswitch *errSourceIdx {\n\n\t// We are the source of the failure.\n\tcase 0:\n\t\ti.processPaymentOutcomeSelf(rt, failure)\n\n\t// A failure from the final hop was received.\n\tcase len(rt.Hops):\n\t\ti.processPaymentOutcomeFinal(\n\t\t\trt, failure,\n\t\t)\n\n\t// An intermediate hop failed. Interpret the outcome, update reputation\n\t// and try again.\n\tdefault:\n\t\ti.processPaymentOutcomeIntermediate(\n\t\t\trt, *errSourceIdx, failure,\n\t\t)\n\t}\n}\n\n// processPaymentOutcomeSelf handles failures sent by ourselves.",
+      "length": 601,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processPaymentOutcomeSelf(",
+      "content": "func (i *interpretedResult) processPaymentOutcomeSelf(\n\trt *route.Route, failure lnwire.FailureMessage) {\n\n\tswitch failure.(type) {\n\n\t// We receive a malformed htlc failure from our peer. We trust ourselves\n\t// to send the correct htlc, so our peer must be at fault.\n\tcase *lnwire.FailInvalidOnionVersion,\n\t\t*lnwire.FailInvalidOnionHmac,\n\t\t*lnwire.FailInvalidOnionKey:\n\n\t\ti.failNode(rt, 1)\n\n\t\t// If this was a payment to a direct peer, we can stop trying.\n\t\tif len(rt.Hops) == 1 {\n\t\t\ti.finalFailureReason = &reasonError\n\t\t}\n\n\t// Any other failure originating from ourselves should be temporary and\n\t// caused by changing conditions between path finding and execution of\n\t// the payment. We just retry and trust that the information locally\n\t// available in the link has been updated.\n\tdefault:\n\t\tlog.Warnf(\"Routing failure for local channel %v occurred\",\n\t\t\trt.Hops[0].ChannelID)\n\t}\n}\n\n// processPaymentOutcomeFinal handles failures sent by the final hop.",
+      "length": 873,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processPaymentOutcomeFinal(",
+      "content": "func (i *interpretedResult) processPaymentOutcomeFinal(\n\troute *route.Route, failure lnwire.FailureMessage) {\n\n\tn := len(route.Hops)\n\n\t// If a failure from the final node is received, we will fail the\n\t// payment in almost all cases. Only when the penultimate node sends an\n\t// incorrect htlc, we want to retry via another route. Invalid onion\n\t// failures are not expected, because the final node wouldn't be able to\n\t// encrypt that failure.\n\tswitch failure.(type) {\n\n\t// Expiry or amount of the HTLC doesn't match the onion, try another\n\t// route.\n\tcase *lnwire.FailFinalIncorrectCltvExpiry,\n\t\t*lnwire.FailFinalIncorrectHtlcAmount:\n\n\t\t// We trust ourselves. If this is a direct payment, we penalize\n\t\t// the final node and fail the payment.\n\t\tif n == 1 {\n\t\t\ti.failNode(route, n)\n\t\t\ti.finalFailureReason = &reasonError\n\n\t\t\treturn\n\t\t}\n\n\t\t// Otherwise penalize the last pair of the route and retry.\n\t\t// Either the final node is at fault, or it gets sent a bad htlc\n\t\t// from its predecessor.\n\t\ti.failPair(route, n-1)\n\n\t\t// The other hops relayed correctly, so assign those pairs a\n\t\t// success result. At this point, n >= 2.\n\t\ti.successPairRange(route, 0, n-2)\n\n\t// We are using wrong payment hash or amount, fail the payment.\n\tcase *lnwire.FailIncorrectPaymentAmount,\n\t\t*lnwire.FailIncorrectDetails:\n\n\t\t// Assign all pairs a success result, as the payment reached the\n\t\t// destination correctly.\n\t\ti.successPairRange(route, 0, n-1)\n\n\t\ti.finalFailureReason = &reasonIncorrectDetails\n\n\t// The HTLC that was extended to the final hop expires too soon. Fail\n\t// the payment, because we may be using the wrong final cltv delta.\n\tcase *lnwire.FailFinalExpiryTooSoon:\n\t\t// TODO(roasbeef): can happen to to race condition, try again\n\t\t// with recent block height\n\n\t\t// TODO(joostjager): can also happen because a node delayed\n\t\t// deliberately. What to penalize?\n\t\ti.finalFailureReason = &reasonIncorrectDetails\n\n\tcase *lnwire.FailMPPTimeout:\n\t\t// Assign all pairs a success result, as the payment reached the\n\t\t// destination correctly. Continue the payment process.\n\t\ti.successPairRange(route, 0, n-1)\n\n\tdefault:\n\t\t// All other errors are considered terminal if coming from the\n\t\t// final hop. They indicate that something is wrong at the\n\t\t// recipient, so we do apply a penalty.\n\t\ti.failNode(route, n)\n\n\t\t// Other channels in the route forwarded correctly.\n\t\tif n >= 2 {\n\t\t\ti.successPairRange(route, 0, n-2)\n\t\t}\n\n\t\ti.finalFailureReason = &reasonError\n\t}\n}\n\n// processPaymentOutcomeIntermediate handles failures sent by an intermediate\n// hop.",
+      "length": 2409,
+      "tokens": 358,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processPaymentOutcomeIntermediate(",
+      "content": "func (i *interpretedResult) processPaymentOutcomeIntermediate(\n\troute *route.Route, errorSourceIdx int,\n\tfailure lnwire.FailureMessage) {\n\n\treportOutgoing := func() {\n\t\ti.failPair(\n\t\t\troute, errorSourceIdx,\n\t\t)\n\t}\n\n\treportOutgoingBalance := func() {\n\t\ti.failPairBalance(\n\t\t\troute, errorSourceIdx,\n\t\t)\n\n\t\t// All nodes up to the failing pair must have forwarded\n\t\t// successfully.\n\t\ti.successPairRange(route, 0, errorSourceIdx-1)\n\t}\n\n\treportIncoming := func() {\n\t\t// We trust ourselves. If the error comes from the first hop, we\n\t\t// can penalize the whole node. In that case there is no\n\t\t// uncertainty as to which node to blame.\n\t\tif errorSourceIdx == 1 {\n\t\t\ti.failNode(route, errorSourceIdx)\n\t\t\treturn\n\t\t}\n\n\t\t// Otherwise report the incoming pair.\n\t\ti.failPair(\n\t\t\troute, errorSourceIdx-1,\n\t\t)\n\n\t\t// All nodes up to the failing pair must have forwarded\n\t\t// successfully.\n\t\tif errorSourceIdx > 1 {\n\t\t\ti.successPairRange(route, 0, errorSourceIdx-2)\n\t\t}\n\t}\n\n\treportNode := func() {\n\t\t// Fail only the node that reported the failure.\n\t\ti.failNode(route, errorSourceIdx)\n\n\t\t// Other preceding channels in the route forwarded correctly.\n\t\tif errorSourceIdx > 1 {\n\t\t\ti.successPairRange(route, 0, errorSourceIdx-2)\n\t\t}\n\t}\n\n\treportAll := func() {\n\t\t// We trust ourselves. If the error comes from the first hop, we\n\t\t// can penalize the whole node. In that case there is no\n\t\t// uncertainty as to which node to blame.\n\t\tif errorSourceIdx == 1 {\n\t\t\ti.failNode(route, errorSourceIdx)\n\t\t\treturn\n\t\t}\n\n\t\t// Otherwise penalize all pairs up to the error source. This\n\t\t// includes our own outgoing connection.\n\t\ti.failPairRange(\n\t\t\troute, 0, errorSourceIdx-1,\n\t\t)\n\t}\n\n\tswitch failure.(type) {\n\n\t// If a node reports onion payload corruption or an invalid version,\n\t// that node may be responsible, but it could also be that it is just\n\t// relaying a malformed htlc failure from it successor. By reporting the\n\t// outgoing channel set, we will surely hit the responsible node. At\n\t// this point, it is not possible that the node's predecessor corrupted\n\t// the onion blob. If the predecessor would have corrupted the payload,\n\t// the error source wouldn't have been able to encrypt this failure\n\t// message for us.\n\tcase *lnwire.FailInvalidOnionVersion,\n\t\t*lnwire.FailInvalidOnionHmac,\n\t\t*lnwire.FailInvalidOnionKey:\n\n\t\treportOutgoing()\n\n\t// If InvalidOnionPayload is received, we penalize only the reporting\n\t// node. We know the preceding hop didn't corrupt the onion, since the\n\t// reporting node is able to send the failure. We assume that we\n\t// constructed a valid onion payload and that the failure is most likely\n\t// an unknown required type or a bug in their implementation.\n\tcase *lnwire.InvalidOnionPayload:\n\t\treportNode()\n\n\t// If the next hop in the route wasn't known or offline, we'll only\n\t// penalize the channel set which we attempted to route over. This is\n\t// conservative, and it can handle faulty channels between nodes\n\t// properly. Additionally, this guards against routing nodes returning\n\t// errors in order to attempt to black list another node.\n\tcase *lnwire.FailUnknownNextPeer:\n\t\treportOutgoing()\n\n\t// Some implementations use this error when the next hop is offline, so we\n\t// do the same as FailUnknownNextPeer and also process the channel update.\n\tcase *lnwire.FailChannelDisabled:\n\n\t\t// Set the node pair for which a channel update may be out of\n\t\t// date. The second chance logic uses the policyFailure field.\n\t\ti.policyFailure = &DirectedNodePair{\n\t\t\tFrom: route.Hops[errorSourceIdx-1].PubKeyBytes,\n\t\t\tTo:   route.Hops[errorSourceIdx].PubKeyBytes,\n\t\t}\n\n\t\treportOutgoing()\n\n\t\t// All nodes up to the failing pair must have forwarded\n\t\t// successfully.\n\t\ti.successPairRange(route, 0, errorSourceIdx-1)\n\n\t// If we get a permanent channel, we'll prune the channel set in both\n\t// directions and continue with the rest of the routes.\n\tcase *lnwire.FailPermanentChannelFailure:\n\t\treportOutgoing()\n\n\t// When an HTLC parameter is incorrect, the node sending the error may\n\t// be doing something wrong. But it could also be that its predecessor\n\t// is intentionally modifying the htlc parameters that we instructed it\n\t// via the hop payload. Therefore we penalize the incoming node pair. A\n\t// third cause of this error may be that we have an out of date channel\n\t// update. This is handled by the second chance logic up in mission\n\t// control.\n\tcase *lnwire.FailAmountBelowMinimum,\n\t\t*lnwire.FailFeeInsufficient,\n\t\t*lnwire.FailIncorrectCltvExpiry:\n\n\t\t// Set the node pair for which a channel update may be out of\n\t\t// date. The second chance logic uses the policyFailure field.\n\t\ti.policyFailure = &DirectedNodePair{\n\t\t\tFrom: route.Hops[errorSourceIdx-1].PubKeyBytes,\n\t\t\tTo:   route.Hops[errorSourceIdx].PubKeyBytes,\n\t\t}\n\n\t\t// We report incoming channel. If a second pair is granted in\n\t\t// mission control, this report is ignored.\n\t\treportIncoming()\n\n\t// If the outgoing channel doesn't have enough capacity, we penalize.\n\t// But we penalize only in a single direction and only for amounts\n\t// greater than the attempted amount.\n\tcase *lnwire.FailTemporaryChannelFailure:\n\t\treportOutgoingBalance()\n\n\t// If FailExpiryTooSoon is received, there must have been some delay\n\t// along the path. We can't know which node is causing the delay, so we\n\t// penalize all of them up to the error source.\n\t//\n\t// Alternatively it could also be that we ourselves have fallen behind\n\t// somehow. We ignore that case for now.\n\tcase *lnwire.FailExpiryTooSoon:\n\t\treportAll()\n\n\t// In all other cases, we penalize the reporting node. These are all\n\t// failures that should not happen.\n\tdefault:\n\t\ti.failNode(route, errorSourceIdx)\n\t}\n}\n\n// processPaymentOutcomeUnknown processes a payment outcome for which no failure\n// message or source is available.",
+      "length": 5516,
+      "tokens": 819,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) processPaymentOutcomeUnknown(route *route.Route) {",
+      "content": "func (i *interpretedResult) processPaymentOutcomeUnknown(route *route.Route) {\n\tn := len(route.Hops)\n\n\t// If this is a direct payment, the destination must be at fault.\n\tif n == 1 {\n\t\ti.failNode(route, n)\n\t\ti.finalFailureReason = &reasonError\n\t\treturn\n\t}\n\n\t// Otherwise penalize all channels in the route to make sure the\n\t// responsible node is at least hit too. We even penalize the connection\n\t// to our own peer, because that peer could also be responsible.\n\ti.failPairRange(route, 0, n-1)\n}\n\n// failNode marks the node indicated by idx in the route as failed. It also\n// marks the incoming and outgoing channels of the node as failed. This function\n// intentionally panics when the self node is failed.",
+      "length": 611,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) failNode(rt *route.Route, idx int) {",
+      "content": "func (i *interpretedResult) failNode(rt *route.Route, idx int) {\n\t// Mark the node as failing.\n\ti.nodeFailure = &rt.Hops[idx-1].PubKeyBytes\n\n\t// Mark the incoming connection as failed for the node. We intent to\n\t// penalize as much as we can for a node level failure, including future\n\t// outgoing traffic for this connection. The pair as it is returned by\n\t// getPair is penalized in the original and the reversed direction. Note\n\t// that this will also affect the score of the failing node's peers.\n\t// This is necessary to prevent future routes from keep going into the\n\t// same node again.\n\tincomingChannelIdx := idx - 1\n\tinPair, _ := getPair(rt, incomingChannelIdx)\n\ti.pairResults[inPair] = failPairResult(0)\n\ti.pairResults[inPair.Reverse()] = failPairResult(0)\n\n\t// If not the ultimate node, mark the outgoing connection as failed for\n\t// the node.\n\tif idx < len(rt.Hops) {\n\t\toutgoingChannelIdx := idx\n\t\toutPair, _ := getPair(rt, outgoingChannelIdx)\n\t\ti.pairResults[outPair] = failPairResult(0)\n\t\ti.pairResults[outPair.Reverse()] = failPairResult(0)\n\t}\n}\n\n// failPairRange marks the node pairs from node fromIdx to node toIdx as failed\n// in both direction.",
+      "length": 1072,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) failPairRange(",
+      "content": "func (i *interpretedResult) failPairRange(\n\trt *route.Route, fromIdx, toIdx int) {\n\n\tfor idx := fromIdx; idx <= toIdx; idx++ {\n\t\ti.failPair(rt, idx)\n\t}\n}\n\n// failPair marks a pair as failed in both directions.",
+      "length": 159,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) failPair(",
+      "content": "func (i *interpretedResult) failPair(\n\trt *route.Route, idx int) {\n\n\tpair, _ := getPair(rt, idx)\n\n\t// Report pair in both directions without a minimum penalization amount.\n\ti.pairResults[pair] = failPairResult(0)\n\ti.pairResults[pair.Reverse()] = failPairResult(0)\n}\n\n// failPairBalance marks a pair as failed with a minimum penalization amount.",
+      "length": 297,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) failPairBalance(",
+      "content": "func (i *interpretedResult) failPairBalance(\n\trt *route.Route, channelIdx int) {\n\n\tpair, amt := getPair(rt, channelIdx)\n\n\ti.pairResults[pair] = failPairResult(amt)\n}\n\n// successPairRange marks the node pairs from node fromIdx to node toIdx as\n// succeeded.",
+      "length": 203,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *interpretedResult) successPairRange(",
+      "content": "func (i *interpretedResult) successPairRange(\n\trt *route.Route, fromIdx, toIdx int) {\n\n\tfor idx := fromIdx; idx <= toIdx; idx++ {\n\t\tpair, amt := getPair(rt, idx)\n\n\t\ti.pairResults[pair] = successPairResult(amt)\n\t}\n}\n\n// getPair returns a node pair from the route and the amount passed between that\n// pair.",
+      "length": 249,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func getPair(rt *route.Route, channelIdx int) (DirectedNodePair,",
+      "content": "func getPair(rt *route.Route, channelIdx int) (DirectedNodePair,\n\tlnwire.MilliSatoshi) {\n\n\tnodeTo := rt.Hops[channelIdx].PubKeyBytes\n\tvar (\n\t\tnodeFrom route.Vertex\n\t\tamt      lnwire.MilliSatoshi\n\t)\n\n\tif channelIdx == 0 {\n\t\tnodeFrom = rt.SourcePubKey\n\t\tamt = rt.TotalAmount\n\t} else {\n\t\tnodeFrom = rt.Hops[channelIdx-1].PubKeyBytes\n\t\tamt = rt.Hops[channelIdx-1].AmtToForward\n\t}\n\n\tpair := NewDirectedNodePair(nodeFrom, nodeTo)\n\n\treturn pair, amt\n}\n",
+      "length": 360,
+      "tokens": 41,
+      "embedding": []
+    }
+  ]
+}

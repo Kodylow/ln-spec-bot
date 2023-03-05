@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/amp/shard_tracker.go",
+  "package": "amp",
+  "sections": [
+    {
+      "slug": "type Shard struct {",
+      "content": "type Shard struct {\n\tchild *Child\n\tmpp   *record.MPP\n\tamp   *record.AMP\n}\n\n// A compile time check to ensure Shard implements the shards.PaymentShard\n// interface.\nvar _ shards.PaymentShard = (*Shard)(nil)\n\n// Hash returns the hash used for the HTLC representing this AMP shard.",
+      "length": 249,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shard) Hash() lntypes.Hash {",
+      "content": "func (s *Shard) Hash() lntypes.Hash {\n\treturn s.child.Hash\n}\n\n// MPP returns any extra MPP records that should be set for the final hop on\n// the route used by this shard.",
+      "length": 129,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shard) MPP() *record.MPP {",
+      "content": "func (s *Shard) MPP() *record.MPP {\n\treturn s.mpp\n}\n\n// AMP returns any extra AMP records that should be set for the final hop on\n// the route used by this shard.",
+      "length": 122,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shard) AMP() *record.AMP {",
+      "content": "func (s *Shard) AMP() *record.AMP {\n\treturn s.amp\n}\n\n// ShardTracker is an implementation of the shards.ShardTracker interface\n// that is able to generate payment shards according to the AMP splitting\n// algorithm. It can be used to generate new hashes to use for HTLCs, and also\n// cancel shares used for failed payment shards.",
+      "length": 286,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "type ShardTracker struct {",
+      "content": "type ShardTracker struct {\n\tsetID       [32]byte\n\tpaymentAddr [32]byte\n\ttotalAmt    lnwire.MilliSatoshi\n\n\tsharer Sharer\n\n\tshards map[uint64]*Child\n\tsync.Mutex\n}\n\n// A compile time check to ensure ShardTracker implements the\n// shards.ShardTracker interface.\nvar _ shards.ShardTracker = (*ShardTracker)(nil)\n\n// NewShardTracker creates a new shard tracker to use for AMP payments. The\n// root shard, setID, payment address and total amount must be correctly set in\n// order for the TLV options to include with each shard to be created\n// correctly.",
+      "length": 503,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func NewShardTracker(root, setID, payAddr [32]byte,",
+      "content": "func NewShardTracker(root, setID, payAddr [32]byte,\n\ttotalAmt lnwire.MilliSatoshi) *ShardTracker {\n\n\t// Create a new seed sharer from this root.\n\trootShare := Share(root)\n\trootSharer := SeedSharerFromRoot(&rootShare)\n\n\treturn &ShardTracker{\n\t\tsetID:       setID,\n\t\tpaymentAddr: payAddr,\n\t\ttotalAmt:    totalAmt,\n\t\tsharer:      rootSharer,\n\t\tshards:      make(map[uint64]*Child),\n\t}\n}\n\n// NewShard registers a new attempt with the ShardTracker and returns a\n// new shard representing this attempt. This attempt's shard should be canceled\n// if it ends up not being used by the overall payment, i.e. if the attempt\n// fails.",
+      "length": 552,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShardTracker) NewShard(pid uint64, last bool) (shards.PaymentShard,",
+      "content": "func (s *ShardTracker) NewShard(pid uint64, last bool) (shards.PaymentShard,\n\terror) {\n\n\ts.Lock()\n\tdefer s.Unlock()\n\n\t// Use a random child index.\n\tvar childIndex [4]byte\n\tif _, err := rand.Read(childIndex[:]); err != nil {\n\t\treturn nil, err\n\t}\n\tidx := binary.BigEndian.Uint32(childIndex[:])\n\n\t// Depending on whether we are requesting the last shard or not, either\n\t// split the current share into two, or get a Child directly from the\n\t// current sharer.\n\tvar child *Child\n\tif last {\n\t\tchild = s.sharer.Child(idx)\n\n\t\t// If this was the last shard, set the current share to the\n\t\t// zero share to indicate we cannot split it further.\n\t\ts.sharer = s.sharer.Zero()\n\t} else {\n\t\tleft, sharer, err := s.sharer.Split()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ts.sharer = sharer\n\t\tchild = left.Child(idx)\n\t}\n\n\t// Track the new child and return the shard.\n\ts.shards[pid] = child\n\n\tmpp := record.NewMPP(s.totalAmt, s.paymentAddr)\n\tamp := record.NewAMP(\n\t\tchild.ChildDesc.Share, s.setID, child.ChildDesc.Index,\n\t)\n\n\treturn &Shard{\n\t\tchild: child,\n\t\tmpp:   mpp,\n\t\tamp:   amp,\n\t}, nil\n}\n\n// CancelShard cancel's the shard corresponding to the given attempt ID.",
+      "length": 1028,
+      "tokens": 164,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShardTracker) CancelShard(pid uint64) error {",
+      "content": "func (s *ShardTracker) CancelShard(pid uint64) error {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tc, ok := s.shards[pid]\n\tif !ok {\n\t\treturn fmt.Errorf(\"pid not found\")\n\t}\n\tdelete(s.shards, pid)\n\n\t// Now that we are canceling this shard, we XOR the share back into our\n\t// current share.\n\ts.sharer = s.sharer.Merge(c)\n\treturn nil\n}\n\n// GetHash retrieves the hash used by the shard of the given attempt ID. This\n// will return an error if the attempt ID is unknown.",
+      "length": 379,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShardTracker) GetHash(pid uint64) (lntypes.Hash, error) {",
+      "content": "func (s *ShardTracker) GetHash(pid uint64) (lntypes.Hash, error) {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tc, ok := s.shards[pid]\n\tif !ok {\n\t\treturn lntypes.Hash{}, fmt.Errorf(\"AMP shard for attempt %v \"+\n\t\t\t\"not found\", pid)\n\t}\n\n\treturn c.Hash, nil\n}\n",
+      "length": 164,
+      "tokens": 26,
+      "embedding": []
+    }
+  ]
+}

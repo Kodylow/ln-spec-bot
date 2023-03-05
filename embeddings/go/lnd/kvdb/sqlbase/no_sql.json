@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/no_sql.go",
-  "package": "!kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build !kvdb_postgres && (!kvdb_sqlite || (windows && (arm || 386)) || (linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build !kvdb_postgres && (!kvdb_sqlite || (windows && (arm || 386)) || (linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n",
+      "length": 15,
+      "tokens": 2,
+      "embedding": []
+    },
     {
       "slug": "func Init(maxConnections int) {}",
       "content": "func Init(maxConnections int) {}\n",

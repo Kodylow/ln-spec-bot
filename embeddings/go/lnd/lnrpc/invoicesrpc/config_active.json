@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/invoicesrpc/config_active.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "//go:build invoicesrpc",
+      "content": "//go:build invoicesrpc\n// +build invoicesrpc\n\npackage invoicesrpc\n\nimport (\n\t\"github.com/btcsuite/btcd/chaincfg\"\n\t\"github.com/lightningnetwork/lnd/channeldb\"\n\t\"github.com/lightningnetwork/lnd/invoices\"\n\t\"github.com/lightningnetwork/lnd/lnwire\"\n\t\"github.com/lightningnetwork/lnd/macaroons\"\n\t\"github.com/lightningnetwork/lnd/netann\"\n)\n\n// Config is the primary configuration struct for the invoices RPC server. It\n// contains all the items required for the rpc server to carry out its\n// duties. The fields with struct tags are meant to be parsed as normal\n// configuration options, while if able to be populated, the latter fields MUST\n// also be specified.",
+      "length": 616,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// NetworkDir is the main network directory wherein the invoices rpc\n\t// server will find the macaroon named DefaultInvoicesMacFilename.\n\tNetworkDir string\n\n\t// MacService is the main macaroon service that we'll use to handle\n\t// authentication for the invoices rpc server.\n\tMacService *macaroons.Service\n\n\t// InvoiceRegistry is a central registry of all the outstanding invoices\n\t// created by the daemon.\n\tInvoiceRegistry *invoices.InvoiceRegistry\n\n\t// IsChannelActive is used to generate valid hop hints.\n\tIsChannelActive func(chanID lnwire.ChannelID) bool\n\n\t// ChainParams are required to properly decode invoice payment requests\n\t// that are marshalled over rpc.\n\tChainParams *chaincfg.Params\n\n\t// NodeSigner is an implementation of the MessageSigner implementation\n\t// that's backed by the identity private key of the running lnd node.\n\tNodeSigner *netann.NodeSigner\n\n\t// DefaultCLTVExpiry is the default invoice expiry if no values is\n\t// specified.\n\tDefaultCLTVExpiry uint32\n\n\t// GraphDB is a global database instance which is needed to access the\n\t// channel graph.\n\tGraphDB *channeldb.ChannelGraph\n\n\t// ChanStateDB is a possibly replicated db instance which contains the\n\t// channel state\n\tChanStateDB *channeldb.ChannelStateDB\n\n\t// GenInvoiceFeatures returns a feature containing feature bits that\n\t// should be advertised on freshly generated invoices.\n\tGenInvoiceFeatures func() *lnwire.FeatureVector\n\n\t// GenAmpInvoiceFeatures returns a feature containing feature bits that\n\t// should be advertised on freshly generated AMP invoices.\n\tGenAmpInvoiceFeatures func() *lnwire.FeatureVector\n\n\t// GetAlias returns the peer's alias SCID if it exists given the\n\t// 32-byte ChannelID.\n\tGetAlias func(lnwire.ChannelID) (lnwire.ShortChannelID, error)\n}\n",
+      "length": 1710,
+      "tokens": 225,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/aezeed/errors.go",
+  "package": "aezeed",
+  "sections": [
+    {
+      "slug": "type ErrUnknownMnemonicWord struct {",
+      "content": "type ErrUnknownMnemonicWord struct {\n\t// Word is the unknown word in the mnemonic phrase.\n\tWord string\n\n\t// Index is the index (starting from zero) within the slice of strings\n\t// that makes up the mnemonic that points to the incorrect word.\n\tIndex uint8\n}\n\n// Error returns a human-readable string describing the error.",
+      "length": 275,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrUnknownMnemonicWord) Error() string {",
+      "content": "func (e ErrUnknownMnemonicWord) Error() string {\n\treturn fmt.Sprintf(\"word %v isn't a part of default word list \"+\n\t\t\"(index=%v)\", e.Word, e.Index)\n}\n",
+      "length": 98,
+      "tokens": 15,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/tor/net.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "type DialFunc func(net, addr string, timeout time.Duration) (net.Conn, error)",
+      "content": "type DialFunc func(net, addr string, timeout time.Duration) (net.Conn, error)\n\n// Net is an interface housing a Dial function and several DNS functions that\n// allows us to abstract the implementations of these functions over different\n// networks, e.g. clearnet, Tor net, etc.",
+      "length": 196,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type Net interface {",
+      "content": "type Net interface {\n\t// Dial connects to the address on the named network.\n\tDial(network, address string, timeout time.Duration) (net.Conn, error)\n\n\t// LookupHost performs DNS resolution on a given host and returns its\n\t// addresses.\n\tLookupHost(host string) ([]string, error)\n\n\t// LookupSRV tries to resolve an SRV query of the given service,\n\t// protocol, and domain name.\n\tLookupSRV(service, proto, name string,\n\t\ttimeout time.Duration) (string, []*net.SRV, error)\n\n\t// ResolveTCPAddr resolves TCP addresses.\n\tResolveTCPAddr(network, address string) (*net.TCPAddr, error)\n}\n\n// ClearNet is an implementation of the Net interface that defines behaviour\n// for regular network connections.",
+      "length": 653,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "type ClearNet struct{}",
+      "content": "type ClearNet struct{}\n\n// Dial on the regular network uses net.Dial",
+      "length": 44,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ClearNet) Dial(",
+      "content": "func (r *ClearNet) Dial(\n\tnetwork, address string, timeout time.Duration) (net.Conn, error) {\n\n\treturn net.DialTimeout(network, address, timeout)\n}\n\n// LookupHost for regular network uses the net.LookupHost function",
+      "length": 185,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ClearNet) LookupHost(host string) ([]string, error) {",
+      "content": "func (r *ClearNet) LookupHost(host string) ([]string, error) {\n\treturn net.LookupHost(host)\n}\n\n// LookupSRV for regular network uses net.LookupSRV function",
+      "length": 89,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ClearNet) LookupSRV(service, proto, name string,",
+      "content": "func (r *ClearNet) LookupSRV(service, proto, name string,\n\ttimeout time.Duration) (string, []*net.SRV, error) {\n\n\t// Create a context with a timeout value.\n\tctxt, cancel := context.WithTimeout(context.Background(), timeout)\n\tdefer cancel()\n\n\treturn net.DefaultResolver.LookupSRV(ctxt, service, proto, name)\n}\n\n// ResolveTCPAddr for regular network uses net.ResolveTCPAddr function",
+      "length": 313,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ClearNet) ResolveTCPAddr(network, address string) (*net.TCPAddr, error) {",
+      "content": "func (r *ClearNet) ResolveTCPAddr(network, address string) (*net.TCPAddr, error) {\n\treturn net.ResolveTCPAddr(network, address)\n}\n\n// ProxyNet is an implementation of the Net interface that defines behavior\n// for Tor network connections.",
+      "length": 151,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type ProxyNet struct {",
+      "content": "type ProxyNet struct {\n\t// SOCKS is the host:port which Tor's exposed SOCKS5 proxy is listening\n\t// on.\n\tSOCKS string\n\n\t// DNS is the host:port of the DNS server for Tor to use for SRV\n\t// queries.\n\tDNS string\n\n\t// StreamIsolation is a bool that determines if we should force the\n\t// creation of a new circuit for this connection. If true, then this\n\t// means that our traffic may be harder to correlate as each connection\n\t// will now use a distinct circuit.\n\tStreamIsolation bool\n\n\t// SkipProxyForClearNetTargets allows the proxy network to use direct\n\t// connections to non-onion service targets. If enabled, the node IP\n\t// address will be revealed while communicating with such targets.\n\tSkipProxyForClearNetTargets bool\n}\n\n// Dial uses the Tor Dial function in order to establish connections through\n// Tor. Since Tor only supports TCP connections, only TCP networks are allowed.",
+      "length": 841,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ProxyNet) Dial(network, address string,",
+      "content": "func (p *ProxyNet) Dial(network, address string,\n\ttimeout time.Duration) (net.Conn, error) {\n\n\tswitch network {\n\tcase \"tcp\", \"tcp4\", \"tcp6\", \"onion\":\n\tdefault:\n\t\treturn nil, errors.New(\"cannot dial non-tcp network via Tor\")\n\t}\n\treturn Dial(\n\t\taddress, p.SOCKS, p.StreamIsolation,\n\t\tp.SkipProxyForClearNetTargets, timeout,\n\t)\n}\n\n// LookupHost uses the Tor LookupHost function in order to resolve hosts over\n// Tor.",
+      "length": 350,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ProxyNet) LookupHost(host string) ([]string, error) {",
+      "content": "func (p *ProxyNet) LookupHost(host string) ([]string, error) {\n\treturn LookupHost(host, p.SOCKS)\n}\n\n// LookupSRV uses the Tor LookupSRV function in order to resolve SRV DNS queries\n// over Tor.",
+      "length": 126,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ProxyNet) LookupSRV(service, proto,",
+      "content": "func (p *ProxyNet) LookupSRV(service, proto,\n\tname string, timeout time.Duration) (string, []*net.SRV, error) {\n\n\treturn LookupSRV(\n\t\tservice, proto, name, p.SOCKS, p.DNS, p.StreamIsolation,\n\t\tp.SkipProxyForClearNetTargets, timeout,\n\t)\n}\n\n// ResolveTCPAddr uses the Tor ResolveTCPAddr function in order to resolve TCP\n// addresses over Tor.",
+      "length": 286,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ProxyNet) ResolveTCPAddr(network, address string) (*net.TCPAddr, error) {",
+      "content": "func (p *ProxyNet) ResolveTCPAddr(network, address string) (*net.TCPAddr, error) {\n\tswitch network {\n\tcase \"tcp\", \"tcp4\", \"tcp6\", \"onion\":\n\tdefault:\n\t\treturn nil, errors.New(\"cannot dial non-tcp network via Tor\")\n\t}\n\treturn ResolveTCPAddr(address, p.SOCKS)\n}\n",
+      "length": 169,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

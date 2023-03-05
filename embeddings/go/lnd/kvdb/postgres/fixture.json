@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/postgres/fixture.go",
-  "package": "kvdb_postgres",
+  "package": "postgres",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres",
+      "content": "//go:build kvdb_postgres\n\npackage postgres\n\nimport (\n\t\"context\"\n\t\"crypto/rand\"\n\t\"database/sql\"\n\t\"encoding/hex\"\n\t\"fmt\"\n\t\"strings\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\tembeddedpostgres \"github.com/fergusstrange/embedded-postgres\"\n\t\"github.com/lightningnetwork/lnd/kvdb/sqlbase\"\n)\n\nconst (\n\ttestDsnTemplate = \"postgres://postgres:postgres@localhost:9876/%v?sslmode=disable\"\n\tprefix          = \"test\"\n)\n",
+      "length": 368,
+      "tokens": 25,
+      "embedding": []
+    },
     {
       "slug": "func getTestDsn(dbName string) string {",
       "content": "func getTestDsn(dbName string) string {\n\treturn fmt.Sprintf(testDsnTemplate, dbName)\n}\n\nvar testPostgres *embeddedpostgres.EmbeddedPostgres\n\nconst testMaxConnections = 50\n\n// StartEmbeddedPostgres starts an embedded postgres instance. This only needs\n// to be done once, because NewFixture will create random new databases on every\n// call. It returns a stop closure that stops the database if called.",

@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/reports.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type ResolverType uint8",
+      "content": "type ResolverType uint8\n\nconst (\n\t// ResolverTypeAnchor represents a resolver for an anchor output.\n\tResolverTypeAnchor ResolverType = 0\n\n\t// ResolverTypeIncomingHtlc represents resolution of an incoming htlc.\n\tResolverTypeIncomingHtlc ResolverType = 1\n\n\t// ResolverTypeOutgoingHtlc represents resolution of an outgoing htlc.\n\tResolverTypeOutgoingHtlc ResolverType = 2\n\n\t// ResolverTypeCommit represents resolution of our time locked commit\n\t// when we force close.\n\tResolverTypeCommit ResolverType = 3\n)\n\n// ResolverOutcome indicates the outcome for the resolver that that the contract\n// court reached. This state is not necessarily final, since htlcs on our own\n// commitment are resolved across two resolvers.",
+      "length": 671,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "type ResolverOutcome uint8",
+      "content": "type ResolverOutcome uint8\n\nconst (\n\t// ResolverOutcomeClaimed indicates that funds were claimed on chain.\n\tResolverOutcomeClaimed ResolverOutcome = 0\n\n\t// ResolverOutcomeUnclaimed indicates that we did not claim our funds on\n\t// chain. This may be the case for anchors that we did not sweep, or\n\t// outputs that were not economical to sweep.\n\tResolverOutcomeUnclaimed ResolverOutcome = 1\n\n\t// ResolverOutcomeAbandoned indicates that we did not attempt to claim\n\t// an output on chain. This is the case for htlcs that we could not\n\t// decode to claim, or invoice which we fail when an attempt is made\n\t// to settle them on chain.\n\tResolverOutcomeAbandoned ResolverOutcome = 2\n\n\t// ResolverOutcomeTimeout indicates that a contract was timed out on\n\t// chain.\n\tResolverOutcomeTimeout ResolverOutcome = 3\n\n\t// ResolverOutcomeFirstStage indicates that a htlc had to be claimed\n\t// over two stages, with this outcome representing the confirmation\n\t// of our success/timeout tx.\n\tResolverOutcomeFirstStage ResolverOutcome = 4\n)\n\n// ResolverReport provides an account of the outcome of a resolver. This differs\n// from a ContractReport because it does not necessarily fully resolve the\n// contract; each step of two stage htlc resolution is included.",
+      "length": 1188,
+      "tokens": 184,
+      "embedding": []
+    },
+    {
+      "slug": "type ResolverReport struct {",
+      "content": "type ResolverReport struct {\n\t// OutPoint is the on chain outpoint that was spent as a result of this\n\t// resolution. When an output is directly resolved (eg, commitment\n\t// sweeps and single stage htlcs on the remote party's output) this\n\t// is an output on the commitment tx that was broadcast. When we resolve\n\t// across two stages (eg, htlcs on our own force close commit), the\n\t// first stage outpoint is the output on our commitment and the second\n\t// stage output is the spend from our htlc success/timeout tx.\n\tOutPoint wire.OutPoint\n\n\t// Amount is the value of the output referenced above.\n\tAmount btcutil.Amount\n\n\t// ResolverType indicates the type of resolution that occurred.\n\tResolverType\n\n\t// ResolverOutcome indicates the outcome of the resolver.\n\tResolverOutcome\n\n\t// SpendTxID is the transaction ID of the spending transaction that\n\t// claimed the outpoint. This may be a sweep transaction, or a first\n\t// stage success/timeout transaction.\n\tSpendTxID *chainhash.Hash\n}\n\n// PutResolverReport creates and commits a transaction that is used to write a\n// resolver report to disk.",
+      "length": 1040,
+      "tokens": 170,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DB) PutResolverReport(tx kvdb.RwTx, chainHash chainhash.Hash,",
+      "content": "func (d *DB) PutResolverReport(tx kvdb.RwTx, chainHash chainhash.Hash,\n\tchannelOutpoint *wire.OutPoint, report *ResolverReport) error {\n\n\tputReportFunc := func(tx kvdb.RwTx) error {\n\t\treturn putReport(tx, chainHash, channelOutpoint, report)\n\t}\n\n\t// If the transaction is nil, we'll create a new one.\n\tif tx == nil {\n\t\treturn kvdb.Update(d, putReportFunc, func() {})\n\t}\n\n\t// Otherwise, we can write the report to disk using the existing\n\t// transaction.\n\treturn putReportFunc(tx)\n}\n\n// putReport puts a report in the bucket provided, with its outpoint as its key.",
+      "length": 475,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func putReport(tx kvdb.RwTx, chainHash chainhash.Hash,",
+      "content": "func putReport(tx kvdb.RwTx, chainHash chainhash.Hash,\n\tchannelOutpoint *wire.OutPoint, report *ResolverReport) error {\n\n\tchannelBucket, err := fetchReportWriteBucket(\n\t\ttx, chainHash, channelOutpoint,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// If the resolvers bucket does not exist yet, create it.\n\tresolvers, err := channelBucket.CreateBucketIfNotExists(\n\t\tresolversBucket,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar valueBuf bytes.Buffer\n\tif err := serializeReport(&valueBuf, report); err != nil {\n\t\treturn err\n\t}\n\n\t// Finally write our outpoint to be used as the key for this record.\n\tvar keyBuf bytes.Buffer\n\tif err := writeOutpoint(&keyBuf, &report.OutPoint); err != nil {\n\t\treturn err\n\t}\n\n\treturn resolvers.Put(keyBuf.Bytes(), valueBuf.Bytes())\n}\n\n// serializeReport serialized a report using a TLV stream to allow for optional\n// fields.",
+      "length": 756,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeReport(w io.Writer, report *ResolverReport) error {",
+      "content": "func serializeReport(w io.Writer, report *ResolverReport) error {\n\tamt := uint64(report.Amount)\n\tresolver := uint8(report.ResolverType)\n\toutcome := uint8(report.ResolverOutcome)\n\n\t// Create a set of TLV records for the values we know to be present.\n\trecords := []tlv.Record{\n\t\ttlv.MakePrimitiveRecord(amountType, &amt),\n\t\ttlv.MakePrimitiveRecord(resolverType, &resolver),\n\t\ttlv.MakePrimitiveRecord(outcomeType, &outcome),\n\t}\n\n\t// If our spend txid is non-nil, we add a tlv entry for it.\n\tif report.SpendTxID != nil {\n\t\tvar spendBuf bytes.Buffer\n\t\terr := WriteElement(&spendBuf, *report.SpendTxID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tspendBytes := spendBuf.Bytes()\n\n\t\trecords = append(records, tlv.MakePrimitiveRecord(\n\t\t\tspendTxIDType, &spendBytes,\n\t\t))\n\t}\n\n\t// Create our stream and encode it.\n\ttlvStream, err := tlv.NewStream(records...)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn tlvStream.Encode(w)\n}\n\n// FetchChannelReports fetches the set of reports for a channel.",
+      "length": 871,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func (d DB) FetchChannelReports(chainHash chainhash.Hash,",
+      "content": "func (d DB) FetchChannelReports(chainHash chainhash.Hash,\n\toutPoint *wire.OutPoint) ([]*ResolverReport, error) {\n\n\tvar reports []*ResolverReport\n\n\tif err := kvdb.View(d.Backend, func(tx kvdb.RTx) error {\n\t\tchanBucket, err := fetchReportReadBucket(\n\t\t\ttx, chainHash, outPoint,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If there are no resolvers for this channel, we simply\n\t\t// return nil, because nothing has been persisted yet.\n\t\tresolvers := chanBucket.NestedReadBucket(resolversBucket)\n\t\tif resolvers == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Run through each resolution and add it to our set of\n\t\t// resolutions.\n\t\treturn resolvers.ForEach(func(k, v []byte) error {\n\t\t\t// Deserialize the contents of our field.\n\t\t\tr := bytes.NewReader(v)\n\t\t\treport, err := deserializeReport(r)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// Once we have read our values out, set the outpoint\n\t\t\t// on the report using the key.\n\t\t\tr = bytes.NewReader(k)\n\t\t\tif err := ReadElement(r, &report.OutPoint); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\treports = append(reports, report)\n\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\treports = nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn reports, nil\n}\n\n// deserializeReport gets a resolver report from a tlv stream. The outpoint on\n// the resolver will not be set because we key reports by their outpoint, and\n// this function reads only the values saved in the stream.",
+      "length": 1272,
+      "tokens": 203,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeReport(r io.Reader) (*ResolverReport, error) {",
+      "content": "func deserializeReport(r io.Reader) (*ResolverReport, error) {\n\tvar (\n\t\tresolver, outcome uint8\n\t\tamt               uint64\n\t\tspentTx           []byte\n\t)\n\n\ttlvStream, err := tlv.NewStream(\n\t\ttlv.MakePrimitiveRecord(amountType, &amt),\n\t\ttlv.MakePrimitiveRecord(resolverType, &resolver),\n\t\ttlv.MakePrimitiveRecord(outcomeType, &outcome),\n\t\ttlv.MakePrimitiveRecord(spendTxIDType, &spentTx),\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := tlvStream.Decode(r); err != nil {\n\t\treturn nil, err\n\t}\n\n\treport := &ResolverReport{\n\t\tAmount:          btcutil.Amount(amt),\n\t\tResolverOutcome: ResolverOutcome(outcome),\n\t\tResolverType:    ResolverType(resolver),\n\t}\n\n\t// If our spend tx is set, we set it on our report.\n\tif len(spentTx) != 0 {\n\t\tspendTx, err := chainhash.NewHash(spentTx)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\treport.SpendTxID = spendTx\n\t}\n\n\treturn report, nil\n}\n\n// fetchReportWriteBucket returns a write channel bucket within the reports\n// top level bucket. If the channel's bucket does not yet exist, it will be\n// created.",
+      "length": 935,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchReportWriteBucket(tx kvdb.RwTx, chainHash chainhash.Hash,",
+      "content": "func fetchReportWriteBucket(tx kvdb.RwTx, chainHash chainhash.Hash,\n\toutPoint *wire.OutPoint) (kvdb.RwBucket, error) {\n\n\t// Get the channel close summary bucket.\n\tclosedBucket := tx.ReadWriteBucket(closeSummaryBucket)\n\n\t// Create the chain hash bucket if it does not exist.\n\tchainHashBkt, err := closedBucket.CreateBucketIfNotExists(chainHash[:])\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar chanPointBuf bytes.Buffer\n\tif err := writeOutpoint(&chanPointBuf, outPoint); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn chainHashBkt.CreateBucketIfNotExists(chanPointBuf.Bytes())\n}\n\n// fetchReportReadBucket returns a read channel bucket within the reports\n// top level bucket. If any bucket along the way does not exist, it will error.",
+      "length": 638,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchReportReadBucket(tx kvdb.RTx, chainHash chainhash.Hash,",
+      "content": "func fetchReportReadBucket(tx kvdb.RTx, chainHash chainhash.Hash,\n\toutPoint *wire.OutPoint) (kvdb.RBucket, error) {\n\n\t// First fetch the top level channel close summary bucket.\n\tcloseBucket := tx.ReadBucket(closeSummaryBucket)\n\n\t// Next we get the chain hash bucket for our current chain.\n\tchainHashBucket := closeBucket.NestedReadBucket(chainHash[:])\n\tif chainHashBucket == nil {\n\t\treturn nil, ErrNoChainHashBucket\n\t}\n\n\t// With the bucket for the node and chain fetched, we can now go down\n\t// another level, for the channel itself.\n\tvar chanPointBuf bytes.Buffer\n\tif err := writeOutpoint(&chanPointBuf, outPoint); err != nil {\n\t\treturn nil, err\n\t}\n\n\tchanBucket := chainHashBucket.NestedReadBucket(chanPointBuf.Bytes())\n\tif chanBucket == nil {\n\t\treturn nil, ErrNoChannelSummaries\n\t}\n\n\treturn chanBucket, nil\n}\n",
+      "length": 720,
+      "tokens": 96,
+      "embedding": []
+    }
+  ]
+}

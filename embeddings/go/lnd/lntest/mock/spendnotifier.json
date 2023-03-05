@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/mock/spendnotifier.go",
+  "package": "mock",
+  "sections": [
+    {
+      "slug": "type SpendNotifier struct {",
+      "content": "type SpendNotifier struct {\n\t*ChainNotifier\n\tspendMap map[wire.OutPoint][]chan *chainntnfs.SpendDetail\n\tspends   map[wire.OutPoint]*chainntnfs.SpendDetail\n\tmtx      sync.Mutex\n}\n\n// MakeMockSpendNotifier creates a SpendNotifier.",
+      "length": 194,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeMockSpendNotifier() *SpendNotifier {",
+      "content": "func MakeMockSpendNotifier() *SpendNotifier {\n\treturn &SpendNotifier{\n\t\tChainNotifier: &ChainNotifier{\n\t\t\tSpendChan: make(chan *chainntnfs.SpendDetail),\n\t\t\tEpochChan: make(chan *chainntnfs.BlockEpoch),\n\t\t\tConfChan:  make(chan *chainntnfs.TxConfirmation),\n\t\t},\n\t\tspendMap: make(map[wire.OutPoint][]chan *chainntnfs.SpendDetail),\n\t\tspends:   make(map[wire.OutPoint]*chainntnfs.SpendDetail),\n\t}\n}\n\n// RegisterSpendNtfn registers a spend notification for a specified outpoint.",
+      "length": 415,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SpendNotifier) RegisterSpendNtfn(outpoint *wire.OutPoint,",
+      "content": "func (s *SpendNotifier) RegisterSpendNtfn(outpoint *wire.OutPoint,\n\t_ []byte, heightHint uint32) (*chainntnfs.SpendEvent, error) {\n\n\ts.mtx.Lock()\n\tdefer s.mtx.Unlock()\n\n\tspendChan := make(chan *chainntnfs.SpendDetail, 1)\n\tif detail, ok := s.spends[*outpoint]; ok {\n\t\t// Deliver spend immediately if details are already known.\n\t\tspendChan <- &chainntnfs.SpendDetail{\n\t\t\tSpentOutPoint:     detail.SpentOutPoint,\n\t\t\tSpendingHeight:    detail.SpendingHeight,\n\t\t\tSpendingTx:        detail.SpendingTx,\n\t\t\tSpenderTxHash:     detail.SpenderTxHash,\n\t\t\tSpenderInputIndex: detail.SpenderInputIndex,\n\t\t}\n\t} else {\n\t\t// Otherwise, queue the notification for delivery if the spend\n\t\t// is ever received.\n\t\ts.spendMap[*outpoint] = append(s.spendMap[*outpoint], spendChan)\n\t}\n\n\treturn &chainntnfs.SpendEvent{\n\t\tSpend:  spendChan,\n\t\tCancel: func() {},\n\t}, nil\n}\n\n// Spend dispatches SpendDetails to all subscribers of the outpoint. The details\n// will includethe transaction and height provided by the caller.",
+      "length": 897,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SpendNotifier) Spend(outpoint *wire.OutPoint, height int32,",
+      "content": "func (s *SpendNotifier) Spend(outpoint *wire.OutPoint, height int32,\n\ttxn *wire.MsgTx) {\n\n\ts.mtx.Lock()\n\tdefer s.mtx.Unlock()\n\n\tvar inputIndex uint32\n\tfor i, in := range txn.TxIn {\n\t\tif in.PreviousOutPoint == *outpoint {\n\t\t\tinputIndex = uint32(i)\n\t\t}\n\t}\n\n\ttxnHash := txn.TxHash()\n\tdetails := &chainntnfs.SpendDetail{\n\t\tSpentOutPoint:     outpoint,\n\t\tSpendingHeight:    height,\n\t\tSpendingTx:        txn,\n\t\tSpenderTxHash:     &txnHash,\n\t\tSpenderInputIndex: inputIndex,\n\t}\n\n\t// Cache details in case of late registration.\n\tif _, ok := s.spends[*outpoint]; !ok {\n\t\ts.spends[*outpoint] = details\n\t}\n\n\t// Deliver any backlogged spend notifications.\n\tif spendChans, ok := s.spendMap[*outpoint]; ok {\n\t\tdelete(s.spendMap, *outpoint)\n\t\tfor _, spendChan := range spendChans {\n\t\t\tspendChan <- &chainntnfs.SpendDetail{\n\t\t\t\tSpentOutPoint:     details.SpentOutPoint,\n\t\t\t\tSpendingHeight:    details.SpendingHeight,\n\t\t\t\tSpendingTx:        details.SpendingTx,\n\t\t\t\tSpenderTxHash:     details.SpenderTxHash,\n\t\t\t\tSpenderInputIndex: details.SpenderInputIndex,\n\t\t\t}\n\t\t}\n\t}\n}\n",
+      "length": 944,
+      "tokens": 101,
+      "embedding": []
+    }
+  ]
+}

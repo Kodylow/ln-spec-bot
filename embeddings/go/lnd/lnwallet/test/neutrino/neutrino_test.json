@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/test/neutrino/neutrino_test.go",
+  "package": "neutrino_test",
+  "sections": [
+    {
+      "slug": "func TestLightningWallet(t *testing.T) {",
+      "content": "func TestLightningWallet(t *testing.T) {\n\tlnwallettest.TestLightningWallet(t, \"neutrino\")\n}\n",
+      "length": 49,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

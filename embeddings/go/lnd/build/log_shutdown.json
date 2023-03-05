@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/build/log_shutdown.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "type ShutdownLogger struct {",
+      "content": "type ShutdownLogger struct {\n\tbtclog.Logger\n\tshutdown func()\n}\n\n// NewShutdownLogger creates a shutdown logger for the log provided which will\n// use the signal package to request shutdown on critical errors.",
+      "length": 174,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func NewShutdownLogger(logger btclog.Logger, shutdown func()) *ShutdownLogger {",
+      "content": "func NewShutdownLogger(logger btclog.Logger, shutdown func()) *ShutdownLogger {\n\treturn &ShutdownLogger{\n\t\tLogger:   logger,\n\t\tshutdown: shutdown,\n\t}\n}\n\n// Criticalf formats message according to format specifier and writes to\n// log with LevelCritical. It will then call the shutdown logger's shutdown\n// function to prompt safe shutdown.\n//\n// Note: it is part of the btclog.Logger interface.",
+      "length": 303,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShutdownLogger) Criticalf(format string, params ...interface{}) {",
+      "content": "func (s *ShutdownLogger) Criticalf(format string, params ...interface{}) {\n\ts.Logger.Criticalf(format, params...)\n\ts.Logger.Info(\"Sending request for shutdown\")\n\ts.shutdown()\n}\n\n// Critical formats message using the default formats for its operands\n// and writes to log with LevelCritical. It will then call the shutdown\n// logger's shutdown function to prompt safe shutdown.\n//\n// Note: it is part of the btclog.Logger interface.",
+      "length": 346,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShutdownLogger) Critical(v ...interface{}) {",
+      "content": "func (s *ShutdownLogger) Critical(v ...interface{}) {\n\ts.Logger.Critical(v)\n\ts.Logger.Info(\"Sending request for shutdown\")\n\ts.shutdown()\n}\n",
+      "length": 81,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

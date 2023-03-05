@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/deployment_prod.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build !dev",
+      "content": "//go:build !dev\n// +build !dev\n\npackage build\n\n// Deployment specifies a production build.\nconst Deployment = Production\n",
+      "length": 99,
+      "tokens": 15,
+      "embedding": []
+    }
+  ]
+}

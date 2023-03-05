@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration29/codec.go",
+  "package": "migration29",
+  "sections": [
+    {
+      "slug": "type ChannelID [32]byte",
+      "content": "type ChannelID [32]byte\n\n// String returns the string representation of the ChannelID. This is just the\n// hex string encoding of the ChannelID itself.",
+      "length": 125,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChannelID) String() string {",
+      "content": "func (c ChannelID) String() string {\n\treturn hex.EncodeToString(c[:])\n}\n\n// NewChanIDFromOutPoint converts a target OutPoint into a ChannelID that is\n// usable within the network. In order to convert the OutPoint into a ChannelID,\n// we XOR the lower 2-bytes of the txid within the OutPoint with the big-endian\n// serialization of the Index of the OutPoint, truncated to 2-bytes.",
+      "length": 336,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChanIDFromOutPoint(op *wire.OutPoint) ChannelID {",
+      "content": "func NewChanIDFromOutPoint(op *wire.OutPoint) ChannelID {\n\t// First we'll copy the txid of the outpoint into our channel ID slice.\n\tvar cid ChannelID\n\tcopy(cid[:], op.Hash[:])\n\n\t// With the txid copied over, we'll now XOR the lower 2-bytes of the\n\t// partial channelID with big-endian serialization of output index.\n\txorTxid(&cid, uint16(op.Index))\n\n\treturn cid\n}\n\n// xorTxid performs the transformation needed to transform an OutPoint into a\n// ChannelID. To do this, we expect the cid parameter to contain the txid\n// unaltered and the outputIndex to be the output index",
+      "length": 501,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func xorTxid(cid *ChannelID, outputIndex uint16) {",
+      "content": "func xorTxid(cid *ChannelID, outputIndex uint16) {\n\tvar buf [2]byte\n\tbinary.BigEndian.PutUint16(buf[:], outputIndex)\n\n\tcid[30] ^= buf[0]\n\tcid[31] ^= buf[1]\n}\n\n// readOutpoint reads an outpoint from the passed reader.",
+      "length": 158,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func readOutpoint(r io.Reader, o *wire.OutPoint) error {",
+      "content": "func readOutpoint(r io.Reader, o *wire.OutPoint) error {\n\tif _, err := io.ReadFull(r, o.Hash[:]); err != nil {\n\t\treturn err\n\t}\n\tif err := binary.Read(r, byteOrder, &o.Index); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 153,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

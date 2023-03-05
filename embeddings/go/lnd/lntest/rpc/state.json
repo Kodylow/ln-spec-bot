@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/state.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "func (h *HarnessRPC) SubscribeState() lnrpc.State_SubscribeStateClient {",
+      "content": "func (h *HarnessRPC) SubscribeState() lnrpc.State_SubscribeStateClient {\n\tclient, err := h.State.SubscribeState(\n\t\th.runCtx, &lnrpc.SubscribeStateRequest{},\n\t)\n\th.NoError(err, \"SubscribeState\")\n\n\treturn client\n}\n",
+      "length": 132,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

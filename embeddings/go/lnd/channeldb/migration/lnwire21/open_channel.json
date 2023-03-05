@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/open_channel.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type FundingFlag uint8",
+      "content": "type FundingFlag uint8\n\nconst (\n\t// FFAnnounceChannel is a FundingFlag that when set, indicates the\n\t// initiator of a funding flow wishes to announce the channel to the\n\t// greater network.\n\tFFAnnounceChannel FundingFlag = 1 << iota\n)\n\n// OpenChannel is the message Alice sends to Bob if we should like to create a\n// channel with Bob where she's the sole provider of funds to the channel.\n// Single funder channels simplify the initial funding workflow, are supported\n// by nodes backed by SPV Bitcoin clients, and have a simpler security models\n// than dual funded channels.",
+      "length": 542,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "type OpenChannel struct {",
+      "content": "type OpenChannel struct {\n\t// ChainHash is the target chain that the initiator wishes to open a\n\t// channel within.\n\tChainHash chainhash.Hash\n\n\t// PendingChannelID serves to uniquely identify the future channel\n\t// created by the initiated single funder workflow.\n\tPendingChannelID [32]byte\n\n\t// FundingAmount is the amount of satoshis that the initiator of the\n\t// channel wishes to use as the total capacity of the channel. The\n\t// initial balance of the funding will be this value minus the push\n\t// amount (if set).\n\tFundingAmount btcutil.Amount\n\n\t// PushAmount is the value that the initiating party wishes to \"push\"\n\t// to the responding as part of the first commitment state. If the\n\t// responder accepts, then this will be their initial balance.\n\tPushAmount MilliSatoshi\n\n\t// DustLimit is the specific dust limit the sender of this message\n\t// would like enforced on their version of the commitment transaction.\n\t// Any output below this value will be \"trimmed\" from the commitment\n\t// transaction, with the amount of the HTLC going to dust.\n\tDustLimit btcutil.Amount\n\n\t// MaxValueInFlight represents the maximum amount of coins that can be\n\t// pending within the channel at any given time. If the amount of funds\n\t// in limbo exceeds this amount, then the channel will be failed.\n\tMaxValueInFlight MilliSatoshi\n\n\t// ChannelReserve is the amount of BTC that the receiving party MUST\n\t// maintain a balance above at all times. This is a safety mechanism to\n\t// ensure that both sides always have skin in the game during the\n\t// channel's lifetime.\n\tChannelReserve btcutil.Amount\n\n\t// HtlcMinimum is the smallest HTLC that the sender of this message\n\t// will accept.\n\tHtlcMinimum MilliSatoshi\n\n\t// FeePerKiloWeight is the initial fee rate that the initiator suggests\n\t// for both commitment transaction. This value is expressed in sat per\n\t// kilo-weight.\n\t//\n\t// TODO(halseth): make SatPerKWeight when fee estimation is in own\n\t// package. Currently this will cause an import cycle.\n\tFeePerKiloWeight uint32\n\n\t// CsvDelay is the number of blocks to use for the relative time lock\n\t// in the pay-to-self output of both commitment transactions.\n\tCsvDelay uint16\n\n\t// MaxAcceptedHTLCs is the total number of incoming HTLC's that the\n\t// sender of this channel will accept.\n\tMaxAcceptedHTLCs uint16\n\n\t// FundingKey is the key that should be used on behalf of the sender\n\t// within the 2-of-2 multi-sig output that it contained within the\n\t// funding transaction.\n\tFundingKey *btcec.PublicKey\n\n\t// RevocationPoint is the base revocation point for the sending party.\n\t// Any commitment transaction belonging to the receiver of this message\n\t// should use this key and their per-commitment point to derive the\n\t// revocation key for the commitment transaction.\n\tRevocationPoint *btcec.PublicKey\n\n\t// PaymentPoint is the base payment point for the sending party. This\n\t// key should be combined with the per commitment point for a\n\t// particular commitment state in order to create the key that should\n\t// be used in any output that pays directly to the sending party, and\n\t// also within the HTLC covenant transactions.\n\tPaymentPoint *btcec.PublicKey\n\n\t// DelayedPaymentPoint is the delay point for the sending party. This\n\t// key should be combined with the per commitment point to derive the\n\t// keys that are used in outputs of the sender's commitment transaction\n\t// where they claim funds.\n\tDelayedPaymentPoint *btcec.PublicKey\n\n\t// HtlcPoint is the base point used to derive the set of keys for this\n\t// party that will be used within the HTLC public key scripts. This\n\t// value is combined with the receiver's revocation base point in order\n\t// to derive the keys that are used within HTLC scripts.\n\tHtlcPoint *btcec.PublicKey\n\n\t// FirstCommitmentPoint is the first commitment point for the sending\n\t// party. This value should be combined with the receiver's revocation\n\t// base point in order to derive the revocation keys that are placed\n\t// within the commitment transaction of the sender.\n\tFirstCommitmentPoint *btcec.PublicKey\n\n\t// ChannelFlags is a bit-field which allows the initiator of the\n\t// channel to specify further behavior surrounding the channel.\n\t// Currently, the least significant bit of this bit field indicates the\n\t// initiator of the channel wishes to advertise this channel publicly.\n\tChannelFlags FundingFlag\n\n\t// UpfrontShutdownScript is the script to which the channel funds should\n\t// be paid when mutually closing the channel. This field is optional, and\n\t// and has a length prefix, so a zero will be written if it is not set\n\t// and its length followed by the script will be written if it is set.\n\tUpfrontShutdownScript DeliveryAddress\n}\n\n// A compile time check to ensure OpenChannel implements the lnwire.Message\n// interface.\nvar _ Message = (*OpenChannel)(nil)\n\n// Encode serializes the target OpenChannel into the passed io.Writer\n// implementation. Serialization will observe the rules defined by the passed\n// protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 4887,
+      "tokens": 785,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpenChannel) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (o *OpenChannel) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\to.ChainHash[:],\n\t\to.PendingChannelID[:],\n\t\to.FundingAmount,\n\t\to.PushAmount,\n\t\to.DustLimit,\n\t\to.MaxValueInFlight,\n\t\to.ChannelReserve,\n\t\to.HtlcMinimum,\n\t\to.FeePerKiloWeight,\n\t\to.CsvDelay,\n\t\to.MaxAcceptedHTLCs,\n\t\to.FundingKey,\n\t\to.RevocationPoint,\n\t\to.PaymentPoint,\n\t\to.DelayedPaymentPoint,\n\t\to.HtlcPoint,\n\t\to.FirstCommitmentPoint,\n\t\to.ChannelFlags,\n\t\to.UpfrontShutdownScript,\n\t)\n}\n\n// Decode deserializes the serialized OpenChannel stored in the passed\n// io.Reader into the target OpenChannel using the deserialization rules\n// defined by the passed protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 618,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpenChannel) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (o *OpenChannel) Decode(r io.Reader, pver uint32) error {\n\tif err := ReadElements(r,\n\t\to.ChainHash[:],\n\t\to.PendingChannelID[:],\n\t\t&o.FundingAmount,\n\t\t&o.PushAmount,\n\t\t&o.DustLimit,\n\t\t&o.MaxValueInFlight,\n\t\t&o.ChannelReserve,\n\t\t&o.HtlcMinimum,\n\t\t&o.FeePerKiloWeight,\n\t\t&o.CsvDelay,\n\t\t&o.MaxAcceptedHTLCs,\n\t\t&o.FundingKey,\n\t\t&o.RevocationPoint,\n\t\t&o.PaymentPoint,\n\t\t&o.DelayedPaymentPoint,\n\t\t&o.HtlcPoint,\n\t\t&o.FirstCommitmentPoint,\n\t\t&o.ChannelFlags,\n\t); err != nil {\n\t\treturn err\n\t}\n\n\t// Check for the optional upfront shutdown script field. If it is not there,\n\t// silence the EOF error.\n\terr := ReadElement(r, &o.UpfrontShutdownScript)\n\tif err != nil && err != io.EOF {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// MsgType returns the MessageType code which uniquely identifies this message\n// as an OpenChannel on the wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 774,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpenChannel) MsgType() MessageType {",
+      "content": "func (o *OpenChannel) MsgType() MessageType {\n\treturn MsgOpenChannel\n}\n\n// MaxPayloadLength returns the maximum allowed payload length for a\n// OpenChannel message.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 164,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpenChannel) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (o *OpenChannel) MaxPayloadLength(uint32) uint32 {\n\t// (32 * 2) + (8 * 6) + (4 * 1) + (2 * 2) + (33 * 6) + 1\n\tvar length uint32 = 319 // base length\n\n\t// Upfront shutdown script max length.\n\tlength += 2 + deliveryAddressMaxSize\n\n\treturn length\n}\n",
+      "length": 187,
+      "tokens": 44,
+      "embedding": []
+    }
+  ]
+}

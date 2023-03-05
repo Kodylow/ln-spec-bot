@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/peers.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "type (",
+      "content": "type (\n\tAnnReq  *peersrpc.NodeAnnouncementUpdateRequest\n\tAnnResp *peersrpc.NodeAnnouncementUpdateResponse\n)\n\n// UpdateNodeAnnouncement makes an UpdateNodeAnnouncement RPC call the peersrpc\n// client and asserts.",
+      "length": 199,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) UpdateNodeAnnouncement(req AnnReq) AnnResp {",
+      "content": "func (h *HarnessRPC) UpdateNodeAnnouncement(req AnnReq) AnnResp {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Peer.UpdateNodeAnnouncement(ctxt, req)\n\th.NoError(err, \"UpdateNodeAnnouncement\")\n\n\treturn resp\n}\n\n// UpdateNodeAnnouncementErr makes an UpdateNodeAnnouncement RPC call the\n// peersrpc client and asserts an error is returned.",
+      "length": 310,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) UpdateNodeAnnouncementErr(req AnnReq) {",
+      "content": "func (h *HarnessRPC) UpdateNodeAnnouncementErr(req AnnReq) {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Peer.UpdateNodeAnnouncement(ctxt, req)\n\trequire.Error(h, err, \"expect an error from update announcement\")\n}\n",
+      "length": 195,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

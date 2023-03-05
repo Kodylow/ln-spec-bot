@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/routing/heap_test.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "func TestHeapOrdering(t *testing.T) {",
+      "content": "func TestHeapOrdering(t *testing.T) {\n\tt.Parallel()\n\n\t// First, create a blank heap, we'll use this to push on randomly\n\t// generated items.\n\tnodeHeap := newDistanceHeap(0)\n\n\tprand.Seed(1)\n\n\t// Create 100 random entries adding them to the heap created above, but\n\t// also a list that we'll sort with the entries.\n\tconst numEntries = 100\n\tsortedEntries := make([]*nodeWithDist, 0, numEntries)\n\tfor i := 0; i < numEntries; i++ {\n\t\tvar pubKey [33]byte\n\t\tprand.Read(pubKey[:])\n\n\t\tentry := &nodeWithDist{\n\t\t\tnode: route.Vertex(pubKey),\n\t\t\tdist: prand.Int63(),\n\t\t}\n\n\t\t// Use the PushOrFix method for the initial push to test the scenario\n\t\t// where entry doesn't exist on the heap.\n\t\tnodeHeap.PushOrFix(entry)\n\n\t\t// Re-generate this entry's dist field\n\t\tentry.dist = prand.Int63()\n\n\t\t// Reorder the heap with a PushOrFix call.\n\t\tnodeHeap.PushOrFix(entry)\n\n\t\tsortedEntries = append(sortedEntries, entry)\n\t}\n\n\t// Sort the regular slice, we'll compare this against all the entries\n\t// popped from the heap.\n\tsort.Slice(sortedEntries, func(i, j int) bool {\n\t\treturn sortedEntries[i].dist < sortedEntries[j].dist\n\t})\n\n\t// One by one, pop of all the entries from the heap, they should come\n\t// out in sorted order.\n\tvar poppedEntries []*nodeWithDist\n\tfor nodeHeap.Len() != 0 {\n\t\te := heap.Pop(&nodeHeap).(*nodeWithDist)\n\t\tpoppedEntries = append(poppedEntries, e)\n\t}\n\n\t// Assert that the pubkeyIndices map is empty after popping all of the\n\t// items off of it.\n\tif len(nodeHeap.pubkeyIndices) != 0 {\n\t\tt.Fatalf(\"there are still %d pubkeys in the pubkeyIndices map\",\n\t\t\tlen(nodeHeap.pubkeyIndices))\n\t}\n\n\t// Finally, ensure that the items popped from the heap and the items we\n\t// sorted are identical at this rate.\n\tif !reflect.DeepEqual(poppedEntries, sortedEntries) {\n\t\tt.Fatalf(\"items don't match: expected %v, got %v\", sortedEntries,\n\t\t\tpoppedEntries)\n\t}\n}\n",
+      "length": 1747,
+      "tokens": 253,
+      "embedding": []
+    }
+  ]
+}

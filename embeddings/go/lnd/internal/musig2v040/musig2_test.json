@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/internal/musig2v040/musig2_test.go",
-  "package": "Copyright",
+  "package": "musig2v040",
   "sections": [
     {
       "slug": "func getInfinityTweak() KeyTweakDesc {",

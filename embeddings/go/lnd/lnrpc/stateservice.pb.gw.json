@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/stateservice.pb.gw.go",
+  "package": "lnrpc",
+  "sections": [
+    {
+      "slug": "func request_State_SubscribeState_0(ctx context.Context, marshaler runtime.Marshaler, client StateClient, req *http.Request, pathParams map[string]string) (State_SubscribeStateClient, runtime.ServerMetadata, error) {",
+      "content": "func request_State_SubscribeState_0(ctx context.Context, marshaler runtime.Marshaler, client StateClient, req *http.Request, pathParams map[string]string) (State_SubscribeStateClient, runtime.ServerMetadata, error) {\n\tvar protoReq SubscribeStateRequest\n\tvar metadata runtime.ServerMetadata\n\n\tstream, err := client.SubscribeState(ctx, &protoReq)\n\tif err != nil {\n\t\treturn nil, metadata, err\n\t}\n\theader, err := stream.Header()\n\tif err != nil {\n\t\treturn nil, metadata, err\n\t}\n\tmetadata.HeaderMD = header\n\treturn stream, metadata, nil\n\n}\n",
+      "length": 302,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func request_State_GetState_0(ctx context.Context, marshaler runtime.Marshaler, client StateClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {",
+      "content": "func request_State_GetState_0(ctx context.Context, marshaler runtime.Marshaler, client StateClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {\n\tvar protoReq GetStateRequest\n\tvar metadata runtime.ServerMetadata\n\n\tmsg, err := client.GetState(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))\n\treturn msg, metadata, err\n\n}\n",
+      "length": 204,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func local_request_State_GetState_0(ctx context.Context, marshaler runtime.Marshaler, server StateServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {",
+      "content": "func local_request_State_GetState_0(ctx context.Context, marshaler runtime.Marshaler, server StateServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {\n\tvar protoReq GetStateRequest\n\tvar metadata runtime.ServerMetadata\n\n\tmsg, err := server.GetState(ctx, &protoReq)\n\treturn msg, metadata, err\n\n}\n\n// RegisterStateHandlerServer registers the http handlers for service State to \"mux\".\n// UnaryRPC     :call StateServer directly.\n// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.\n// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterStateHandlerFromEndpoint instead.",
+      "length": 509,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterStateHandlerServer(ctx context.Context, mux *runtime.ServeMux, server StateServer) error {",
+      "content": "func RegisterStateHandlerServer(ctx context.Context, mux *runtime.ServeMux, server StateServer) error {\n\n\tmux.Handle(\"GET\", pattern_State_SubscribeState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\terr := status.Error(codes.Unimplemented, \"streaming calls are not yet supported in the in-process transport\")\n\t\t_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\treturn\n\t})\n\n\tmux.Handle(\"GET\", pattern_State_GetState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\tctx, cancel := context.WithCancel(req.Context())\n\t\tdefer cancel()\n\t\tvar stream runtime.ServerTransportStream\n\t\tctx = grpc.NewContextWithServerTransportStream(ctx, &stream)\n\t\tinboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\trctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, \"/lnrpc.State/GetState\", runtime.WithHTTPPathPattern(\"/v1/state\"))\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\t\tresp, md, err := local_request_State_GetState_0(rctx, inboundMarshaler, server, req, pathParams)\n\t\tmd.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())\n\t\tctx = runtime.NewServerMetadataContext(ctx, md)\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\n\t\tforward_State_GetState_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)\n\n\t})\n\n\treturn nil\n}\n\n// RegisterStateHandlerFromEndpoint is same as RegisterStateHandler but\n// automatically dials to \"endpoint\" and closes the connection when \"ctx\" gets done.",
+      "length": 1598,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterStateHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {",
+      "content": "func RegisterStateHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {\n\tconn, err := grpc.Dial(endpoint, opts...)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer func() {\n\t\tif err != nil {\n\t\t\tif cerr := conn.Close(); cerr != nil {\n\t\t\t\tgrpclog.Infof(\"Failed to close conn to %s: %v\", endpoint, cerr)\n\t\t\t}\n\t\t\treturn\n\t\t}\n\t\tgo func() {\n\t\t\t<-ctx.Done()\n\t\t\tif cerr := conn.Close(); cerr != nil {\n\t\t\t\tgrpclog.Infof(\"Failed to close conn to %s: %v\", endpoint, cerr)\n\t\t\t}\n\t\t}()\n\t}()\n\n\treturn RegisterStateHandler(ctx, mux, conn)\n}\n\n// RegisterStateHandler registers the http handlers for service State to \"mux\".\n// The handlers forward requests to the grpc endpoint over \"conn\".",
+      "length": 567,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterStateHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {",
+      "content": "func RegisterStateHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {\n\treturn RegisterStateHandlerClient(ctx, mux, NewStateClient(conn))\n}\n\n// RegisterStateHandlerClient registers the http handlers for service State\n// to \"mux\". The handlers forward requests to the grpc endpoint over the given implementation of \"StateClient\".\n// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in \"StateClient\"\n// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in\n// \"StateClient\" to call the correct interceptors.",
+      "length": 516,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterStateHandlerClient(ctx context.Context, mux *runtime.ServeMux, client StateClient) error {",
+      "content": "func RegisterStateHandlerClient(ctx context.Context, mux *runtime.ServeMux, client StateClient) error {\n\n\tmux.Handle(\"GET\", pattern_State_SubscribeState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\tctx, cancel := context.WithCancel(req.Context())\n\t\tdefer cancel()\n\t\tinboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\trctx, err := runtime.AnnotateContext(ctx, mux, req, \"/lnrpc.State/SubscribeState\", runtime.WithHTTPPathPattern(\"/v1/state/subscribe\"))\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\t\tresp, md, err := request_State_SubscribeState_0(rctx, inboundMarshaler, client, req, pathParams)\n\t\tctx = runtime.NewServerMetadataContext(ctx, md)\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\n\t\tforward_State_SubscribeState_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)\n\n\t})\n\n\tmux.Handle(\"GET\", pattern_State_GetState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\tctx, cancel := context.WithCancel(req.Context())\n\t\tdefer cancel()\n\t\tinboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\trctx, err := runtime.AnnotateContext(ctx, mux, req, \"/lnrpc.State/GetState\", runtime.WithHTTPPathPattern(\"/v1/state\"))\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\t\tresp, md, err := request_State_GetState_0(rctx, inboundMarshaler, client, req, pathParams)\n\t\tctx = runtime.NewServerMetadataContext(ctx, md)\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\n\t\tforward_State_GetState_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)\n\n\t})\n\n\treturn nil\n}\n\nvar (\n\tpattern_State_SubscribeState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{\"v1\", \"state\", \"subscribe\"}, \"\"))\n\n\tpattern_State_GetState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{\"v1\", \"state\"}, \"\"))\n)\n\nvar (\n\tforward_State_SubscribeState_0 = runtime.ForwardResponseStream\n\n\tforward_State_GetState_0 = runtime.ForwardResponseMessage\n)\n",
+      "length": 2124,
+      "tokens": 194,
+      "embedding": []
+    }
+  ]
+}

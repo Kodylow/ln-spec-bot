@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/zpay32/fuzz_test.go",
+  "package": "zpay32",
+  "sections": [
+    {
+      "slug": "func FuzzDecode(f *testing.F) {",
+      "content": "func FuzzDecode(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data string) {\n\t\tinv, err := Decode(data, &chaincfg.TestNet3Params)\n\t\tif err != nil {\n\t\t\treturn\n\t\t}\n\n\t\t// Call these functions as a sanity check to make sure the\n\t\t// invoice is well-formed.\n\t\t_ = inv.MinFinalCLTVExpiry()\n\t\t_ = inv.Expiry()\n\t})\n}\n",
+      "length": 262,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzEncode(f *testing.F) {",
+      "content": "func FuzzEncode(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data string) {\n\t\tinv, err := Decode(data, &chaincfg.TestNet3Params)\n\t\tif err != nil {\n\t\t\treturn\n\t\t}\n\n\t\t// Call these functions as a sanity check to make sure the\n\t\t// invoice is well-formed.\n\t\t_ = inv.MinFinalCLTVExpiry()\n\t\t_ = inv.Expiry()\n\n\t\t// Initialize the static key we will be using for this fuzz\n\t\t// test.\n\t\ttestPrivKey, _ := btcec.PrivKeyFromBytes(testPrivKeyBytes)\n\n\t\t// Then, initialize the testMessageSigner so we can encode out\n\t\t// invoices with this private key.\n\t\ttestMessageSigner := MessageSigner{\n\t\t\tSignCompact: func(msg []byte) ([]byte, error) {\n\t\t\t\thash := chainhash.HashB(msg)\n\t\t\t\tsig, err := ecdsa.SignCompact(testPrivKey, hash,\n\t\t\t\t\ttrue)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn nil,\n\t\t\t\t\t\tfmt.Errorf(\"can't sign the \"+\n\t\t\t\t\t\t\t\"message: %v\", err)\n\t\t\t\t}\n\n\t\t\t\treturn sig, nil\n\t\t\t},\n\t\t}\n\t\t_, err = inv.Encode(testMessageSigner)\n\t\tif err != nil {\n\t\t\treturn\n\t\t}\n\t})\n}\n",
+      "length": 871,
+      "tokens": 124,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/error.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "func ErrTooManyExtraOpaqueBytes(numBytes int) error {",
+      "content": "func ErrTooManyExtraOpaqueBytes(numBytes int) error {\n\treturn fmt.Errorf(\"max allowed number of opaque bytes is %v, received \"+\n\t\t\"%v bytes\", MaxAllowedExtraOpaqueBytes, numBytes)\n}\n",
+      "length": 125,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

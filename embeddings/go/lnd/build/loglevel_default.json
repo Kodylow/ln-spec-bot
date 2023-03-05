@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/loglevel_default.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build !info && !debug && !trace && !warn && !error && !critical && !off",
+      "content": "//go:build !info && !debug && !trace && !warn && !error && !critical && !off\n// +build !info,!debug,!trace,!warn,!error,!critical,!off\n\npackage build\n\n// LogLevel specifies a default log level of info.\nvar LogLevel = \"info\"\n",
+      "length": 141,
+      "tokens": 18,
+      "embedding": []
+    }
+  ]
+}

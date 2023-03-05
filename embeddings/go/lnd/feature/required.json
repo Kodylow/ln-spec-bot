@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/feature/required.go",
+  "package": "feature",
+  "sections": [
+    {
+      "slug": "type ErrUnknownRequired struct {",
+      "content": "type ErrUnknownRequired struct {\n\tunknown []lnwire.FeatureBit\n}\n\n// NewErrUnknownRequired initializes an ErrUnknownRequired with the unknown\n// feature bits.",
+      "length": 120,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func NewErrUnknownRequired(unknown []lnwire.FeatureBit) ErrUnknownRequired {",
+      "content": "func NewErrUnknownRequired(unknown []lnwire.FeatureBit) ErrUnknownRequired {\n\treturn ErrUnknownRequired{\n\t\tunknown: unknown,\n\t}\n}\n\n// Error returns a human-readable description of the error.",
+      "length": 108,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrUnknownRequired) Error() string {",
+      "content": "func (e ErrUnknownRequired) Error() string {\n\treturn fmt.Sprintf(\"feature vector contains unknown required \"+\n\t\t\"features: %v\", e.unknown)\n}\n\n// ValidateRequired returns an error if the feature vector contains a non-zero\n// number of unknown, required feature bits.",
+      "length": 215,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func ValidateRequired(fv *lnwire.FeatureVector) error {",
+      "content": "func ValidateRequired(fv *lnwire.FeatureVector) error {\n\tunknown := fv.UnknownRequiredFeatures()\n\tif len(unknown) > 0 {\n\t\treturn NewErrUnknownRequired(unknown)\n\t}\n\treturn nil\n}\n",
+      "length": 115,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

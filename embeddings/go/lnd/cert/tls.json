@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/cert/tls.go",
+  "package": "cert",
+  "sections": [
+    {
+      "slug": "func GetCertBytesFromPath(certPath, keyPath string) (certBytes,",
+      "content": "func GetCertBytesFromPath(certPath, keyPath string) (certBytes,\n\tkeyBytes []byte, err error) {\n\n\tcertBytes, err = ioutil.ReadFile(certPath)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tkeyBytes, err = ioutil.ReadFile(keyPath)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\treturn certBytes, keyBytes, nil\n}\n\n// LoadCert loads a certificate and its corresponding private key from the PEM\n// files indicated and returns the certificate in the two formats it is most\n// commonly used.",
+      "length": 398,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func LoadCert(certPath, keyPath string) (tls.Certificate, *x509.Certificate,",
+      "content": "func LoadCert(certPath, keyPath string) (tls.Certificate, *x509.Certificate,\n\terror) {\n\n\t// The certData returned here is just a wrapper around the PEM blocks\n\t// loaded from the file. The PEM is not yet fully parsed but a basic\n\t// check is performed that the certificate and private key actually\n\t// belong together.\n\tcertData, err := tls.LoadX509KeyPair(certPath, keyPath)\n\tif err != nil {\n\t\treturn tls.Certificate{}, nil, err\n\t}\n\n\t// Now parse the the PEM block of the certificate into its x509 data\n\t// structure so it can be examined in more detail.\n\tx509Cert, err := x509.ParseCertificate(certData.Certificate[0])\n\tif err != nil {\n\t\treturn tls.Certificate{}, nil, err\n\t}\n\n\treturn certData, x509Cert, nil\n}\n\n// LoadCertFromBytes loads a certificate and its corresponding private key from\n// the PEM bytes indicated and returns the certificate in the two formats it is\n// most commonly used.",
+      "length": 796,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func LoadCertFromBytes(certBytes, keyBytes []byte) (tls.Certificate,",
+      "content": "func LoadCertFromBytes(certBytes, keyBytes []byte) (tls.Certificate,\n\t*x509.Certificate, error) {\n\n\t// The certData returned here is just a wrapper around the PEM blocks\n\t// loaded from the file. The PEM is not yet fully parsed but a basic\n\t// check is performed that the certificate and private key actually\n\t// belong together.\n\tcertData, err := tls.X509KeyPair(certBytes, keyBytes)\n\tif err != nil {\n\t\treturn tls.Certificate{}, nil, err\n\t}\n\n\t// Now parse the the PEM block of the certificate into its x509 data\n\t// structure so it can be examined in more detail.\n\tx509Cert, err := x509.ParseCertificate(certData.Certificate[0])\n\tif err != nil {\n\t\treturn tls.Certificate{}, nil, err\n\t}\n\n\treturn certData, x509Cert, nil\n}\n\n// TLSConfFromCert returns the default TLS configuration used for a server,\n// using the given certificate as identity.",
+      "length": 751,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func TLSConfFromCert(certData tls.Certificate) *tls.Config {",
+      "content": "func TLSConfFromCert(certData tls.Certificate) *tls.Config {\n\treturn &tls.Config{\n\t\tCertificates: []tls.Certificate{certData},\n\t\tCipherSuites: tlsCipherSuites,\n\t\tMinVersion:   tls.VersionTLS12,\n\t}\n}\n\n// TLSReloader updates the TLS certificate without restarting the server.",
+      "length": 205,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type TLSReloader struct {",
+      "content": "type TLSReloader struct {\n\tcertMu sync.RWMutex\n\tcert   *tls.Certificate\n}\n\n// NewTLSReloader is used to create a new TLS Reloader that will be used\n// to update the TLS certificate without restarting the server.",
+      "length": 180,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTLSReloader(certBytes, keyBytes []byte) (*TLSReloader, error) {",
+      "content": "func NewTLSReloader(certBytes, keyBytes []byte) (*TLSReloader, error) {\n\tcert, _, err := LoadCertFromBytes(certBytes, keyBytes)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn &TLSReloader{\n\t\tcert: &cert,\n\t}, nil\n}\n\n// AttemptReload will make an attempt to update the TLS certificate\n// and key used by the server.",
+      "length": 230,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSReloader) AttemptReload(certBytes, keyBytes []byte) error {",
+      "content": "func (t *TLSReloader) AttemptReload(certBytes, keyBytes []byte) error {\n\tnewCert, _, err := LoadCertFromBytes(certBytes, keyBytes)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tt.certMu.Lock()\n\tt.cert = &newCert\n\tt.certMu.Unlock()\n\n\treturn nil\n}\n\n// GetCertificateFunc is used in the server's TLS configuration to\n// determine the correct TLS certificate to server on a request.",
+      "length": 282,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSReloader) GetCertificateFunc() func(*tls.ClientHelloInfo) (",
+      "content": "func (t *TLSReloader) GetCertificateFunc() func(*tls.ClientHelloInfo) (\n\t*tls.Certificate, error) {\n\n\treturn func(clientHello *tls.ClientHelloInfo) (*tls.Certificate,\n\t\terror) {\n\n\t\tt.certMu.RLock()\n\t\tdefer t.certMu.RUnlock()\n\n\t\treturn t.cert, nil\n\t}\n}\n",
+      "length": 169,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

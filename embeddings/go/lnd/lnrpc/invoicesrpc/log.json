@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/invoicesrpc/log.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\tUseLogger(build.NewSubLogger(\"IRPC\", nil))\n}\n\n// DisableLog disables all library log output.  Logging output is disabled by\n// by default until UseLogger is called.",
+      "length": 161,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func DisableLog() {",
+      "content": "func DisableLog() {\n\tUseLogger(btclog.Disabled)\n}\n\n// UseLogger uses a specified Logger to output package logging info. This\n// should be used in preference to SetLogWriter if the caller is also using\n// btclog.",
+      "length": 186,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func UseLogger(logger btclog.Logger) {",
+      "content": "func UseLogger(logger btclog.Logger) {\n\tlog = logger\n}\n\n// logClosure is used to provide a closure over expensive logging operations so\n// don't have to be performed when the logging level doesn't warrant it.",
+      "length": 165,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "type logClosure func() string",
+      "content": "type logClosure func() string\n\n// String invokes the underlying function and returns the result.",
+      "length": 65,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (c logClosure) String() string {",
+      "content": "func (c logClosure) String() string {\n\treturn c()\n}\n\n// newLogClosure returns a new closure over a function that returns a string\n// which itself provides a Stringer interface so that it can be used with the\n// logging system.",
+      "length": 183,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func newLogClosure(c func() string) logClosure {",
+      "content": "func newLogClosure(c func() string) logClosure {\n\treturn logClosure(c)\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

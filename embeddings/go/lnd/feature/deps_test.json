@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/feature/deps_test.go",
+  "package": "feature",
+  "sections": [
+    {
+      "slug": "type depTest struct {",
+      "content": "type depTest struct {\n\tname   string\n\traw    *lnwire.RawFeatureVector\n\texpErr error\n}\n\nvar depTests = []depTest{\n\t{\n\t\tname: \"empty\",\n\t\traw:  lnwire.NewRawFeatureVector(),\n\t},\n\t{\n\t\tname: \"no deps optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.GossipQueriesOptional,\n\t\t),\n\t},\n\t{\n\t\tname: \"no deps required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t),\n\t},\n\t{\n\t\tname: \"one dep optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\tlnwire.PaymentAddrOptional,\n\t\t),\n\t},\n\t{\n\t\tname: \"one dep required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t\tlnwire.PaymentAddrRequired,\n\t\t),\n\t},\n\t{\n\t\tname: \"one missing optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.PaymentAddrOptional,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.TLVOnionPayloadOptional},\n\t},\n\t{\n\t\tname: \"one missing required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.PaymentAddrRequired,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.TLVOnionPayloadOptional},\n\t},\n\t{\n\t\tname: \"two dep optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\tlnwire.PaymentAddrOptional,\n\t\t\tlnwire.MPPOptional,\n\t\t),\n\t},\n\t{\n\t\tname: \"two dep required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t\tlnwire.PaymentAddrRequired,\n\t\t\tlnwire.MPPRequired,\n\t\t),\n\t},\n\t{\n\t\tname: \"two dep last missing optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.PaymentAddrOptional,\n\t\t\tlnwire.MPPOptional,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.TLVOnionPayloadOptional},\n\t},\n\t{\n\t\tname: \"two dep last missing required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.PaymentAddrRequired,\n\t\t\tlnwire.MPPRequired,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.TLVOnionPayloadOptional},\n\t},\n\t{\n\t\tname: \"two dep first missing optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\tlnwire.MPPOptional,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.PaymentAddrOptional},\n\t},\n\t{\n\t\tname: \"two dep first missing required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t\tlnwire.MPPRequired,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.PaymentAddrOptional},\n\t},\n\t{\n\t\tname: \"forest optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.GossipQueriesOptional,\n\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\tlnwire.PaymentAddrOptional,\n\t\t\tlnwire.MPPOptional,\n\t\t),\n\t},\n\t{\n\t\tname: \"forest required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.GossipQueriesRequired,\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t\tlnwire.PaymentAddrRequired,\n\t\t\tlnwire.MPPRequired,\n\t\t),\n\t},\n\t{\n\t\tname: \"broken forest optional\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.GossipQueriesOptional,\n\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\tlnwire.MPPOptional,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.PaymentAddrOptional},\n\t},\n\t{\n\t\tname: \"broken forest required\",\n\t\traw: lnwire.NewRawFeatureVector(\n\t\t\tlnwire.GossipQueriesRequired,\n\t\t\tlnwire.TLVOnionPayloadRequired,\n\t\t\tlnwire.MPPRequired,\n\t\t),\n\t\texpErr: ErrMissingFeatureDep{lnwire.PaymentAddrOptional},\n\t},\n}\n\n// TestValidateDeps tests that ValidateDeps correctly asserts whether or not the\n// set features constitute a valid feature chain when accounting for transititve\n// dependencies.",
+      "length": 3054,
+      "tokens": 245,
+      "embedding": []
+    },
+    {
+      "slug": "func TestValidateDeps(t *testing.T) {",
+      "content": "func TestValidateDeps(t *testing.T) {\n\tfor _, test := range depTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestValidateDeps(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 120,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func testValidateDeps(t *testing.T, test depTest) {",
+      "content": "func testValidateDeps(t *testing.T, test depTest) {\n\tfv := lnwire.NewFeatureVector(test.raw, lnwire.Features)\n\terr := ValidateDeps(fv)\n\tif !reflect.DeepEqual(err, test.expErr) {\n\t\tt.Fatalf(\"validation mismatch, want: %v, got: %v\",\n\t\t\ttest.expErr, err)\n\t}\n}\n",
+      "length": 198,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/migration_11_invoices_test.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "func beforeMigrationFuncV11(t *testing.T, d *DB, invoices []Invoice) {",
+      "content": "func beforeMigrationFuncV11(t *testing.T, d *DB, invoices []Invoice) {\n\terr := kvdb.Update(d, func(tx kvdb.RwTx) error {\n\t\tinvoicesBucket, err := tx.CreateTopLevelBucket(\n\t\t\tinvoiceBucket,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tinvoiceNum := uint32(1)\n\t\tfor _, invoice := range invoices {\n\t\t\tvar invoiceKey [4]byte\n\t\t\tbyteOrder.PutUint32(invoiceKey[:], invoiceNum)\n\t\t\tinvoiceNum++\n\n\t\t\tvar buf bytes.Buffer\n\t\t\terr := serializeInvoiceLegacy(&buf, &invoice) // nolint:scopelint\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\terr = invoicesBucket.Put(\n\t\t\t\tinvoiceKey[:], buf.Bytes(),\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// TestMigrateInvoices checks that invoices are migrated correctly.",
+      "length": 656,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMigrateInvoices(t *testing.T) {",
+      "content": "func TestMigrateInvoices(t *testing.T) {\n\tt.Parallel()\n\n\tpayReqBtc, err := getPayReq(&bitcoinCfg.MainNetParams)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tvar ltcNetParams bitcoinCfg.Params\n\tltcNetParams.Bech32HRPSegwit = litecoinCfg.MainNetParams.Bech32HRPSegwit\n\tpayReqLtc, err := getPayReq(&ltcNetParams)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tinvoices := []Invoice{\n\t\t{\n\t\t\tPaymentRequest: []byte(payReqBtc),\n\t\t},\n\t\t{\n\t\t\tPaymentRequest: []byte(payReqLtc),\n\t\t},\n\t}\n\n\t// Verify that all invoices were migrated.\n\tafterMigrationFunc := func(d *DB) {\n\t\tdbInvoices, err := d.FetchAllInvoices(false)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to fetch invoices: %v\", err)\n\t\t}\n\n\t\tif len(invoices) != len(dbInvoices) {\n\t\t\tt.Fatalf(\"expected %d invoices, got %d\", len(invoices),\n\t\t\t\tlen(dbInvoices))\n\t\t}\n\n\t\tfor _, dbInvoice := range dbInvoices {\n\t\t\tif dbInvoice.FinalCltvDelta != testCltvDelta {\n\t\t\t\tt.Fatal(\"incorrect final cltv delta\")\n\t\t\t}\n\t\t\tif dbInvoice.Expiry != 3600*time.Second {\n\t\t\t\tt.Fatal(\"incorrect expiry\")\n\t\t\t}\n\t\t\tif len(dbInvoice.Htlcs) != 0 {\n\t\t\t\tt.Fatal(\"expected no htlcs after migration\")\n\t\t\t}\n\t\t}\n\t}\n\n\tapplyMigration(t,\n\t\tfunc(d *DB) { beforeMigrationFuncV11(t, d, invoices) },\n\t\tafterMigrationFunc,\n\t\tMigrateInvoices,\n\t\tfalse)\n}\n\n// TestMigrateInvoicesHodl checks that a hodl invoice in the accepted state\n// fails the migration.",
+      "length": 1233,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMigrateInvoicesHodl(t *testing.T) {",
+      "content": "func TestMigrateInvoicesHodl(t *testing.T) {\n\tt.Parallel()\n\n\tpayReqBtc, err := getPayReq(&bitcoinCfg.MainNetParams)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tinvoices := []Invoice{\n\t\t{\n\t\t\tPaymentRequest: []byte(payReqBtc),\n\t\t\tTerms: ContractTerm{\n\t\t\t\tState: ContractAccepted,\n\t\t\t},\n\t\t},\n\t}\n\n\tapplyMigration(t,\n\t\tfunc(d *DB) { beforeMigrationFuncV11(t, d, invoices) },\n\t\tfunc(d *DB) {},\n\t\tMigrateInvoices,\n\t\ttrue)\n}\n\n// signDigestCompact generates a test signature to be used in the generation of\n// test payment requests.",
+      "length": 447,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func signDigestCompact(hash []byte) ([]byte, error) {",
+      "content": "func signDigestCompact(hash []byte) ([]byte, error) {\n\t// Should the signature reference a compressed public key or not.\n\tisCompressedKey := true\n\n\tprivKey, _ := btcec.PrivKeyFromBytes(testPrivKeyBytes)\n\n\t// ecdsa.SignCompact returns a pubkey-recoverable signature\n\tsig, err := ecdsa.SignCompact(privKey, hash, isCompressedKey)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"can't sign the hash: %v\", err)\n\t}\n\n\treturn sig, nil\n}\n\n// getPayReq creates a payment request for the given net.",
+      "length": 415,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func getPayReq(net *bitcoinCfg.Params) (string, error) {",
+      "content": "func getPayReq(net *bitcoinCfg.Params) (string, error) {\n\toptions := []func(*zpay32.Invoice){\n\t\tzpay32.CLTVExpiry(uint64(testCltvDelta)),\n\t\tzpay32.Description(\"test\"),\n\t}\n\n\tpayReq, err := zpay32.NewInvoice(\n\t\tnet, [32]byte{}, time.Unix(1, 0), options...,\n\t)\n\tif err != nil {\n\t\treturn \"\", err\n\t}\n\treturn payReq.Encode(\n\t\tzpay32.MessageSigner{\n\t\t\tSignCompact: signDigestCompact,\n\t\t},\n\t)\n}\n",
+      "length": 313,
+      "tokens": 33,
+      "embedding": []
+    }
+  ]
+}

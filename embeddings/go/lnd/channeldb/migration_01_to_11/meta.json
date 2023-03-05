@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/meta.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "type Meta struct {",
+      "content": "type Meta struct {\n\t// DbVersionNumber is the current schema version of the database.\n\tDbVersionNumber uint32\n}\n\n// putMeta is an internal helper function used in order to allow callers to\n// re-use a database transaction. See the publicly exported PutMeta method for\n// more information.",
+      "length": 263,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func putMeta(meta *Meta, tx kvdb.RwTx) error {",
+      "content": "func putMeta(meta *Meta, tx kvdb.RwTx) error {\n\tmetaBucket, err := tx.CreateTopLevelBucket(metaBucket)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn putDbVersion(metaBucket, meta)\n}\n",
+      "length": 124,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func putDbVersion(metaBucket kvdb.RwBucket, meta *Meta) error {",
+      "content": "func putDbVersion(metaBucket kvdb.RwBucket, meta *Meta) error {\n\tscratch := make([]byte, 4)\n\tbyteOrder.PutUint32(scratch, meta.DbVersionNumber)\n\treturn metaBucket.Put(dbVersionKey, scratch)\n}\n",
+      "length": 124,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

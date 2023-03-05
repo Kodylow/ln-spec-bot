@@ -1,0 +1,174 @@
+{
+  "filepath": "../implementations/go/lnd/routing/missioncontrol.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type NodeResults map[route.Vertex]TimedPairResult",
+      "content": "type NodeResults map[route.Vertex]TimedPairResult\n\n// MissionControl contains state which summarizes the past attempts of HTLC\n// routing by external callers when sending payments throughout the network. It\n// acts as a shared memory during routing attempts with the goal to optimize the\n// payment attempt success rate.\n//\n// Failed payment attempts are reported to mission control. These reports are\n// used to track the time of the last node or channel level failure. The time\n// since the last failure is used to estimate a success probability that is fed\n// into the path finding process for subsequent payment attempts.",
+      "length": 566,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "type MissionControl struct {",
+      "content": "type MissionControl struct {\n\t// state is the internal mission control state that is input for\n\t// probability estimation.\n\tstate *missionControlState\n\n\t// now is expected to return the current time. It is supplied as an\n\t// external function to enable deterministic unit tests.\n\tnow func() time.Time\n\n\t// selfNode is our pubkey.\n\tselfNode route.Vertex\n\n\tstore *missionControlStore\n\n\t// estimator is the probability estimator that is used with the payment\n\t// results that mission control collects.\n\testimator Estimator\n\n\tsync.Mutex\n\n\t// TODO(roasbeef): further counters, if vertex continually unavailable,\n\t// add to another generation\n\n\t// TODO(roasbeef): also add favorable metrics for nodes\n}\n\n// MissionControlConfig defines parameters that control mission control\n// behaviour.",
+      "length": 728,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "type MissionControlConfig struct {",
+      "content": "type MissionControlConfig struct {\n\t// Estimator gives probability estimates for node pairs.\n\tEstimator Estimator\n\n\t// MaxMcHistory defines the maximum number of payment results that are\n\t// held on disk.\n\tMaxMcHistory int\n\n\t// McFlushInterval defines the ticker interval when we flush the\n\t// accumulated state to the DB.\n\tMcFlushInterval time.Duration\n\n\t// MinFailureRelaxInterval is the minimum time that must have passed\n\t// since the previously recorded failure before the failure amount may\n\t// be raised.\n\tMinFailureRelaxInterval time.Duration\n}\n",
+      "length": 502,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *MissionControlConfig) validate() error {",
+      "content": "func (c *MissionControlConfig) validate() error {\n\tif c.MaxMcHistory < 0 {\n\t\treturn ErrInvalidMcHistory\n\t}\n\n\tif c.MinFailureRelaxInterval < 0 {\n\t\treturn ErrInvalidFailureInterval\n\t}\n\n\treturn nil\n}\n\n// String returns a string representation of a mission control config.",
+      "length": 207,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *MissionControlConfig) String() string {",
+      "content": "func (c *MissionControlConfig) String() string {\n\treturn fmt.Sprintf(\"maximum history: %v, minimum failure relax \"+\n\t\t\"interval: %v\", c.MaxMcHistory, c.MinFailureRelaxInterval)\n}\n\n// TimedPairResult describes a timestamped pair result.",
+      "length": 182,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type TimedPairResult struct {",
+      "content": "type TimedPairResult struct {\n\t// FailTime is the time of the last failure.\n\tFailTime time.Time\n\n\t// FailAmt is the amount of the last failure. This amount may be pushed\n\t// up if a later success is higher than the last failed amount.\n\tFailAmt lnwire.MilliSatoshi\n\n\t// SuccessTime is the time of the last success.\n\tSuccessTime time.Time\n\n\t// SuccessAmt is the highest amount that successfully forwarded. This\n\t// isn't necessarily the last success amount. The value of this field\n\t// may also be pushed down if a later failure is lower than the highest\n\t// success amount. Because of this, SuccessAmt may not match\n\t// SuccessTime.\n\tSuccessAmt lnwire.MilliSatoshi\n}\n\n// MissionControlSnapshot contains a snapshot of the current state of mission\n// control.",
+      "length": 707,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "type MissionControlSnapshot struct {",
+      "content": "type MissionControlSnapshot struct {\n\t// Pairs is a list of channels for which specific information is\n\t// logged.\n\tPairs []MissionControlPairSnapshot\n}\n\n// MissionControlPairSnapshot contains a snapshot of the current node pair\n// state in mission control.",
+      "length": 214,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type MissionControlPairSnapshot struct {",
+      "content": "type MissionControlPairSnapshot struct {\n\t// Pair is the node pair of which the state is described.\n\tPair DirectedNodePair\n\n\t// TimedPairResult contains the data for this pair.\n\tTimedPairResult\n}\n\n// paymentResult is the information that becomes available when a payment\n// attempt completes.",
+      "length": 243,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "type paymentResult struct {",
+      "content": "type paymentResult struct {\n\tid                 uint64\n\ttimeFwd, timeReply time.Time\n\troute              *route.Route\n\tsuccess            bool\n\tfailureSourceIdx   *int\n\tfailure            lnwire.FailureMessage\n}\n\n// NewMissionControl returns a new instance of missionControl.",
+      "length": 239,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMissionControl(db kvdb.Backend, self route.Vertex,",
+      "content": "func NewMissionControl(db kvdb.Backend, self route.Vertex,\n\tcfg *MissionControlConfig) (*MissionControl, error) {\n\n\tlog.Debugf(\"Instantiating mission control with config: %v, %v\", cfg,\n\t\tcfg.Estimator)\n\n\tif err := cfg.validate(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tstore, err := newMissionControlStore(\n\t\tdb, cfg.MaxMcHistory, cfg.McFlushInterval,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tmc := &MissionControl{\n\t\tstate:     newMissionControlState(cfg.MinFailureRelaxInterval),\n\t\tnow:       time.Now,\n\t\tselfNode:  self,\n\t\tstore:     store,\n\t\testimator: cfg.Estimator,\n\t}\n\n\tif err := mc.init(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn mc, nil\n}\n\n// RunStoreTicker runs the mission control store's ticker.",
+      "length": 619,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) RunStoreTicker() {",
+      "content": "func (m *MissionControl) RunStoreTicker() {\n\tm.store.run()\n}\n\n// StopStoreTicker stops the mission control store's ticker.",
+      "length": 75,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) StopStoreTicker() {",
+      "content": "func (m *MissionControl) StopStoreTicker() {\n\tm.store.stop()\n}\n\n// init initializes mission control with historical data.",
+      "length": 73,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) init() error {",
+      "content": "func (m *MissionControl) init() error {\n\tlog.Debugf(\"Mission control state reconstruction started\")\n\n\tstart := time.Now()\n\n\tresults, err := m.store.fetchAll()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor _, result := range results {\n\t\tm.applyPaymentResult(result)\n\t}\n\n\tlog.Debugf(\"Mission control state reconstruction finished: \"+\n\t\t\"n=%v, time=%v\", len(results), time.Since(start))\n\n\treturn nil\n}\n\n// GetConfig returns the config that mission control is currently configured\n// with. All fields are copied by value, so we do not need to worry about\n// mutation.",
+      "length": 495,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) GetConfig() *MissionControlConfig {",
+      "content": "func (m *MissionControl) GetConfig() *MissionControlConfig {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\treturn &MissionControlConfig{\n\t\tEstimator:               m.estimator,\n\t\tMaxMcHistory:            m.store.maxRecords,\n\t\tMcFlushInterval:         m.store.flushInterval,\n\t\tMinFailureRelaxInterval: m.state.minFailureRelaxInterval,\n\t}\n}\n\n// SetConfig validates the config provided and updates mission control's config\n// if it is valid.",
+      "length": 349,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) SetConfig(cfg *MissionControlConfig) error {",
+      "content": "func (m *MissionControl) SetConfig(cfg *MissionControlConfig) error {\n\tif cfg == nil {\n\t\treturn errors.New(\"nil mission control config\")\n\t}\n\n\tif err := cfg.validate(); err != nil {\n\t\treturn err\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tlog.Infof(\"Active mission control cfg: %v, estimator: %v\", cfg,\n\t\tcfg.Estimator)\n\n\tm.store.maxRecords = cfg.MaxMcHistory\n\tm.state.minFailureRelaxInterval = cfg.MinFailureRelaxInterval\n\tm.estimator = cfg.Estimator\n\n\treturn nil\n}\n\n// ResetHistory resets the history of MissionControl returning it to a state as\n// if no payment attempts have been made.",
+      "length": 486,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) ResetHistory() error {",
+      "content": "func (m *MissionControl) ResetHistory() error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tif err := m.store.clear(); err != nil {\n\t\treturn err\n\t}\n\n\tm.state.resetHistory()\n\n\tlog.Debugf(\"Mission control history cleared\")\n\n\treturn nil\n}\n\n// GetProbability is expected to return the success probability of a payment\n// from fromNode along edge.",
+      "length": 265,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) GetProbability(fromNode, toNode route.Vertex,",
+      "content": "func (m *MissionControl) GetProbability(fromNode, toNode route.Vertex,\n\tamt lnwire.MilliSatoshi, capacity btcutil.Amount) float64 {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tnow := m.now()\n\tresults, _ := m.state.getLastPairResult(fromNode)\n\n\t// Use a distinct probability estimation function for local channels.\n\tif fromNode == m.selfNode {\n\t\treturn m.estimator.LocalPairProbability(now, results, toNode)\n\t}\n\n\treturn m.estimator.PairProbability(\n\t\tnow, results, toNode, amt, capacity,\n\t)\n}\n\n// GetHistorySnapshot takes a snapshot from the current mission control state\n// and actual probability estimates.",
+      "length": 504,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) GetHistorySnapshot() *MissionControlSnapshot {",
+      "content": "func (m *MissionControl) GetHistorySnapshot() *MissionControlSnapshot {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tlog.Debugf(\"Requesting history snapshot from mission control\")\n\n\treturn m.state.getSnapshot()\n}\n\n// ImportHistory imports the set of mission control results provided to our\n// in-memory state. These results are not persisted, so will not survive\n// restarts.",
+      "length": 278,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) ImportHistory(history *MissionControlSnapshot,",
+      "content": "func (m *MissionControl) ImportHistory(history *MissionControlSnapshot,\n\tforce bool) error {\n\n\tif history == nil {\n\t\treturn errors.New(\"cannot import nil history\")\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tlog.Infof(\"Importing history snapshot with %v pairs to mission control\",\n\t\tlen(history.Pairs))\n\n\timported := m.state.importSnapshot(history, force)\n\n\tlog.Infof(\"Imported %v results to mission control\", imported)\n\n\treturn nil\n}\n\n// GetPairHistorySnapshot returns the stored history for a given node pair.",
+      "length": 410,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) GetPairHistorySnapshot(",
+      "content": "func (m *MissionControl) GetPairHistorySnapshot(\n\tfromNode, toNode route.Vertex) TimedPairResult {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tresults, ok := m.state.getLastPairResult(fromNode)\n\tif !ok {\n\t\treturn TimedPairResult{}\n\t}\n\n\tresult, ok := results[toNode]\n\tif !ok {\n\t\treturn TimedPairResult{}\n\t}\n\n\treturn result\n}\n\n// ReportPaymentFail reports a failed payment to mission control as input for\n// future probability estimates. The failureSourceIdx argument indicates the\n// failure source. If it is nil, the failure source is unknown. This function\n// returns a reason if this failure is a final failure. In that case no further\n// payment attempts need to be made.",
+      "length": 590,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) ReportPaymentFail(paymentID uint64, rt *route.Route,",
+      "content": "func (m *MissionControl) ReportPaymentFail(paymentID uint64, rt *route.Route,\n\tfailureSourceIdx *int, failure lnwire.FailureMessage) (\n\t*channeldb.FailureReason, error) {\n\n\ttimestamp := m.now()\n\n\tresult := &paymentResult{\n\t\tsuccess:          false,\n\t\ttimeFwd:          timestamp,\n\t\ttimeReply:        timestamp,\n\t\tid:               paymentID,\n\t\tfailureSourceIdx: failureSourceIdx,\n\t\tfailure:          failure,\n\t\troute:            rt,\n\t}\n\n\treturn m.processPaymentResult(result)\n}\n\n// ReportPaymentSuccess reports a successful payment to mission control as input\n// for future probability estimates.",
+      "length": 499,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) ReportPaymentSuccess(paymentID uint64,",
+      "content": "func (m *MissionControl) ReportPaymentSuccess(paymentID uint64,\n\trt *route.Route) error {\n\n\ttimestamp := m.now()\n\n\tresult := &paymentResult{\n\t\ttimeFwd:   timestamp,\n\t\ttimeReply: timestamp,\n\t\tid:        paymentID,\n\t\tsuccess:   true,\n\t\troute:     rt,\n\t}\n\n\t_, err := m.processPaymentResult(result)\n\treturn err\n}\n\n// processPaymentResult stores a payment result in the mission control store and\n// updates mission control's in-memory state.",
+      "length": 355,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) processPaymentResult(result *paymentResult) (",
+      "content": "func (m *MissionControl) processPaymentResult(result *paymentResult) (\n\t*channeldb.FailureReason, error) {\n\n\t// Store complete result in database.\n\tm.store.AddResult(result)\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Apply result to update mission control state.\n\treason := m.applyPaymentResult(result)\n\n\treturn reason, nil\n}\n\n// applyPaymentResult applies a payment result as input for future probability\n// estimates. It returns a bool indicating whether this error is a final error\n// and no further payment attempts need to be made.",
+      "length": 440,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MissionControl) applyPaymentResult(",
+      "content": "func (m *MissionControl) applyPaymentResult(\n\tresult *paymentResult) *channeldb.FailureReason {\n\n\t// Interpret result.\n\ti := interpretResult(\n\t\tresult.route, result.success, result.failureSourceIdx,\n\t\tresult.failure,\n\t)\n\n\tif i.policyFailure != nil {\n\t\tif m.state.requestSecondChance(\n\t\t\tresult.timeReply,\n\t\t\ti.policyFailure.From, i.policyFailure.To,\n\t\t) {\n\t\t\treturn nil\n\t\t}\n\t}\n\n\t// If there is a node-level failure, record a failure for every tried\n\t// connection of that node. A node-level failure can be considered as a\n\t// failure that would have occurred with any of the node's channels.\n\t//\n\t// Ideally we'd also record the failure for the untried connections of\n\t// the node. Unfortunately this would require access to the graph and\n\t// adding this dependency and db calls does not outweigh the benefits.\n\t//\n\t// Untried connections will fall back to the node probability. After the\n\t// call to setAllPairResult below, the node probability will be equal to\n\t// the probability of the tried channels except that the a priori\n\t// probability is mixed in too. This effect is controlled by the\n\t// aprioriWeight parameter. If that parameter isn't set to an extreme\n\t// and there are a few known connections, there shouldn't be much of a\n\t// difference. The largest difference occurs when aprioriWeight is 1. In\n\t// that case, a node-level failure would not be applied to untried\n\t// channels.\n\tif i.nodeFailure != nil {\n\t\tlog.Debugf(\"Reporting node failure to Mission Control: \"+\n\t\t\t\"node=%v\", *i.nodeFailure)\n\n\t\tm.state.setAllFail(*i.nodeFailure, result.timeReply)\n\t}\n\n\tfor pair, pairResult := range i.pairResults {\n\t\tpairResult := pairResult\n\n\t\tif pairResult.success {\n\t\t\tlog.Debugf(\"Reporting pair success to Mission \"+\n\t\t\t\t\"Control: pair=%v, amt=%v\",\n\t\t\t\tpair, pairResult.amt)\n\t\t} else {\n\t\t\tlog.Debugf(\"Reporting pair failure to Mission \"+\n\t\t\t\t\"Control: pair=%v, amt=%v\",\n\t\t\t\tpair, pairResult.amt)\n\t\t}\n\n\t\tm.state.setLastPairResult(\n\t\t\tpair.From, pair.To, result.timeReply, &pairResult, false,\n\t\t)\n\t}\n\n\treturn i.finalFailureReason\n}\n",
+      "length": 1932,
+      "tokens": 272,
+      "embedding": []
+    }
+  ]
+}

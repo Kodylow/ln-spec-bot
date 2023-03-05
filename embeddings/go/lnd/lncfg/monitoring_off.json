@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lncfg/monitoring_off.go",
-  "package": "!monitoring",
+  "package": "lncfg",
   "sections": [
+    {
+      "slug": "//go:build !monitoring",
+      "content": "//go:build !monitoring\n// +build !monitoring\n\npackage lncfg\n\n// Prometheus configures the Prometheus exporter when monitoring is enabled.\n// Monitoring is currently disabled.",
+      "length": 146,
+      "tokens": 20,
+      "embedding": []
+    },
     {
       "slug": "type Prometheus struct{}",
       "content": "type Prometheus struct{}\n\n// DefaultPrometheus is the default configuration for the Prometheus metrics\n// exporter when monitoring is enabled. Monitoring is currently disabled.",

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/kvdb_no_sqlite.go",
-  "package": "!kvdb_sqlite",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build !kvdb_sqlite || (windows && (arm || 386)) || (linux && (ppc64 || mips || mipsle || mips64))",
+      "content": "//go:build !kvdb_sqlite || (windows && (arm || 386)) || (linux && (ppc64 || mips || mipsle || mips64))\n\npackage kvdb\n\nimport (\n\t\"fmt\"\n\t\"runtime\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\nvar errSqliteNotAvailable = fmt.Errorf(\"sqlite backend not available either \"+\n\t\"due to the `kvdb_sqlite` build tag not being set, or due to this \"+\n\t\"OS(%s) and/or architecture(%s) not being supported\", runtime.GOOS,\n\truntime.GOARCH)\n\n// SqliteBackend is conditionally set to false when the kvdb_sqlite build tag is\n// not defined. This will allow testing of other database backends.\nconst SqliteBackend = false\n\n// StartSqliteTestBackend is a stub returning nil, and errSqliteNotAvailable\n// error.",
+      "length": 568,
+      "tokens": 78,
+      "embedding": []
+    },
     {
       "slug": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {",
       "content": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {\n\treturn nil, errSqliteNotAvailable\n}\n",

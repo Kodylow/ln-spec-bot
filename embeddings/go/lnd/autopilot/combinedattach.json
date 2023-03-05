@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/combinedattach.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type WeightedHeuristic struct {",
+      "content": "type WeightedHeuristic struct {\n\t// Weight is this AttachmentHeuristic's relative weight factor. It\n\t// should be between 0.0 and 1.0.\n\tWeight float64\n\n\tAttachmentHeuristic\n}\n\n// WeightedCombAttachment is an implementation of the AttachmentHeuristic\n// interface that combines the scores given by several sub-heuristics into one.",
+      "length": 289,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "type WeightedCombAttachment struct {",
+      "content": "type WeightedCombAttachment struct {\n\theuristics []*WeightedHeuristic\n}\n\n// NewWeightedCombAttachment creates a new instance of a WeightedCombAttachment.",
+      "length": 113,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWeightedCombAttachment(h ...*WeightedHeuristic) (",
+      "content": "func NewWeightedCombAttachment(h ...*WeightedHeuristic) (\n\t*WeightedCombAttachment, error) {\n\n\t// The sum of weights given to the sub-heuristics must sum to exactly\n\t// 1.0.\n\tvar sum float64\n\tfor _, w := range h {\n\t\tsum += w.Weight\n\t}\n\n\tif sum != 1.0 {\n\t\treturn nil, fmt.Errorf(\"weights MUST sum to 1.0 (was %v)\", sum)\n\t}\n\n\treturn &WeightedCombAttachment{\n\t\theuristics: h,\n\t}, nil\n}\n\n// A compile time assertion to ensure WeightedCombAttachment meets the\n// AttachmentHeuristic and ScoreSettable interfaces.\nvar _ AttachmentHeuristic = (*WeightedCombAttachment)(nil)\nvar _ ScoreSettable = (*WeightedCombAttachment)(nil)\n\n// Name returns the name of this heuristic.\n//\n// NOTE: This is a part of the AttachmentHeuristic interface.",
+      "length": 646,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WeightedCombAttachment) Name() string {",
+      "content": "func (c *WeightedCombAttachment) Name() string {\n\treturn \"weightedcomb\"\n}\n\n// NodeScores is a method that given the current channel graph, current set of\n// local channels and funds available, scores the given nodes according to the\n// preference of opening a channel with them. The returned channel candidates\n// maps the NodeID to an attachment directive containing a score and a channel\n// size.\n//\n// The scores is determined by querying the set of sub-heuristics, then\n// combining these scores into a final score according to the active\n// configuration.\n//\n// The returned scores will be in the range [0, 1.0], where 0 indicates no\n// improvement in connectivity if a channel is opened to this node, while 1.0\n// is the maximum possible improvement in connectivity.\n//\n// NOTE: This is a part of the AttachmentHeuristic interface.",
+      "length": 771,
+      "tokens": 134,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WeightedCombAttachment) NodeScores(g ChannelGraph, chans []LocalChannel,",
+      "content": "func (c *WeightedCombAttachment) NodeScores(g ChannelGraph, chans []LocalChannel,\n\tchanSize btcutil.Amount, nodes map[NodeID]struct{}) (\n\tmap[NodeID]*NodeScore, error) {\n\n\t// We now query each heuristic to determine the score they give to the\n\t// nodes for the given channel size.\n\tvar subScores []map[NodeID]*NodeScore\n\tfor _, h := range c.heuristics {\n\t\tlog.Tracef(\"Getting scores from sub heuristic %v\", h.Name())\n\n\t\ts, err := h.NodeScores(\n\t\t\tg, chans, chanSize, nodes,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to get sub score: %v\",\n\t\t\t\terr)\n\t\t}\n\n\t\tsubScores = append(subScores, s)\n\t}\n\n\t// We combine the scores given by the sub-heuristics by using the\n\t// heuristics' given weight factor.\n\tscores := make(map[NodeID]*NodeScore)\n\tfor nID := range nodes {\n\t\tscore := &NodeScore{\n\t\t\tNodeID: nID,\n\t\t}\n\n\t\t// Each sub-heuristic should have scored the node, if not it is\n\t\t// implicitly given a zero score by that heuristic.\n\t\tfor i, h := range c.heuristics {\n\t\t\tsub, ok := subScores[i][nID]\n\t\t\tif !ok {\n\t\t\t\tlog.Tracef(\"No score given to node %x by sub \"+\n\t\t\t\t\t\"heuristic %v\", nID[:], h.Name())\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// Use the heuristic's weight factor to determine of\n\t\t\t// how much weight we should give to this particular\n\t\t\t// score.\n\t\t\tsubScore := h.Weight * sub.Score\n\t\t\tlog.Tracef(\"Giving node %x a sub score of %v \"+\n\t\t\t\t\"(%v * %v) from sub heuristic %v\", nID[:],\n\t\t\t\tsubScore, h.Weight, sub.Score, h.Name())\n\n\t\t\tscore.Score += subScore\n\t\t}\n\n\t\tlog.Tracef(\"Node %x got final combined score %v\", nID[:],\n\t\t\tscore.Score)\n\n\t\tswitch {\n\t\t// Instead of adding a node with score 0 to the returned set,\n\t\t// we just skip it.\n\t\tcase score.Score == 0:\n\t\t\tcontinue\n\n\t\t// Sanity check the new score.\n\t\tcase score.Score < 0 || score.Score > 1.0:\n\t\t\treturn nil, fmt.Errorf(\"invalid node score from \"+\n\t\t\t\t\"combination: %v\", score.Score)\n\t\t}\n\n\t\tscores[nID] = score\n\t}\n\n\treturn scores, nil\n}\n\n// SetNodeScores is used to set the internal map from NodeIDs to scores. The\n// passed scores must be in the range [0, 1.0]. The fist parameter is the name\n// of the targeted heuristic, to allow recursively target specific\n// sub-heuristics. The returned boolean indicates whether the targeted\n// heuristic was found.\n//\n// Since this heuristic doesn't keep any internal scores, it will recursively\n// apply the scores to its sub-heuristics.\n//\n// NOTE: This is a part of the ScoreSettable interface.",
+      "length": 2238,
+      "tokens": 359,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WeightedCombAttachment) SetNodeScores(targetHeuristic string,",
+      "content": "func (c *WeightedCombAttachment) SetNodeScores(targetHeuristic string,\n\tnewScores map[NodeID]float64) (bool, error) {\n\n\tfound := false\n\tfor _, h := range c.heuristics {\n\t\t// It must be ScoreSettable to be available for external\n\t\t// scores.\n\t\ts, ok := h.AttachmentHeuristic.(ScoreSettable)\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Heuristic supports scoring, attempt to set them.\n\t\tapplied, err := s.SetNodeScores(targetHeuristic, newScores)\n\t\tif err != nil {\n\t\t\treturn false, err\n\t\t}\n\t\tfound = found || applied\n\t}\n\n\treturn found, nil\n}\n",
+      "length": 437,
+      "tokens": 68,
+      "embedding": []
+    }
+  ]
+}

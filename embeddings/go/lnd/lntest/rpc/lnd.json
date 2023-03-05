@@ -1,0 +1,419 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/lnd.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "func (h *HarnessRPC) NewAddress(",
+      "content": "func (h *HarnessRPC) NewAddress(\n\treq *lnrpc.NewAddressRequest) *lnrpc.NewAddressResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.NewAddress(ctxt, req)\n\th.NoError(err, \"NewAddress\")\n\n\treturn resp\n}\n\n// WalletBalance makes a RPC call to WalletBalance and asserts.",
+      "length": 280,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) WalletBalance() *lnrpc.WalletBalanceResponse {",
+      "content": "func (h *HarnessRPC) WalletBalance() *lnrpc.WalletBalanceResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.WalletBalanceRequest{}\n\tresp, err := h.LN.WalletBalance(ctxt, req)\n\th.NoError(err, \"WalletBalance\")\n\n\treturn resp\n}\n\n// ListPeers makes a RPC call to the node's ListPeers and asserts.",
+      "length": 268,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListPeers() *lnrpc.ListPeersResponse {",
+      "content": "func (h *HarnessRPC) ListPeers() *lnrpc.ListPeersResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.ListPeers(ctxt, &lnrpc.ListPeersRequest{})\n\th.NoError(err, \"ListPeers\")\n\n\treturn resp\n}\n\n// DisconnectPeer calls the DisconnectPeer RPC on a given node with a specified\n// public key string and asserts there's no error.",
+      "length": 308,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DisconnectPeer(",
+      "content": "func (h *HarnessRPC) DisconnectPeer(\n\tpubkey string) *lnrpc.DisconnectPeerResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.DisconnectPeerRequest{PubKey: pubkey}\n\n\tresp, err := h.LN.DisconnectPeer(ctxt, req)\n\th.NoError(err, \"DisconnectPeer\")\n\n\treturn resp\n}\n\n// DeleteAllPayments makes a RPC call to the node's DeleteAllPayments and\n// asserts.",
+      "length": 350,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DeleteAllPayments() {",
+      "content": "func (h *HarnessRPC) DeleteAllPayments() {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.DeleteAllPaymentsRequest{}\n\t_, err := h.LN.DeleteAllPayments(ctxt, req)\n\th.NoError(err, \"DeleteAllPayments\")\n}\n\n// GetInfo calls the GetInfo RPC on a given node and asserts there's no error.",
+      "length": 277,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) GetInfo() *lnrpc.GetInfoResponse {",
+      "content": "func (h *HarnessRPC) GetInfo() *lnrpc.GetInfoResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tinfo, err := h.LN.GetInfo(ctxt, &lnrpc.GetInfoRequest{})\n\th.NoError(err, \"GetInfo\")\n\n\treturn info\n}\n\n// ConnectPeer makes a RPC call to ConnectPeer and asserts there's no error.",
+      "length": 249,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ConnectPeer(",
+      "content": "func (h *HarnessRPC) ConnectPeer(\n\treq *lnrpc.ConnectPeerRequest) *lnrpc.ConnectPeerResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.ConnectPeer(ctxt, req)\n\th.NoError(err, \"ConnectPeer\")\n\n\treturn resp\n}\n\n// ConnectPeerAssertErr makes a RPC call to ConnectPeer and asserts an error\n// returned.",
+      "length": 309,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ConnectPeerAssertErr(req *lnrpc.ConnectPeerRequest) error {",
+      "content": "func (h *HarnessRPC) ConnectPeerAssertErr(req *lnrpc.ConnectPeerRequest) error {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.LN.ConnectPeer(ctxt, req)\n\trequire.Error(h, err, \"expected an error from ConnectPeer\")\n\n\treturn err\n}\n\n// ListChannels list the channels for the given node and asserts it's\n// successful.",
+      "length": 270,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListChannels(",
+      "content": "func (h *HarnessRPC) ListChannels(\n\treq *lnrpc.ListChannelsRequest) *lnrpc.ListChannelsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.ListChannels(ctxt, req)\n\th.NoError(err, \"ListChannels\")\n\n\treturn resp\n}\n\n// PendingChannels makes a RPC request to PendingChannels and asserts there's\n// no error.",
+      "length": 314,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) PendingChannels() *lnrpc.PendingChannelsResponse {",
+      "content": "func (h *HarnessRPC) PendingChannels() *lnrpc.PendingChannelsResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tpendingChansRequest := &lnrpc.PendingChannelsRequest{}\n\tresp, err := h.LN.PendingChannels(ctxt, pendingChansRequest)\n\n\t// TODO(yy): We may get a `unable to find arbitrator` error from the\n\t// rpc point, due to a timing issue in rpcserver,\n\t// 1. `r.server.chanStateDB.FetchClosedChannels` fetches\n\t//    the pending force close channel.\n\t// 2. `r.arbitratorPopulateForceCloseResp` relies on the\n\t//    channel arbitrator to get the report, and,\n\t// 3. the arbitrator may be deleted due to the force close\n\t//    channel being resolved.\n\t// Somewhere along the line is missing a lock to keep the data\n\t// consistent.\n\t//\n\t// Return if there's no error.\n\tif err == nil {\n\t\treturn resp\n\t}\n\n\t// Otherwise, give it a second shot if it's the arbitrator error.\n\tif strings.Contains(err.Error(), \"unable to find arbitrator\") {\n\t\tresp, err = h.LN.PendingChannels(ctxt, pendingChansRequest)\n\t}\n\n\t// It's very unlikely we'd get the arbitrator not found error again.\n\th.NoError(err, \"PendingChannels\")\n\n\treturn resp\n}\n\n// ClosedChannels makes a RPC call to node's ClosedChannels and asserts.",
+      "length": 1127,
+      "tokens": 161,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ClosedChannels(",
+      "content": "func (h *HarnessRPC) ClosedChannels(\n\treq *lnrpc.ClosedChannelsRequest) *lnrpc.ClosedChannelsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.ClosedChannels(ctxt, req)\n\th.NoError(err, \"ClosedChannels\")\n\n\treturn resp\n}\n\n// ListPayments lists the node's payments and asserts.",
+      "length": 287,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListPayments(",
+      "content": "func (h *HarnessRPC) ListPayments(\n\treq *lnrpc.ListPaymentsRequest) *lnrpc.ListPaymentsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.ListPayments(ctxt, req)\n\th.NoError(err, \"ListPayments\")\n\n\treturn resp\n}\n\n// ListInvoices list the node's invoice using the request and asserts.",
+      "length": 295,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ListInvoices(",
+      "content": "func (h *HarnessRPC) ListInvoices(\n\treq *lnrpc.ListInvoiceRequest) *lnrpc.ListInvoiceResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tif req == nil {\n\t\treq = &lnrpc.ListInvoiceRequest{}\n\t}\n\n\tresp, err := h.LN.ListInvoices(ctxt, req)\n\th.NoError(err, \"ListInvoice\")\n\n\treturn resp\n}\n\n// DescribeGraph makes a RPC call to the node's DescribeGraph and asserts. It\n// takes a bool to indicate whether we want to include private edges or not.",
+      "length": 428,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DescribeGraph(",
+      "content": "func (h *HarnessRPC) DescribeGraph(\n\treq *lnrpc.ChannelGraphRequest) *lnrpc.ChannelGraph {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.DescribeGraph(ctxt, req)\n\th.NoError(err, \"DescribeGraph\")\n\n\treturn resp\n}\n\n// ChannelBalance gets the channel balance and asserts.",
+      "length": 274,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ChannelBalance() *lnrpc.ChannelBalanceResponse {",
+      "content": "func (h *HarnessRPC) ChannelBalance() *lnrpc.ChannelBalanceResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.ChannelBalanceRequest{}\n\tresp, err := h.LN.ChannelBalance(ctxt, req)\n\th.NoError(err, \"ChannelBalance\")\n\n\treturn resp\n}\n",
+      "length": 205,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type OpenChanClient lnrpc.Lightning_OpenChannelClient",
+      "content": "type OpenChanClient lnrpc.Lightning_OpenChannelClient\n\n// OpenChannel makes a rpc call to LightningClient and returns the open channel\n// client.",
+      "length": 89,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) OpenChannel(req *lnrpc.OpenChannelRequest) OpenChanClient {",
+      "content": "func (h *HarnessRPC) OpenChannel(req *lnrpc.OpenChannelRequest) OpenChanClient {\n\tstream, err := h.LN.OpenChannel(h.runCtx, req)\n\th.NoError(err, \"OpenChannel\")\n\n\treturn stream\n}\n",
+      "length": 92,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type CloseChanClient lnrpc.Lightning_CloseChannelClient",
+      "content": "type CloseChanClient lnrpc.Lightning_CloseChannelClient\n\n// CloseChannel makes a rpc call to LightningClient and returns the close\n// channel client.",
+      "length": 91,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) CloseChannel(",
+      "content": "func (h *HarnessRPC) CloseChannel(\n\treq *lnrpc.CloseChannelRequest) CloseChanClient {\n\n\t// Use runCtx here instead of a timeout context to keep the client\n\t// alive for the entire test case.\n\tstream, err := h.LN.CloseChannel(h.runCtx, req)\n\th.NoError(err, \"CloseChannel\")\n\n\treturn stream\n}\n\n// FundingStateStep makes a RPC call to FundingStateStep and asserts.",
+      "length": 315,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) FundingStateStep(",
+      "content": "func (h *HarnessRPC) FundingStateStep(\n\tmsg *lnrpc.FundingTransitionMsg) *lnrpc.FundingStateStepResp {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.FundingStateStep(ctxt, msg)\n\th.NoError(err, \"FundingStateStep\")\n\n\treturn resp\n}\n\n// FundingStateStepAssertErr makes a RPC call to FundingStateStep and asserts\n// there's an error.",
+      "length": 331,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) FundingStateStepAssertErr(m *lnrpc.FundingTransitionMsg) {",
+      "content": "func (h *HarnessRPC) FundingStateStepAssertErr(m *lnrpc.FundingTransitionMsg) {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.LN.FundingStateStep(ctxt, m)\n\trequire.Error(h, err, \"expected an error from FundingStateStep\")\n}\n\n// AddInvoice adds a invoice for the given node and asserts.",
+      "length": 244,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) AddInvoice(req *lnrpc.Invoice) *lnrpc.AddInvoiceResponse {",
+      "content": "func (h *HarnessRPC) AddInvoice(req *lnrpc.Invoice) *lnrpc.AddInvoiceResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tinvoice, err := h.LN.AddInvoice(ctxt, req)\n\th.NoError(err, \"AddInvoice\")\n\n\treturn invoice\n}\n\n// AbandonChannel makes a RPC call to AbandonChannel and asserts.",
+      "length": 230,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) AbandonChannel(",
+      "content": "func (h *HarnessRPC) AbandonChannel(\n\treq *lnrpc.AbandonChannelRequest) *lnrpc.AbandonChannelResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.AbandonChannel(ctxt, req)\n\th.NoError(err, \"AbandonChannel\")\n\n\treturn resp\n}\n\n// ExportAllChanBackups makes a RPC call to the node's ExportAllChannelBackups\n// and asserts.",
+      "length": 326,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ExportAllChanBackups() *lnrpc.ChanBackupSnapshot {",
+      "content": "func (h *HarnessRPC) ExportAllChanBackups() *lnrpc.ChanBackupSnapshot {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.ChanBackupExportRequest{}\n\tchanBackup, err := h.LN.ExportAllChannelBackups(ctxt, req)\n\th.NoError(err, \"ExportAllChannelBackups\")\n\n\treturn chanBackup\n}\n\n// ExportChanBackup makes a RPC call to the node's ExportChannelBackup\n// and asserts.",
+      "length": 322,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ExportChanBackup(",
+      "content": "func (h *HarnessRPC) ExportChanBackup(\n\tchanPoint *lnrpc.ChannelPoint) *lnrpc.ChannelBackup {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.ExportChannelBackupRequest{\n\t\tChanPoint: chanPoint,\n\t}\n\tchanBackup, err := h.LN.ExportChannelBackup(ctxt, req)\n\th.NoError(err, \"ExportChannelBackup\")\n\n\treturn chanBackup\n}\n\n// RestoreChanBackups makes a RPC call to the node's RestoreChannelBackups and\n// asserts.",
+      "length": 399,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) RestoreChanBackups(",
+      "content": "func (h *HarnessRPC) RestoreChanBackups(\n\treq *lnrpc.RestoreChanBackupRequest) *lnrpc.RestoreBackupResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.RestoreChannelBackups(ctxt, req)\n\th.NoError(err, \"RestoreChannelBackups\")\n\n\treturn resp\n}\n",
+      "length": 249,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type AcceptorClient lnrpc.Lightning_ChannelAcceptorClient",
+      "content": "type AcceptorClient lnrpc.Lightning_ChannelAcceptorClient\n\n// ChannelAcceptor makes a RPC call to the node's ChannelAcceptor and asserts.",
+      "length": 78,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ChannelAcceptor() (AcceptorClient, context.CancelFunc) {",
+      "content": "func (h *HarnessRPC) ChannelAcceptor() (AcceptorClient, context.CancelFunc) {\n\t// Use runCtx here instead of a timeout context to keep the client\n\t// alive for the entire test case.\n\tctxt, cancel := context.WithCancel(h.runCtx)\n\tresp, err := h.LN.ChannelAcceptor(ctxt)\n\th.NoError(err, \"ChannelAcceptor\")\n\n\treturn resp, cancel\n}\n\n// SendCoins sends a given amount of money to the specified address from the\n// passed node.",
+      "length": 333,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendCoins(",
+      "content": "func (h *HarnessRPC) SendCoins(\n\treq *lnrpc.SendCoinsRequest) *lnrpc.SendCoinsResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.SendCoins(ctxt, req)\n\th.NoError(err, \"SendCoins\")\n\n\treturn resp\n}\n\n// SendCoinsAssertErr sends a given amount of money to the specified address\n// from the passed node and asserts an error has returned.",
+      "length": 347,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendCoinsAssertErr(req *lnrpc.SendCoinsRequest) {",
+      "content": "func (h *HarnessRPC) SendCoinsAssertErr(req *lnrpc.SendCoinsRequest) {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.LN.SendCoins(ctxt, req)\n\trequire.Error(h, err, \"node %s didn't not return an error\", h.Name)\n}\n\n// GetTransactions makes a RPC call to GetTransactions and asserts.",
+      "length": 249,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) GetTransactions(",
+      "content": "func (h *HarnessRPC) GetTransactions(\n\treq *lnrpc.GetTransactionsRequest) *lnrpc.TransactionDetails {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tif req == nil {\n\t\treq = &lnrpc.GetTransactionsRequest{}\n\t}\n\n\tresp, err := h.LN.GetTransactions(ctxt, req)\n\th.NoError(err, \"GetTransactions\")\n\n\treturn resp\n}\n\n// SignMessage makes a RPC call to node's SignMessage and asserts.",
+      "length": 355,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignMessage(msg []byte) *lnrpc.SignMessageResponse {",
+      "content": "func (h *HarnessRPC) SignMessage(msg []byte) *lnrpc.SignMessageResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.SignMessageRequest{Msg: msg}\n\tresp, err := h.LN.SignMessage(ctxt, req)\n\th.NoError(err, \"SignMessage\")\n\n\treturn resp\n}\n\n// VerifyMessage makes a RPC call to node's VerifyMessage and asserts.",
+      "length": 274,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) VerifyMessage(msg []byte,",
+      "content": "func (h *HarnessRPC) VerifyMessage(msg []byte,\n\tsig string) *lnrpc.VerifyMessageResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &lnrpc.VerifyMessageRequest{Msg: msg, Signature: sig}\n\tresp, err := h.LN.VerifyMessage(ctxt, req)\n\th.NoError(err, \"VerifyMessage\")\n\n\treturn resp\n}\n\n// GetRecoveryInfo uses the specified node to make a RPC call to\n// GetRecoveryInfo and asserts.",
+      "length": 364,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) GetRecoveryInfo(",
+      "content": "func (h *HarnessRPC) GetRecoveryInfo(\n\treq *lnrpc.GetRecoveryInfoRequest) *lnrpc.GetRecoveryInfoResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tif req == nil {\n\t\treq = &lnrpc.GetRecoveryInfoRequest{}\n\t}\n\n\tresp, err := h.LN.GetRecoveryInfo(ctxt, req)\n\th.NoError(err, \"GetRecoveryInfo\")\n\n\treturn resp\n}\n\n// BatchOpenChannel makes a RPC call to BatchOpenChannel and asserts.",
+      "length": 363,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) BatchOpenChannel(",
+      "content": "func (h *HarnessRPC) BatchOpenChannel(\n\treq *lnrpc.BatchOpenChannelRequest) *lnrpc.BatchOpenChannelResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.BatchOpenChannel(ctxt, req)\n\th.NoError(err, \"BatchOpenChannel\")\n\n\treturn resp\n}\n\n// BatchOpenChannelAssertErr makes a RPC call to BatchOpenChannel and asserts\n// there's an error returned.",
+      "length": 347,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) BatchOpenChannelAssertErr(",
+      "content": "func (h *HarnessRPC) BatchOpenChannelAssertErr(\n\treq *lnrpc.BatchOpenChannelRequest) error {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.LN.BatchOpenChannel(ctxt, req)\n\trequire.Error(h, err, \"expecte batch open channel fail\")\n\n\treturn err\n}\n\n// QueryRoutes makes a RPC call to QueryRoutes and asserts.",
+      "length": 292,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) QueryRoutes(",
+      "content": "func (h *HarnessRPC) QueryRoutes(\n\treq *lnrpc.QueryRoutesRequest) *lnrpc.QueryRoutesResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\troutes, err := h.LN.QueryRoutes(ctxt, req)\n\th.NoError(err, \"QueryRoutes\")\n\n\treturn routes\n}\n",
+      "length": 225,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type SendToRouteClient lnrpc.Lightning_SendToRouteClient",
+      "content": "type SendToRouteClient lnrpc.Lightning_SendToRouteClient\n\n// SendToRoute makes a RPC call to SendToRoute and asserts.",
+      "length": 59,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendToRoute() SendToRouteClient {",
+      "content": "func (h *HarnessRPC) SendToRoute() SendToRouteClient {\n\t// SendToRoute needs to have the context alive for the entire test case\n\t// as the returned client will be used for send and receive payment\n\t// stream. Thus we use runCtx here instead of a timeout context.\n\tclient, err := h.LN.SendToRoute(h.runCtx)\n\th.NoError(err, \"SendToRoute\")\n\n\treturn client\n}\n\n// SendToRouteSync makes a RPC call to SendToRouteSync and asserts.",
+      "length": 359,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendToRouteSync(",
+      "content": "func (h *HarnessRPC) SendToRouteSync(\n\treq *lnrpc.SendToRouteRequest) *lnrpc.SendResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.SendToRouteSync(ctxt, req)\n\th.NoError(err, \"SendToRouteSync\")\n\n\treturn resp\n}\n\n// UpdateChannelPolicy makes a RPC call to UpdateChannelPolicy and asserts.",
+      "length": 297,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) UpdateChannelPolicy(",
+      "content": "func (h *HarnessRPC) UpdateChannelPolicy(\n\treq *lnrpc.PolicyUpdateRequest) *lnrpc.PolicyUpdateResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.UpdateChannelPolicy(ctxt, req)\n\th.NoError(err, \"UpdateChannelPolicy\")\n\n\treturn resp\n}\n",
+      "length": 239,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceUpdateClient lnrpc.Lightning_SubscribeInvoicesClient",
+      "content": "type InvoiceUpdateClient lnrpc.Lightning_SubscribeInvoicesClient\n\n// SubscribeInvoices creates a subscription client for invoice events and\n// asserts its creation.\n//\n// NOTE: make sure to subscribe an invoice as early as possible as it takes\n// some time for the lnd to create the subscription client. If an invoice is\n// added right after the subscription, it may be missed. However, if AddIndex\n// or SettleIndex is used in the request, it will be fine as a backlog will\n// always be sent.",
+      "length": 420,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SubscribeInvoices(",
+      "content": "func (h *HarnessRPC) SubscribeInvoices(\n\treq *lnrpc.InvoiceSubscription) InvoiceUpdateClient {\n\n\t// SubscribeInvoices needs to have the context alive for the\n\t// entire test case as the returned client will be used for send and\n\t// receive events stream. Thus we use runCtx here instead of a timeout\n\t// context.\n\tclient, err := h.LN.SubscribeInvoices(h.runCtx, req)\n\th.NoError(err, \"SubscribeInvoices\")\n\n\treturn client\n}\n",
+      "length": 371,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type BackupSubscriber lnrpc.Lightning_SubscribeChannelBackupsClient",
+      "content": "type BackupSubscriber lnrpc.Lightning_SubscribeChannelBackupsClient\n\n// SubscribeChannelBackups creates a client to listen to channel backup stream.",
+      "length": 79,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SubscribeChannelBackups() BackupSubscriber {",
+      "content": "func (h *HarnessRPC) SubscribeChannelBackups() BackupSubscriber {\n\t// Use runCtx here instead of timeout context to keep the stream client\n\t// alive.\n\tbackupStream, err := h.LN.SubscribeChannelBackups(\n\t\th.runCtx, &lnrpc.ChannelBackupSubscription{},\n\t)\n\th.NoError(err, \"SubscribeChannelBackups\")\n\n\treturn backupStream\n}\n\n// VerifyChanBackup makes a RPC call to node's VerifyChanBackup and asserts.",
+      "length": 321,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) VerifyChanBackup(",
+      "content": "func (h *HarnessRPC) VerifyChanBackup(\n\tss *lnrpc.ChanBackupSnapshot) *lnrpc.VerifyChanBackupResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.VerifyChanBackup(ctxt, ss)\n\th.NoError(err, \"VerifyChanBackup\")\n\n\treturn resp\n}\n\n// LookupInvoice queries the node's invoices using the specified rHash.",
+      "length": 305,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) LookupInvoice(rHash []byte) *lnrpc.Invoice {",
+      "content": "func (h *HarnessRPC) LookupInvoice(rHash []byte) *lnrpc.Invoice {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tpayHash := &lnrpc.PaymentHash{RHash: rHash}\n\tresp, err := h.LN.LookupInvoice(ctxt, payHash)\n\th.NoError(err, \"LookupInvoice\")\n\n\treturn resp\n}\n\n// DecodePayReq makes a RPC call to node's DecodePayReq and asserts.",
+      "length": 281,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DecodePayReq(req string) *lnrpc.PayReq {",
+      "content": "func (h *HarnessRPC) DecodePayReq(req string) *lnrpc.PayReq {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tpayReq := &lnrpc.PayReqString{PayReq: req}\n\tresp, err := h.LN.DecodePayReq(ctxt, payReq)\n\th.NoError(err, \"DecodePayReq\")\n\n\treturn resp\n}\n\n// ForwardingHistory makes a RPC call to the node's ForwardingHistory and\n// asserts.",
+      "length": 293,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ForwardingHistory(",
+      "content": "func (h *HarnessRPC) ForwardingHistory(\n\treq *lnrpc.ForwardingHistoryRequest) *lnrpc.ForwardingHistoryResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tif req == nil {\n\t\treq = &lnrpc.ForwardingHistoryRequest{}\n\t}\n\n\tresp, err := h.LN.ForwardingHistory(ctxt, req)\n\th.NoError(err, \"ForwardingHistory\")\n\n\treturn resp\n}\n",
+      "length": 304,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "type MiddlewareClient lnrpc.Lightning_RegisterRPCMiddlewareClient",
+      "content": "type MiddlewareClient lnrpc.Lightning_RegisterRPCMiddlewareClient\n\n// RegisterRPCMiddleware makes a RPC call to the node's RegisterRPCMiddleware\n// and asserts. It also returns a cancel context which can cancel the context\n// used by the client.",
+      "length": 176,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) RegisterRPCMiddleware() (MiddlewareClient,",
+      "content": "func (h *HarnessRPC) RegisterRPCMiddleware() (MiddlewareClient,\n\tcontext.CancelFunc) {\n\n\tctxt, cancel := context.WithCancel(h.runCtx)\n\n\tstream, err := h.LN.RegisterRPCMiddleware(ctxt)\n\th.NoError(err, \"RegisterRPCMiddleware\")\n\n\treturn stream, cancel\n}\n",
+      "length": 178,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelEventsClient lnrpc.Lightning_SubscribeChannelEventsClient",
+      "content": "type ChannelEventsClient lnrpc.Lightning_SubscribeChannelEventsClient\n\n// SubscribeChannelEvents creates a subscription client for channel events and\n// asserts its creation.",
+      "length": 102,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SubscribeChannelEvents() ChannelEventsClient {",
+      "content": "func (h *HarnessRPC) SubscribeChannelEvents() ChannelEventsClient {\n\treq := &lnrpc.ChannelEventSubscription{}\n\n\t// SubscribeChannelEvents needs to have the context alive for the\n\t// entire test case as the returned client will be used for send and\n\t// receive events stream. Thus we use runCtx here instead of a timeout\n\t// context.\n\tclient, err := h.LN.SubscribeChannelEvents(h.runCtx, req)\n\th.NoError(err, \"SubscribeChannelEvents\")\n\n\treturn client\n}\n",
+      "length": 373,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "type CustomMessageClient lnrpc.Lightning_SubscribeCustomMessagesClient",
+      "content": "type CustomMessageClient lnrpc.Lightning_SubscribeCustomMessagesClient\n\n// SubscribeCustomMessages creates a subscription client for custom messages.",
+      "length": 77,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SubscribeCustomMessages() (CustomMessageClient,",
+      "content": "func (h *HarnessRPC) SubscribeCustomMessages() (CustomMessageClient,\n\tcontext.CancelFunc) {\n\n\tctxt, cancel := context.WithCancel(h.runCtx)\n\n\treq := &lnrpc.SubscribeCustomMessagesRequest{}\n\n\t// SubscribeCustomMessages needs to have the context alive for the\n\t// entire test case as the returned client will be used for send and\n\t// receive events stream. Thus we use runCtx here instead of a timeout\n\t// context.\n\tstream, err := h.LN.SubscribeCustomMessages(ctxt, req)\n\th.NoError(err, \"SubscribeCustomMessages\")\n\n\treturn stream, cancel\n}\n\n// SendCustomMessage makes a RPC call to the node's SendCustomMessage and\n// returns the response.",
+      "length": 550,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SendCustomMessage(",
+      "content": "func (h *HarnessRPC) SendCustomMessage(\n\treq *lnrpc.SendCustomMessageRequest) *lnrpc.SendCustomMessageResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.SendCustomMessage(ctxt, req)\n\th.NoError(err, \"SendCustomMessage\")\n\n\treturn resp\n}\n\n// GetChanInfo makes a RPC call to the node's GetChanInfo and returns the\n// response.",
+      "length": 330,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) GetChanInfo(",
+      "content": "func (h *HarnessRPC) GetChanInfo(\n\treq *lnrpc.ChanInfoRequest) *lnrpc.ChannelEdge {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.GetChanInfo(ctxt, req)\n\th.NoError(err, \"GetChanInfo\")\n\n\treturn resp\n}\n\n// LookupHtlcResolution makes a RPC call to the node's LookupHtlcResolution and\n// returns the response.\n//\n//nolint:lll",
+      "length": 327,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) LookupHtlcResolution(",
+      "content": "func (h *HarnessRPC) LookupHtlcResolution(\n\treq *lnrpc.LookupHtlcResolutionRequest) *lnrpc.LookupHtlcResolutionResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.LN.LookupHtlcResolution(ctxt, req)\n\th.NoError(err, \"LookupHtlcResolution\")\n\n\treturn resp\n}\n\n// LookupHtlcResolutionAssertErr makes a RPC call to the node's\n// LookupHtlcResolution and asserts an RPC error is returned.",
+      "length": 381,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) LookupHtlcResolutionAssertErr(",
+      "content": "func (h *HarnessRPC) LookupHtlcResolutionAssertErr(\n\treq *lnrpc.LookupHtlcResolutionRequest) error {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.LN.LookupHtlcResolution(ctxt, req)\n\trequire.Error(h, err, \"expected an error\")\n\n\treturn err\n}\n",
+      "length": 227,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

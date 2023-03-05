@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/waitingproof_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func TestWaitingProofStore(t *testing.T) {",
+      "content": "func TestWaitingProofStore(t *testing.T) {\n\tt.Parallel()\n\n\tdb, err := MakeTestDB(t)\n\trequire.NoError(t, err, \"failed to make test database\")\n\n\tproof1 := NewWaitingProof(true, &lnwire.AnnounceSignatures{\n\t\tNodeSignature:    wireSig,\n\t\tBitcoinSignature: wireSig,\n\t\tExtraOpaqueData:  make([]byte, 0),\n\t})\n\n\tstore, err := NewWaitingProofStore(db)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to create the waiting proofs storage: %v\",\n\t\t\terr)\n\t}\n\n\tif err := store.Add(proof1); err != nil {\n\t\tt.Fatalf(\"unable add proof to storage: %v\", err)\n\t}\n\n\tproof2, err := store.Get(proof1.Key())\n\trequire.NoError(t, err, \"unable retrieve proof from storage\")\n\tif !reflect.DeepEqual(proof1, proof2) {\n\t\tt.Fatalf(\"wrong proof retrieved: expected %v, got %v\",\n\t\t\tspew.Sdump(proof1), spew.Sdump(proof2))\n\t}\n\n\tif _, err := store.Get(proof1.OppositeKey()); err != ErrWaitingProofNotFound {\n\t\tt.Fatalf(\"proof shouldn't be found: %v\", err)\n\t}\n\n\tif err := store.Remove(proof1.Key()); err != nil {\n\t\tt.Fatalf(\"unable remove proof from storage: %v\", err)\n\t}\n\n\tif err := store.ForAll(func(proof *WaitingProof) error {\n\t\treturn errors.New(\"storage should be empty\")\n\t}, func() {}); err != nil && err != ErrWaitingProofNotFound {\n\t\tt.Fatal(err)\n\t}\n}\n",
+      "length": 1127,
+      "tokens": 142,
+      "embedding": []
+    }
+  ]
+}

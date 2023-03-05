@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/utils.go",
+  "package": "lntest",
+  "sections": [
+    {
+      "slug": "func CopyFile(dest, src string) error {",
+      "content": "func CopyFile(dest, src string) error {\n\ts, err := os.Open(src)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer s.Close()\n\n\td, err := os.Create(dest)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := io.Copy(d, s); err != nil {\n\t\td.Close()\n\t\treturn err\n\t}\n\n\treturn d.Close()\n}\n\n// errNumNotMatched is a helper method to return a nicely formatted error.",
+      "length": 283,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func errNumNotMatched(name string, subject string,",
+      "content": "func errNumNotMatched(name string, subject string,\n\twant, got, total, old int) error {\n\n\treturn fmt.Errorf(\"%s: assert %s failed: want %d, got: %d, total: \"+\n\t\t\"%d, previously had: %d\", name, subject, want, got, total, old)\n}\n\n// parseDerivationPath parses a path in the form of m/x'/y'/z'/a/b into a slice\n// of [x, y, z, a, b], meaning that the apostrophe is ignored and 2^31 is _not_\n// added to the numbers.",
+      "length": 352,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseDerivationPath(path string) ([]uint32, error) {",
+      "content": "func ParseDerivationPath(path string) ([]uint32, error) {\n\tpath = strings.TrimSpace(path)\n\tif len(path) == 0 {\n\t\treturn nil, fmt.Errorf(\"path cannot be empty\")\n\t}\n\tif !strings.HasPrefix(path, \"m/\") {\n\t\treturn nil, fmt.Errorf(\"path must start with m/\")\n\t}\n\n\t// Just the root key, no path was provided. This is valid but not useful\n\t// in most cases.\n\trest := strings.ReplaceAll(path, \"m/\", \"\")\n\tif rest == \"\" {\n\t\treturn []uint32{}, nil\n\t}\n\n\tparts := strings.Split(rest, \"/\")\n\tindices := make([]uint32, len(parts))\n\tfor i := 0; i < len(parts); i++ {\n\t\tpart := parts[i]\n\t\tif strings.Contains(parts[i], \"'\") {\n\t\t\tpart = strings.TrimRight(parts[i], \"'\")\n\t\t}\n\t\tparsed, err := strconv.ParseInt(part, 10, 32)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"could not parse part \\\"%s\\\": \"+\n\t\t\t\t\"%v\", part, err)\n\t\t}\n\t\tindices[i] = uint32(parsed)\n\t}\n\n\treturn indices, nil\n}\n\n// ChanPointFromPendingUpdate constructs a channel point from a lnrpc pending\n// update.",
+      "length": 857,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func ChanPointFromPendingUpdate(pu *lnrpc.PendingUpdate) *lnrpc.ChannelPoint {",
+      "content": "func ChanPointFromPendingUpdate(pu *lnrpc.PendingUpdate) *lnrpc.ChannelPoint {\n\tchanPoint := &lnrpc.ChannelPoint{\n\t\tFundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{\n\t\t\tFundingTxidBytes: pu.Txid,\n\t\t},\n\t\tOutputIndex: pu.OutputIndex,\n\t}\n\n\treturn chanPoint\n}\n\n// channelPointStr returns the string representation of the channel's\n// funding transaction.",
+      "length": 261,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func channelPointStr(chanPoint *lnrpc.ChannelPoint) string {",
+      "content": "func channelPointStr(chanPoint *lnrpc.ChannelPoint) string {\n\tfundingTxID, err := lnrpc.GetChanPointFundingTxid(chanPoint)\n\tif err != nil {\n\t\treturn \"\"\n\t}\n\tcp := wire.OutPoint{\n\t\tHash:  *fundingTxID,\n\t\tIndex: chanPoint.OutputIndex,\n\t}\n\n\treturn cp.String()\n}\n\n// CommitTypeHasAnchors returns whether commitType uses anchor outputs.",
+      "length": 257,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func CommitTypeHasAnchors(commitType lnrpc.CommitmentType) bool {",
+      "content": "func CommitTypeHasAnchors(commitType lnrpc.CommitmentType) bool {\n\tswitch commitType {\n\tcase lnrpc.CommitmentType_ANCHORS,\n\t\tlnrpc.CommitmentType_SCRIPT_ENFORCED_LEASE:\n\t\treturn true\n\tdefault:\n\t\treturn false\n\t}\n}\n\n// NodeArgsForCommitType returns the command line flag to supply to enable this\n// commitment type.",
+      "length": 237,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeArgsForCommitType(commitType lnrpc.CommitmentType) []string {",
+      "content": "func NodeArgsForCommitType(commitType lnrpc.CommitmentType) []string {\n\tswitch commitType {\n\tcase lnrpc.CommitmentType_LEGACY:\n\t\treturn []string{\"--protocol.legacy.committweak\"}\n\tcase lnrpc.CommitmentType_STATIC_REMOTE_KEY:\n\t\treturn []string{}\n\tcase lnrpc.CommitmentType_ANCHORS:\n\t\treturn []string{\"--protocol.anchors\"}\n\tcase lnrpc.CommitmentType_SCRIPT_ENFORCED_LEASE:\n\t\treturn []string{\n\t\t\t\"--protocol.anchors\",\n\t\t\t\"--protocol.script-enforced-lease\",\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// CalcStaticFee calculates appropriate fees for commitment transactions. This\n// function provides a simple way to allow test balance assertions to take fee\n// calculations into account.",
+      "length": 573,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func CalcStaticFee(c lnrpc.CommitmentType, numHTLCs int) btcutil.Amount {",
+      "content": "func CalcStaticFee(c lnrpc.CommitmentType, numHTLCs int) btcutil.Amount {\n\t//nolint:lll\n\tconst (\n\t\thtlcWeight         = input.HTLCWeight\n\t\tanchorSize         = 330 * 2\n\t\tdefaultSatPerVByte = lnwallet.DefaultAnchorsCommitMaxFeeRateSatPerVByte\n\t\tscale              = 1000\n\t)\n\n\tvar (\n\t\tanchors      = btcutil.Amount(0)\n\t\tcommitWeight = input.CommitWeight\n\t\tfeePerKw     = chainfee.SatPerKWeight(DefaultFeeRateSatPerKw)\n\t)\n\n\t// The anchor commitment type is slightly heavier, and we must also add\n\t// the value of the two anchors to the resulting fee the initiator\n\t// pays. In addition the fee rate is capped at 10 sat/vbyte for anchor\n\t// channels.\n\tif CommitTypeHasAnchors(c) {\n\t\tfeePerKw = chainfee.SatPerKVByte(\n\t\t\tdefaultSatPerVByte * scale,\n\t\t).FeePerKWeight()\n\t\tcommitWeight = input.AnchorCommitWeight\n\t\tanchors = anchorSize\n\t}\n\n\treturn feePerKw.FeeForWeight(int64(commitWeight+htlcWeight*numHTLCs)) +\n\t\tanchors\n}\n\n// CalculateMaxHtlc re-implements the RequiredRemoteChannelReserve of the\n// funding manager's config, which corresponds to the maximum MaxHTLC value we\n// allow users to set when updating a channel policy.",
+      "length": 1019,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func CalculateMaxHtlc(chanCap btcutil.Amount) uint64 {",
+      "content": "func CalculateMaxHtlc(chanCap btcutil.Amount) uint64 {\n\tconst ratio = 100\n\treserve := lnwire.NewMSatFromSatoshis(chanCap / ratio)\n\tmax := lnwire.NewMSatFromSatoshis(chanCap) - reserve\n\n\treturn uint64(max)\n}\n",
+      "length": 146,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

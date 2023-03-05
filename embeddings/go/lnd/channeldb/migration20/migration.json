@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration20/migration.go",
+  "package": "migration20",
+  "sections": [
+    {
+      "slug": "type indexStatus uint8",
+      "content": "type indexStatus uint8\n\nconst (\n\t// outpointOpen represents an outpoint that is open in the outpoint index.\n\toutpointOpen indexStatus = 0\n\n\t// outpointClosed represents an outpoint that is closed in the outpoint\n\t// index.\n\toutpointClosed indexStatus = 1\n)\n\n// MigrateOutpointIndex populates the outpoint index with outpoints that\n// the node already has. This takes every outpoint in the open channel\n// bucket and every outpoint in the closed channel bucket and stores them\n// in this index.",
+      "length": 457,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func MigrateOutpointIndex(tx kvdb.RwTx) error {",
+      "content": "func MigrateOutpointIndex(tx kvdb.RwTx) error {\n\tlog.Info(\"Migrating to the outpoint index\")\n\n\t// First get the set of open outpoints.\n\topenList, err := getOpenOutpoints(tx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Then get the set of closed outpoints.\n\tclosedList, err := getClosedOutpoints(tx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Get the outpoint bucket which was created in migration 19.\n\tbucket := tx.ReadWriteBucket(outpointBucket)\n\n\t// Store the set of open outpoints in the outpoint bucket.\n\tif err := putOutpoints(bucket, openList, false); err != nil {\n\t\treturn err\n\t}\n\n\t// Store the set of closed outpoints in the outpoint bucket.\n\treturn putOutpoints(bucket, closedList, true)\n}\n\n// getOpenOutpoints traverses through the openChanBucket and returns the\n// list of these channels' outpoints.",
+      "length": 724,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func getOpenOutpoints(tx kvdb.RwTx) ([]*wire.OutPoint, error) {",
+      "content": "func getOpenOutpoints(tx kvdb.RwTx) ([]*wire.OutPoint, error) {\n\tvar ops []*wire.OutPoint\n\n\topenBucket := tx.ReadBucket(openChanBucket)\n\tif openBucket == nil {\n\t\treturn ops, nil\n\t}\n\n\t// Iterate through every node and chain bucket to get every open\n\t// outpoint.\n\t//\n\t// The bucket tree:\n\t// openChanBucket -> nodePub -> chainHash -> chanPoint\n\terr := openBucket.ForEach(func(k, v []byte) error {\n\t\t// Ensure that the key is the same size as a pubkey and the\n\t\t// value is nil.\n\t\tif len(k) != 33 || v != nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tnodeBucket := openBucket.NestedReadBucket(k)\n\t\tif nodeBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn nodeBucket.ForEach(func(k, v []byte) error {\n\t\t\t// If there's a value it's not a bucket.\n\t\t\tif v != nil {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\tchainBucket := nodeBucket.NestedReadBucket(k)\n\t\t\tif chainBucket == nil {\n\t\t\t\treturn fmt.Errorf(\"unable to read \"+\n\t\t\t\t\t\"bucket for chain: %x\", k)\n\t\t\t}\n\n\t\t\treturn chainBucket.ForEach(func(k, v []byte) error {\n\t\t\t\t// If there's a value it's not a bucket.\n\t\t\t\tif v != nil {\n\t\t\t\t\treturn nil\n\t\t\t\t}\n\n\t\t\t\tvar op wire.OutPoint\n\t\t\t\tr := bytes.NewReader(k)\n\t\t\t\tif err := readOutpoint(r, &op); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tops = append(ops, &op)\n\n\t\t\t\treturn nil\n\t\t\t})\n\t\t})\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn ops, nil\n}\n\n// getClosedOutpoints traverses through the closedChanBucket and returns\n// a list of closed outpoints.",
+      "length": 1271,
+      "tokens": 209,
+      "embedding": []
+    },
+    {
+      "slug": "func getClosedOutpoints(tx kvdb.RwTx) ([]*wire.OutPoint, error) {",
+      "content": "func getClosedOutpoints(tx kvdb.RwTx) ([]*wire.OutPoint, error) {\n\tvar ops []*wire.OutPoint\n\tclosedBucket := tx.ReadBucket(closedChannelBucket)\n\tif closedBucket == nil {\n\t\treturn ops, nil\n\t}\n\n\t// Iterate through every key-value pair to gather all outpoints.\n\terr := closedBucket.ForEach(func(k, v []byte) error {\n\t\tvar op wire.OutPoint\n\t\tr := bytes.NewReader(k)\n\t\tif err := readOutpoint(r, &op); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tops = append(ops, &op)\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn ops, nil\n}\n\n// putOutpoints puts the set of outpoints into the outpoint bucket.",
+      "length": 506,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func putOutpoints(bucket kvdb.RwBucket, ops []*wire.OutPoint, isClosed bool) error {",
+      "content": "func putOutpoints(bucket kvdb.RwBucket, ops []*wire.OutPoint, isClosed bool) error {\n\tstatus := uint8(outpointOpen)\n\tif isClosed {\n\t\tstatus = uint8(outpointClosed)\n\t}\n\n\trecord := tlv.MakePrimitiveRecord(indexStatusType, &status)\n\tstream, err := tlv.NewStream(record)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar b bytes.Buffer\n\tif err := stream.Encode(&b); err != nil {\n\t\treturn err\n\t}\n\n\t// Store the set of outpoints with the encoded tlv stream.\n\tfor _, op := range ops {\n\t\tvar opBuf bytes.Buffer\n\t\tif err := writeOutpoint(&opBuf, op); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif err := bucket.Put(opBuf.Bytes(), b.Bytes()); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 547,
+      "tokens": 89,
+      "embedding": []
+    }
+  ]
+}

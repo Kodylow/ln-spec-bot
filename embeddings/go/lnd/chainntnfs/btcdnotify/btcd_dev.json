@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chainntnfs/btcdnotify/btcd_dev.go",
+  "package": "btcdnotify",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage btcdnotify\n\nimport (\n\t\"fmt\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/lightningnetwork/lnd/chainntnfs\"\n)\n\n// UnsafeStart starts the notifier with a specified best height and optional\n// best hash. Its bestBlock and txNotifier are initialized with bestHeight and\n// optionally bestHash. The parameter generateBlocks is necessary for the\n// bitcoind notifier to ensure we drain all notifications up to syncHeight,\n// since if they are generated ahead of UnsafeStart the chainConn may start up\n// with an outdated best block and miss sending ntfns. Used for testing.",
+      "length": 596,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BtcdNotifier) UnsafeStart(bestHeight int32, bestHash *chainhash.Hash,",
+      "content": "func (b *BtcdNotifier) UnsafeStart(bestHeight int32, bestHash *chainhash.Hash,\n\tsyncHeight int32, generateBlocks func() error) error {\n\n\t// Connect to btcd, and register for notifications on connected, and\n\t// disconnected blocks.\n\tif err := b.chainConn.Connect(20); err != nil {\n\t\treturn err\n\t}\n\tif err := b.chainConn.NotifyBlocks(); err != nil {\n\t\treturn err\n\t}\n\n\tb.txNotifier = chainntnfs.NewTxNotifier(\n\t\tuint32(bestHeight), chainntnfs.ReorgSafetyLimit,\n\t\tb.confirmHintCache, b.spendHintCache,\n\t)\n\n\tb.chainUpdates.Start()\n\tb.txUpdates.Start()\n\n\tif generateBlocks != nil {\n\t\t// Ensure no block notifications are pending when we start the\n\t\t// notification dispatcher goroutine.\n\n\t\t// First generate the blocks, then drain the notifications\n\t\t// for the generated blocks.\n\t\tif err := generateBlocks(); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\ttimeout := time.After(60 * time.Second)\n\tloop:\n\t\tfor {\n\t\t\tselect {\n\t\t\tcase ntfn := <-b.chainUpdates.ChanOut():\n\t\t\t\tlastReceivedNtfn := ntfn.(*chainUpdate)\n\t\t\t\tif lastReceivedNtfn.blockHeight >= syncHeight {\n\t\t\t\t\tbreak loop\n\t\t\t\t}\n\t\t\tcase <-timeout:\n\t\t\t\treturn fmt.Errorf(\"unable to catch up to height %d\",\n\t\t\t\t\tsyncHeight)\n\t\t\t}\n\t\t}\n\t}\n\n\t// Run notificationDispatcher after setting the notifier's best block\n\t// to avoid a race condition.\n\tb.bestBlock = chainntnfs.BlockEpoch{Height: bestHeight, Hash: bestHash}\n\tif bestHash == nil {\n\t\thash, err := b.chainConn.GetBlockHash(int64(bestHeight))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tb.bestBlock.Hash = hash\n\t}\n\n\tb.wg.Add(1)\n\tgo b.notificationDispatcher()\n\n\treturn nil\n}\n",
+      "length": 1414,
+      "tokens": 185,
+      "embedding": []
+    }
+  ]
+}

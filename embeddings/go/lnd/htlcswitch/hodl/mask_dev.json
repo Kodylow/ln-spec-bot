@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/htlcswitch/hodl/mask_dev.go",
-  "package": "dev",
+  "package": "hodl",
   "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage hodl\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\n// MaskFromFlags merges a variadic set of Flags into a single Mask.",
+      "length": 117,
+      "tokens": 22,
+      "embedding": []
+    },
     {
       "slug": "func MaskFromFlags(flags ...Flag) Mask {",
       "content": "func MaskFromFlags(flags ...Flag) Mask {\n\tvar mask Mask\n\tfor _, flag := range flags {\n\t\tmask |= Mask(flag)\n\t}\n\n\treturn mask\n}\n\n// Active returns true if the bit corresponding to the flag is set within the\n// mask.",

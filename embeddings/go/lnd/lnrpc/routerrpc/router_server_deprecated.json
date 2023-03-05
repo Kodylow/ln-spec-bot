@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/router_server_deprecated.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "type legacyTrackPaymentServer struct {",
+      "content": "type legacyTrackPaymentServer struct {\n\tRouter_TrackPaymentServer\n}\n\n// Send converts a Payment object and sends it as a PaymentStatus object on the\n// embedded stream.",
+      "length": 125,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *legacyTrackPaymentServer) Send(p *lnrpc.Payment) error {",
+      "content": "func (i *legacyTrackPaymentServer) Send(p *lnrpc.Payment) error {\n\tvar state PaymentState\n\tswitch p.Status {\n\tcase lnrpc.Payment_IN_FLIGHT:\n\t\tstate = PaymentState_IN_FLIGHT\n\tcase lnrpc.Payment_SUCCEEDED:\n\t\tstate = PaymentState_SUCCEEDED\n\tcase lnrpc.Payment_FAILED:\n\t\tswitch p.FailureReason {\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_NONE:\n\t\t\treturn fmt.Errorf(\"expected fail reason\")\n\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_TIMEOUT:\n\t\t\tstate = PaymentState_FAILED_TIMEOUT\n\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_NO_ROUTE:\n\t\t\tstate = PaymentState_FAILED_NO_ROUTE\n\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_ERROR:\n\t\t\tstate = PaymentState_FAILED_ERROR\n\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_INCORRECT_PAYMENT_DETAILS:\n\t\t\tstate = PaymentState_FAILED_INCORRECT_PAYMENT_DETAILS\n\n\t\tcase lnrpc.PaymentFailureReason_FAILURE_REASON_INSUFFICIENT_BALANCE:\n\t\t\tstate = PaymentState_FAILED_INSUFFICIENT_BALANCE\n\n\t\tdefault:\n\t\t\treturn fmt.Errorf(\"unknown failure reason %v\",\n\t\t\t\tp.FailureReason)\n\t\t}\n\tdefault:\n\t\treturn fmt.Errorf(\"unknown state %v\", p.Status)\n\t}\n\n\tpreimage, err := hex.DecodeString(p.PaymentPreimage)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tlegacyState := PaymentStatus{\n\t\tState:    state,\n\t\tPreimage: preimage,\n\t\tHtlcs:    p.Htlcs,\n\t}\n\n\treturn i.Router_TrackPaymentServer.Send(&legacyState)\n}\n\n// TrackPayment returns a stream of payment state updates. The stream is\n// closed when the payment completes.",
+      "length": 1331,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) TrackPayment(request *TrackPaymentRequest,",
+      "content": "func (s *Server) TrackPayment(request *TrackPaymentRequest,\n\tstream Router_TrackPaymentServer) error {\n\n\tlegacyStream := legacyTrackPaymentServer{\n\t\tRouter_TrackPaymentServer: stream,\n\t}\n\treturn s.TrackPaymentV2(request, &legacyStream)\n}\n\n// SendPayment attempts to route a payment described by the passed\n// PaymentRequest to the final destination. If we are unable to route the\n// payment, or cannot find a route that satisfies the constraints in the\n// PaymentRequest, then an error will be returned. Otherwise, the payment\n// pre-image, along with the final route will be returned.",
+      "length": 513,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SendPayment(request *SendPaymentRequest,",
+      "content": "func (s *Server) SendPayment(request *SendPaymentRequest,\n\tstream Router_SendPaymentServer) error {\n\n\tif request.MaxParts > 1 {\n\t\treturn errors.New(\"for multi-part payments, use SendPaymentV2\")\n\t}\n\n\tlegacyStream := legacyTrackPaymentServer{\n\t\tRouter_TrackPaymentServer: stream,\n\t}\n\treturn s.SendPaymentV2(request, &legacyStream)\n}\n\n// SendToRoute sends a payment through a predefined route. The response of this\n// call contains structured error information.",
+      "length": 387,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SendToRoute(ctx context.Context,",
+      "content": "func (s *Server) SendToRoute(ctx context.Context,\n\treq *SendToRouteRequest) (*SendToRouteResponse, error) {\n\n\tresp, err := s.SendToRouteV2(ctx, req)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif resp == nil {\n\t\treturn nil, nil\n\t}\n\n\t// Need to convert to legacy response message because proto identifiers\n\t// don't line up.\n\tlegacyResp := &SendToRouteResponse{\n\t\tPreimage: resp.Preimage,\n\t\tFailure:  resp.Failure,\n\t}\n\n\treturn legacyResp, err\n}\n\n// QueryProbability returns the current success probability estimate for a\n// given node pair and amount.",
+      "length": 474,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) QueryProbability(ctx context.Context,",
+      "content": "func (s *Server) QueryProbability(ctx context.Context,\n\treq *QueryProbabilityRequest) (*QueryProbabilityResponse, error) {\n\n\tfromNode, err := route.NewVertexFromBytes(req.FromNode)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\ttoNode, err := route.NewVertexFromBytes(req.ToNode)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tamt := lnwire.MilliSatoshi(req.AmtMsat)\n\n\t// Compute the probability.\n\tvar prob float64\n\tmc := s.cfg.RouterBackend.MissionControl\n\tcapacity, err := s.cfg.RouterBackend.FetchAmountPairCapacity(\n\t\tfromNode, toNode, amt,\n\t)\n\n\t// If we cannot query the capacity this means that either we don't have\n\t// information available or that the channel fails min/maxHtlc\n\t// constraints, so we return a zero probability.\n\tif err != nil {\n\t\tlog.Errorf(\"Cannot fetch capacity: %v\", err)\n\t} else {\n\t\tprob = mc.GetProbability(fromNode, toNode, amt, capacity)\n\t}\n\n\thistory := mc.GetPairHistorySnapshot(fromNode, toNode)\n\n\treturn &QueryProbabilityResponse{\n\t\tProbability: prob,\n\t\tHistory:     toRPCPairData(&history),\n\t}, nil\n}\n",
+      "length": 931,
+      "tokens": 116,
+      "embedding": []
+    }
+  ]
+}

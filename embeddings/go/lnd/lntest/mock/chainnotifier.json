@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/mock/chainnotifier.go",
+  "package": "mock",
+  "sections": [
+    {
+      "slug": "type ChainNotifier struct {",
+      "content": "type ChainNotifier struct {\n\tSpendChan chan *chainntnfs.SpendDetail\n\tEpochChan chan *chainntnfs.BlockEpoch\n\tConfChan  chan *chainntnfs.TxConfirmation\n}\n\n// RegisterConfirmationsNtfn returns a ConfirmationEvent that contains a channel\n// that the tx confirmation will go over.",
+      "length": 241,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) RegisterConfirmationsNtfn(txid *chainhash.Hash,",
+      "content": "func (c *ChainNotifier) RegisterConfirmationsNtfn(txid *chainhash.Hash,\n\tpkScript []byte, numConfs, heightHint uint32,\n\topts ...chainntnfs.NotifierOption) (*chainntnfs.ConfirmationEvent, error) {\n\n\treturn &chainntnfs.ConfirmationEvent{\n\t\tConfirmed: c.ConfChan,\n\t\tCancel:    func() {},\n\t}, nil\n}\n\n// RegisterSpendNtfn returns a SpendEvent that contains a channel that the spend\n// details will go over.",
+      "length": 319,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) RegisterSpendNtfn(outpoint *wire.OutPoint,",
+      "content": "func (c *ChainNotifier) RegisterSpendNtfn(outpoint *wire.OutPoint,\n\tpkScript []byte, heightHint uint32) (*chainntnfs.SpendEvent, error) {\n\n\treturn &chainntnfs.SpendEvent{\n\t\tSpend:  c.SpendChan,\n\t\tCancel: func() {},\n\t}, nil\n}\n\n// RegisterBlockEpochNtfn returns a BlockEpochEvent that contains a channel that\n// block epochs will go over.",
+      "length": 260,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) RegisterBlockEpochNtfn(blockEpoch *chainntnfs.BlockEpoch) (",
+      "content": "func (c *ChainNotifier) RegisterBlockEpochNtfn(blockEpoch *chainntnfs.BlockEpoch) (\n\t*chainntnfs.BlockEpochEvent, error) {\n\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tEpochs: c.EpochChan,\n\t\tCancel: func() {},\n\t}, nil\n}\n\n// Start currently returns a dummy value.",
+      "length": 165,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) Start() error {",
+      "content": "func (c *ChainNotifier) Start() error {\n\treturn nil\n}\n\n// Started currently returns a dummy value.",
+      "length": 55,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) Started() bool {",
+      "content": "func (c *ChainNotifier) Started() bool {\n\treturn true\n}\n\n// Stop currently returns a dummy value.",
+      "length": 53,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainNotifier) Stop() error {",
+      "content": "func (c *ChainNotifier) Stop() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

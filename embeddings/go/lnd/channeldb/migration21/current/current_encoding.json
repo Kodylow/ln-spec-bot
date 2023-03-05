@@ -1,0 +1,188 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration21/current/current_encoding.go",
+  "package": "current",
+  "sections": [
+    {
+      "slug": "func serializeChanCommit(w io.Writer, c *common.ChannelCommitment) error { // nolint: dupl",
+      "content": "func serializeChanCommit(w io.Writer, c *common.ChannelCommitment) error { // nolint: dupl\n\tif err := WriteElements(w,\n\t\tc.CommitHeight, c.LocalLogIndex, c.LocalHtlcIndex,\n\t\tc.RemoteLogIndex, c.RemoteHtlcIndex, c.LocalBalance,\n\t\tc.RemoteBalance, c.CommitFee, c.FeePerKw, c.CommitTx,\n\t\tc.CommitSig,\n\t); err != nil {\n\t\treturn err\n\t}\n\n\treturn serializeHtlcs(w, c.Htlcs...)\n}\n",
+      "length": 270,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func SerializeLogUpdates(w io.Writer, logUpdates []common.LogUpdate) error { // nolint: dupl",
+      "content": "func SerializeLogUpdates(w io.Writer, logUpdates []common.LogUpdate) error { // nolint: dupl\n\tnumUpdates := uint16(len(logUpdates))\n\tif err := binary.Write(w, byteOrder, numUpdates); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, diff := range logUpdates {\n\t\terr := WriteElements(w, diff.LogIndex, diff.UpdateMsg)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 252,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeHtlcs(b io.Writer, htlcs ...common.HTLC) error { // nolint: dupl",
+      "content": "func serializeHtlcs(b io.Writer, htlcs ...common.HTLC) error { // nolint: dupl\n\tnumHtlcs := uint16(len(htlcs))\n\tif err := WriteElement(b, numHtlcs); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, htlc := range htlcs {\n\t\tif err := WriteElements(b,\n\t\t\thtlc.Signature, htlc.RHash, htlc.Amt, htlc.RefundTimeout,\n\t\t\thtlc.OutputIndex, htlc.Incoming, htlc.OnionBlob,\n\t\t\thtlc.HtlcIndex, htlc.LogIndex,\n\t\t); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 343,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func SerializeCommitDiff(w io.Writer, diff *common.CommitDiff) error { // nolint: dupl",
+      "content": "func SerializeCommitDiff(w io.Writer, diff *common.CommitDiff) error { // nolint: dupl\n\tif err := serializeChanCommit(w, &diff.Commitment); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteElements(w, diff.CommitSig); err != nil {\n\t\treturn err\n\t}\n\n\tif err := SerializeLogUpdates(w, diff.LogUpdates); err != nil {\n\t\treturn err\n\t}\n\n\tnumOpenRefs := uint16(len(diff.OpenedCircuitKeys))\n\tif err := binary.Write(w, byteOrder, numOpenRefs); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, openRef := range diff.OpenedCircuitKeys {\n\t\terr := WriteElements(w, openRef.ChanID, openRef.HtlcID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\tnumClosedRefs := uint16(len(diff.ClosedCircuitKeys))\n\tif err := binary.Write(w, byteOrder, numClosedRefs); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, closedRef := range diff.ClosedCircuitKeys {\n\t\terr := WriteElements(w, closedRef.ChanID, closedRef.HtlcID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 790,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeHtlcs(r io.Reader) ([]common.HTLC, error) { // nolint: dupl",
+      "content": "func deserializeHtlcs(r io.Reader) ([]common.HTLC, error) { // nolint: dupl\n\tvar numHtlcs uint16\n\tif err := ReadElement(r, &numHtlcs); err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar htlcs []common.HTLC\n\tif numHtlcs == 0 {\n\t\treturn htlcs, nil\n\t}\n\n\thtlcs = make([]common.HTLC, numHtlcs)\n\tfor i := uint16(0); i < numHtlcs; i++ {\n\t\tif err := ReadElements(r,\n\t\t\t&htlcs[i].Signature, &htlcs[i].RHash, &htlcs[i].Amt,\n\t\t\t&htlcs[i].RefundTimeout, &htlcs[i].OutputIndex,\n\t\t\t&htlcs[i].Incoming, &htlcs[i].OnionBlob,\n\t\t\t&htlcs[i].HtlcIndex, &htlcs[i].LogIndex,\n\t\t); err != nil {\n\t\t\treturn htlcs, err\n\t\t}\n\t}\n\n\treturn htlcs, nil\n}\n",
+      "length": 510,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeChanCommit(r io.Reader) (common.ChannelCommitment, error) { // nolint: dupl",
+      "content": "func deserializeChanCommit(r io.Reader) (common.ChannelCommitment, error) { // nolint: dupl\n\tvar c common.ChannelCommitment\n\n\terr := ReadElements(r,\n\t\t&c.CommitHeight, &c.LocalLogIndex, &c.LocalHtlcIndex, &c.RemoteLogIndex,\n\t\t&c.RemoteHtlcIndex, &c.LocalBalance, &c.RemoteBalance,\n\t\t&c.CommitFee, &c.FeePerKw, &c.CommitTx, &c.CommitSig,\n\t)\n\tif err != nil {\n\t\treturn c, err\n\t}\n\n\tc.Htlcs, err = deserializeHtlcs(r)\n\tif err != nil {\n\t\treturn c, err\n\t}\n\n\treturn c, nil\n}\n",
+      "length": 357,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func DeserializeLogUpdates(r io.Reader) ([]common.LogUpdate, error) { // nolint: dupl",
+      "content": "func DeserializeLogUpdates(r io.Reader) ([]common.LogUpdate, error) { // nolint: dupl\n\tvar numUpdates uint16\n\tif err := binary.Read(r, byteOrder, &numUpdates); err != nil {\n\t\treturn nil, err\n\t}\n\n\tlogUpdates := make([]common.LogUpdate, numUpdates)\n\tfor i := 0; i < int(numUpdates); i++ {\n\t\terr := ReadElements(r,\n\t\t\t&logUpdates[i].LogIndex, &logUpdates[i].UpdateMsg,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\treturn logUpdates, nil\n}\n",
+      "length": 338,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func DeserializeCommitDiff(r io.Reader) (*common.CommitDiff, error) { // nolint: dupl",
+      "content": "func DeserializeCommitDiff(r io.Reader) (*common.CommitDiff, error) { // nolint: dupl\n\tvar (\n\t\td   common.CommitDiff\n\t\terr error\n\t)\n\n\td.Commitment, err = deserializeChanCommit(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar msg lnwire.Message\n\tif err := ReadElements(r, &msg); err != nil {\n\t\treturn nil, err\n\t}\n\tcommitSig, ok := msg.(*lnwire.CommitSig)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"expected lnwire.CommitSig, instead \"+\n\t\t\t\"read: %T\", msg)\n\t}\n\td.CommitSig = commitSig\n\n\td.LogUpdates, err = DeserializeLogUpdates(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar numOpenRefs uint16\n\tif err := binary.Read(r, byteOrder, &numOpenRefs); err != nil {\n\t\treturn nil, err\n\t}\n\n\td.OpenedCircuitKeys = make([]common.CircuitKey, numOpenRefs)\n\tfor i := 0; i < int(numOpenRefs); i++ {\n\t\terr := ReadElements(r,\n\t\t\t&d.OpenedCircuitKeys[i].ChanID,\n\t\t\t&d.OpenedCircuitKeys[i].HtlcID)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tvar numClosedRefs uint16\n\tif err := binary.Read(r, byteOrder, &numClosedRefs); err != nil {\n\t\treturn nil, err\n\t}\n\n\td.ClosedCircuitKeys = make([]common.CircuitKey, numClosedRefs)\n\tfor i := 0; i < int(numClosedRefs); i++ {\n\t\terr := ReadElements(r,\n\t\t\t&d.ClosedCircuitKeys[i].ChanID,\n\t\t\t&d.ClosedCircuitKeys[i].HtlcID)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\treturn &d, nil\n}\n",
+      "length": 1150,
+      "tokens": 163,
+      "embedding": []
+    },
+    {
+      "slug": "func SerializeNetworkResult(w io.Writer, n *common.NetworkResult) error { // nolint: dupl",
+      "content": "func SerializeNetworkResult(w io.Writer, n *common.NetworkResult) error { // nolint: dupl\n\treturn WriteElements(w, n.Msg, n.Unencrypted, n.IsResolution)\n}\n",
+      "length": 63,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func DeserializeNetworkResult(r io.Reader) (*common.NetworkResult, error) { // nolint: dupl",
+      "content": "func DeserializeNetworkResult(r io.Reader) (*common.NetworkResult, error) { // nolint: dupl\n\tn := &common.NetworkResult{}\n\n\tif err := ReadElements(r,\n\t\t&n.Msg, &n.Unencrypted, &n.IsResolution,\n\t); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn n, nil\n}\n",
+      "length": 147,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func writeChanConfig(b io.Writer, c *common.ChannelConfig) error { // nolint: dupl",
+      "content": "func writeChanConfig(b io.Writer, c *common.ChannelConfig) error { // nolint: dupl\n\treturn WriteElements(b,\n\t\tc.DustLimit, c.MaxPendingAmount, c.ChanReserve, c.MinHTLC,\n\t\tc.MaxAcceptedHtlcs, c.CsvDelay, c.MultiSigKey,\n\t\tc.RevocationBasePoint, c.PaymentBasePoint, c.DelayBasePoint,\n\t\tc.HtlcBasePoint,\n\t)\n}\n",
+      "length": 215,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func SerializeChannelCloseSummary(w io.Writer, cs *common.ChannelCloseSummary) error { // nolint: dupl",
+      "content": "func SerializeChannelCloseSummary(w io.Writer, cs *common.ChannelCloseSummary) error { // nolint: dupl\n\terr := WriteElements(w,\n\t\tcs.ChanPoint, cs.ShortChanID, cs.ChainHash, cs.ClosingTXID,\n\t\tcs.CloseHeight, cs.RemotePub, cs.Capacity, cs.SettledBalance,\n\t\tcs.TimeLockedBalance, cs.CloseType, cs.IsPending,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// If this is a close channel summary created before the addition of\n\t// the new fields, then we can exit here.\n\tif cs.RemoteCurrentRevocation == nil {\n\t\treturn WriteElements(w, false)\n\t}\n\n\t// If fields are present, write boolean to indicate this, and continue.\n\tif err := WriteElements(w, true); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteElements(w, cs.RemoteCurrentRevocation); err != nil {\n\t\treturn err\n\t}\n\n\tif err := writeChanConfig(w, &cs.LocalChanConfig); err != nil {\n\t\treturn err\n\t}\n\n\t// The RemoteNextRevocation field is optional, as it's possible for a\n\t// channel to be closed before we learn of the next unrevoked\n\t// revocation point for the remote party. Write a boolean indicating\n\t// whether this field is present or not.\n\tif err := WriteElements(w, cs.RemoteNextRevocation != nil); err != nil {\n\t\treturn err\n\t}\n\n\t// Write the field, if present.\n\tif cs.RemoteNextRevocation != nil {\n\t\tif err = WriteElements(w, cs.RemoteNextRevocation); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Write whether the channel sync message is present.\n\tif err := WriteElements(w, cs.LastChanSyncMsg != nil); err != nil {\n\t\treturn err\n\t}\n\n\t// Write the channel sync message, if present.\n\tif cs.LastChanSyncMsg != nil {\n\t\tif err := WriteElements(w, cs.LastChanSyncMsg); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 1496,
+      "tokens": 234,
+      "embedding": []
+    },
+    {
+      "slug": "func readChanConfig(b io.Reader, c *common.ChannelConfig) error {",
+      "content": "func readChanConfig(b io.Reader, c *common.ChannelConfig) error {\n\treturn ReadElements(b,\n\t\t&c.DustLimit, &c.MaxPendingAmount, &c.ChanReserve,\n\t\t&c.MinHTLC, &c.MaxAcceptedHtlcs, &c.CsvDelay,\n\t\t&c.MultiSigKey, &c.RevocationBasePoint,\n\t\t&c.PaymentBasePoint, &c.DelayBasePoint,\n\t\t&c.HtlcBasePoint,\n\t)\n}\n",
+      "length": 226,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func DeserializeCloseChannelSummary(r io.Reader) (*common.ChannelCloseSummary, error) { // nolint: dupl",
+      "content": "func DeserializeCloseChannelSummary(r io.Reader) (*common.ChannelCloseSummary, error) { // nolint: dupl\n\tc := &common.ChannelCloseSummary{}\n\n\terr := ReadElements(r,\n\t\t&c.ChanPoint, &c.ShortChanID, &c.ChainHash, &c.ClosingTXID,\n\t\t&c.CloseHeight, &c.RemotePub, &c.Capacity, &c.SettledBalance,\n\t\t&c.TimeLockedBalance, &c.CloseType, &c.IsPending,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// We'll now check to see if the channel close summary was encoded with\n\t// any of the additional optional fields.\n\tvar hasNewFields bool\n\terr = ReadElements(r, &hasNewFields)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If fields are not present, we can return.\n\tif !hasNewFields {\n\t\treturn c, nil\n\t}\n\n\t// Otherwise read the new fields.\n\tif err := ReadElements(r, &c.RemoteCurrentRevocation); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := readChanConfig(r, &c.LocalChanConfig); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally, we'll attempt to read the next unrevoked commitment point\n\t// for the remote party. If we closed the channel before receiving a\n\t// funding locked message then this might not be present. A boolean\n\t// indicating whether the field is present will come first.\n\tvar hasRemoteNextRevocation bool\n\terr = ReadElements(r, &hasRemoteNextRevocation)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If this field was written, read it.\n\tif hasRemoteNextRevocation {\n\t\terr = ReadElements(r, &c.RemoteNextRevocation)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Check if we have a channel sync message to read.\n\tvar hasChanSyncMsg bool\n\terr = ReadElements(r, &hasChanSyncMsg)\n\tif err == io.EOF {\n\t\treturn c, nil\n\t} else if err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If a chan sync message is present, read it.\n\tif hasChanSyncMsg {\n\t\t// We must pass in reference to a lnwire.Message for the codec\n\t\t// to support it.\n\t\tvar msg lnwire.Message\n\t\tif err := ReadElements(r, &msg); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tchanSync, ok := msg.(*lnwire.ChannelReestablish)\n\t\tif !ok {\n\t\t\treturn nil, errors.New(\"unable cast db Message to \" +\n\t\t\t\t\"ChannelReestablish\")\n\t\t}\n\t\tc.LastChanSyncMsg = chanSync\n\t}\n\n\treturn c, nil\n}\n\n// ErrCorruptedFwdPkg signals that the on-disk structure of the forwarding\n// package has potentially been mangled.\nvar ErrCorruptedFwdPkg = errors.New(\"fwding package db has been corrupted\")\n\nvar (\n\t// fwdPackagesKey is the root-level bucket that all forwarding packages\n\t// are written. This bucket is further subdivided based on the short\n\t// channel ID of each channel.\n\tfwdPackagesKey = []byte(\"fwd-packages\")\n\n\t// addBucketKey is the bucket to which all Add log updates are written.\n\taddBucketKey = []byte(\"add-updates\")\n\n\t// failSettleBucketKey is the bucket to which all Settle/Fail log\n\t// updates are written.\n\tfailSettleBucketKey = []byte(\"fail-settle-updates\")\n\n\t// fwdFilterKey is a key used to write the set of Adds that passed\n\t// validation and are to be forwarded to the switch.\n\t// NOTE: The presence of this key within a forwarding package indicates\n\t// that the package has reached FwdStateProcessed.\n\tfwdFilterKey = []byte(\"fwd-filter-key\")\n\n\t// ackFilterKey is a key used to access the PkgFilter indicating which\n\t// Adds have received a Settle/Fail. This response may come from a\n\t// number of sources, including: exitHop settle/fails, switch failures,\n\t// chain arbiter interjections, as well as settle/fails from the\n\t// next hop in the route.\n\tackFilterKey = []byte(\"ack-filter-key\")\n\n\t// settleFailFilterKey is a key used to access the PkgFilter indicating\n\t// which Settles/Fails in have been received and processed by the link\n\t// that originally received the Add.\n\tsettleFailFilterKey = []byte(\"settle-fail-filter-key\")\n)\n",
+      "length": 3441,
+      "tokens": 529,
+      "embedding": []
+    },
+    {
+      "slug": "func makeLogKey(updateNum uint64) [8]byte {",
+      "content": "func makeLogKey(updateNum uint64) [8]byte {\n\tvar key [8]byte\n\tbyteOrder.PutUint64(key[:], updateNum)\n\treturn key\n}\n\n// uint16Key writes the provided 16-bit unsigned integer to a 2-byte slice.",
+      "length": 142,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func uint16Key(i uint16) []byte {",
+      "content": "func uint16Key(i uint16) []byte {\n\tkey := make([]byte, 2)\n\tbyteOrder.PutUint16(key, i)\n\treturn key\n}\n\n// ChannelPackager is used by a channel to manage the lifecycle of its forwarding\n// packages. The packager is tied to a particular source channel ID, allowing it\n// to create and edit its own packages. Each packager also has the ability to\n// remove fail/settle htlcs that correspond to an add contained in one of\n// source's packages.",
+      "length": 395,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelPackager struct {",
+      "content": "type ChannelPackager struct {\n\tsource lnwire.ShortChannelID\n}\n\n// NewChannelPackager creates a new packager for a single channel.",
+      "length": 96,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChannelPackager(source lnwire.ShortChannelID) *ChannelPackager {",
+      "content": "func NewChannelPackager(source lnwire.ShortChannelID) *ChannelPackager {\n\treturn &ChannelPackager{\n\t\tsource: source,\n\t}\n}\n\n// AddFwdPkg writes a newly locked in forwarding package to disk.",
+      "length": 110,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChannelPackager) AddFwdPkg(tx kvdb.RwTx, fwdPkg *common.FwdPkg) error { // nolint: dupl",
+      "content": "func (*ChannelPackager) AddFwdPkg(tx kvdb.RwTx, fwdPkg *common.FwdPkg) error { // nolint: dupl\n\tfwdPkgBkt, err := tx.CreateTopLevelBucket(fwdPackagesKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tsource := makeLogKey(fwdPkg.Source.ToUint64())\n\tsourceBkt, err := fwdPkgBkt.CreateBucketIfNotExists(source[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\theightKey := makeLogKey(fwdPkg.Height)\n\theightBkt, err := sourceBkt.CreateBucketIfNotExists(heightKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write ADD updates we received at this commit height.\n\taddBkt, err := heightBkt.CreateBucketIfNotExists(addBucketKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write SETTLE/FAIL updates we received at this commit height.\n\tfailSettleBkt, err := heightBkt.CreateBucketIfNotExists(failSettleBucketKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor i := range fwdPkg.Adds {\n\t\terr = putLogUpdate(addBkt, uint16(i), &fwdPkg.Adds[i])\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Persist the initialized pkg filter, which will be used to determine\n\t// when we can remove this forwarding package from disk.\n\tvar ackFilterBuf bytes.Buffer\n\tif err := fwdPkg.AckFilter.Encode(&ackFilterBuf); err != nil {\n\t\treturn err\n\t}\n\n\tif err := heightBkt.Put(ackFilterKey, ackFilterBuf.Bytes()); err != nil {\n\t\treturn err\n\t}\n\n\tfor i := range fwdPkg.SettleFails {\n\t\terr = putLogUpdate(failSettleBkt, uint16(i), &fwdPkg.SettleFails[i])\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\tvar settleFailFilterBuf bytes.Buffer\n\terr = fwdPkg.SettleFailFilter.Encode(&settleFailFilterBuf)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn heightBkt.Put(settleFailFilterKey, settleFailFilterBuf.Bytes())\n}\n\n// putLogUpdate writes an htlc to the provided `bkt`, using `index` as the key.",
+      "length": 1544,
+      "tokens": 206,
+      "embedding": []
+    },
+    {
+      "slug": "func putLogUpdate(bkt kvdb.RwBucket, idx uint16, htlc *common.LogUpdate) error {",
+      "content": "func putLogUpdate(bkt kvdb.RwBucket, idx uint16, htlc *common.LogUpdate) error {\n\tvar b bytes.Buffer\n\tif err := serializeLogUpdate(&b, htlc); err != nil {\n\t\treturn err\n\t}\n\n\treturn bkt.Put(uint16Key(idx), b.Bytes())\n}\n\n// LoadFwdPkgs scans the forwarding log for any packages that haven't been\n// processed, and returns their deserialized log updates in a map indexed by the\n// remote commitment height at which the updates were locked in.",
+      "length": 347,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) LoadFwdPkgs(tx kvdb.RTx) ([]*common.FwdPkg, error) {",
+      "content": "func (p *ChannelPackager) LoadFwdPkgs(tx kvdb.RTx) ([]*common.FwdPkg, error) {\n\treturn loadChannelFwdPkgs(tx, p.source)\n}\n\n// loadChannelFwdPkgs loads all forwarding packages owned by `source`.",
+      "length": 111,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func loadChannelFwdPkgs(tx kvdb.RTx, source lnwire.ShortChannelID) ([]*common.FwdPkg, error) { // nolint: dupl",
+      "content": "func loadChannelFwdPkgs(tx kvdb.RTx, source lnwire.ShortChannelID) ([]*common.FwdPkg, error) { // nolint: dupl\n\tfwdPkgBkt := tx.ReadBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn nil, nil\n\t}\n\n\tsourceKey := makeLogKey(source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadBucket(sourceKey[:])\n\tif sourceBkt == nil {\n\t\treturn nil, nil\n\t}\n\n\tvar heights []uint64\n\tif err := sourceBkt.ForEach(func(k, _ []byte) error {\n\t\tif len(k) != 8 {\n\t\t\treturn ErrCorruptedFwdPkg\n\t\t}\n\n\t\theights = append(heights, byteOrder.Uint64(k))\n\n\t\treturn nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load the forwarding package for each retrieved height.\n\tfwdPkgs := make([]*common.FwdPkg, 0, len(heights))\n\tfor _, height := range heights {\n\t\tfwdPkg, err := loadFwdPkg(fwdPkgBkt, source, height)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tfwdPkgs = append(fwdPkgs, fwdPkg)\n\t}\n\n\treturn fwdPkgs, nil\n}\n\n// loadFwdPkg reads the packager's fwd pkg at a given height, and determines the\n// appropriate FwdState.",
+      "length": 838,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func loadFwdPkg(fwdPkgBkt kvdb.RBucket, source lnwire.ShortChannelID,",
+      "content": "func loadFwdPkg(fwdPkgBkt kvdb.RBucket, source lnwire.ShortChannelID,\n\theight uint64) (*common.FwdPkg, error) {\n\n\tsourceKey := makeLogKey(source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadBucket(sourceKey[:])\n\tif sourceBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\theightKey := makeLogKey(height)\n\theightBkt := sourceBkt.NestedReadBucket(heightKey[:])\n\tif heightBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\t// Load ADDs from disk.\n\taddBkt := heightBkt.NestedReadBucket(addBucketKey)\n\tif addBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\tadds, err := loadHtlcs(addBkt)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load ack filter from disk.\n\tackFilterBytes := heightBkt.Get(ackFilterKey)\n\tif ackFilterBytes == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\tackFilterReader := bytes.NewReader(ackFilterBytes)\n\n\tackFilter := &common.PkgFilter{}\n\tif err := ackFilter.Decode(ackFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load SETTLE/FAILs from disk.\n\tfailSettleBkt := heightBkt.NestedReadBucket(failSettleBucketKey)\n\tif failSettleBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\tfailSettles, err := loadHtlcs(failSettleBkt)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load settle fail filter from disk.\n\tsettleFailFilterBytes := heightBkt.Get(settleFailFilterKey)\n\tif settleFailFilterBytes == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\tsettleFailFilterReader := bytes.NewReader(settleFailFilterBytes)\n\n\tsettleFailFilter := &common.PkgFilter{}\n\tif err := settleFailFilter.Decode(settleFailFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Initialize the fwding package, which always starts in the\n\t// FwdStateLockedIn. We can determine what state the package was left in\n\t// by examining constraints on the information loaded from disk.\n\tfwdPkg := &common.FwdPkg{\n\t\tSource:           source,\n\t\tState:            common.FwdStateLockedIn,\n\t\tHeight:           height,\n\t\tAdds:             adds,\n\t\tAckFilter:        ackFilter,\n\t\tSettleFails:      failSettles,\n\t\tSettleFailFilter: settleFailFilter,\n\t}\n\n\t// Check to see if we have written the set exported filter adds to\n\t// disk. If we haven't, processing of this package was never started, or\n\t// failed during the last attempt.\n\tfwdFilterBytes := heightBkt.Get(fwdFilterKey)\n\tif fwdFilterBytes == nil {\n\t\tnAdds := uint16(len(adds))\n\t\tfwdPkg.FwdFilter = common.NewPkgFilter(nAdds)\n\t\treturn fwdPkg, nil\n\t}\n\n\tfwdFilterReader := bytes.NewReader(fwdFilterBytes)\n\tfwdPkg.FwdFilter = &common.PkgFilter{}\n\tif err := fwdPkg.FwdFilter.Decode(fwdFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Otherwise, a complete round of processing was completed, and we\n\t// advance the package to FwdStateProcessed.\n\tfwdPkg.State = common.FwdStateProcessed\n\n\t// If every add, settle, and fail has been fully acknowledged, we can\n\t// safely set the package's state to FwdStateCompleted, signalling that\n\t// it can be garbage collected.\n\tif fwdPkg.AckFilter.IsFull() && fwdPkg.SettleFailFilter.IsFull() {\n\t\tfwdPkg.State = common.FwdStateCompleted\n\t}\n\n\treturn fwdPkg, nil\n}\n\n// loadHtlcs retrieves all serialized htlcs in a bucket, returning\n// them in order of the indexes they were written under.",
+      "length": 2973,
+      "tokens": 370,
+      "embedding": []
+    },
+    {
+      "slug": "func loadHtlcs(bkt kvdb.RBucket) ([]common.LogUpdate, error) {",
+      "content": "func loadHtlcs(bkt kvdb.RBucket) ([]common.LogUpdate, error) {\n\tvar htlcs []common.LogUpdate\n\tif err := bkt.ForEach(func(_, v []byte) error {\n\t\thtlc, err := deserializeLogUpdate(bytes.NewReader(v))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\thtlcs = append(htlcs, *htlc)\n\n\t\treturn nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn htlcs, nil\n}\n\n// serializeLogUpdate writes a log update to the provided io.Writer.",
+      "length": 330,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeLogUpdate(w io.Writer, l *common.LogUpdate) error {",
+      "content": "func serializeLogUpdate(w io.Writer, l *common.LogUpdate) error {\n\treturn WriteElements(w, l.LogIndex, l.UpdateMsg)\n}\n\n// deserializeLogUpdate reads a log update from the provided io.Reader.",
+      "length": 121,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeLogUpdate(r io.Reader) (*common.LogUpdate, error) {",
+      "content": "func deserializeLogUpdate(r io.Reader) (*common.LogUpdate, error) {\n\tl := &common.LogUpdate{}\n\tif err := ReadElements(r, &l.LogIndex, &l.UpdateMsg); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn l, nil\n}\n",
+      "length": 126,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

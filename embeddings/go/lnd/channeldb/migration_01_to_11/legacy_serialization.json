@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/legacy_serialization.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "func deserializeCloseChannelSummaryV6(r io.Reader) (*ChannelCloseSummary, error) {",
+      "content": "func deserializeCloseChannelSummaryV6(r io.Reader) (*ChannelCloseSummary, error) {\n\tc := &ChannelCloseSummary{}\n\n\terr := ReadElements(r,\n\t\t&c.ChanPoint, &c.ShortChanID, &c.ChainHash, &c.ClosingTXID,\n\t\t&c.CloseHeight, &c.RemotePub, &c.Capacity, &c.SettledBalance,\n\t\t&c.TimeLockedBalance, &c.CloseType, &c.IsPending,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// We'll now check to see if the channel close summary was encoded with\n\t// any of the additional optional fields.\n\terr = ReadElements(r, &c.RemoteCurrentRevocation)\n\tswitch {\n\tcase err == io.EOF:\n\t\treturn c, nil\n\n\t// If we got a non-eof error, then we know there's an actually issue.\n\t// Otherwise, it may have been the case that this summary didn't have\n\t// the set of optional fields.\n\tcase err != nil:\n\t\treturn nil, err\n\t}\n\n\tif err := ReadChanConfig(r, &c.LocalChanConfig); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally, we'll attempt to read the next unrevoked commitment point\n\t// for the remote party. If we closed the channel before receiving a\n\t// funding locked message, then this can be nil. As a result, we'll use\n\t// the same technique to read the field, only if there's still data\n\t// left in the buffer.\n\terr = ReadElements(r, &c.RemoteNextRevocation)\n\tif err != nil && err != io.EOF {\n\t\t// If we got a non-eof error, then we know there's an actually\n\t\t// issue. Otherwise, it may have been the case that this\n\t\t// summary didn't have the set of optional fields.\n\t\treturn nil, err\n\t}\n\n\treturn c, nil\n}\n",
+      "length": 1349,
+      "tokens": 225,
+      "embedding": []
+    }
+  ]
+}

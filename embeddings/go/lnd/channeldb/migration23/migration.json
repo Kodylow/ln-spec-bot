@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration23/migration.go",
+  "package": "migration23",
+  "sections": [
+    {
+      "slug": "func htlcBucketKey(prefix, id []byte) []byte {",
+      "content": "func htlcBucketKey(prefix, id []byte) []byte {\n\tkey := make([]byte, len(prefix)+len(id))\n\tcopy(key, prefix)\n\tcopy(key[len(prefix):], id)\n\treturn key\n}\n\n// MigrateHtlcAttempts will gather all htlc-attempt-info's, htlcs-settle-info's\n// and htlcs-fail-info's from the attempt ID buckes and re-store them using the\n// flattened keys to each payment's payment-htlcs-bucket.",
+      "length": 314,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func MigrateHtlcAttempts(tx kvdb.RwTx) error {",
+      "content": "func MigrateHtlcAttempts(tx kvdb.RwTx) error {\n\tpayments := tx.ReadWriteBucket(paymentsRootBucket)\n\tif payments == nil {\n\t\treturn nil\n\t}\n\n\t// Collect all payment hashes so we can migrate payments one-by-one to\n\t// avoid any bugs bbolt might have when invalidating cursors.\n\t// For 100 million payments, this would need about 3 GiB memory so we\n\t// should hopefully be fine for very large nodes too.\n\tvar paymentHashes []string\n\tif err := payments.ForEach(func(hash, v []byte) error {\n\t\t// Get the bucket which contains the payment, fail if the key\n\t\t// does not have a bucket.\n\t\tbucket := payments.NestedReadBucket(hash)\n\t\tif bucket == nil {\n\t\t\treturn fmt.Errorf(\"key must be a bucket: '%v'\",\n\t\t\t\tstring(paymentsRootBucket))\n\t\t}\n\n\t\tpaymentHashes = append(paymentHashes, string(hash))\n\t\treturn nil\n\t}); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, paymentHash := range paymentHashes {\n\t\tpayment := payments.NestedReadWriteBucket([]byte(paymentHash))\n\t\tif payment.Get(paymentHtlcsBucket) != nil {\n\t\t\treturn fmt.Errorf(\"key must be a bucket: '%v'\",\n\t\t\t\tstring(paymentHtlcsBucket))\n\t\t}\n\n\t\thtlcs := payment.NestedReadWriteBucket(paymentHtlcsBucket)\n\t\tif htlcs == nil {\n\t\t\t// Nothing to migrate for this payment.\n\t\t\tcontinue\n\t\t}\n\n\t\tif err := migrateHtlcsBucket(htlcs); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// migrateHtlcsBucket is a helper to gather, transform and re-store htlc attempt\n// key/values.",
+      "length": 1307,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateHtlcsBucket(htlcs kvdb.RwBucket) error {",
+      "content": "func migrateHtlcsBucket(htlcs kvdb.RwBucket) error {\n\t// Collect attempt ids so that we can migrate attempts one-by-one\n\t// to avoid any bugs bbolt might have when invalidating cursors.\n\tvar aids []string\n\n\t// First we collect all htlc attempt ids.\n\tif err := htlcs.ForEach(func(aid, v []byte) error {\n\t\taids = append(aids, string(aid))\n\t\treturn nil\n\t}); err != nil {\n\t\treturn err\n\t}\n\n\t// Next we go over these attempts, fetch all data and migrate.\n\tfor _, aid := range aids {\n\t\taidKey := []byte(aid)\n\t\tattempt := htlcs.NestedReadWriteBucket(aidKey)\n\t\tif attempt == nil {\n\t\t\treturn fmt.Errorf(\"non bucket element '%v' in '%v' \"+\n\t\t\t\t\"bucket\", aidKey, string(paymentHtlcsBucket))\n\t\t}\n\n\t\t// Collect attempt/settle/fail infos.\n\t\tattemptInfo := attempt.Get(oldAttemptInfoKey)\n\t\tif len(attemptInfo) > 0 {\n\t\t\tnewKey := htlcBucketKey(htlcAttemptInfoKey, aidKey)\n\t\t\tif err := htlcs.Put(newKey, attemptInfo); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\tsettleInfo := attempt.Get(oldSettleInfoKey)\n\t\tif len(settleInfo) > 0 {\n\t\t\tnewKey := htlcBucketKey(htlcSettleInfoKey, aidKey)\n\t\t\tif err := htlcs.Put(newKey, settleInfo); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\tfailInfo := attempt.Get(oldFailInfoKey)\n\t\tif len(failInfo) > 0 {\n\t\t\tnewKey := htlcBucketKey(htlcFailInfoKey, aidKey)\n\t\t\tif err := htlcs.Put(newKey, failInfo); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\t// Finally we delete old attempt buckets.\n\tfor _, aid := range aids {\n\t\tif err := htlcs.DeleteNestedBucket([]byte(aid)); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 1411,
+      "tokens": 206,
+      "embedding": []
+    }
+  ]
+}

@@ -1,5 +1,13 @@
 {
   "filepath": "../implementations/go/lnd/itest/list_off_test.go",
-  "package": "!integration",
-  "sections": []
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "//go:build !integration",
+      "content": "//go:build !integration\n\npackage itest\n\nimport \"github.com/lightningnetwork/lnd/lntest\"\n\nvar allTestCases = []*lntest.TestCase{}\n",
+      "length": 99,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
 }

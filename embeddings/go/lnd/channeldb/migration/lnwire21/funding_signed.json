@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/funding_signed.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type FundingSigned struct {",
+      "content": "type FundingSigned struct {\n\t// ChannelPoint is the particular active channel that this\n\t// FundingSigned is bound to.\n\tChanID ChannelID\n\n\t// CommitSig is Bob's signature for Alice's version of the commitment\n\t// transaction.\n\tCommitSig Sig\n}\n\n// A compile time check to ensure FundingSigned implements the lnwire.Message\n// interface.\nvar _ Message = (*FundingSigned)(nil)\n\n// Encode serializes the target FundingSigned into the passed io.Writer\n// implementation. Serialization will observe the rules defined by the passed\n// protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 552,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FundingSigned) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (f *FundingSigned) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w, f.ChanID, f.CommitSig)\n}\n\n// Decode deserializes the serialized FundingSigned stored in the passed\n// io.Reader into the target FundingSigned using the deserialization rules\n// defined by the passed protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 286,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FundingSigned) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (f *FundingSigned) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r, &f.ChanID, &f.CommitSig)\n}\n\n// MsgType returns the uint32 code which uniquely identifies this message as a\n// FundingSigned on the wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 206,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FundingSigned) MsgType() MessageType {",
+      "content": "func (f *FundingSigned) MsgType() MessageType {\n\treturn MsgFundingSigned\n}\n\n// MaxPayloadLength returns the maximum allowed payload length for a\n// FundingSigned message.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 168,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FundingSigned) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (f *FundingSigned) MaxPayloadLength(uint32) uint32 {\n\t// 32 + 64\n\treturn 96\n}\n",
+      "length": 22,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/watchtower.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "func (h *HarnessRPC) GetInfoWatchtower() *watchtowerrpc.GetInfoResponse {",
+      "content": "func (h *HarnessRPC) GetInfoWatchtower() *watchtowerrpc.GetInfoResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &watchtowerrpc.GetInfoRequest{}\n\tinfo, err := h.Watchtower.GetInfo(ctxt, req)\n\th.NoError(err, \"GetInfo from Watchtower\")\n\n\treturn info\n}\n\n// AddTower makes a RPC call to the WatchtowerClient of the given node and\n// asserts.",
+      "length": 301,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) AddTower(",
+      "content": "func (h *HarnessRPC) AddTower(\n\treq *wtclientrpc.AddTowerRequest) *wtclientrpc.AddTowerResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.WatchtowerClient.AddTower(ctxt, req)\n\th.NoError(err, \"AddTower\")\n\n\treturn resp\n}\n\n// WatchtowerStats makes a RPC call to the WatchtowerClient of the given node\n// and asserts.",
+      "length": 327,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) WatchtowerStats() *wtclientrpc.StatsResponse {",
+      "content": "func (h *HarnessRPC) WatchtowerStats() *wtclientrpc.StatsResponse {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\treq := &wtclientrpc.StatsRequest{}\n\tresp, err := h.WatchtowerClient.Stats(ctxt, req)\n\th.NoError(err, \"Stats from Watchtower\")\n\n\treturn resp\n}\n",
+      "length": 214,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

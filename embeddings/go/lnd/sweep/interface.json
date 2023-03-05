@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/interface.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "type Wallet interface {",
+      "content": "type Wallet interface {\n\t// PublishTransaction performs cursory validation (dust checks, etc) and\n\t// broadcasts the passed transaction to the Bitcoin network.\n\tPublishTransaction(tx *wire.MsgTx, label string) error\n\n\t// ListUnspentWitnessFromDefaultAccount returns all unspent outputs\n\t// which are version 0 witness programs from the default wallet account.\n\t// The 'minConfs' and 'maxConfs' parameters indicate the minimum\n\t// and maximum number of confirmations an output needs in order to be\n\t// returned by this method.\n\tListUnspentWitnessFromDefaultAccount(minConfs, maxConfs int32) (\n\t\t[]*lnwallet.Utxo, error)\n\n\t// WithCoinSelectLock will execute the passed function closure in a\n\t// synchronized manner preventing any coin selection operations from\n\t// proceeding while the closure is executing. This can be seen as the\n\t// ability to execute a function closure under an exclusive coin\n\t// selection lock.\n\tWithCoinSelectLock(f func() error) error\n\n\t// RemoveDescendants removes any wallet transactions that spends\n\t// outputs created by the specified transaction.\n\tRemoveDescendants(*wire.MsgTx) error\n\n\t// FetchTx returns the transaction that corresponds to the transaction\n\t// hash passed in. If the transaction can't be found then a nil\n\t// transaction pointer is returned.\n\tFetchTx(chainhash.Hash) (*wire.MsgTx, error)\n}\n",
+      "length": 1284,
+      "tokens": 173,
+      "embedding": []
+    }
+  ]
+}

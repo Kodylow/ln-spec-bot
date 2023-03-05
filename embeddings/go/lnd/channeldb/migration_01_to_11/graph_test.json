@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/graph_test.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "func createLightningNode(db *DB, priv *btcec.PrivateKey) (*LightningNode, error) {",
+      "content": "func createLightningNode(db *DB, priv *btcec.PrivateKey) (*LightningNode, error) {\n\tupdateTime := prand.Int63()\n\n\tpub := priv.PubKey().SerializeCompressed()\n\tn := &LightningNode{\n\t\tHaveNodeAnnouncement: true,\n\t\tAuthSigBytes:         testSig.Serialize(),\n\t\tLastUpdate:           time.Unix(updateTime, 0),\n\t\tColor:                color.RGBA{1, 2, 3, 0},\n\t\tAlias:                \"kek\" + string(pub[:]),\n\t\tFeatures:             testFeatures,\n\t\tAddresses:            testAddrs,\n\t\tdb:                   db,\n\t}\n\tcopy(n.PubKeyBytes[:], priv.PubKey().SerializeCompressed())\n\n\treturn n, nil\n}\n",
+      "length": 483,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func createTestVertex(db *DB) (*LightningNode, error) {",
+      "content": "func createTestVertex(db *DB) (*LightningNode, error) {\n\tpriv, err := btcec.NewPrivateKey()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn createLightningNode(db, priv)\n}\n",
+      "length": 108,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

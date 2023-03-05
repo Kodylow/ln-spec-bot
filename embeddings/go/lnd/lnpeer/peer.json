@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnpeer/peer.go",
+  "package": "lnpeer",
+  "sections": [
+    {
+      "slug": "type Peer interface {",
+      "content": "type Peer interface {\n\t// SendMessage sends a variadic number of high-priority message to\n\t// remote peer.  The first argument denotes if the method should block\n\t// until the messages have been sent to the remote peer or an error is\n\t// returned, otherwise it returns immediately after queuing.\n\tSendMessage(sync bool, msgs ...lnwire.Message) error\n\n\t// SendMessageLazy sends a variadic number of low-priority message to\n\t// remote peer. The first argument denotes if the method should block\n\t// until the messages have been sent to the remote peer or an error is\n\t// returned, otherwise it returns immediately after queueing.\n\tSendMessageLazy(sync bool, msgs ...lnwire.Message) error\n\n\t// AddNewChannel adds a new channel to the peer. The channel should fail\n\t// to be added if the cancel channel is closed.\n\tAddNewChannel(channel *channeldb.OpenChannel, cancel <-chan struct{}) error\n\n\t// WipeChannel removes the channel uniquely identified by its channel\n\t// point from all indexes associated with the peer.\n\tWipeChannel(*wire.OutPoint)\n\n\t// PubKey returns the serialized public key of the remote peer.\n\tPubKey() [33]byte\n\n\t// IdentityKey returns the public key of the remote peer.\n\tIdentityKey() *btcec.PublicKey\n\n\t// Address returns the network address of the remote peer.\n\tAddress() net.Addr\n\n\t// QuitSignal is a method that should return a channel which will be\n\t// sent upon or closed once the backing peer exits. This allows callers\n\t// using the interface to cancel any processing in the event the backing\n\t// implementation exits.\n\tQuitSignal() <-chan struct{}\n\n\t// LocalFeatures returns the set of features that has been advertised by\n\t// the us to the remote peer. This allows sub-systems that use this\n\t// interface to gate their behavior off the set of negotiated feature\n\t// bits.\n\tLocalFeatures() *lnwire.FeatureVector\n\n\t// RemoteFeatures returns the set of features that has been advertised\n\t// by the remote peer. This allows sub-systems that use this interface\n\t// to gate their behavior off the set of negotiated feature bits.\n\tRemoteFeatures() *lnwire.FeatureVector\n}\n",
+      "length": 2023,
+      "tokens": 310,
+      "embedding": []
+    }
+  ]
+}

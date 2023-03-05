@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/lnwire/message.go",
-  "package": "Copyright",
+  "package": "lnwire",
   "sections": [
     {
       "slug": "type MessageType uint16",

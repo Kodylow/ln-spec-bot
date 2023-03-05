@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/internal/musig2v040/keys.go",
-  "package": "Copyright",
+  "package": "musig2v040",
   "sections": [
     {
       "slug": "type sortableKeys []*btcec.PublicKey",

@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/btcd.go",
+  "package": "lntest",
+  "sections": [
+    {
+      "slug": "//go:build !bitcoind && !neutrino",
+      "content": "//go:build !bitcoind && !neutrino\n// +build !bitcoind,!neutrino\n\npackage lntest\n\nimport (\n\t\"encoding/hex\"\n\t\"errors\"\n\t\"fmt\"\n\t\"io/ioutil\"\n\t\"os\"\n\t\"strings\"\n\n\t\"github.com/btcsuite/btcd/btcjson\"\n\t\"github.com/btcsuite/btcd/chaincfg\"\n\t\"github.com/btcsuite/btcd/integration/rpctest\"\n\t\"github.com/btcsuite/btcd/rpcclient\"\n\t\"github.com/lightningnetwork/lnd/lntest/node\"\n)\n\n// logDirPattern is the pattern of the name of the temporary log directory.\nconst logDirPattern = \"%s/.backendlogs\"\n\n// temp is used to signal we want to establish a temporary connection using the\n// btcd Node API.\n//\n// NOTE: Cannot be const, since the node API expects a reference.\nvar temp = \"temp\"\n\n// BtcdBackendConfig is an implementation of the BackendConfig interface\n// backed by a btcd node.",
+      "length": 701,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "type BtcdBackendConfig struct {",
+      "content": "type BtcdBackendConfig struct {\n\t// rpcConfig houses the connection config to the backing btcd instance.\n\trpcConfig rpcclient.ConnConfig\n\n\t// harness is the backing btcd instance.\n\tharness *rpctest.Harness\n\n\t// minerAddr is the p2p address of the miner to connect to.\n\tminerAddr string\n}\n\n// A compile time assertion to ensure BtcdBackendConfig meets the BackendConfig\n// interface.\nvar _ node.BackendConfig = (*BtcdBackendConfig)(nil)\n\n// GenArgs returns the arguments needed to be passed to LND at startup for\n// using this node as a chain backend.",
+      "length": 503,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BtcdBackendConfig) GenArgs() []string {",
+      "content": "func (b BtcdBackendConfig) GenArgs() []string {\n\tvar args []string\n\tencodedCert := hex.EncodeToString(b.rpcConfig.Certificates)\n\targs = append(args, \"--bitcoin.node=btcd\")\n\targs = append(args, fmt.Sprintf(\"--btcd.rpchost=%v\", b.rpcConfig.Host))\n\targs = append(args, fmt.Sprintf(\"--btcd.rpcuser=%v\", b.rpcConfig.User))\n\targs = append(args, fmt.Sprintf(\"--btcd.rpcpass=%v\", b.rpcConfig.Pass))\n\targs = append(args, fmt.Sprintf(\"--btcd.rawrpccert=%v\", encodedCert))\n\n\treturn args\n}\n\n// ConnectMiner is called to establish a connection to the test miner.",
+      "length": 490,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BtcdBackendConfig) ConnectMiner() error {",
+      "content": "func (b BtcdBackendConfig) ConnectMiner() error {\n\treturn b.harness.Client.Node(btcjson.NConnect, b.minerAddr, &temp)\n}\n\n// DisconnectMiner is called to disconnect the miner.",
+      "length": 121,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BtcdBackendConfig) DisconnectMiner() error {",
+      "content": "func (b BtcdBackendConfig) DisconnectMiner() error {\n\treturn b.harness.Client.Node(btcjson.NDisconnect, b.minerAddr, &temp)\n}\n\n// Credentials returns the rpc username, password and host for the backend.",
+      "length": 146,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BtcdBackendConfig) Credentials() (string, string, string, error) {",
+      "content": "func (b BtcdBackendConfig) Credentials() (string, string, string, error) {\n\treturn b.rpcConfig.User, b.rpcConfig.Pass, b.rpcConfig.Host, nil\n}\n\n// Name returns the name of the backend type.",
+      "length": 111,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BtcdBackendConfig) Name() string {",
+      "content": "func (b BtcdBackendConfig) Name() string {\n\treturn \"btcd\"\n}\n\n// NewBackend starts a new rpctest.Harness and returns a BtcdBackendConfig for\n// that node. miner should be set to the P2P address of the miner to connect\n// to.",
+      "length": 175,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBackend(miner string, netParams *chaincfg.Params) (",
+      "content": "func NewBackend(miner string, netParams *chaincfg.Params) (\n\t*BtcdBackendConfig, func() error, error) {\n\n\tbaseLogDir := fmt.Sprintf(logDirPattern, node.GetLogDir())\n\targs := []string{\n\t\t\"--rejectnonstd\",\n\t\t\"--txindex\",\n\t\t\"--trickleinterval=100ms\",\n\t\t\"--debuglevel=debug\",\n\t\t\"--logdir=\" + baseLogDir,\n\t\t\"--nowinservice\",\n\t\t// The miner will get banned and disconnected from the node if\n\t\t// its requested data are not found. We add a nobanning flag to\n\t\t// make sure they stay connected if it happens.\n\t\t\"--nobanning\",\n\t\t// Don't disconnect if a reply takes too long.\n\t\t\"--nostalldetect\",\n\t}\n\tchainBackend, err := rpctest.New(\n\t\tnetParams, nil, args, node.GetBtcdBinary(),\n\t)\n\tif err != nil {\n\t\treturn nil, nil, fmt.Errorf(\"unable to create btcd node: %w\",\n\t\t\terr)\n\t}\n\n\t// We want to overwrite some of the connection settings to make the\n\t// tests more robust. We might need to restart the backend while there\n\t// are already blocks present, which will take a bit longer than the\n\t// 1 second the default settings amount to. Doubling both values will\n\t// give us retries up to 4 seconds.\n\tconst (\n\t\tmaxConnRetries   = rpctest.DefaultMaxConnectionRetries * 2\n\t\tconnRetryTimeout = rpctest.DefaultConnectionRetryTimeout * 2\n\t)\n\n\tchainBackend.MaxConnRetries = maxConnRetries\n\tchainBackend.ConnectionRetryTimeout = connRetryTimeout\n\n\tif err := chainBackend.SetUp(false, 0); err != nil {\n\t\treturn nil, nil, fmt.Errorf(\"unable to set up btcd backend: %w\",\n\t\t\terr)\n\t}\n\n\tbd := &BtcdBackendConfig{\n\t\trpcConfig: chainBackend.RPCConfig(),\n\t\tharness:   chainBackend,\n\t\tminerAddr: miner,\n\t}\n\n\tcleanUp := func() error {\n\t\tvar errStr string\n\t\tif err := chainBackend.TearDown(); err != nil {\n\t\t\terrStr += err.Error() + \"\\n\"\n\t\t}\n\n\t\t// After shutting down the chain backend, we'll make a copy of\n\t\t// the log files, including any compressed log files from\n\t\t// logrorate, before deleting the temporary log dir.\n\t\tlogDir := fmt.Sprintf(\"%s/%s\", baseLogDir, netParams.Name)\n\t\tfiles, err := ioutil.ReadDir(logDir)\n\t\tif err != nil {\n\t\t\terrStr += fmt.Sprintf(\n\t\t\t\t\"unable to read log directory: %v\\n\", err,\n\t\t\t)\n\t\t}\n\n\t\tfor _, file := range files {\n\t\t\tlogFile := fmt.Sprintf(\"%s/%s\", logDir, file.Name())\n\t\t\tnewFilename := strings.Replace(\n\t\t\t\tfile.Name(), \"btcd.log\",\n\t\t\t\t\"output_btcd_chainbackend.log\", 1,\n\t\t\t)\n\t\t\tlogDestination := fmt.Sprintf(\n\t\t\t\t\"%s/%s\", node.GetLogDir(), newFilename,\n\t\t\t)\n\t\t\terr := node.CopyFile(logDestination, logFile)\n\t\t\tif err != nil {\n\t\t\t\terrStr += fmt.Sprintf(\"unable to copy file: \"+\n\t\t\t\t\t\"%v\\n\", err)\n\t\t\t}\n\t\t}\n\n\t\tif err = os.RemoveAll(baseLogDir); err != nil {\n\t\t\terrStr += fmt.Sprintf(\n\t\t\t\t\"cannot remove dir %s: %v\\n\", baseLogDir, err,\n\t\t\t)\n\t\t}\n\t\tif errStr != \"\" {\n\t\t\treturn errors.New(errStr)\n\t\t}\n\t\treturn nil\n\t}\n\n\treturn bd, cleanUp, nil\n}\n",
+      "length": 2595,
+      "tokens": 361,
+      "embedding": []
+    }
+  ]
+}

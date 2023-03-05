@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/peersrpc_active.go",
-  "package": "peersrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build peersrpc",
+      "content": "//go:build peersrpc\n// +build peersrpc\n\npackage main\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"github.com/lightningnetwork/lnd/lnrpc/peersrpc\"\n\t\"github.com/urfave/cli\"\n)\n\n// peersCommands will return the set of commands to enable for peersrpc\n// builds.",
+      "length": 239,
+      "tokens": 26,
+      "embedding": []
+    },
     {
       "slug": "func peersCommands() []cli.Command {",
       "content": "func peersCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"peers\",\n\t\t\tCategory: \"Peers\",\n\t\t\tUsage: \"Interacts with the other nodes of the \" +\n\t\t\t\t\"network\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tupdateNodeAnnouncementCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",

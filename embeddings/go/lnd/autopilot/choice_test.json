@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/choice_test.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "func TestWeightedChoiceEmptyMap(t *testing.T) {",
+      "content": "func TestWeightedChoiceEmptyMap(t *testing.T) {\n\tt.Parallel()\n\n\tvar w []float64\n\t_, err := weightedChoice(w)\n\tif err != ErrNoPositive {\n\t\tt.Fatalf(\"expected ErrNoPositive when choosing in \"+\n\t\t\t\"empty map, instead got %v\", err)\n\t}\n}\n\n// singeNonZero is a type used to generate float64 slices with one non-zero\n// element.",
+      "length": 262,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type singleNonZero []float64",
+      "content": "type singleNonZero []float64\n\n// Generate generates a value of type sinelNonZero to be used during\n// QuickTests.",
+      "length": 82,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (singleNonZero) Generate(rand *rand.Rand, size int) reflect.Value {",
+      "content": "func (singleNonZero) Generate(rand *rand.Rand, size int) reflect.Value {\n\tw := make([]float64, size)\n\n\t// Pick a random index and set it to a random float.\n\ti := rand.Intn(size)\n\tw[i] = rand.Float64()\n\n\treturn reflect.ValueOf(w)\n}\n\n// TestWeightedChoiceSingleIndex tests that choosing randomly in a slice with\n// one positive element always returns that one index.",
+      "length": 281,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWeightedChoiceSingleIndex(t *testing.T) {",
+      "content": "func TestWeightedChoiceSingleIndex(t *testing.T) {\n\tt.Parallel()\n\n\t// Helper that returns the index of the non-zero element.\n\tallButOneZero := func(weights []float64) (bool, int) {\n\t\tvar (\n\t\t\tnumZero   uint32\n\t\t\tnonZeroEl int\n\t\t)\n\n\t\tfor i, w := range weights {\n\t\t\tif w != 0 {\n\t\t\t\tnumZero++\n\t\t\t\tnonZeroEl = i\n\t\t\t}\n\t\t}\n\n\t\treturn numZero == 1, nonZeroEl\n\t}\n\n\tproperty := func(weights singleNonZero) bool {\n\t\t// Make sure the generated slice has exactly one non-zero\n\t\t// element.\n\t\tconditionMet, nonZeroElem := allButOneZero(weights[:])\n\t\tif !conditionMet {\n\t\t\treturn false\n\t\t}\n\n\t\t// Call weightedChoice and assert it picks the non-zero\n\t\t// element.\n\t\tchoice, err := weightedChoice(weights[:])\n\t\tif err != nil {\n\t\t\treturn false\n\t\t}\n\t\treturn choice == nonZeroElem\n\t}\n\n\tif err := quick.Check(property, nil); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// nonNegative is a type used to generate float64 slices with non-negative\n// elements.",
+      "length": 832,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "type nonNegative []float64",
+      "content": "type nonNegative []float64\n\n// Generate generates a value of type nonNegative to be used during\n// QuickTests.",
+      "length": 81,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (nonNegative) Generate(rand *rand.Rand, size int) reflect.Value {",
+      "content": "func (nonNegative) Generate(rand *rand.Rand, size int) reflect.Value {\n\tw := make([]float64, size)\n\n\tfor i := range w {\n\t\tr := rand.Float64()\n\n\t\t// For very small weights it won't work to check deviation from\n\t\t// expected value, so we set them to zero.\n\t\tif r < 0.01*float64(size) {\n\t\t\tr = 0\n\t\t}\n\t\tw[i] = float64(r)\n\t}\n\treturn reflect.ValueOf(w)\n}\n",
+      "length": 264,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func assertChoice(w []float64, iterations int) bool {",
+      "content": "func assertChoice(w []float64, iterations int) bool {\n\tvar sum float64\n\tfor _, v := range w {\n\t\tsum += v\n\t}\n\n\t// Calculate the expected frequency of each choice.\n\texpFrequency := make([]float64, len(w))\n\tfor i, ww := range w {\n\t\texpFrequency[i] = ww / sum\n\t}\n\n\tchosen := make(map[int]int)\n\tfor i := 0; i < iterations; i++ {\n\t\tres, err := weightedChoice(w)\n\t\tif err != nil {\n\t\t\treturn false\n\t\t}\n\t\tchosen[res]++\n\t}\n\n\t// Since this is random we check that the number of times chosen is\n\t// within 20% of the expected value.\n\ttotalChoices := 0\n\tfor i, f := range expFrequency {\n\t\texp := float64(iterations) * f\n\t\tv := float64(chosen[i])\n\t\ttotalChoices += chosen[i]\n\t\texpHigh := exp + exp/5\n\t\texpLow := exp - exp/5\n\t\tif v < expLow || v > expHigh {\n\t\t\treturn false\n\t\t}\n\t}\n\n\t// The sum of choices must be exactly iterations of course.\n\treturn totalChoices == iterations\n\n}\n\n// TestWeightedChoiceDistribution asserts that the weighted choice algorithm\n// chooses among indexes according to their scores.",
+      "length": 901,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWeightedChoiceDistribution(t *testing.T) {",
+      "content": "func TestWeightedChoiceDistribution(t *testing.T) {\n\tconst iterations = 100000\n\n\tproperty := func(weights nonNegative) bool {\n\t\treturn assertChoice(weights, iterations)\n\t}\n\n\tif err := quick.Check(property, nil); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// TestChooseNEmptyMap checks that chooseN returns an empty result when no\n// nodes are chosen among.",
+      "length": 283,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChooseNEmptyMap(t *testing.T) {",
+      "content": "func TestChooseNEmptyMap(t *testing.T) {\n\tt.Parallel()\n\n\tnodes := map[NodeID]*NodeScore{}\n\tproperty := func(n uint32) bool {\n\t\tres, err := chooseN(n, nodes)\n\t\tif err != nil {\n\t\t\treturn false\n\t\t}\n\n\t\t// Result should always be empty.\n\t\treturn len(res) == 0\n\t}\n\n\tif err := quick.Check(property, nil); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// candidateMapVarLen is a type we'll use to generate maps of various lengths\n// up to 255 to be used during QuickTests.",
+      "length": 392,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type candidateMapVarLen map[NodeID]*NodeScore",
+      "content": "type candidateMapVarLen map[NodeID]*NodeScore\n\n// Generate generates a value of type candidateMapVarLen to be used during\n// QuickTests.",
+      "length": 88,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (candidateMapVarLen) Generate(rand *rand.Rand, size int) reflect.Value {",
+      "content": "func (candidateMapVarLen) Generate(rand *rand.Rand, size int) reflect.Value {\n\tnodes := make(map[NodeID]*NodeScore)\n\n\t// To avoid creating huge maps, we restrict them to max uint8 len.\n\tn := uint8(rand.Uint32())\n\n\tfor i := uint8(0); i < n; i++ {\n\t\ts := rand.Float64()\n\n\t\t// We set small values to zero, to ensure we handle these\n\t\t// correctly.\n\t\tif s < 0.01 {\n\t\t\ts = 0\n\t\t}\n\n\t\tvar nID [33]byte\n\t\tbinary.BigEndian.PutUint32(nID[:], uint32(i))\n\t\tnodes[nID] = &NodeScore{\n\t\t\tScore: s,\n\t\t}\n\t}\n\n\treturn reflect.ValueOf(nodes)\n}\n\n// TestChooseNMinimum test that chooseN returns the minimum of the number of\n// nodes we request and the number of positively scored nodes in the given map.",
+      "length": 577,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChooseNMinimum(t *testing.T) {",
+      "content": "func TestChooseNMinimum(t *testing.T) {\n\tt.Parallel()\n\n\t// Helper to count the number of positive scores in the given map.\n\tnumPositive := func(nodes map[NodeID]*NodeScore) int {\n\t\tcnt := 0\n\t\tfor _, v := range nodes {\n\t\t\tif v.Score > 0 {\n\t\t\t\tcnt++\n\t\t\t}\n\t\t}\n\t\treturn cnt\n\t}\n\n\t// We use let the type of n be uint8 to avoid generating huge numbers.\n\tproperty := func(nodes candidateMapVarLen, n uint8) bool {\n\t\tres, err := chooseN(uint32(n), nodes)\n\t\tif err != nil {\n\t\t\treturn false\n\t\t}\n\n\t\tpositive := numPositive(nodes)\n\n\t\t// Result should always be the minimum of the number of nodes\n\t\t// we wanted to select and the number of positively scored\n\t\t// nodes in the map.\n\t\tmin := positive\n\t\tif int(n) < min {\n\t\t\tmin = int(n)\n\t\t}\n\n\t\tif len(res) != min {\n\t\t\treturn false\n\n\t\t}\n\t\treturn true\n\t}\n\n\tif err := quick.Check(property, nil); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// TestChooseNSample sanity checks that nodes are picked by chooseN according\n// to their scores.",
+      "length": 875,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChooseNSample(t *testing.T) {",
+      "content": "func TestChooseNSample(t *testing.T) {\n\tt.Parallel()\n\n\tconst numNodes = 500\n\tconst maxIterations = 100000\n\tfifth := uint32(numNodes / 5)\n\n\tnodes := make(map[NodeID]*NodeScore)\n\n\t// we make 5 buckets of nodes: 0, 0.1, 0.2, 0.4 and 0.8 score. We want\n\t// to check that zero scores never gets chosen, while a doubling the\n\t// score makes a node getting chosen about double the amount (this is\n\t// true only when n <<< numNodes).\n\tj := 2 * fifth\n\tscore := 0.1\n\tfor i := uint32(0); i < numNodes; i++ {\n\n\t\t// Each time i surpasses j we double the score we give to the\n\t\t// next fifth of nodes.\n\t\tif i >= j {\n\t\t\tscore *= 2\n\t\t\tj += fifth\n\t\t}\n\t\ts := score\n\n\t\t// The first 1/5 of nodes we give a score of 0.\n\t\tif i < fifth {\n\t\t\ts = 0\n\t\t}\n\n\t\tvar nID [33]byte\n\t\tbinary.BigEndian.PutUint32(nID[:], i)\n\t\tnodes[nID] = &NodeScore{\n\t\t\tScore: s,\n\t\t}\n\t}\n\n\t// For each value of N we'll check that the nodes are picked the\n\t// expected number of times over time.\n\tfor _, n := range []uint32{1, 5, 10, 20, 50} {\n\t\t// Since choosing more nodes will result in chooseN getting\n\t\t// slower we decrease the number of iterations. This is okay\n\t\t// since the variance in the total picks for a node will be\n\t\t// lower when choosing more nodes each time.\n\t\titerations := maxIterations / n\n\t\tcount := make(map[NodeID]int)\n\t\tfor i := 0; i < int(iterations); i++ {\n\t\t\tres, err := chooseN(n, nodes)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"failed choosing nodes: %v\", err)\n\t\t\t}\n\n\t\t\tfor nID := range res {\n\t\t\t\tcount[nID]++\n\t\t\t}\n\t\t}\n\n\t\t// Sum the number of times a node in each score bucket was\n\t\t// picked.\n\t\tsums := make(map[float64]int)\n\t\tfor nID, s := range nodes {\n\t\t\tsums[s.Score] += count[nID]\n\t\t}\n\n\t\t// The count of each bucket should be about double of the\n\t\t// previous bucket.  Since this is all random, we check that\n\t\t// the result is within 20% of the expected value.\n\t\tfor _, score := range []float64{0.2, 0.4, 0.8} {\n\t\t\tcnt := sums[score]\n\t\t\thalf := cnt / 2\n\t\t\texpLow := half - half/5\n\t\t\texpHigh := half + half/5\n\t\t\tif sums[score/2] < expLow || sums[score/2] > expHigh {\n\t\t\t\tt.Fatalf(\"expected the nodes with score %v \"+\n\t\t\t\t\t\"to be chosen about %v times, instead \"+\n\t\t\t\t\t\"was %v\", score/2, half, sums[score/2])\n\t\t\t}\n\t\t}\n\t}\n}\n",
+      "length": 2079,
+      "tokens": 388,
+      "embedding": []
+    }
+  ]
+}

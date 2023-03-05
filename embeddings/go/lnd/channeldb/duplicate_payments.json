@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/duplicate_payments.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type duplicateHTLCAttemptInfo struct {",
+      "content": "type duplicateHTLCAttemptInfo struct {\n\t// attemptID is the unique ID used for this attempt.\n\tattemptID uint64\n\n\t// sessionKey is the ephemeral key used for this attempt.\n\tsessionKey [btcec.PrivKeyBytesLen]byte\n\n\t// route is the route attempted to send the HTLC.\n\troute route.Route\n}\n\n// fetchDuplicatePaymentStatus fetches the payment status of the payment. If the\n// payment isn't found, it will default to \"StatusUnknown\".",
+      "length": 375,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchDuplicatePaymentStatus(bucket kvdb.RBucket) PaymentStatus {",
+      "content": "func fetchDuplicatePaymentStatus(bucket kvdb.RBucket) PaymentStatus {\n\tif bucket.Get(duplicatePaymentSettleInfoKey) != nil {\n\t\treturn StatusSucceeded\n\t}\n\n\tif bucket.Get(duplicatePaymentFailInfoKey) != nil {\n\t\treturn StatusFailed\n\t}\n\n\tif bucket.Get(duplicatePaymentCreationInfoKey) != nil {\n\t\treturn StatusInFlight\n\t}\n\n\treturn StatusUnknown\n}\n",
+      "length": 258,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeDuplicateHTLCAttemptInfo(r io.Reader) (",
+      "content": "func deserializeDuplicateHTLCAttemptInfo(r io.Reader) (\n\t*duplicateHTLCAttemptInfo, error) {\n\n\ta := &duplicateHTLCAttemptInfo{}\n\terr := ReadElements(r, &a.attemptID, &a.sessionKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\ta.route, err = DeserializeRoute(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn a, nil\n}\n",
+      "length": 241,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeDuplicatePaymentCreationInfo(r io.Reader) (",
+      "content": "func deserializeDuplicatePaymentCreationInfo(r io.Reader) (\n\t*PaymentCreationInfo, error) {\n\n\tvar scratch [8]byte\n\n\tc := &PaymentCreationInfo{}\n\n\tif _, err := io.ReadFull(r, c.PaymentIdentifier[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn nil, err\n\t}\n\tc.Value = lnwire.MilliSatoshi(byteOrder.Uint64(scratch[:]))\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn nil, err\n\t}\n\tc.CreationTime = time.Unix(int64(byteOrder.Uint64(scratch[:])), 0)\n\n\tif _, err := io.ReadFull(r, scratch[:4]); err != nil {\n\t\treturn nil, err\n\t}\n\n\treqLen := byteOrder.Uint32(scratch[:4])\n\tpayReq := make([]byte, reqLen)\n\tif reqLen > 0 {\n\t\tif _, err := io.ReadFull(r, payReq); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\tc.PaymentRequest = payReq\n\n\treturn c, nil\n}\n",
+      "length": 713,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchDuplicatePayment(bucket kvdb.RBucket) (*MPPayment, error) {",
+      "content": "func fetchDuplicatePayment(bucket kvdb.RBucket) (*MPPayment, error) {\n\tseqBytes := bucket.Get(duplicatePaymentSequenceKey)\n\tif seqBytes == nil {\n\t\treturn nil, fmt.Errorf(\"sequence number not found\")\n\t}\n\n\tsequenceNum := binary.BigEndian.Uint64(seqBytes)\n\n\t// Get the payment status.\n\tpaymentStatus := fetchDuplicatePaymentStatus(bucket)\n\n\t// Get the PaymentCreationInfo.\n\tb := bucket.Get(duplicatePaymentCreationInfoKey)\n\tif b == nil {\n\t\treturn nil, fmt.Errorf(\"creation info not found\")\n\t}\n\n\tr := bytes.NewReader(b)\n\tcreationInfo, err := deserializeDuplicatePaymentCreationInfo(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Get failure reason if available.\n\tvar failureReason *FailureReason\n\tb = bucket.Get(duplicatePaymentFailInfoKey)\n\tif b != nil {\n\t\treason := FailureReason(b[0])\n\t\tfailureReason = &reason\n\t}\n\n\tpayment := &MPPayment{\n\t\tSequenceNum:   sequenceNum,\n\t\tInfo:          creationInfo,\n\t\tFailureReason: failureReason,\n\t\tStatus:        paymentStatus,\n\t}\n\n\t// Get the HTLCAttemptInfo. It can be absent.\n\tb = bucket.Get(duplicatePaymentAttemptInfoKey)\n\tif b != nil {\n\t\tr = bytes.NewReader(b)\n\t\tattempt, err := deserializeDuplicateHTLCAttemptInfo(r)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\thtlc := HTLCAttempt{\n\t\t\tHTLCAttemptInfo: HTLCAttemptInfo{\n\t\t\t\tAttemptID:  attempt.attemptID,\n\t\t\t\tRoute:      attempt.route,\n\t\t\t\tsessionKey: attempt.sessionKey,\n\t\t\t},\n\t\t}\n\n\t\t// Get the payment preimage. This is only found for\n\t\t// successful payments.\n\t\tb = bucket.Get(duplicatePaymentSettleInfoKey)\n\t\tif b != nil {\n\t\t\tvar preimg lntypes.Preimage\n\t\t\tcopy(preimg[:], b)\n\n\t\t\thtlc.Settle = &HTLCSettleInfo{\n\t\t\t\tPreimage:   preimg,\n\t\t\t\tSettleTime: time.Time{},\n\t\t\t}\n\t\t} else {\n\t\t\t// Otherwise the payment must have failed.\n\t\t\thtlc.Failure = &HTLCFailInfo{\n\t\t\t\tFailTime: time.Time{},\n\t\t\t}\n\t\t}\n\n\t\tpayment.HTLCs = []HTLCAttempt{htlc}\n\t}\n\n\treturn payment, nil\n}\n",
+      "length": 1708,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchDuplicatePayments(paymentHashBucket kvdb.RBucket) ([]*MPPayment,",
+      "content": "func fetchDuplicatePayments(paymentHashBucket kvdb.RBucket) ([]*MPPayment,\n\terror) {\n\n\tvar payments []*MPPayment\n\n\t// For older versions of lnd, duplicate payments to a payment has was\n\t// possible. These will be found in a sub-bucket indexed by their\n\t// sequence number if available.\n\tdup := paymentHashBucket.NestedReadBucket(duplicatePaymentsBucket)\n\tif dup == nil {\n\t\treturn nil, nil\n\t}\n\n\terr := dup.ForEach(func(k, v []byte) error {\n\t\tsubBucket := dup.NestedReadBucket(k)\n\t\tif subBucket == nil {\n\t\t\t// We one bucket for each duplicate to be found.\n\t\t\treturn fmt.Errorf(\"non bucket element\" +\n\t\t\t\t\"in duplicate bucket\")\n\t\t}\n\n\t\tp, err := fetchDuplicatePayment(subBucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tpayments = append(payments, p)\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn payments, nil\n}\n",
+      "length": 716,
+      "tokens": 113,
+      "embedding": []
+    }
+  ]
+}

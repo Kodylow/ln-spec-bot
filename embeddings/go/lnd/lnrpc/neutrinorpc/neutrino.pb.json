@@ -1,0 +1,1021 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/neutrinorpc/neutrino.pb.go",
+  "package": "neutrinorpc",
+  "sections": [
+    {
+      "slug": "type StatusRequest struct {",
+      "content": "type StatusRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) Reset() {",
+      "content": "func (x *StatusRequest) Reset() {\n\t*x = StatusRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 186,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) String() string {",
+      "content": "func (x *StatusRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusRequest) ProtoMessage() {}",
+      "content": "func (*StatusRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *StatusRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.",
+      "length": 313,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*StatusRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type StatusResponse struct {",
+      "content": "type StatusResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Indicates whether the neutrino backend is active or not.\n\tActive bool `protobuf:\"varint,1,opt,name=active,proto3\" json:\"active,omitempty\"`\n\t// Is fully synced.\n\tSynced bool `protobuf:\"varint,2,opt,name=synced,proto3\" json:\"synced,omitempty\"`\n\t// Best block height.\n\tBlockHeight int32 `protobuf:\"varint,3,opt,name=block_height,json=blockHeight,proto3\" json:\"block_height,omitempty\"`\n\t// Best block hash.\n\tBlockHash string `protobuf:\"bytes,4,opt,name=block_hash,json=blockHash,proto3\" json:\"block_hash,omitempty\"`\n\t// Connected peers.\n\tPeers []string `protobuf:\"bytes,5,rep,name=peers,proto3\" json:\"peers,omitempty\"`\n}\n",
+      "length": 719,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) Reset() {",
+      "content": "func (x *StatusResponse) Reset() {\n\t*x = StatusResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 187,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) String() string {",
+      "content": "func (x *StatusResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusResponse) ProtoMessage() {}",
+      "content": "func (*StatusResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *StatusResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.",
+      "length": 314,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*StatusResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetActive() bool {",
+      "content": "func (x *StatusResponse) GetActive() bool {\n\tif x != nil {\n\t\treturn x.Active\n\t}\n\treturn false\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetSynced() bool {",
+      "content": "func (x *StatusResponse) GetSynced() bool {\n\tif x != nil {\n\t\treturn x.Synced\n\t}\n\treturn false\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetBlockHeight() int32 {",
+      "content": "func (x *StatusResponse) GetBlockHeight() int32 {\n\tif x != nil {\n\t\treturn x.BlockHeight\n\t}\n\treturn 0\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetBlockHash() string {",
+      "content": "func (x *StatusResponse) GetBlockHash() string {\n\tif x != nil {\n\t\treturn x.BlockHash\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetPeers() []string {",
+      "content": "func (x *StatusResponse) GetPeers() []string {\n\tif x != nil {\n\t\treturn x.Peers\n\t}\n\treturn nil\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type AddPeerRequest struct {",
+      "content": "type AddPeerRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Peer to add.\n\tPeerAddrs string `protobuf:\"bytes,1,opt,name=peer_addrs,json=peerAddrs,proto3\" json:\"peer_addrs,omitempty\"`\n}\n",
+      "length": 234,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerRequest) Reset() {",
+      "content": "func (x *AddPeerRequest) Reset() {\n\t*x = AddPeerRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[2]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 187,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerRequest) String() string {",
+      "content": "func (x *AddPeerRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*AddPeerRequest) ProtoMessage() {}",
+      "content": "func (*AddPeerRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *AddPeerRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[2]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use AddPeerRequest.ProtoReflect.Descriptor instead.",
+      "length": 314,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*AddPeerRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*AddPeerRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{2}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerRequest) GetPeerAddrs() string {",
+      "content": "func (x *AddPeerRequest) GetPeerAddrs() string {\n\tif x != nil {\n\t\treturn x.PeerAddrs\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type AddPeerResponse struct {",
+      "content": "type AddPeerResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerResponse) Reset() {",
+      "content": "func (x *AddPeerResponse) Reset() {\n\t*x = AddPeerResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[3]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 188,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerResponse) String() string {",
+      "content": "func (x *AddPeerResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*AddPeerResponse) ProtoMessage() {}",
+      "content": "func (*AddPeerResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *AddPeerResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *AddPeerResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[3]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use AddPeerResponse.ProtoReflect.Descriptor instead.",
+      "length": 315,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*AddPeerResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*AddPeerResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{3}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type DisconnectPeerRequest struct {",
+      "content": "type DisconnectPeerRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Peer to disconnect.\n\tPeerAddrs string `protobuf:\"bytes,1,opt,name=peer_addrs,json=peerAddrs,proto3\" json:\"peer_addrs,omitempty\"`\n}\n",
+      "length": 241,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerRequest) Reset() {",
+      "content": "func (x *DisconnectPeerRequest) Reset() {\n\t*x = DisconnectPeerRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[4]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 194,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerRequest) String() string {",
+      "content": "func (x *DisconnectPeerRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*DisconnectPeerRequest) ProtoMessage() {}",
+      "content": "func (*DisconnectPeerRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *DisconnectPeerRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[4]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use DisconnectPeerRequest.ProtoReflect.Descriptor instead.",
+      "length": 321,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*DisconnectPeerRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*DisconnectPeerRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{4}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerRequest) GetPeerAddrs() string {",
+      "content": "func (x *DisconnectPeerRequest) GetPeerAddrs() string {\n\tif x != nil {\n\t\treturn x.PeerAddrs\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type DisconnectPeerResponse struct {",
+      "content": "type DisconnectPeerResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerResponse) Reset() {",
+      "content": "func (x *DisconnectPeerResponse) Reset() {\n\t*x = DisconnectPeerResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[5]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 195,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerResponse) String() string {",
+      "content": "func (x *DisconnectPeerResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*DisconnectPeerResponse) ProtoMessage() {}",
+      "content": "func (*DisconnectPeerResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *DisconnectPeerResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *DisconnectPeerResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[5]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use DisconnectPeerResponse.ProtoReflect.Descriptor instead.",
+      "length": 322,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*DisconnectPeerResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*DisconnectPeerResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{5}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type IsBannedRequest struct {",
+      "content": "type IsBannedRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Peer to lookup.\n\tPeerAddrs string `protobuf:\"bytes,1,opt,name=peer_addrs,json=peerAddrs,proto3\" json:\"peer_addrs,omitempty\"`\n}\n",
+      "length": 237,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedRequest) Reset() {",
+      "content": "func (x *IsBannedRequest) Reset() {\n\t*x = IsBannedRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[6]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 188,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedRequest) String() string {",
+      "content": "func (x *IsBannedRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*IsBannedRequest) ProtoMessage() {}",
+      "content": "func (*IsBannedRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *IsBannedRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[6]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use IsBannedRequest.ProtoReflect.Descriptor instead.",
+      "length": 315,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*IsBannedRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*IsBannedRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{6}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedRequest) GetPeerAddrs() string {",
+      "content": "func (x *IsBannedRequest) GetPeerAddrs() string {\n\tif x != nil {\n\t\treturn x.PeerAddrs\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type IsBannedResponse struct {",
+      "content": "type IsBannedResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\tBanned bool `protobuf:\"varint,1,opt,name=banned,proto3\" json:\"banned,omitempty\"`\n}\n",
+      "length": 191,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedResponse) Reset() {",
+      "content": "func (x *IsBannedResponse) Reset() {\n\t*x = IsBannedResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[7]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedResponse) String() string {",
+      "content": "func (x *IsBannedResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*IsBannedResponse) ProtoMessage() {}",
+      "content": "func (*IsBannedResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *IsBannedResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[7]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use IsBannedResponse.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*IsBannedResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*IsBannedResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{7}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *IsBannedResponse) GetBanned() bool {",
+      "content": "func (x *IsBannedResponse) GetBanned() bool {\n\tif x != nil {\n\t\treturn x.Banned\n\t}\n\treturn false\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHeaderRequest struct {",
+      "content": "type GetBlockHeaderRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Block hash in hex notation.\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n}\n",
+      "length": 217,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderRequest) Reset() {",
+      "content": "func (x *GetBlockHeaderRequest) Reset() {\n\t*x = GetBlockHeaderRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[8]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 194,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderRequest) String() string {",
+      "content": "func (x *GetBlockHeaderRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHeaderRequest) ProtoMessage() {}",
+      "content": "func (*GetBlockHeaderRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHeaderRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[8]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHeaderRequest.ProtoReflect.Descriptor instead.",
+      "length": 321,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHeaderRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHeaderRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{8}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderRequest) GetHash() string {",
+      "content": "func (x *GetBlockHeaderRequest) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHeaderResponse struct {",
+      "content": "type GetBlockHeaderResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The block hash (same as provided).\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n\t// The number of confirmations.\n\tConfirmations int64 `protobuf:\"varint,2,opt,name=confirmations,proto3\" json:\"confirmations,omitempty\"`\n\t// The block size excluding witness data.\n\tStrippedSize int64 `protobuf:\"varint,3,opt,name=stripped_size,json=strippedSize,proto3\" json:\"stripped_size,omitempty\"`\n\t// The block size (bytes).\n\tSize int64 `protobuf:\"varint,4,opt,name=size,proto3\" json:\"size,omitempty\"`\n\t// The block weight as defined in BIP 141.\n\tWeight int64 `protobuf:\"varint,5,opt,name=weight,proto3\" json:\"weight,omitempty\"`\n\t// The block height or index.\n\tHeight int32 `protobuf:\"varint,6,opt,name=height,proto3\" json:\"height,omitempty\"`\n\t// The block version.\n\tVersion int32 `protobuf:\"varint,7,opt,name=version,proto3\" json:\"version,omitempty\"`\n\t// The block version.\n\tVersionHex string `protobuf:\"bytes,8,opt,name=version_hex,json=versionHex,proto3\" json:\"version_hex,omitempty\"`\n\t// The merkle root.\n\tMerkleroot string `protobuf:\"bytes,9,opt,name=merkleroot,proto3\" json:\"merkleroot,omitempty\"`\n\t// The block time in seconds since epoch (Jan 1 1970 GMT).\n\tTime int64 `protobuf:\"varint,10,opt,name=time,proto3\" json:\"time,omitempty\"`\n\t// The nonce.\n\tNonce uint32 `protobuf:\"varint,11,opt,name=nonce,proto3\" json:\"nonce,omitempty\"`\n\t// The bits in hex notation.\n\tBits string `protobuf:\"bytes,12,opt,name=bits,proto3\" json:\"bits,omitempty\"`\n\t// The number of transactions in the block.\n\tNtx int32 `protobuf:\"varint,13,opt,name=ntx,proto3\" json:\"ntx,omitempty\"`\n\t// The hash of the previous block.\n\tPreviousBlockHash string `protobuf:\"bytes,14,opt,name=previous_block_hash,json=previousBlockHash,proto3\" json:\"previous_block_hash,omitempty\"`\n\t// The raw hex of the block.\n\tRawHex []byte `protobuf:\"bytes,15,opt,name=raw_hex,json=rawHex,proto3\" json:\"raw_hex,omitempty\"`\n}\n",
+      "length": 1975,
+      "tokens": 161,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) Reset() {",
+      "content": "func (x *GetBlockHeaderResponse) Reset() {\n\t*x = GetBlockHeaderResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[9]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 195,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) String() string {",
+      "content": "func (x *GetBlockHeaderResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHeaderResponse) ProtoMessage() {}",
+      "content": "func (*GetBlockHeaderResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHeaderResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[9]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHeaderResponse.ProtoReflect.Descriptor instead.",
+      "length": 322,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHeaderResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHeaderResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{9}\n}\n",
+      "length": 64,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetHash() string {",
+      "content": "func (x *GetBlockHeaderResponse) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetConfirmations() int64 {",
+      "content": "func (x *GetBlockHeaderResponse) GetConfirmations() int64 {\n\tif x != nil {\n\t\treturn x.Confirmations\n\t}\n\treturn 0\n}\n",
+      "length": 50,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetStrippedSize() int64 {",
+      "content": "func (x *GetBlockHeaderResponse) GetStrippedSize() int64 {\n\tif x != nil {\n\t\treturn x.StrippedSize\n\t}\n\treturn 0\n}\n",
+      "length": 49,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetSize() int64 {",
+      "content": "func (x *GetBlockHeaderResponse) GetSize() int64 {\n\tif x != nil {\n\t\treturn x.Size\n\t}\n\treturn 0\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetWeight() int64 {",
+      "content": "func (x *GetBlockHeaderResponse) GetWeight() int64 {\n\tif x != nil {\n\t\treturn x.Weight\n\t}\n\treturn 0\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetHeight() int32 {",
+      "content": "func (x *GetBlockHeaderResponse) GetHeight() int32 {\n\tif x != nil {\n\t\treturn x.Height\n\t}\n\treturn 0\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetVersion() int32 {",
+      "content": "func (x *GetBlockHeaderResponse) GetVersion() int32 {\n\tif x != nil {\n\t\treturn x.Version\n\t}\n\treturn 0\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetVersionHex() string {",
+      "content": "func (x *GetBlockHeaderResponse) GetVersionHex() string {\n\tif x != nil {\n\t\treturn x.VersionHex\n\t}\n\treturn \"\"\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetMerkleroot() string {",
+      "content": "func (x *GetBlockHeaderResponse) GetMerkleroot() string {\n\tif x != nil {\n\t\treturn x.Merkleroot\n\t}\n\treturn \"\"\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetTime() int64 {",
+      "content": "func (x *GetBlockHeaderResponse) GetTime() int64 {\n\tif x != nil {\n\t\treturn x.Time\n\t}\n\treturn 0\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetNonce() uint32 {",
+      "content": "func (x *GetBlockHeaderResponse) GetNonce() uint32 {\n\tif x != nil {\n\t\treturn x.Nonce\n\t}\n\treturn 0\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetBits() string {",
+      "content": "func (x *GetBlockHeaderResponse) GetBits() string {\n\tif x != nil {\n\t\treturn x.Bits\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetNtx() int32 {",
+      "content": "func (x *GetBlockHeaderResponse) GetNtx() int32 {\n\tif x != nil {\n\t\treturn x.Ntx\n\t}\n\treturn 0\n}\n",
+      "length": 40,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetPreviousBlockHash() string {",
+      "content": "func (x *GetBlockHeaderResponse) GetPreviousBlockHash() string {\n\tif x != nil {\n\t\treturn x.PreviousBlockHash\n\t}\n\treturn \"\"\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHeaderResponse) GetRawHex() []byte {",
+      "content": "func (x *GetBlockHeaderResponse) GetRawHex() []byte {\n\tif x != nil {\n\t\treturn x.RawHex\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockRequest struct {",
+      "content": "type GetBlockRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Block hash in hex notation.\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n}\n",
+      "length": 217,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) Reset() {",
+      "content": "func (x *GetBlockRequest) Reset() {\n\t*x = GetBlockRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[10]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) String() string {",
+      "content": "func (x *GetBlockRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockRequest) ProtoMessage() {}",
+      "content": "func (*GetBlockRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[10]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockRequest.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{10}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockRequest) GetHash() string {",
+      "content": "func (x *GetBlockRequest) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockResponse struct {",
+      "content": "type GetBlockResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The block hash (same as provided).\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n\t// The number of confirmations.\n\tConfirmations int64 `protobuf:\"varint,2,opt,name=confirmations,proto3\" json:\"confirmations,omitempty\"`\n\t// The block size excluding witness data.\n\tStrippedSize int64 `protobuf:\"varint,3,opt,name=stripped_size,json=strippedSize,proto3\" json:\"stripped_size,omitempty\"`\n\t// The block size (bytes).\n\tSize int64 `protobuf:\"varint,4,opt,name=size,proto3\" json:\"size,omitempty\"`\n\t// The block weight as defined in BIP 141.\n\tWeight int64 `protobuf:\"varint,5,opt,name=weight,proto3\" json:\"weight,omitempty\"`\n\t// The block height or index.\n\tHeight int32 `protobuf:\"varint,6,opt,name=height,proto3\" json:\"height,omitempty\"`\n\t// The block version.\n\tVersion int32 `protobuf:\"varint,7,opt,name=version,proto3\" json:\"version,omitempty\"`\n\t// The block version.\n\tVersionHex string `protobuf:\"bytes,8,opt,name=version_hex,json=versionHex,proto3\" json:\"version_hex,omitempty\"`\n\t// The merkle root.\n\tMerkleroot string `protobuf:\"bytes,9,opt,name=merkleroot,proto3\" json:\"merkleroot,omitempty\"`\n\t// List of transaction ids.\n\tTx []string `protobuf:\"bytes,10,rep,name=tx,proto3\" json:\"tx,omitempty\"`\n\t// The block time in seconds since epoch (Jan 1 1970 GMT).\n\tTime int64 `protobuf:\"varint,11,opt,name=time,proto3\" json:\"time,omitempty\"`\n\t// The nonce.\n\tNonce uint32 `protobuf:\"varint,12,opt,name=nonce,proto3\" json:\"nonce,omitempty\"`\n\t// The bits in hex notation.\n\tBits string `protobuf:\"bytes,13,opt,name=bits,proto3\" json:\"bits,omitempty\"`\n\t// The number of transactions in the block.\n\tNtx int32 `protobuf:\"varint,14,opt,name=ntx,proto3\" json:\"ntx,omitempty\"`\n\t// The hash of the previous block.\n\tPreviousBlockHash string `protobuf:\"bytes,15,opt,name=previous_block_hash,json=previousBlockHash,proto3\" json:\"previous_block_hash,omitempty\"`\n\t// The raw hex of the block.\n\tRawHex []byte `protobuf:\"bytes,16,opt,name=raw_hex,json=rawHex,proto3\" json:\"raw_hex,omitempty\"`\n}\n",
+      "length": 2076,
+      "tokens": 170,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) Reset() {",
+      "content": "func (x *GetBlockResponse) Reset() {\n\t*x = GetBlockResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[11]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 190,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) String() string {",
+      "content": "func (x *GetBlockResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockResponse) ProtoMessage() {}",
+      "content": "func (*GetBlockResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[11]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockResponse.ProtoReflect.Descriptor instead.",
+      "length": 317,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{11}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetHash() string {",
+      "content": "func (x *GetBlockResponse) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetConfirmations() int64 {",
+      "content": "func (x *GetBlockResponse) GetConfirmations() int64 {\n\tif x != nil {\n\t\treturn x.Confirmations\n\t}\n\treturn 0\n}\n",
+      "length": 50,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetStrippedSize() int64 {",
+      "content": "func (x *GetBlockResponse) GetStrippedSize() int64 {\n\tif x != nil {\n\t\treturn x.StrippedSize\n\t}\n\treturn 0\n}\n",
+      "length": 49,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetSize() int64 {",
+      "content": "func (x *GetBlockResponse) GetSize() int64 {\n\tif x != nil {\n\t\treturn x.Size\n\t}\n\treturn 0\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetWeight() int64 {",
+      "content": "func (x *GetBlockResponse) GetWeight() int64 {\n\tif x != nil {\n\t\treturn x.Weight\n\t}\n\treturn 0\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetHeight() int32 {",
+      "content": "func (x *GetBlockResponse) GetHeight() int32 {\n\tif x != nil {\n\t\treturn x.Height\n\t}\n\treturn 0\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetVersion() int32 {",
+      "content": "func (x *GetBlockResponse) GetVersion() int32 {\n\tif x != nil {\n\t\treturn x.Version\n\t}\n\treturn 0\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetVersionHex() string {",
+      "content": "func (x *GetBlockResponse) GetVersionHex() string {\n\tif x != nil {\n\t\treturn x.VersionHex\n\t}\n\treturn \"\"\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetMerkleroot() string {",
+      "content": "func (x *GetBlockResponse) GetMerkleroot() string {\n\tif x != nil {\n\t\treturn x.Merkleroot\n\t}\n\treturn \"\"\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetTx() []string {",
+      "content": "func (x *GetBlockResponse) GetTx() []string {\n\tif x != nil {\n\t\treturn x.Tx\n\t}\n\treturn nil\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetTime() int64 {",
+      "content": "func (x *GetBlockResponse) GetTime() int64 {\n\tif x != nil {\n\t\treturn x.Time\n\t}\n\treturn 0\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetNonce() uint32 {",
+      "content": "func (x *GetBlockResponse) GetNonce() uint32 {\n\tif x != nil {\n\t\treturn x.Nonce\n\t}\n\treturn 0\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetBits() string {",
+      "content": "func (x *GetBlockResponse) GetBits() string {\n\tif x != nil {\n\t\treturn x.Bits\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetNtx() int32 {",
+      "content": "func (x *GetBlockResponse) GetNtx() int32 {\n\tif x != nil {\n\t\treturn x.Ntx\n\t}\n\treturn 0\n}\n",
+      "length": 40,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetPreviousBlockHash() string {",
+      "content": "func (x *GetBlockResponse) GetPreviousBlockHash() string {\n\tif x != nil {\n\t\treturn x.PreviousBlockHash\n\t}\n\treturn \"\"\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockResponse) GetRawHex() []byte {",
+      "content": "func (x *GetBlockResponse) GetRawHex() []byte {\n\tif x != nil {\n\t\treturn x.RawHex\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetCFilterRequest struct {",
+      "content": "type GetCFilterRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Block hash in hex notation.\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n}\n",
+      "length": 217,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterRequest) Reset() {",
+      "content": "func (x *GetCFilterRequest) Reset() {\n\t*x = GetCFilterRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[12]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 191,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterRequest) String() string {",
+      "content": "func (x *GetCFilterRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetCFilterRequest) ProtoMessage() {}",
+      "content": "func (*GetCFilterRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetCFilterRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[12]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetCFilterRequest.ProtoReflect.Descriptor instead.",
+      "length": 318,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetCFilterRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetCFilterRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{12}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterRequest) GetHash() string {",
+      "content": "func (x *GetCFilterRequest) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetCFilterResponse struct {",
+      "content": "type GetCFilterResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// GCS filter.\n\tFilter []byte `protobuf:\"bytes,1,opt,name=filter,proto3\" json:\"filter,omitempty\"`\n}\n",
+      "length": 207,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterResponse) Reset() {",
+      "content": "func (x *GetCFilterResponse) Reset() {\n\t*x = GetCFilterResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[13]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 192,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterResponse) String() string {",
+      "content": "func (x *GetCFilterResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetCFilterResponse) ProtoMessage() {}",
+      "content": "func (*GetCFilterResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetCFilterResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[13]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetCFilterResponse.ProtoReflect.Descriptor instead.",
+      "length": 319,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetCFilterResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetCFilterResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{13}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetCFilterResponse) GetFilter() []byte {",
+      "content": "func (x *GetCFilterResponse) GetFilter() []byte {\n\tif x != nil {\n\t\treturn x.Filter\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHashRequest struct {",
+      "content": "type GetBlockHashRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The block height or index.\n\tHeight int32 `protobuf:\"varint,1,opt,name=height,proto3\" json:\"height,omitempty\"`\n}\n",
+      "length": 222,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) Reset() {",
+      "content": "func (x *GetBlockHashRequest) Reset() {\n\t*x = GetBlockHashRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[14]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 193,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) String() string {",
+      "content": "func (x *GetBlockHashRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashRequest) ProtoMessage() {}",
+      "content": "func (*GetBlockHashRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHashRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[14]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHashRequest.ProtoReflect.Descriptor instead.",
+      "length": 320,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHashRequest) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{14}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashRequest) GetHeight() int32 {",
+      "content": "func (x *GetBlockHashRequest) GetHeight() int32 {\n\tif x != nil {\n\t\treturn x.Height\n\t}\n\treturn 0\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type GetBlockHashResponse struct {",
+      "content": "type GetBlockHashResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The block hash.\n\tHash string `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n}\n",
+      "length": 205,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) Reset() {",
+      "content": "func (x *GetBlockHashResponse) Reset() {\n\t*x = GetBlockHashResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[15]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 194,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) String() string {",
+      "content": "func (x *GetBlockHashResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashResponse) ProtoMessage() {}",
+      "content": "func (*GetBlockHashResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *GetBlockHashResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_neutrinorpc_neutrino_proto_msgTypes[15]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use GetBlockHashResponse.ProtoReflect.Descriptor instead.",
+      "length": 321,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*GetBlockHashResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*GetBlockHashResponse) Descriptor() ([]byte, []int) {\n\treturn file_neutrinorpc_neutrino_proto_rawDescGZIP(), []int{15}\n}\n",
+      "length": 65,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *GetBlockHashResponse) GetHash() string {",
+      "content": "func (x *GetBlockHashResponse) GetHash() string {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn \"\"\n}\n\nvar File_neutrinorpc_neutrino_proto protoreflect.FileDescriptor\n\nvar file_neutrinorpc_neutrino_proto_rawDesc = []byte{\n\t0x0a, 0x1a, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2f, 0x6e, 0x65,\n\t0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0b, 0x6e, 0x65,\n\t0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x22, 0x0f, 0x0a, 0x0d, 0x53, 0x74, 0x61,\n\t0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x98, 0x01, 0x0a, 0x0e, 0x53,\n\t0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a,\n\t0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x61,\n\t0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x79, 0x6e, 0x63, 0x65, 0x64, 0x18,\n\t0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x73, 0x79, 0x6e, 0x63, 0x65, 0x64, 0x12, 0x21, 0x0a,\n\t0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20,\n\t0x01, 0x28, 0x05, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,\n\t0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x04,\n\t0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12,\n\t0x14, 0x0a, 0x05, 0x70, 0x65, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05,\n\t0x70, 0x65, 0x65, 0x72, 0x73, 0x22, 0x2f, 0x0a, 0x0e, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72,\n\t0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x65, 0x65, 0x72, 0x5f,\n\t0x61, 0x64, 0x64, 0x72, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x70, 0x65, 0x65,\n\t0x72, 0x41, 0x64, 0x64, 0x72, 0x73, 0x22, 0x11, 0x0a, 0x0f, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65,\n\t0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x36, 0x0a, 0x15, 0x44, 0x69, 0x73,\n\t0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x50, 0x65, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,\n\t0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x73,\n\t0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x70, 0x65, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72,\n\t0x73, 0x22, 0x18, 0x0a, 0x16, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x50,\n\t0x65, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x30, 0x0a, 0x0f, 0x49,\n\t0x73, 0x42, 0x61, 0x6e, 0x6e, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d,\n\t0x0a, 0x0a, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x73, 0x18, 0x01, 0x20, 0x01,\n\t0x28, 0x09, 0x52, 0x09, 0x70, 0x65, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x73, 0x22, 0x2a, 0x0a,\n\t0x10, 0x49, 0x73, 0x42, 0x61, 0x6e, 0x6e, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,\n\t0x65, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x61, 0x6e, 0x6e, 0x65, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,\n\t0x08, 0x52, 0x06, 0x62, 0x61, 0x6e, 0x6e, 0x65, 0x64, 0x22, 0x2b, 0x0a, 0x15, 0x47, 0x65, 0x74,\n\t0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,\n\t0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,\n\t0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x22, 0xaf, 0x03, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x42, 0x6c,\n\t0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,\n\t0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,\n\t0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,\n\t0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0d, 0x63, 0x6f,\n\t0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x73,\n\t0x74, 0x72, 0x69, 0x70, 0x70, 0x65, 0x64, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20, 0x01,\n\t0x28, 0x03, 0x52, 0x0c, 0x73, 0x74, 0x72, 0x69, 0x70, 0x70, 0x65, 0x64, 0x53, 0x69, 0x7a, 0x65,\n\t0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04,\n\t0x73, 0x69, 0x7a, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05,\n\t0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x16, 0x0a, 0x06,\n\t0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x68, 0x65,\n\t0x69, 0x67, 0x68, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,\n\t0x07, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1f,\n\t0x0a, 0x0b, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x78, 0x18, 0x08, 0x20,\n\t0x01, 0x28, 0x09, 0x52, 0x0a, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x78, 0x12,\n\t0x1e, 0x0a, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x09, 0x20,\n\t0x01, 0x28, 0x09, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x72, 0x6f, 0x6f, 0x74, 0x12,\n\t0x12, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74,\n\t0x69, 0x6d, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x0b, 0x20, 0x01,\n\t0x28, 0x0d, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x69, 0x74,\n\t0x73, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x69, 0x74, 0x73, 0x12, 0x10, 0x0a,\n\t0x03, 0x6e, 0x74, 0x78, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x6e, 0x74, 0x78, 0x12,\n\t0x2e, 0x0a, 0x13, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x5f, 0x62, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09, 0x52, 0x11, 0x70, 0x72,\n\t0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12,\n\t0x17, 0x0a, 0x07, 0x72, 0x61, 0x77, 0x5f, 0x68, 0x65, 0x78, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x0c,\n\t0x52, 0x06, 0x72, 0x61, 0x77, 0x48, 0x65, 0x78, 0x22, 0x25, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x42,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x68,\n\t0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x22,\n\t0xb9, 0x03, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x73, 0x70,\n\t0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01,\n\t0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66,\n\t0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52,\n\t0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x23,\n\t0x0a, 0x0d, 0x73, 0x74, 0x72, 0x69, 0x70, 0x70, 0x65, 0x64, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18,\n\t0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0c, 0x73, 0x74, 0x72, 0x69, 0x70, 0x70, 0x65, 0x64, 0x53,\n\t0x69, 0x7a, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28,\n\t0x03, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68,\n\t0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,\n\t0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52,\n\t0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,\n\t0x6f, 0x6e, 0x18, 0x07, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,\n\t0x6e, 0x12, 0x1f, 0x0a, 0x0b, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x78,\n\t0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x48,\n\t0x65, 0x78, 0x12, 0x1e, 0x0a, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x72, 0x6f, 0x6f, 0x74,\n\t0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x72, 0x6f,\n\t0x6f, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x74, 0x78, 0x18, 0x0a, 0x20, 0x03, 0x28, 0x09, 0x52, 0x02,\n\t0x74, 0x78, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x03,\n\t0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18,\n\t0x0c, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04,\n\t0x62, 0x69, 0x74, 0x73, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x69, 0x74, 0x73,\n\t0x12, 0x10, 0x0a, 0x03, 0x6e, 0x74, 0x78, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x6e,\n\t0x74, 0x78, 0x12, 0x2e, 0x0a, 0x13, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x5f, 0x62,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52,\n\t0x11, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61,\n\t0x73, 0x68, 0x12, 0x17, 0x0a, 0x07, 0x72, 0x61, 0x77, 0x5f, 0x68, 0x65, 0x78, 0x18, 0x10, 0x20,\n\t0x01, 0x28, 0x0c, 0x52, 0x06, 0x72, 0x61, 0x77, 0x48, 0x65, 0x78, 0x22, 0x27, 0x0a, 0x11, 0x47,\n\t0x65, 0x74, 0x43, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,\n\t0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,\n\t0x68, 0x61, 0x73, 0x68, 0x22, 0x2c, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x43, 0x46, 0x69, 0x6c, 0x74,\n\t0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69,\n\t0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74,\n\t0x65, 0x72, 0x22, 0x2d, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61,\n\t0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x69,\n\t0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68,\n\t0x74, 0x22, 0x2a, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73,\n\t0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73,\n\t0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x32, 0x82, 0x05,\n\t0x0a, 0x0b, 0x4e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x4b, 0x69, 0x74, 0x12, 0x41, 0x0a,\n\t0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1a, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69,\n\t0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75,\n\t0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70,\n\t0x63, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,\n\t0x12, 0x44, 0x0a, 0x07, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72, 0x12, 0x1b, 0x2e, 0x6e, 0x65,\n\t0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65,\n\t0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72,\n\t0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72, 0x52, 0x65,\n\t0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59, 0x0a, 0x0e, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x6e,\n\t0x6e, 0x65, 0x63, 0x74, 0x50, 0x65, 0x65, 0x72, 0x12, 0x22, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72,\n\t0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63,\n\t0x74, 0x50, 0x65, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x6e,\n\t0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x44, 0x69, 0x73, 0x63, 0x6f,\n\t0x6e, 0x6e, 0x65, 0x63, 0x74, 0x50, 0x65, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,\n\t0x65, 0x12, 0x47, 0x0a, 0x08, 0x49, 0x73, 0x42, 0x61, 0x6e, 0x6e, 0x65, 0x64, 0x12, 0x1c, 0x2e,\n\t0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x49, 0x73, 0x42, 0x61,\n\t0x6e, 0x6e, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x6e, 0x65,\n\t0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x49, 0x73, 0x42, 0x61, 0x6e, 0x6e,\n\t0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59, 0x0a, 0x0e, 0x47, 0x65,\n\t0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x22, 0x2e, 0x6e,\n\t0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x6c,\n\t0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,\n\t0x1a, 0x23, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47,\n\t0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73,\n\t0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63,\n\t0x6b, 0x12, 0x1c, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e,\n\t0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,\n\t0x1d, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65,\n\t0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d,\n\t0x0a, 0x0a, 0x47, 0x65, 0x74, 0x43, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x1e, 0x2e, 0x6e,\n\t0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x46,\n\t0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6e,\n\t0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x46,\n\t0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a,\n\t0x0c, 0x47, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x20, 0x2e,\n\t0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x42,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,\n\t0x21, 0x2e, 0x6e, 0x65, 0x75, 0x74, 0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65,\n\t0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,\n\t0x73, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,\n\t0x2f, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,\n\t0x6b, 0x2f, 0x6c, 0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2f, 0x6e, 0x65, 0x75, 0x74,\n\t0x72, 0x69, 0x6e, 0x6f, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_neutrinorpc_neutrino_proto_rawDescOnce sync.Once\n\tfile_neutrinorpc_neutrino_proto_rawDescData = file_neutrinorpc_neutrino_proto_rawDesc\n)\n",
+      "length": 14123,
+      "tokens": 2330,
+      "embedding": []
+    },
+    {
+      "slug": "func file_neutrinorpc_neutrino_proto_rawDescGZIP() []byte {",
+      "content": "func file_neutrinorpc_neutrino_proto_rawDescGZIP() []byte {\n\tfile_neutrinorpc_neutrino_proto_rawDescOnce.Do(func() {\n\t\tfile_neutrinorpc_neutrino_proto_rawDescData = protoimpl.X.CompressGZIP(file_neutrinorpc_neutrino_proto_rawDescData)\n\t})\n\treturn file_neutrinorpc_neutrino_proto_rawDescData\n}\n\nvar file_neutrinorpc_neutrino_proto_msgTypes = make([]protoimpl.MessageInfo, 16)\nvar file_neutrinorpc_neutrino_proto_goTypes = []interface{}{\n\t(*StatusRequest)(nil),          // 0: neutrinorpc.StatusRequest\n\t(*StatusResponse)(nil),         // 1: neutrinorpc.StatusResponse\n\t(*AddPeerRequest)(nil),         // 2: neutrinorpc.AddPeerRequest\n\t(*AddPeerResponse)(nil),        // 3: neutrinorpc.AddPeerResponse\n\t(*DisconnectPeerRequest)(nil),  // 4: neutrinorpc.DisconnectPeerRequest\n\t(*DisconnectPeerResponse)(nil), // 5: neutrinorpc.DisconnectPeerResponse\n\t(*IsBannedRequest)(nil),        // 6: neutrinorpc.IsBannedRequest\n\t(*IsBannedResponse)(nil),       // 7: neutrinorpc.IsBannedResponse\n\t(*GetBlockHeaderRequest)(nil),  // 8: neutrinorpc.GetBlockHeaderRequest\n\t(*GetBlockHeaderResponse)(nil), // 9: neutrinorpc.GetBlockHeaderResponse\n\t(*GetBlockRequest)(nil),        // 10: neutrinorpc.GetBlockRequest\n\t(*GetBlockResponse)(nil),       // 11: neutrinorpc.GetBlockResponse\n\t(*GetCFilterRequest)(nil),      // 12: neutrinorpc.GetCFilterRequest\n\t(*GetCFilterResponse)(nil),     // 13: neutrinorpc.GetCFilterResponse\n\t(*GetBlockHashRequest)(nil),    // 14: neutrinorpc.GetBlockHashRequest\n\t(*GetBlockHashResponse)(nil),   // 15: neutrinorpc.GetBlockHashResponse\n}\nvar file_neutrinorpc_neutrino_proto_depIdxs = []int32{\n\t0,  // 0: neutrinorpc.NeutrinoKit.Status:input_type -> neutrinorpc.StatusRequest\n\t2,  // 1: neutrinorpc.NeutrinoKit.AddPeer:input_type -> neutrinorpc.AddPeerRequest\n\t4,  // 2: neutrinorpc.NeutrinoKit.DisconnectPeer:input_type -> neutrinorpc.DisconnectPeerRequest\n\t6,  // 3: neutrinorpc.NeutrinoKit.IsBanned:input_type -> neutrinorpc.IsBannedRequest\n\t8,  // 4: neutrinorpc.NeutrinoKit.GetBlockHeader:input_type -> neutrinorpc.GetBlockHeaderRequest\n\t10, // 5: neutrinorpc.NeutrinoKit.GetBlock:input_type -> neutrinorpc.GetBlockRequest\n\t12, // 6: neutrinorpc.NeutrinoKit.GetCFilter:input_type -> neutrinorpc.GetCFilterRequest\n\t14, // 7: neutrinorpc.NeutrinoKit.GetBlockHash:input_type -> neutrinorpc.GetBlockHashRequest\n\t1,  // 8: neutrinorpc.NeutrinoKit.Status:output_type -> neutrinorpc.StatusResponse\n\t3,  // 9: neutrinorpc.NeutrinoKit.AddPeer:output_type -> neutrinorpc.AddPeerResponse\n\t5,  // 10: neutrinorpc.NeutrinoKit.DisconnectPeer:output_type -> neutrinorpc.DisconnectPeerResponse\n\t7,  // 11: neutrinorpc.NeutrinoKit.IsBanned:output_type -> neutrinorpc.IsBannedResponse\n\t9,  // 12: neutrinorpc.NeutrinoKit.GetBlockHeader:output_type -> neutrinorpc.GetBlockHeaderResponse\n\t11, // 13: neutrinorpc.NeutrinoKit.GetBlock:output_type -> neutrinorpc.GetBlockResponse\n\t13, // 14: neutrinorpc.NeutrinoKit.GetCFilter:output_type -> neutrinorpc.GetCFilterResponse\n\t15, // 15: neutrinorpc.NeutrinoKit.GetBlockHash:output_type -> neutrinorpc.GetBlockHashResponse\n\t8,  // [8:16] is the sub-list for method output_type\n\t0,  // [0:8] is the sub-list for method input_type\n\t0,  // [0:0] is the sub-list for extension type_name\n\t0,  // [0:0] is the sub-list for extension extendee\n\t0,  // [0:0] is the sub-list for field type_name\n}\n",
+      "length": 3224,
+      "tokens": 229,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_neutrinorpc_neutrino_proto_init() }",
+      "content": "func init() { file_neutrinorpc_neutrino_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_neutrinorpc_neutrino_proto_init() {",
+      "content": "func file_neutrinorpc_neutrino_proto_init() {\n\tif File_neutrinorpc_neutrino_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*StatusRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*StatusResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*AddPeerRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*AddPeerResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*DisconnectPeerRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*DisconnectPeerResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*IsBannedRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*IsBannedResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHeaderRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHeaderResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetCFilterRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetCFilterResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHashRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_neutrinorpc_neutrino_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*GetBlockHashResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_neutrinorpc_neutrino_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   16,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_neutrinorpc_neutrino_proto_goTypes,\n\t\tDependencyIndexes: file_neutrinorpc_neutrino_proto_depIdxs,\n\t\tMessageInfos:      file_neutrinorpc_neutrino_proto_msgTypes,\n\t}.Build()\n\tFile_neutrinorpc_neutrino_proto = out.File\n\tfile_neutrinorpc_neutrino_proto_rawDesc = nil\n\tfile_neutrinorpc_neutrino_proto_goTypes = nil\n\tfile_neutrinorpc_neutrino_proto_depIdxs = nil\n}\n",
+      "length": 5061,
+      "tokens": 548,
+      "embedding": []
+    }
+  ]
+}

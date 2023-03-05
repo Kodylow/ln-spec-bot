@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/height_hint_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func initHintCache(t *testing.T) *HeightHintCache {",
+      "content": "func initHintCache(t *testing.T) *HeightHintCache {\n\tt.Helper()\n\n\tdefaultCfg := CacheConfig{\n\t\tQueryDisable: false,\n\t}\n\n\treturn initHintCacheWithConfig(t, defaultCfg)\n}\n",
+      "length": 109,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func initHintCacheWithConfig(t *testing.T, cfg CacheConfig) *HeightHintCache {",
+      "content": "func initHintCacheWithConfig(t *testing.T, cfg CacheConfig) *HeightHintCache {\n\tt.Helper()\n\n\tdb, err := Open(t.TempDir())\n\trequire.NoError(t, err, \"unable to create db\")\n\thintCache, err := NewHeightHintCache(cfg, db.Backend)\n\trequire.NoError(t, err, \"unable to create hint cache\")\n\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, db.Close())\n\t})\n\n\treturn hintCache\n}\n\n// TestHeightHintCacheConfirms ensures that the height hint cache properly\n// caches confirm hints for transactions.",
+      "length": 383,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHeightHintCacheConfirms(t *testing.T) {",
+      "content": "func TestHeightHintCacheConfirms(t *testing.T) {\n\tt.Parallel()\n\n\thintCache := initHintCache(t)\n\n\t// Querying for a transaction hash not found within the cache should\n\t// return an error indication so.\n\tvar unknownHash chainhash.Hash\n\tcopy(unknownHash[:], bytes.Repeat([]byte{0x01}, 32))\n\tunknownConfRequest := chainntnfs.ConfRequest{TxID: unknownHash}\n\t_, err := hintCache.QueryConfirmHint(unknownConfRequest)\n\trequire.ErrorIs(t, err, chainntnfs.ErrConfirmHintNotFound)\n\n\t// Now, we'll create some transaction hashes and commit them to the\n\t// cache with the same confirm hint.\n\tconst height = 100\n\tconst numHashes = 5\n\tconfRequests := make([]chainntnfs.ConfRequest, numHashes)\n\tfor i := 0; i < numHashes; i++ {\n\t\tvar txHash chainhash.Hash\n\t\tcopy(txHash[:], bytes.Repeat([]byte{byte(i + 1)}, 32))\n\t\tconfRequests[i] = chainntnfs.ConfRequest{TxID: txHash}\n\t}\n\n\terr = hintCache.CommitConfirmHint(height, confRequests...)\n\trequire.NoError(t, err, \"unable to add entries to cache\")\n\n\t// With the hashes committed, we'll now query the cache to ensure that\n\t// we're able to properly retrieve the confirm hints.\n\tfor _, confRequest := range confRequests {\n\t\tconfirmHint, err := hintCache.QueryConfirmHint(confRequest)\n\t\trequire.NoError(t, err)\n\t\trequire.EqualValues(t, height, confirmHint)\n\t}\n\n\t// We'll also attempt to purge all of them in a single database\n\t// transaction.\n\terr = hintCache.PurgeConfirmHint(confRequests...)\n\trequire.NoError(t, err)\n\n\t// Finally, we'll attempt to query for each hash. We should expect not\n\t// to find a hint for any of them.\n\tfor _, confRequest := range confRequests {\n\t\t_, err := hintCache.QueryConfirmHint(confRequest)\n\t\trequire.ErrorIs(t, err, chainntnfs.ErrConfirmHintNotFound)\n\t}\n}\n\n// TestHeightHintCacheSpends ensures that the height hint cache properly caches\n// spend hints for outpoints.",
+      "length": 1729,
+      "tokens": 216,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHeightHintCacheSpends(t *testing.T) {",
+      "content": "func TestHeightHintCacheSpends(t *testing.T) {\n\tt.Parallel()\n\n\thintCache := initHintCache(t)\n\n\t// Querying for an outpoint not found within the cache should return an\n\t// error indication so.\n\tunknownOutPoint := wire.OutPoint{Index: 1}\n\tunknownSpendRequest := chainntnfs.SpendRequest{\n\t\tOutPoint: unknownOutPoint,\n\t}\n\t_, err := hintCache.QuerySpendHint(unknownSpendRequest)\n\trequire.ErrorIs(t, err, chainntnfs.ErrSpendHintNotFound)\n\n\t// Now, we'll create some outpoints and commit them to the cache with\n\t// the same spend hint.\n\tconst height = 100\n\tconst numOutpoints = 5\n\tspendRequests := make([]chainntnfs.SpendRequest, numOutpoints)\n\tfor i := uint32(0); i < numOutpoints; i++ {\n\t\tspendRequests[i] = chainntnfs.SpendRequest{\n\t\t\tOutPoint: wire.OutPoint{Index: i + 1},\n\t\t}\n\t}\n\n\terr = hintCache.CommitSpendHint(height, spendRequests...)\n\trequire.NoError(t, err, \"unable to add entries to cache\")\n\n\t// With the outpoints committed, we'll now query the cache to ensure\n\t// that we're able to properly retrieve the confirm hints.\n\tfor _, spendRequest := range spendRequests {\n\t\tspendHint, err := hintCache.QuerySpendHint(spendRequest)\n\t\trequire.NoError(t, err)\n\t\trequire.EqualValues(t, height, spendHint)\n\t}\n\n\t// We'll also attempt to purge all of them in a single database\n\t// transaction.\n\terr = hintCache.PurgeSpendHint(spendRequests...)\n\trequire.NoError(t, err)\n\n\t// Finally, we'll attempt to query for each outpoint. We should expect\n\t// not to find a hint for any of them.\n\tfor _, spendRequest := range spendRequests {\n\t\t_, err = hintCache.QuerySpendHint(spendRequest)\n\t\trequire.ErrorIs(t, err, chainntnfs.ErrSpendHintNotFound)\n\t}\n}\n\n// TestQueryDisable asserts querying for confirmation or spend hints always\n// return height zero when QueryDisabled is set to true in the CacheConfig.",
+      "length": 1692,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "func TestQueryDisable(t *testing.T) {",
+      "content": "func TestQueryDisable(t *testing.T) {\n\tcfg := CacheConfig{\n\t\tQueryDisable: true,\n\t}\n\n\thintCache := initHintCacheWithConfig(t, cfg)\n\n\t// Insert a new confirmation hint with a non-zero height.\n\tconst confHeight = 100\n\tconfRequest := chainntnfs.ConfRequest{\n\t\tTxID: chainhash.Hash{0x01, 0x02, 0x03},\n\t}\n\terr := hintCache.CommitConfirmHint(confHeight, confRequest)\n\trequire.Nil(t, err)\n\n\t// Query for the confirmation hint, which should return zero.\n\tcachedConfHeight, err := hintCache.QueryConfirmHint(confRequest)\n\trequire.Nil(t, err)\n\trequire.Equal(t, uint32(0), cachedConfHeight)\n\n\t// Insert a new spend hint with a non-zero height.\n\tconst spendHeight = 200\n\tspendRequest := chainntnfs.SpendRequest{\n\t\tOutPoint: wire.OutPoint{\n\t\t\tHash:  chainhash.Hash{0x4, 0x05, 0x06},\n\t\t\tIndex: 42,\n\t\t},\n\t}\n\terr = hintCache.CommitSpendHint(spendHeight, spendRequest)\n\trequire.Nil(t, err)\n\n\t// Query for the spend hint, which should return zero.\n\tcachedSpendHeight, err := hintCache.QuerySpendHint(spendRequest)\n\trequire.Nil(t, err)\n\trequire.Equal(t, uint32(0), cachedSpendHeight)\n}\n",
+      "length": 994,
+      "tokens": 110,
+      "embedding": []
+    }
+  ]
+}

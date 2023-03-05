@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/aliasmgr/aliasmgr_test.go",
+  "package": "aliasmgr",
+  "sections": [
+    {
+      "slug": "func TestAliasStorePeerAlias(t *testing.T) {",
+      "content": "func TestAliasStorePeerAlias(t *testing.T) {\n\tt.Parallel()\n\n\t// Create the backend database and use this to create the aliasStore.\n\tdbPath := filepath.Join(t.TempDir(), \"testdb\")\n\tdb, err := kvdb.Create(\n\t\tkvdb.BoltBackendName, dbPath, true, kvdb.DefaultDBTimeout,\n\t)\n\trequire.NoError(t, err)\n\tdefer db.Close()\n\n\taliasStore, err := NewManager(db)\n\trequire.NoError(t, err)\n\n\tvar chanID1 [32]byte\n\t_, err = rand.Read(chanID1[:])\n\trequire.NoError(t, err)\n\n\t// Test that we can put the (chanID, alias) mapping in the database.\n\t// Also check that we retrieve exactly what we put in.\n\terr = aliasStore.PutPeerAlias(chanID1, StartingAlias)\n\trequire.NoError(t, err)\n\n\tstoredAlias, err := aliasStore.GetPeerAlias(chanID1)\n\trequire.NoError(t, err)\n\trequire.Equal(t, StartingAlias, storedAlias)\n}\n\n// TestAliasStoreRequest tests that the aliasStore delivers the expected SCID.",
+      "length": 794,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAliasStoreRequest(t *testing.T) {",
+      "content": "func TestAliasStoreRequest(t *testing.T) {\n\tt.Parallel()\n\n\t// Create the backend database and use this to create the aliasStore.\n\tdbPath := filepath.Join(t.TempDir(), \"testdb\")\n\tdb, err := kvdb.Create(\n\t\tkvdb.BoltBackendName, dbPath, true, kvdb.DefaultDBTimeout,\n\t)\n\trequire.NoError(t, err)\n\tdefer db.Close()\n\n\taliasStore, err := NewManager(db)\n\trequire.NoError(t, err)\n\n\t// We'll assert that the very first alias we receive is StartingAlias.\n\talias1, err := aliasStore.RequestAlias()\n\trequire.NoError(t, err)\n\trequire.Equal(t, StartingAlias, alias1)\n\n\t// The next alias should be the result of passing in StartingAlias to\n\t// getNextScid.\n\tnextAlias := getNextScid(alias1)\n\talias2, err := aliasStore.RequestAlias()\n\trequire.NoError(t, err)\n\trequire.Equal(t, nextAlias, alias2)\n}\n\n// TestGetNextScid tests that given a current lnwire.ShortChannelID,\n// getNextScid returns the expected alias to use next.",
+      "length": 834,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func TestGetNextScid(t *testing.T) {",
+      "content": "func TestGetNextScid(t *testing.T) {\n\ttests := []struct {\n\t\tname     string\n\t\tcurrent  lnwire.ShortChannelID\n\t\texpected lnwire.ShortChannelID\n\t}{\n\t\t{\n\t\t\tname:    \"starting alias\",\n\t\t\tcurrent: StartingAlias,\n\t\t\texpected: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: uint32(startingBlockHeight),\n\t\t\t\tTxIndex:     0,\n\t\t\t\tTxPosition:  1,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"txposition rollover\",\n\t\t\tcurrent: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_000,\n\t\t\t\tTxIndex:     15,\n\t\t\t\tTxPosition:  65535,\n\t\t\t},\n\t\t\texpected: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_000,\n\t\t\t\tTxIndex:     16,\n\t\t\t\tTxPosition:  0,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"txindex max no rollover\",\n\t\t\tcurrent: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_000,\n\t\t\t\tTxIndex:     16777215,\n\t\t\t\tTxPosition:  15,\n\t\t\t},\n\t\t\texpected: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_000,\n\t\t\t\tTxIndex:     16777215,\n\t\t\t\tTxPosition:  16,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"txindex rollover\",\n\t\t\tcurrent: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_000,\n\t\t\t\tTxIndex:     16777215,\n\t\t\t\tTxPosition:  65535,\n\t\t\t},\n\t\t\texpected: lnwire.ShortChannelID{\n\t\t\t\tBlockHeight: 16_100_001,\n\t\t\t\tTxIndex:     0,\n\t\t\t\tTxPosition:  0,\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tnextScid := getNextScid(test.current)\n\t\t\trequire.Equal(t, test.expected, nextScid)\n\t\t})\n\t}\n}\n",
+      "length": 1245,
+      "tokens": 122,
+      "embedding": []
+    }
+  ]
+}

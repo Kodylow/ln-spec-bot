@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/revocation_producer_itest.go",
+  "package": "lnwallet",
+  "sections": [
+    {
+      "slug": "//go:build integration",
+      "content": "//go:build integration\n\npackage lnwallet\n\nimport (\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/lightningnetwork/lnd/keychain\"\n\t\"github.com/lightningnetwork/lnd/shachain\"\n)\n\n// nextRevocationProducer creates a new revocation producer, deriving the\n// revocation root by applying ECDH to a new key from our revocation root family\n// and the multisig key we use for the channel.",
+      "length": 357,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LightningWallet) nextRevocationProducer(res *ChannelReservation,",
+      "content": "func (l *LightningWallet) nextRevocationProducer(res *ChannelReservation,\n\tkeyRing keychain.KeyRing) (shachain.Producer, error) {\n\n\t// Derive the next key in the revocation root family.\n\tnextRevocationKeyDesc, err := keyRing.DeriveNextKey(\n\t\tkeychain.KeyFamilyRevocationRoot,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Within our itests, we want to make sure we can still restore channel\n\t// backups created with the old revocation root derivation method. To\n\t// create a channel in the legacy format during the test, we signal this\n\t// by setting an explicit pending channel ID. The ID is the hex\n\t// representation of the string \"legacy-revocation\".\n\titestLegacyFormatChanID := [32]byte{\n\t\t0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x2d, 0x72, 0x65, 0x76,\n\t\t0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,\n\t}\n\tif res.pendingChanID == itestLegacyFormatChanID {\n\t\trevocationRoot, err := l.DerivePrivKey(nextRevocationKeyDesc)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Once we have the root, we can then generate our shachain\n\t\t// producer and from that generate the per-commitment point.\n\t\trevRoot, err := chainhash.NewHash(revocationRoot.Serialize())\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn shachain.NewRevocationProducer(*revRoot), nil\n\t}\n\n\t// If the DeriveNextKey call returns the first key with Index 0, we need\n\t// to re-derive the key as the keychain/btcwallet.go DerivePrivKey call\n\t// special-cases Index 0.\n\tif nextRevocationKeyDesc.Index == 0 {\n\t\tnextRevocationKeyDesc, err = keyRing.DeriveNextKey(\n\t\t\tkeychain.KeyFamilyRevocationRoot,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tres.nextRevocationKeyLoc = nextRevocationKeyDesc.KeyLocator\n\n\t// Perform an ECDH operation between the private key described in\n\t// nextRevocationKeyDesc and our public multisig key. The result will be\n\t// used to seed the revocation producer.\n\trevRoot, err := l.ECDH(\n\t\tnextRevocationKeyDesc, res.ourContribution.MultiSigKey.PubKey,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Once we have the root, we can then generate our shachain producer\n\t// and from that generate the per-commitment point.\n\treturn shachain.NewRevocationProducer(revRoot), nil\n}\n",
+      "length": 2020,
+      "tokens": 287,
+      "embedding": []
+    }
+  ]
+}

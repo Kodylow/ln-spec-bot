@@ -1,0 +1,503 @@
+{
+  "filepath": "../implementations/go/lnd/routing/mock_test.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type mockPaymentAttemptDispatcherOld struct {",
+      "content": "type mockPaymentAttemptDispatcherOld struct {\n\tonPayment func(firstHop lnwire.ShortChannelID) ([32]byte, error)\n\tresults   map[uint64]*htlcswitch.PaymentResult\n\n\tsync.Mutex\n}\n\nvar _ PaymentAttemptDispatcher = (*mockPaymentAttemptDispatcherOld)(nil)\n",
+      "length": 196,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcherOld) SendHTLC(",
+      "content": "func (m *mockPaymentAttemptDispatcherOld) SendHTLC(\n\tfirstHop lnwire.ShortChannelID, pid uint64,\n\t_ *lnwire.UpdateAddHTLC) error {\n\n\tif m.onPayment == nil {\n\t\treturn nil\n\t}\n\n\tvar result *htlcswitch.PaymentResult\n\tpreimage, err := m.onPayment(firstHop)\n\tif err != nil {\n\t\trtErr, ok := err.(htlcswitch.ClearTextError)\n\t\tif !ok {\n\t\t\treturn err\n\t\t}\n\t\tresult = &htlcswitch.PaymentResult{\n\t\t\tError: rtErr,\n\t\t}\n\t} else {\n\t\tresult = &htlcswitch.PaymentResult{Preimage: preimage}\n\t}\n\n\tm.Lock()\n\tif m.results == nil {\n\t\tm.results = make(map[uint64]*htlcswitch.PaymentResult)\n\t}\n\n\tm.results[pid] = result\n\tm.Unlock()\n\n\treturn nil\n}\n",
+      "length": 538,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcherOld) GetAttemptResult(paymentID uint64,",
+      "content": "func (m *mockPaymentAttemptDispatcherOld) GetAttemptResult(paymentID uint64,\n\t_ lntypes.Hash, _ htlcswitch.ErrorDecrypter) (\n\t<-chan *htlcswitch.PaymentResult, error) {\n\n\tc := make(chan *htlcswitch.PaymentResult, 1)\n\n\tm.Lock()\n\tres, ok := m.results[paymentID]\n\tm.Unlock()\n\n\tif !ok {\n\t\treturn nil, htlcswitch.ErrPaymentIDNotFound\n\t}\n\tc <- res\n\n\treturn c, nil\n\n}",
+      "length": 267,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcherOld) CleanStore(",
+      "content": "func (m *mockPaymentAttemptDispatcherOld) CleanStore(\n\tmap[uint64]struct{}) error {\n\n\treturn nil\n}\n",
+      "length": 41,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcherOld) setPaymentResult(",
+      "content": "func (m *mockPaymentAttemptDispatcherOld) setPaymentResult(\n\tf func(firstHop lnwire.ShortChannelID) ([32]byte, error)) {\n\n\tm.onPayment = f\n}\n",
+      "length": 77,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPaymentSessionSourceOld struct {",
+      "content": "type mockPaymentSessionSourceOld struct {\n\troutes       []*route.Route\n\trouteRelease chan struct{}\n}\n\nvar _ PaymentSessionSource = (*mockPaymentSessionSourceOld)(nil)\n",
+      "length": 120,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSourceOld) NewPaymentSession(",
+      "content": "func (m *mockPaymentSessionSourceOld) NewPaymentSession(\n\t_ *LightningPayment) (PaymentSession, error) {\n\n\treturn &mockPaymentSessionOld{\n\t\troutes:  m.routes,\n\t\trelease: m.routeRelease,\n\t}, nil\n}\n",
+      "length": 132,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSourceOld) NewPaymentSessionForRoute(",
+      "content": "func (m *mockPaymentSessionSourceOld) NewPaymentSessionForRoute(\n\tpreBuiltRoute *route.Route) PaymentSession {\n\treturn nil\n}\n",
+      "length": 57,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSourceOld) NewPaymentSessionEmpty() PaymentSession {",
+      "content": "func (m *mockPaymentSessionSourceOld) NewPaymentSessionEmpty() PaymentSession {\n\treturn &mockPaymentSessionOld{}\n}\n",
+      "length": 33,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMissionControlOld struct {",
+      "content": "type mockMissionControlOld struct {\n\tMissionControl\n}\n\nvar _ MissionController = (*mockMissionControlOld)(nil)\n",
+      "length": 71,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControlOld) ReportPaymentFail(",
+      "content": "func (m *mockMissionControlOld) ReportPaymentFail(\n\tpaymentID uint64, rt *route.Route,\n\tfailureSourceIdx *int, failure lnwire.FailureMessage) (\n\t*channeldb.FailureReason, error) {\n\n\t// Report a permanent failure if this is an error caused\n\t// by incorrect details.\n\tif failure.Code() == lnwire.CodeIncorrectOrUnknownPaymentDetails {\n\t\treason := channeldb.FailureReasonPaymentDetails\n\t\treturn &reason, nil\n\t}\n\n\treturn nil, nil\n}\n",
+      "length": 364,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControlOld) ReportPaymentSuccess(paymentID uint64,",
+      "content": "func (m *mockMissionControlOld) ReportPaymentSuccess(paymentID uint64,\n\trt *route.Route) error {\n\n\treturn nil\n}\n",
+      "length": 37,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControlOld) GetProbability(fromNode, toNode route.Vertex,",
+      "content": "func (m *mockMissionControlOld) GetProbability(fromNode, toNode route.Vertex,\n\tamt lnwire.MilliSatoshi, capacity btcutil.Amount) float64 {\n\n\treturn 0\n}\n",
+      "length": 70,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPaymentSessionOld struct {",
+      "content": "type mockPaymentSessionOld struct {\n\troutes []*route.Route\n\n\t// release is a channel that optionally blocks requesting a route\n\t// from our mock payment channel. If this value is nil, we will just\n\t// release the route automatically.\n\trelease chan struct{}\n}\n\nvar _ PaymentSession = (*mockPaymentSessionOld)(nil)\n",
+      "length": 268,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionOld) RequestRoute(_, _ lnwire.MilliSatoshi,",
+      "content": "func (m *mockPaymentSessionOld) RequestRoute(_, _ lnwire.MilliSatoshi,\n\t_, height uint32) (*route.Route, error) {\n\n\tif m.release != nil {\n\t\tm.release <- struct{}{}\n\t}\n\n\tif len(m.routes) == 0 {\n\t\treturn nil, errNoPathFound\n\t}\n\n\tr := m.routes[0]\n\tm.routes = m.routes[1:]\n\n\treturn r, nil\n}\n",
+      "length": 201,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionOld) UpdateAdditionalEdge(_ *lnwire.ChannelUpdate,",
+      "content": "func (m *mockPaymentSessionOld) UpdateAdditionalEdge(_ *lnwire.ChannelUpdate,\n\t_ *btcec.PublicKey, _ *channeldb.CachedEdgePolicy) bool {\n\n\treturn false\n}\n",
+      "length": 72,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionOld) GetAdditionalEdgePolicy(_ *btcec.PublicKey,",
+      "content": "func (m *mockPaymentSessionOld) GetAdditionalEdgePolicy(_ *btcec.PublicKey,\n\t_ uint64) *channeldb.CachedEdgePolicy {\n\n\treturn nil\n}\n",
+      "length": 52,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPayerOld struct {",
+      "content": "type mockPayerOld struct {\n\tsendResult    chan error\n\tpaymentResult chan *htlcswitch.PaymentResult\n\tquit          chan struct{}\n}\n\nvar _ PaymentAttemptDispatcher = (*mockPayerOld)(nil)\n",
+      "length": 152,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPayerOld) SendHTLC(_ lnwire.ShortChannelID,",
+      "content": "func (m *mockPayerOld) SendHTLC(_ lnwire.ShortChannelID,\n\tpaymentID uint64,\n\t_ *lnwire.UpdateAddHTLC) error {\n\n\tselect {\n\tcase res := <-m.sendResult:\n\t\treturn res\n\tcase <-m.quit:\n\t\treturn fmt.Errorf(\"test quitting\")\n\t}\n\n}\n",
+      "length": 154,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPayerOld) GetAttemptResult(paymentID uint64, _ lntypes.Hash,",
+      "content": "func (m *mockPayerOld) GetAttemptResult(paymentID uint64, _ lntypes.Hash,\n\t_ htlcswitch.ErrorDecrypter) (<-chan *htlcswitch.PaymentResult, error) {\n\n\tselect {\n\tcase res, ok := <-m.paymentResult:\n\t\tresChan := make(chan *htlcswitch.PaymentResult, 1)\n\t\tif !ok {\n\t\t\tclose(resChan)\n\t\t} else {\n\t\t\tresChan <- res\n\t\t}\n\n\t\treturn resChan, nil\n\n\tcase <-m.quit:\n\t\treturn nil, fmt.Errorf(\"test quitting\")\n\t}\n}\n",
+      "length": 306,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPayerOld) CleanStore(pids map[uint64]struct{}) error {",
+      "content": "func (m *mockPayerOld) CleanStore(pids map[uint64]struct{}) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type initArgs struct {",
+      "content": "type initArgs struct {\n\tc *channeldb.PaymentCreationInfo\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type registerAttemptArgs struct {",
+      "content": "type registerAttemptArgs struct {\n\ta *channeldb.HTLCAttemptInfo\n}\n",
+      "length": 30,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type settleAttemptArgs struct {",
+      "content": "type settleAttemptArgs struct {\n\tpreimg lntypes.Preimage\n}\n",
+      "length": 25,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type failAttemptArgs struct {",
+      "content": "type failAttemptArgs struct {\n\treason *channeldb.HTLCFailInfo\n}\n",
+      "length": 32,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type failPaymentArgs struct {",
+      "content": "type failPaymentArgs struct {\n\treason channeldb.FailureReason\n}\n",
+      "length": 32,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type testPayment struct {",
+      "content": "type testPayment struct {\n\tinfo     channeldb.PaymentCreationInfo\n\tattempts []channeldb.HTLCAttempt\n}\n",
+      "length": 73,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type mockControlTowerOld struct {",
+      "content": "type mockControlTowerOld struct {\n\tpayments   map[lntypes.Hash]*testPayment\n\tsuccessful map[lntypes.Hash]struct{}\n\tfailed     map[lntypes.Hash]channeldb.FailureReason\n\n\tinit            chan initArgs\n\tregisterAttempt chan registerAttemptArgs\n\tsettleAttempt   chan settleAttemptArgs\n\tfailAttempt     chan failAttemptArgs\n\tfailPayment     chan failPaymentArgs\n\tfetchInFlight   chan struct{}\n\n\tsync.Mutex\n}\n\nvar _ ControlTower = (*mockControlTowerOld)(nil)\n",
+      "length": 404,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func makeMockControlTower() *mockControlTowerOld {",
+      "content": "func makeMockControlTower() *mockControlTowerOld {\n\treturn &mockControlTowerOld{\n\t\tpayments:   make(map[lntypes.Hash]*testPayment),\n\t\tsuccessful: make(map[lntypes.Hash]struct{}),\n\t\tfailed:     make(map[lntypes.Hash]channeldb.FailureReason),\n\t}\n}\n",
+      "length": 189,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) InitPayment(phash lntypes.Hash,",
+      "content": "func (m *mockControlTowerOld) InitPayment(phash lntypes.Hash,\n\tc *channeldb.PaymentCreationInfo) error {\n\n\tif m.init != nil {\n\t\tm.init <- initArgs{c}\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Don't allow re-init a successful payment.\n\tif _, ok := m.successful[phash]; ok {\n\t\treturn channeldb.ErrAlreadyPaid\n\t}\n\n\t_, failed := m.failed[phash]\n\t_, ok := m.payments[phash]\n\n\t// If the payment is known, only allow re-init if failed.\n\tif ok && !failed {\n\t\treturn channeldb.ErrPaymentInFlight\n\t}\n\n\tdelete(m.failed, phash)\n\tm.payments[phash] = &testPayment{\n\t\tinfo: *c,\n\t}\n\n\treturn nil\n}\n",
+      "length": 485,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) DeleteFailedAttempts(phash lntypes.Hash) error {",
+      "content": "func (m *mockControlTowerOld) DeleteFailedAttempts(phash lntypes.Hash) error {\n\tp, ok := m.payments[phash]\n\tif !ok {\n\t\treturn channeldb.ErrPaymentNotInitiated\n\t}\n\n\tvar inFlight bool\n\tfor _, a := range p.attempts {\n\t\tif a.Settle != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tif a.Failure != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tinFlight = true\n\t}\n\n\tif inFlight {\n\t\treturn channeldb.ErrPaymentInFlight\n\t}\n\n\treturn nil\n}\n",
+      "length": 285,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) RegisterAttempt(phash lntypes.Hash,",
+      "content": "func (m *mockControlTowerOld) RegisterAttempt(phash lntypes.Hash,\n\ta *channeldb.HTLCAttemptInfo) error {\n\n\tif m.registerAttempt != nil {\n\t\tm.registerAttempt <- registerAttemptArgs{a}\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Lookup payment.\n\tp, ok := m.payments[phash]\n\tif !ok {\n\t\treturn channeldb.ErrPaymentNotInitiated\n\t}\n\n\tvar inFlight bool\n\tfor _, a := range p.attempts {\n\t\tif a.Settle != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tif a.Failure != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tinFlight = true\n\t}\n\n\t// Cannot register attempts for successful or failed payments.\n\t_, settled := m.successful[phash]\n\t_, failed := m.failed[phash]\n\n\tif settled || failed {\n\t\treturn channeldb.ErrPaymentTerminal\n\t}\n\n\tif settled && !inFlight {\n\t\treturn channeldb.ErrPaymentAlreadySucceeded\n\t}\n\n\tif failed && !inFlight {\n\t\treturn channeldb.ErrPaymentAlreadyFailed\n\t}\n\n\t// Add attempt to payment.\n\tp.attempts = append(p.attempts, channeldb.HTLCAttempt{\n\t\tHTLCAttemptInfo: *a,\n\t})\n\tm.payments[phash] = p\n\n\treturn nil\n}\n",
+      "length": 851,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) SettleAttempt(phash lntypes.Hash,",
+      "content": "func (m *mockControlTowerOld) SettleAttempt(phash lntypes.Hash,\n\tpid uint64, settleInfo *channeldb.HTLCSettleInfo) (\n\t*channeldb.HTLCAttempt, error) {\n\n\tif m.settleAttempt != nil {\n\t\tm.settleAttempt <- settleAttemptArgs{settleInfo.Preimage}\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Only allow setting attempts if the payment is known.\n\tp, ok := m.payments[phash]\n\tif !ok {\n\t\treturn nil, channeldb.ErrPaymentNotInitiated\n\t}\n\n\t// Find the attempt with this pid, and set the settle info.\n\tfor i, a := range p.attempts {\n\t\tif a.AttemptID != pid {\n\t\t\tcontinue\n\t\t}\n\n\t\tif a.Settle != nil {\n\t\t\treturn nil, channeldb.ErrAttemptAlreadySettled\n\t\t}\n\t\tif a.Failure != nil {\n\t\t\treturn nil, channeldb.ErrAttemptAlreadyFailed\n\t\t}\n\n\t\tp.attempts[i].Settle = settleInfo\n\n\t\t// Mark the payment successful on first settled attempt.\n\t\tm.successful[phash] = struct{}{}\n\t\treturn &channeldb.HTLCAttempt{\n\t\t\tSettle: settleInfo,\n\t\t}, nil\n\t}\n\n\treturn nil, fmt.Errorf(\"pid not found\")\n}\n",
+      "length": 850,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) FailAttempt(phash lntypes.Hash, pid uint64,",
+      "content": "func (m *mockControlTowerOld) FailAttempt(phash lntypes.Hash, pid uint64,\n\tfailInfo *channeldb.HTLCFailInfo) (*channeldb.HTLCAttempt, error) {\n\n\tif m.failAttempt != nil {\n\t\tm.failAttempt <- failAttemptArgs{failInfo}\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Only allow failing attempts if the payment is known.\n\tp, ok := m.payments[phash]\n\tif !ok {\n\t\treturn nil, channeldb.ErrPaymentNotInitiated\n\t}\n\n\t// Find the attempt with this pid, and set the failure info.\n\tfor i, a := range p.attempts {\n\t\tif a.AttemptID != pid {\n\t\t\tcontinue\n\t\t}\n\n\t\tif a.Settle != nil {\n\t\t\treturn nil, channeldb.ErrAttemptAlreadySettled\n\t\t}\n\t\tif a.Failure != nil {\n\t\t\treturn nil, channeldb.ErrAttemptAlreadyFailed\n\t\t}\n\n\t\tp.attempts[i].Failure = failInfo\n\t\treturn &channeldb.HTLCAttempt{\n\t\t\tFailure: failInfo,\n\t\t}, nil\n\t}\n\n\treturn nil, fmt.Errorf(\"pid not found\")\n}\n",
+      "length": 723,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) FailPayment(phash lntypes.Hash,",
+      "content": "func (m *mockControlTowerOld) FailPayment(phash lntypes.Hash,\n\treason channeldb.FailureReason) error {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tif m.failPayment != nil {\n\t\tm.failPayment <- failPaymentArgs{reason}\n\t}\n\n\t// Payment must be known.\n\tif _, ok := m.payments[phash]; !ok {\n\t\treturn channeldb.ErrPaymentNotInitiated\n\t}\n\n\tm.failed[phash] = reason\n\n\treturn nil\n}\n",
+      "length": 279,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) FetchPayment(phash lntypes.Hash) (",
+      "content": "func (m *mockControlTowerOld) FetchPayment(phash lntypes.Hash) (\n\t*channeldb.MPPayment, error) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\treturn m.fetchPayment(phash)\n}\n",
+      "length": 87,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) fetchPayment(phash lntypes.Hash) (",
+      "content": "func (m *mockControlTowerOld) fetchPayment(phash lntypes.Hash) (\n\t*channeldb.MPPayment, error) {\n\n\tp, ok := m.payments[phash]\n\tif !ok {\n\t\treturn nil, channeldb.ErrPaymentNotInitiated\n\t}\n\n\tmp := &channeldb.MPPayment{\n\t\tInfo: &p.info,\n\t}\n\n\treason, ok := m.failed[phash]\n\tif ok {\n\t\tmp.FailureReason = &reason\n\t}\n\n\t// Return a copy of the current attempts.\n\tmp.HTLCs = append(mp.HTLCs, p.attempts...)\n\treturn mp, nil\n}\n",
+      "length": 330,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) FetchInFlightPayments() (",
+      "content": "func (m *mockControlTowerOld) FetchInFlightPayments() (\n\t[]*channeldb.MPPayment, error) {\n\n\tif m.fetchInFlight != nil {\n\t\tm.fetchInFlight <- struct{}{}\n\t}\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// In flight are all payments not successful or failed.\n\tvar fl []*channeldb.MPPayment\n\tfor hash := range m.payments {\n\t\tif _, ok := m.successful[hash]; ok {\n\t\t\tcontinue\n\t\t}\n\t\tif _, ok := m.failed[hash]; ok {\n\t\t\tcontinue\n\t\t}\n\n\t\tmp, err := m.fetchPayment(hash)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tfl = append(fl, mp)\n\t}\n\n\treturn fl, nil\n}\n",
+      "length": 447,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) SubscribePayment(paymentHash lntypes.Hash) (",
+      "content": "func (m *mockControlTowerOld) SubscribePayment(paymentHash lntypes.Hash) (\n\tControlTowerSubscriber, error) {\n\n\treturn nil, errors.New(\"not implemented\")\n}\n",
+      "length": 76,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTowerOld) SubscribeAllPayments() (",
+      "content": "func (m *mockControlTowerOld) SubscribeAllPayments() (\n\tControlTowerSubscriber, error) {\n\n\treturn nil, errors.New(\"not implemented\")\n}\n",
+      "length": 76,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPaymentAttemptDispatcher struct {",
+      "content": "type mockPaymentAttemptDispatcher struct {\n\tmock.Mock\n\n\tresultChan chan *htlcswitch.PaymentResult\n}\n\nvar _ PaymentAttemptDispatcher = (*mockPaymentAttemptDispatcher)(nil)\n",
+      "length": 122,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcher) SendHTLC(firstHop lnwire.ShortChannelID,",
+      "content": "func (m *mockPaymentAttemptDispatcher) SendHTLC(firstHop lnwire.ShortChannelID,\n\tpid uint64, htlcAdd *lnwire.UpdateAddHTLC) error {\n\n\targs := m.Called(firstHop, pid, htlcAdd)\n\treturn args.Error(0)\n}\n",
+      "length": 114,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcher) GetAttemptResult(attemptID uint64,",
+      "content": "func (m *mockPaymentAttemptDispatcher) GetAttemptResult(attemptID uint64,\n\tpaymentHash lntypes.Hash, deobfuscator htlcswitch.ErrorDecrypter) (\n\t<-chan *htlcswitch.PaymentResult, error) {\n\n\tm.Called(attemptID, paymentHash, deobfuscator)\n\n\t// Instead of returning the mocked returned values, we need to return\n\t// the chan resultChan so it can be converted into a read-only chan.\n\treturn m.resultChan, nil\n}\n",
+      "length": 323,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentAttemptDispatcher) CleanStore(",
+      "content": "func (m *mockPaymentAttemptDispatcher) CleanStore(\n\tkeepPids map[uint64]struct{}) error {\n\n\targs := m.Called(keepPids)\n\treturn args.Error(0)\n}\n",
+      "length": 87,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPaymentSessionSource struct {",
+      "content": "type mockPaymentSessionSource struct {\n\tmock.Mock\n}\n\nvar _ PaymentSessionSource = (*mockPaymentSessionSource)(nil)\n",
+      "length": 72,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSource) NewPaymentSession(",
+      "content": "func (m *mockPaymentSessionSource) NewPaymentSession(\n\tpayment *LightningPayment) (PaymentSession, error) {\n\n\targs := m.Called(payment)\n\treturn args.Get(0).(PaymentSession), args.Error(1)\n}\n",
+      "length": 131,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSource) NewPaymentSessionForRoute(",
+      "content": "func (m *mockPaymentSessionSource) NewPaymentSessionForRoute(\n\tpreBuiltRoute *route.Route) PaymentSession {\n\n\targs := m.Called(preBuiltRoute)\n\treturn args.Get(0).(PaymentSession)\n}\n",
+      "length": 114,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSessionSource) NewPaymentSessionEmpty() PaymentSession {",
+      "content": "func (m *mockPaymentSessionSource) NewPaymentSessionEmpty() PaymentSession {\n\targs := m.Called()\n\treturn args.Get(0).(PaymentSession)\n}\n",
+      "length": 56,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMissionControl struct {",
+      "content": "type mockMissionControl struct {\n\tmock.Mock\n}\n\nvar _ MissionController = (*mockMissionControl)(nil)\n",
+      "length": 63,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) ReportPaymentFail(",
+      "content": "func (m *mockMissionControl) ReportPaymentFail(\n\tpaymentID uint64, rt *route.Route,\n\tfailureSourceIdx *int, failure lnwire.FailureMessage) (\n\t*channeldb.FailureReason, error) {\n\n\targs := m.Called(paymentID, rt, failureSourceIdx, failure)\n\n\t// Type assertion on nil will fail, so we check and return here.\n\tif args.Get(0) == nil {\n\t\treturn nil, args.Error(1)\n\t}\n\n\treturn args.Get(0).(*channeldb.FailureReason), args.Error(1)\n}\n",
+      "length": 365,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) ReportPaymentSuccess(paymentID uint64,",
+      "content": "func (m *mockMissionControl) ReportPaymentSuccess(paymentID uint64,\n\trt *route.Route) error {\n\n\targs := m.Called(paymentID, rt)\n\treturn args.Error(0)\n}\n",
+      "length": 79,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) GetProbability(fromNode, toNode route.Vertex,",
+      "content": "func (m *mockMissionControl) GetProbability(fromNode, toNode route.Vertex,\n\tamt lnwire.MilliSatoshi, capacity btcutil.Amount) float64 {\n\n\targs := m.Called(fromNode, toNode, amt, capacity)\n\treturn args.Get(0).(float64)\n}\n",
+      "length": 140,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPaymentSession struct {",
+      "content": "type mockPaymentSession struct {\n\tmock.Mock\n}\n\nvar _ PaymentSession = (*mockPaymentSession)(nil)\n",
+      "length": 60,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSession) RequestRoute(maxAmt, feeLimit lnwire.MilliSatoshi,",
+      "content": "func (m *mockPaymentSession) RequestRoute(maxAmt, feeLimit lnwire.MilliSatoshi,\n\tactiveShards, height uint32) (*route.Route, error) {\n\n\targs := m.Called(maxAmt, feeLimit, activeShards, height)\n\treturn args.Get(0).(*route.Route), args.Error(1)\n}\n",
+      "length": 160,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSession) UpdateAdditionalEdge(msg *lnwire.ChannelUpdate,",
+      "content": "func (m *mockPaymentSession) UpdateAdditionalEdge(msg *lnwire.ChannelUpdate,\n\tpubKey *btcec.PublicKey, policy *channeldb.CachedEdgePolicy) bool {\n\n\targs := m.Called(msg, pubKey, policy)\n\treturn args.Bool(0)\n}\n",
+      "length": 127,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPaymentSession) GetAdditionalEdgePolicy(pubKey *btcec.PublicKey,",
+      "content": "func (m *mockPaymentSession) GetAdditionalEdgePolicy(pubKey *btcec.PublicKey,\n\tchannelID uint64) *channeldb.CachedEdgePolicy {\n\n\targs := m.Called(pubKey, channelID)\n\treturn args.Get(0).(*channeldb.CachedEdgePolicy)\n}\n",
+      "length": 134,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type mockControlTower struct {",
+      "content": "type mockControlTower struct {\n\tmock.Mock\n\tsync.Mutex\n}\n\nvar _ ControlTower = (*mockControlTower)(nil)\n",
+      "length": 67,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) InitPayment(phash lntypes.Hash,",
+      "content": "func (m *mockControlTower) InitPayment(phash lntypes.Hash,\n\tc *channeldb.PaymentCreationInfo) error {\n\n\targs := m.Called(phash, c)\n\treturn args.Error(0)\n}\n",
+      "length": 91,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) DeleteFailedAttempts(phash lntypes.Hash) error {",
+      "content": "func (m *mockControlTower) DeleteFailedAttempts(phash lntypes.Hash) error {\n\targs := m.Called(phash)\n\treturn args.Error(0)\n}\n",
+      "length": 46,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) RegisterAttempt(phash lntypes.Hash,",
+      "content": "func (m *mockControlTower) RegisterAttempt(phash lntypes.Hash,\n\ta *channeldb.HTLCAttemptInfo) error {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\targs := m.Called(phash, a)\n\treturn args.Error(0)\n}\n",
+      "length": 113,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) SettleAttempt(phash lntypes.Hash,",
+      "content": "func (m *mockControlTower) SettleAttempt(phash lntypes.Hash,\n\tpid uint64, settleInfo *channeldb.HTLCSettleInfo) (\n\t*channeldb.HTLCAttempt, error) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\targs := m.Called(phash, pid, settleInfo)\n\treturn args.Get(0).(*channeldb.HTLCAttempt), args.Error(1)\n}\n",
+      "length": 212,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) FailAttempt(phash lntypes.Hash, pid uint64,",
+      "content": "func (m *mockControlTower) FailAttempt(phash lntypes.Hash, pid uint64,\n\tfailInfo *channeldb.HTLCFailInfo) (*channeldb.HTLCAttempt, error) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\targs := m.Called(phash, pid, failInfo)\n\treturn args.Get(0).(*channeldb.HTLCAttempt), args.Error(1)\n}\n",
+      "length": 193,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) FailPayment(phash lntypes.Hash,",
+      "content": "func (m *mockControlTower) FailPayment(phash lntypes.Hash,\n\treason channeldb.FailureReason) error {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\targs := m.Called(phash, reason)\n\treturn args.Error(0)\n}\n",
+      "length": 120,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) FetchPayment(phash lntypes.Hash) (",
+      "content": "func (m *mockControlTower) FetchPayment(phash lntypes.Hash) (\n\t*channeldb.MPPayment, error) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\targs := m.Called(phash)\n\n\t// Type assertion on nil will fail, so we check and return here.\n\tif args.Get(0) == nil {\n\t\treturn nil, args.Error(1)\n\t}\n\n\t// Make a copy of the payment here to avoid data race.\n\tp := args.Get(0).(*channeldb.MPPayment)\n\tpayment := &channeldb.MPPayment{\n\t\tInfo:          p.Info,\n\t\tFailureReason: p.FailureReason,\n\t}\n\tpayment.HTLCs = make([]channeldb.HTLCAttempt, len(p.HTLCs))\n\tcopy(payment.HTLCs, p.HTLCs)\n\n\treturn payment, args.Error(1)\n}\n",
+      "length": 506,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) FetchInFlightPayments() (",
+      "content": "func (m *mockControlTower) FetchInFlightPayments() (\n\t[]*channeldb.MPPayment, error) {\n\n\targs := m.Called()\n\treturn args.Get(0).([]*channeldb.MPPayment), args.Error(1)\n}\n",
+      "length": 112,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) SubscribePayment(paymentHash lntypes.Hash) (",
+      "content": "func (m *mockControlTower) SubscribePayment(paymentHash lntypes.Hash) (\n\tControlTowerSubscriber, error) {\n\n\targs := m.Called(paymentHash)\n\treturn args.Get(0).(ControlTowerSubscriber), args.Error(1)\n}\n",
+      "length": 123,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockControlTower) SubscribeAllPayments() (",
+      "content": "func (m *mockControlTower) SubscribeAllPayments() (\n\tControlTowerSubscriber, error) {\n\n\targs := m.Called()\n\treturn args.Get(0).(ControlTowerSubscriber), args.Error(1)\n}\n",
+      "length": 112,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type mockLink struct {",
+      "content": "type mockLink struct {\n\thtlcswitch.ChannelLink\n\tbandwidth         lnwire.MilliSatoshi\n\tmayAddOutgoingErr error\n\tineligible        bool\n}\n\n// Bandwidth returns the bandwidth the mock was configured with.",
+      "length": 173,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockLink) Bandwidth() lnwire.MilliSatoshi {",
+      "content": "func (m *mockLink) Bandwidth() lnwire.MilliSatoshi {\n\treturn m.bandwidth\n}\n\n// EligibleToForward returns the mock's configured eligibility.",
+      "length": 83,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockLink) EligibleToForward() bool {",
+      "content": "func (m *mockLink) EligibleToForward() bool {\n\treturn !m.ineligible\n}\n\n// MayAddOutgoingHtlc returns the error configured in our mock.",
+      "length": 85,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockLink) MayAddOutgoingHtlc(_ lnwire.MilliSatoshi) error {",
+      "content": "func (m *mockLink) MayAddOutgoingHtlc(_ lnwire.MilliSatoshi) error {\n\treturn m.mayAddOutgoingErr\n}\n",
+      "length": 28,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

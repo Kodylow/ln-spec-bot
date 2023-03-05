@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/kvdb_no_postgres.go",
-  "package": "!kvdb_postgres",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build !kvdb_postgres",
+      "content": "//go:build !kvdb_postgres\n// +build !kvdb_postgres\n\npackage kvdb\n\nimport (\n\t\"errors\"\n\n\t\"github.com/lightningnetwork/lnd/kvdb/postgres\"\n)\n\nconst PostgresBackend = false\n",
+      "length": 131,
+      "tokens": 14,
+      "embedding": []
+    },
     {
       "slug": "func NewPostgresFixture(dbName string) (postgres.Fixture, error) {",
       "content": "func NewPostgresFixture(dbName string) (postgres.Fixture, error) {\n\treturn nil, errors.New(\"postgres backend not available\")\n}\n",

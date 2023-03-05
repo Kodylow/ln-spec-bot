@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/postgres/db.go",
-  "package": "kvdb_postgres",
+  "package": "postgres",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres",
+      "content": "//go:build kvdb_postgres\n\npackage postgres\n\nimport (\n\t\"context\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/lightningnetwork/lnd/kvdb/sqlbase\"\n)\n\n// sqliteCmdReplacements defines a mapping from some SQLite keywords and phrases\n// to their postgres counterparts.\nvar sqliteCmdReplacements = sqlbase.SQLiteCmdReplacements{\n\t\"BLOB\":                \"BYTEA\",\n\t\"INTEGER PRIMARY KEY\": \"BIGSERIAL PRIMARY KEY\",\n}\n\n// newPostgresBackend returns a db object initialized with the passed backend\n// config. If postgres connection cannot be established, then returns error.",
+      "length": 529,
+      "tokens": 59,
+      "embedding": []
+    },
     {
       "slug": "func newPostgresBackend(ctx context.Context, config *Config, prefix string) (",
       "content": "func newPostgresBackend(ctx context.Context, config *Config, prefix string) (\n\twalletdb.DB, error) {\n\n\tcfg := &sqlbase.Config{\n\t\tDriverName:            \"pgx\",\n\t\tDsn:                   config.Dsn,\n\t\tTimeout:               config.Timeout,\n\t\tSchema:                \"public\",\n\t\tTableNamePrefix:       prefix,\n\t\tSQLiteCmdReplacements: sqliteCmdReplacements,\n\t\tWithTxLevelLock:       true,\n\t}\n\n\treturn sqlbase.NewSqlBackend(ctx, cfg)\n}\n",

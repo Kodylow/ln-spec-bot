@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/htlcswitch/hodl/config_dev.go",
-  "package": "dev",
+  "package": "hodl",
   "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage hodl\n\n// Config is a struct enumerating the possible command line flags that are used\n// to activate specific hodl modes.\n//\n// NOTE: THESE FLAGS ARE INTENDED FOR TESTING PURPOSES ONLY. ACTIVATING THESE\n// FLAGS IN PRODUCTION WILL VIOLATE CRITICAL ASSUMPTIONS MADE BY THIS SOFTWARE.",
+      "length": 297,
+      "tokens": 50,
+      "embedding": []
+    },
     {
       "slug": "type Config struct {",
       "content": "type Config struct {\n\tExitSettle bool `long:\"exit-settle\" description:\"Instructs the node to drop ADDs for which it is the exit node, and to not settle back to the sender\"`\n\n\tAddIncoming bool `long:\"add-incoming\" description:\"Instructs the node to drop incoming ADDs before processing them in the incoming link\"`\n\n\tSettleIncoming bool `long:\"settle-incoming\" description:\"Instructs the node to drop incoming SETTLEs before processing them in the incoming link\"`\n\n\tFailIncoming bool `long:\"fail-incoming\" description:\"Instructs the node to drop incoming FAILs before processing them in the incoming link\"`\n\n\tAddOutgoing bool `long:\"add-outgoing\" description:\"Instructs the node to drop outgoing ADDs before applying them to the channel state\"`\n\n\tSettleOutgoing bool `long:\"settle-outgoing\" description:\"Instructs the node to drop outgoing SETTLEs before applying them to the channel state\"`\n\n\tFailOutgoing bool `long:\"fail-outgoing\" description:\"Instructs the node to drop outgoing FAILs before applying them to the channel state\"`\n\n\tCommit bool `long:\"commit\" description:\"Instructs the node to add HTLCs to its local commitment state and to open circuits for any ADDs, but abort before committing the changes\"`\n\n\tBogusSettle bool `long:\"bogus-settle\" description:\"Instructs the node to settle back any incoming HTLC with a bogus preimage\"`\n}\n\n// Mask extracts the flags specified in the configuration, composing a Mask from\n// the active flags.",

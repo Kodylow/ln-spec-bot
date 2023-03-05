@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration30/test_utils.go",
+  "package": "migration30",
+  "sections": [
+    {
+      "slug": "func setupTestLogs(db kvdb.Backend, c *mig26.OpenChannel,",
+      "content": "func setupTestLogs(db kvdb.Backend, c *mig26.OpenChannel,\n\toldLogs, newLogs []mig.ChannelCommitment) error {\n\n\treturn kvdb.Update(db, func(tx kvdb.RwTx) error {\n\t\t// If the open channel is nil, only create the root\n\t\t// bucket and skip creating the channel bucket.\n\t\tif c == nil {\n\t\t\t_, err := tx.CreateTopLevelBucket(openChannelBucket)\n\t\t\treturn err\n\t\t}\n\n\t\t// Create test buckets.\n\t\tchanBucket, err := mig25.CreateChanBucket(tx, &c.OpenChannel)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Save channel info.\n\t\tif err := mig26.PutChanInfo(chanBucket, c, false); err != nil {\n\t\t\treturn fmt.Errorf(\"PutChanInfo got %v\", err)\n\t\t}\n\n\t\t// Save revocation state.\n\t\tif err := putChanRevocationState(chanBucket, c); err != nil {\n\t\t\treturn fmt.Errorf(\"putChanRevocationState got %v\", err)\n\t\t}\n\n\t\t// Create old logs.\n\t\terr = writeOldRevocationLogs(chanBucket, oldLogs)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"write old logs: %v\", err)\n\t\t}\n\n\t\t// Create new logs.\n\t\treturn writeNewRevocationLogs(chanBucket, newLogs, !withAmtData)\n\t}, func() {})\n}\n\n// createTestChannel creates an OpenChannel using the specified nodePub and\n// outpoint. If any of the params is nil, a random value is populated.",
+      "length": 1084,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func createTestChannel(nodePub *btcec.PublicKey) *mig26.OpenChannel {",
+      "content": "func createTestChannel(nodePub *btcec.PublicKey) *mig26.OpenChannel {\n\t// Create a random private key that's used to provide randomness.\n\tpriv, _ := btcec.NewPrivateKey()\n\n\t// If passed public key is nil, use the random public key.\n\tif nodePub == nil {\n\t\tnodePub = priv.PubKey()\n\t}\n\n\t// Create a random channel point.\n\tvar op wire.OutPoint\n\tcopy(op.Hash[:], priv.Serialize())\n\n\ttestProducer := shachain.NewRevocationProducer(op.Hash)\n\tstore, _ := createTestStore()\n\n\tlocalCfg := mig.ChannelConfig{\n\t\tChannelConstraints: mig.ChannelConstraints{\n\t\t\tDustLimit:        btcutil.Amount(354),\n\t\t\tMaxAcceptedHtlcs: 483,\n\t\t\tCsvDelay:         4,\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: localMusigKey,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 1,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: localRevocationBasePoint,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 2,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: localHtlcBasePoint,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 3,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: localPaymentBasePoint,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 4,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: localDelayBasePoint,\n\t\t},\n\t}\n\n\tremoteCfg := mig.ChannelConfig{\n\t\tChannelConstraints: mig.ChannelConstraints{\n\t\t\tDustLimit:        btcutil.Amount(354),\n\t\t\tMaxAcceptedHtlcs: 483,\n\t\t\tCsvDelay:         4,\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: remoteMultiSigKey,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: remoteRevocationBasePoint,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: remoteHtlcBasePoint,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: remotePaymentBasePoint,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tKeyLocator: keychain.KeyLocator{\n\t\t\t\tFamily: 0,\n\t\t\t\tIndex:  0,\n\t\t\t},\n\t\t\tPubKey: remoteDelayBasePoint,\n\t\t},\n\t}\n\n\tc := &mig26.OpenChannel{\n\t\tOpenChannel: mig25.OpenChannel{\n\t\t\tOpenChannel: mig.OpenChannel{\n\t\t\t\tChainHash:       testChainHash,\n\t\t\t\tIdentityPub:     nodePub,\n\t\t\t\tFundingOutpoint: op,\n\t\t\t\tLocalChanCfg:    localCfg,\n\t\t\t\tRemoteChanCfg:   remoteCfg,\n\t\t\t\t// Assign dummy values.\n\t\t\t\tRemoteCurrentRevocation: nodePub,\n\t\t\t\tRevocationProducer:      testProducer,\n\t\t\t\tRevocationStore:         store,\n\t\t\t},\n\t\t\tChanType: testChanType,\n\t\t},\n\t}\n\n\treturn c\n}\n\n// writeOldRevocationLogs saves an old revocation log to db.",
+      "length": 2665,
+      "tokens": 244,
+      "embedding": []
+    },
+    {
+      "slug": "func writeOldRevocationLogs(chanBucket kvdb.RwBucket,",
+      "content": "func writeOldRevocationLogs(chanBucket kvdb.RwBucket,\n\toldLogs []mig.ChannelCommitment) error {\n\n\t// Don't bother continue if the logs are empty.\n\tif len(oldLogs) == 0 {\n\t\treturn nil\n\t}\n\n\tlogBucket, err := chanBucket.CreateBucketIfNotExists(\n\t\trevocationLogBucketDeprecated,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor _, c := range oldLogs {\n\t\tif err := putOldRevocationLog(logBucket, &c); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\treturn nil\n}\n\n// writeNewRevocationLogs saves a new revocation log to db.",
+      "length": 421,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func writeNewRevocationLogs(chanBucket kvdb.RwBucket,",
+      "content": "func writeNewRevocationLogs(chanBucket kvdb.RwBucket,\n\toldLogs []mig.ChannelCommitment, noAmtData bool) error {\n\n\t// Don't bother continue if the logs are empty.\n\tif len(oldLogs) == 0 {\n\t\treturn nil\n\t}\n\n\tlogBucket, err := chanBucket.CreateBucketIfNotExists(\n\t\trevocationLogBucket,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor _, c := range oldLogs {\n\t\t// NOTE: we just blindly write the output indexes to db here\n\t\t// whereas normally, we would find the correct indexes from the\n\t\t// old commit tx. We do this intentionally so we can\n\t\t// distinguish a newly created log from an already saved one.\n\t\terr := putRevocationLog(\n\t\t\tlogBucket, &c, testOurIndex, testTheirIndex, noAmtData,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\treturn nil\n}\n\n// createTestStore creates a revocation store and always saves the above\n// defined two preimages into the store.",
+      "length": 768,
+      "tokens": 128,
+      "embedding": []
+    },
+    {
+      "slug": "func createTestStore() (shachain.Store, error) {",
+      "content": "func createTestStore() (shachain.Store, error) {\n\tvar p chainhash.Hash\n\tcopy(p[:], preimage1)\n\n\ttestStore := shachain.NewRevocationStore()\n\tif err := testStore.AddNextEntry(&p); err != nil {\n\t\treturn nil, err\n\t}\n\n\tcopy(p[:], preimage2)\n\tif err := testStore.AddNextEntry(&p); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn testStore, nil\n}\n\n// createNotStarted will setup a situation where we haven't started the\n// migration for the channel. We use the legacy to denote whether to simulate a\n// node with v0.15.0.",
+      "length": 442,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func createNotStarted(cdb kvdb.Backend, c *mig26.OpenChannel,",
+      "content": "func createNotStarted(cdb kvdb.Backend, c *mig26.OpenChannel,\n\tlegacy bool) error {\n\n\tvar newLogs []mig.ChannelCommitment\n\n\t// Create test logs.\n\toldLogs := []mig.ChannelCommitment{oldLog1, oldLog2}\n\n\t// Add a new log if the node is running with v0.15.0.\n\tif !legacy {\n\t\tnewLogs = []mig.ChannelCommitment{newLog3}\n\t}\n\treturn setupTestLogs(cdb, c, oldLogs, newLogs)\n}\n\n// createNotFinished will setup a situation where we have un-migrated logs and\n// return the next migration height. We use the legacy to denote whether to\n// simulate a node with v0.15.0.",
+      "length": 477,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func createNotFinished(cdb kvdb.Backend, c *mig26.OpenChannel,",
+      "content": "func createNotFinished(cdb kvdb.Backend, c *mig26.OpenChannel,\n\tlegacy bool) error {\n\n\t// Create test logs.\n\toldLogs := []mig.ChannelCommitment{oldLog1, oldLog2}\n\tnewLogs := []mig.ChannelCommitment{oldLog1}\n\n\t// Add a new log if the node is running with v0.15.0.\n\tif !legacy {\n\t\tnewLogs = append(newLogs, newLog3)\n\t}\n\treturn setupTestLogs(cdb, c, oldLogs, newLogs)\n}\n\n// createFinished will setup a situation where all the old logs have been\n// migrated and return a nil. We use the legacy to denote whether to simulate a\n// node with v0.15.0.",
+      "length": 465,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func createFinished(cdb kvdb.Backend, c *mig26.OpenChannel,",
+      "content": "func createFinished(cdb kvdb.Backend, c *mig26.OpenChannel,\n\tlegacy bool) error {\n\n\t// Create test logs.\n\toldLogs := []mig.ChannelCommitment{oldLog1, oldLog2}\n\tnewLogs := []mig.ChannelCommitment{oldLog1, oldLog2}\n\n\t// Add a new log if the node is running with v0.15.0.\n\tif !legacy {\n\t\tnewLogs = append(newLogs, newLog3)\n\t}\n\treturn setupTestLogs(cdb, c, oldLogs, newLogs)\n}\n",
+      "length": 301,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\trand.Seed(time.Now().Unix())\n\tif rand.Intn(2) == 0 {\n\t\twithAmtData = true\n\t}\n\n\tif withAmtData {\n\t\tnewLog1 = newLog1WithAmts\n\t\tnewLog2 = newLog2WithAmts\n\t}\n}\n",
+      "length": 148,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

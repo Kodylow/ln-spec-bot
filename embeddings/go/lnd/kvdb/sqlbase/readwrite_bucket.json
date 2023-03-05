@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_bucket.go",
-  "package": "kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n\nimport (\n\t\"database/sql\"\n\t\"errors\"\n\t\"fmt\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\n// readWriteBucket stores the bucket id and the buckets transaction.",
+      "length": 163,
+      "tokens": 19,
+      "embedding": []
+    },
     {
       "slug": "type readWriteBucket struct {",
       "content": "type readWriteBucket struct {\n\t// id is used to identify the bucket. If id is null, it refers to the\n\t// root bucket.\n\tid *int64\n\n\t// tx holds the parent transaction.\n\ttx *readWriteTx\n\n\ttable string\n}\n\n// newReadWriteBucket creates a new rw bucket with the passed transaction\n// and bucket id.",

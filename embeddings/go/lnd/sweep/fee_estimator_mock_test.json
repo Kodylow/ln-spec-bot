@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/fee_estimator_mock_test.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "type mockFeeEstimator struct {",
+      "content": "type mockFeeEstimator struct {\n\tfeePerKW chainfee.SatPerKWeight\n\n\trelayFee chainfee.SatPerKWeight\n\n\tblocksToFee map[uint32]chainfee.SatPerKWeight\n\n\t// A closure that when set is used instead of the\n\t// mockFeeEstimator.EstimateFeePerKW method.\n\testimateFeePerKW func(numBlocks uint32) (chainfee.SatPerKWeight, error)\n\n\tlock sync.Mutex\n}\n",
+      "length": 294,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockFeeEstimator(feePerKW,",
+      "content": "func newMockFeeEstimator(feePerKW,\n\trelayFee chainfee.SatPerKWeight) *mockFeeEstimator {\n\n\treturn &mockFeeEstimator{\n\t\tfeePerKW:    feePerKW,\n\t\trelayFee:    relayFee,\n\t\tblocksToFee: make(map[uint32]chainfee.SatPerKWeight),\n\t}\n}\n",
+      "length": 185,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *mockFeeEstimator) updateFees(feePerKW,",
+      "content": "func (e *mockFeeEstimator) updateFees(feePerKW,\n\trelayFee chainfee.SatPerKWeight) {\n\n\te.lock.Lock()\n\tdefer e.lock.Unlock()\n\n\te.feePerKW = feePerKW\n\te.relayFee = relayFee\n}\n",
+      "length": 116,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *mockFeeEstimator) EstimateFeePerKW(numBlocks uint32) (",
+      "content": "func (e *mockFeeEstimator) EstimateFeePerKW(numBlocks uint32) (\n\tchainfee.SatPerKWeight, error) {\n\n\te.lock.Lock()\n\tdefer e.lock.Unlock()\n\n\tif e.estimateFeePerKW != nil {\n\t\treturn e.estimateFeePerKW(numBlocks)\n\t}\n\n\tif fee, ok := e.blocksToFee[numBlocks]; ok {\n\t\treturn fee, nil\n\t}\n\n\treturn e.feePerKW, nil\n}\n",
+      "length": 228,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *mockFeeEstimator) RelayFeePerKW() chainfee.SatPerKWeight {",
+      "content": "func (e *mockFeeEstimator) RelayFeePerKW() chainfee.SatPerKWeight {\n\te.lock.Lock()\n\tdefer e.lock.Unlock()\n\n\treturn e.relayFee\n}\n",
+      "length": 55,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *mockFeeEstimator) Start() error {",
+      "content": "func (e *mockFeeEstimator) Start() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *mockFeeEstimator) Stop() error {",
+      "content": "func (e *mockFeeEstimator) Stop() error {\n\treturn nil\n}\n\nvar _ chainfee.Estimator = (*mockFeeEstimator)(nil)\n",
+      "length": 63,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

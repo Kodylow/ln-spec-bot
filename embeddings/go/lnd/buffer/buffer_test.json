@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/buffer/buffer_test.go",
+  "package": "buffer_test",
+  "sections": [
+    {
+      "slug": "func TestRecycleSlice(t *testing.T) {",
+      "content": "func TestRecycleSlice(t *testing.T) {\n\ttests := []struct {\n\t\tname  string\n\t\tslice []byte\n\t}{\n\t\t{\n\t\t\tname: \"length zero\",\n\t\t},\n\t\t{\n\t\t\tname:  \"length one\",\n\t\t\tslice: []byte(\"a\"),\n\t\t},\n\t\t{\n\t\t\tname:  \"length power of two length\",\n\t\t\tslice: bytes.Repeat([]byte(\"b\"), 16),\n\t\t},\n\t\t{\n\t\t\tname:  \"length non power of two\",\n\t\t\tslice: bytes.Repeat([]byte(\"c\"), 27),\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tbuffer.RecycleSlice(test.slice)\n\n\t\t\texpSlice := make([]byte, len(test.slice))\n\t\t\tif !bytes.Equal(expSlice, test.slice) {\n\t\t\t\tt.Fatalf(\"slice not recycled, want: %v, got: %v\",\n\t\t\t\t\texpSlice, test.slice)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 582,
+      "tokens": 77,
+      "embedding": []
+    }
+  ]
+}

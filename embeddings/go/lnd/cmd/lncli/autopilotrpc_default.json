@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/autopilotrpc_default.go",
-  "package": "!autopilotrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !autopilotrpc",
+      "content": "//go:build !autopilotrpc\n// +build !autopilotrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// autopilotCommands will return nil for non-autopilotrpc builds.",
+      "length": 130,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func autopilotCommands() []cli.Command {",
       "content": "func autopilotCommands() []cli.Command {\n\treturn nil\n}\n",

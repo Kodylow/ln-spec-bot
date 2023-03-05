@@ -1,0 +1,181 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration21/common/enclosed_types.go",
+  "package": "common",
+  "sections": [
+    {
+      "slug": "type CircuitKey struct {",
+      "content": "type CircuitKey struct {\n\t// ChanID is the short chanid indicating the HTLC's origin.\n\t//\n\t// NOTE: It is fine for this value to be blank, as this indicates a\n\t// locally-sourced payment.\n\tChanID lnwire.ShortChannelID\n\n\t// HtlcID is the unique htlc index predominately assigned by links,\n\t// though can also be assigned by switch in the case of locally-sourced\n\t// payments.\n\tHtlcID uint64\n}\n\n// HTLC is the on-disk representation of a hash time-locked contract. HTLCs are\n// contained within ChannelDeltas which encode the current state of the\n// commitment between state updates.\n//\n// TODO(roasbeef): save space by using smaller ints at tail end?",
+      "length": 608,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "type HTLC struct {",
+      "content": "type HTLC struct {\n\t// Signature is the signature for the second level covenant transaction\n\t// for this HTLC. The second level transaction is a timeout tx in the\n\t// case that this is an outgoing HTLC, and a success tx in the case\n\t// that this is an incoming HTLC.\n\t//\n\t// TODO(roasbeef): make [64]byte instead?\n\tSignature []byte\n\n\t// RHash is the payment hash of the HTLC.\n\tRHash [32]byte\n\n\t// Amt is the amount of milli-satoshis this HTLC escrows.\n\tAmt lnwire.MilliSatoshi\n\n\t// RefundTimeout is the absolute timeout on the HTLC that the sender\n\t// must wait before reclaiming the funds in limbo.\n\tRefundTimeout uint32\n\n\t// OutputIndex is the output index for this particular HTLC output\n\t// within the commitment transaction.\n\tOutputIndex int32\n\n\t// Incoming denotes whether we're the receiver or the sender of this\n\t// HTLC.\n\tIncoming bool\n\n\t// OnionBlob is an opaque blob which is used to complete multi-hop\n\t// routing.\n\tOnionBlob []byte\n\n\t// HtlcIndex is the HTLC counter index of this active, outstanding\n\t// HTLC. This differs from the LogIndex, as the HtlcIndex is only\n\t// incremented for each offered HTLC, while they LogIndex is\n\t// incremented for each update (includes settle+fail).\n\tHtlcIndex uint64\n\n\t// LogIndex is the cumulative log index of this HTLC. This differs\n\t// from the HtlcIndex as this will be incremented for each new log\n\t// update added.\n\tLogIndex uint64\n}\n\n// ChannelCommitment is a snapshot of the commitment state at a particular\n// point in the commitment chain. With each state transition, a snapshot of the\n// current state along with all non-settled HTLCs are recorded. These snapshots\n// detail the state of the _remote_ party's commitment at a particular state\n// number.  For ourselves (the local node) we ONLY store our most recent\n// (unrevoked) state for safety purposes.",
+      "length": 1752,
+      "tokens": 294,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelCommitment struct {",
+      "content": "type ChannelCommitment struct {\n\t// CommitHeight is the update number that this ChannelDelta represents\n\t// the total number of commitment updates to this point. This can be\n\t// viewed as sort of a \"commitment height\" as this number is\n\t// monotonically increasing.\n\tCommitHeight uint64\n\n\t// LocalLogIndex is the cumulative log index index of the local node at\n\t// this point in the commitment chain. This value will be incremented\n\t// for each _update_ added to the local update log.\n\tLocalLogIndex uint64\n\n\t// LocalHtlcIndex is the current local running HTLC index. This value\n\t// will be incremented for each outgoing HTLC the local node offers.\n\tLocalHtlcIndex uint64\n\n\t// RemoteLogIndex is the cumulative log index index of the remote node\n\t// at this point in the commitment chain. This value will be\n\t// incremented for each _update_ added to the remote update log.\n\tRemoteLogIndex uint64\n\n\t// RemoteHtlcIndex is the current remote running HTLC index. This value\n\t// will be incremented for each outgoing HTLC the remote node offers.\n\tRemoteHtlcIndex uint64\n\n\t// LocalBalance is the current available settled balance within the\n\t// channel directly spendable by us.\n\t//\n\t// NOTE: This is the balance *after* subtracting any commitment fee,\n\t// AND anchor output values.\n\tLocalBalance lnwire.MilliSatoshi\n\n\t// RemoteBalance is the current available settled balance within the\n\t// channel directly spendable by the remote node.\n\t//\n\t// NOTE: This is the balance *after* subtracting any commitment fee,\n\t// AND anchor output values.\n\tRemoteBalance lnwire.MilliSatoshi\n\n\t// CommitFee is the amount calculated to be paid in fees for the\n\t// current set of commitment transactions. The fee amount is persisted\n\t// with the channel in order to allow the fee amount to be removed and\n\t// recalculated with each channel state update, including updates that\n\t// happen after a system restart.\n\tCommitFee btcutil.Amount\n\n\t// FeePerKw is the min satoshis/kilo-weight that should be paid within\n\t// the commitment transaction for the entire duration of the channel's\n\t// lifetime. This field may be updated during normal operation of the\n\t// channel as on-chain conditions change.\n\t//\n\t// TODO(halseth): make this SatPerKWeight. Cannot be done atm because\n\t// this will cause the import cycle lnwallet<->channeldb. Fee\n\t// estimation stuff should be in its own package.\n\tFeePerKw btcutil.Amount\n\n\t// CommitTx is the latest version of the commitment state, broadcast\n\t// able by us.\n\tCommitTx *wire.MsgTx\n\n\t// CommitSig is one half of the signature required to fully complete\n\t// the script for the commitment transaction above. This is the\n\t// signature signed by the remote party for our version of the\n\t// commitment transactions.\n\tCommitSig []byte\n\n\t// Htlcs is the set of HTLC's that are pending at this particular\n\t// commitment height.\n\tHtlcs []HTLC\n\n\t// TODO(roasbeef): pending commit pointer?\n\t//  * lets just walk through\n}\n\n// LogUpdate represents a pending update to the remote commitment chain. The\n// log update may be an add, fail, or settle entry. We maintain this data in\n// order to be able to properly retransmit our proposed\n// state if necessary.",
+      "length": 3052,
+      "tokens": 493,
+      "embedding": []
+    },
+    {
+      "slug": "type LogUpdate struct {",
+      "content": "type LogUpdate struct {\n\t// LogIndex is the log index of this proposed commitment update entry.\n\tLogIndex uint64\n\n\t// UpdateMsg is the update message that was included within the our\n\t// local update log. The LogIndex value denotes the log index of this\n\t// update which will be used when restoring our local update log if\n\t// we're left with a dangling update on restart.\n\tUpdateMsg lnwire.Message\n}\n\n// AddRef is used to identify a particular Add in a FwdPkg. The short channel ID\n// is assumed to be that of the packager.",
+      "length": 489,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "type AddRef struct {",
+      "content": "type AddRef struct {\n\t// Height is the remote commitment height that locked in the Add.\n\tHeight uint64\n\n\t// Index is the index of the Add within the fwd pkg's Adds.\n\t//\n\t// NOTE: This index is static over the lifetime of a forwarding package.\n\tIndex uint16\n}\n\n// SettleFailRef is used to locate a Settle/Fail in another channel's FwdPkg. A\n// channel does not remove its own Settle/Fail htlcs, so the source is provided\n// to locate a db bucket belonging to another channel.",
+      "length": 442,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "type SettleFailRef struct {",
+      "content": "type SettleFailRef struct {\n\t// Source identifies the outgoing link that locked in the settle or\n\t// fail. This is then used by the *incoming* link to find the settle\n\t// fail in another link's forwarding packages.\n\tSource lnwire.ShortChannelID\n\n\t// Height is the remote commitment height that locked in this\n\t// Settle/Fail.\n\tHeight uint64\n\n\t// Index is the index of the Add with the fwd pkg's SettleFails.\n\t//\n\t// NOTE: This index is static over the lifetime of a forwarding package.\n\tIndex uint16\n}\n\n// CommitDiff represents the delta needed to apply the state transition between\n// two subsequent commitment states. Given state N and state N+1, one is able\n// to apply the set of messages contained within the CommitDiff to N to arrive\n// at state N+1. Each time a new commitment is extended, we'll write a new\n// commitment (along with the full commitment state) to disk so we can\n// re-transmit the state in the case of a connection loss or message drop.",
+      "length": 912,
+      "tokens": 163,
+      "embedding": []
+    },
+    {
+      "slug": "type CommitDiff struct {",
+      "content": "type CommitDiff struct {\n\t// ChannelCommitment is the full commitment state that one would arrive\n\t// at by applying the set of messages contained in the UpdateDiff to\n\t// the prior accepted commitment.\n\tCommitment ChannelCommitment\n\n\t// LogUpdates is the set of messages sent prior to the commitment state\n\t// transition in question. Upon reconnection, if we detect that they\n\t// don't have the commitment, then we re-send this along with the\n\t// proper signature.\n\tLogUpdates []LogUpdate\n\n\t// CommitSig is the exact CommitSig message that should be sent after\n\t// the set of LogUpdates above has been retransmitted. The signatures\n\t// within this message should properly cover the new commitment state\n\t// and also the HTLC's within the new commitment state.\n\tCommitSig *lnwire.CommitSig\n\n\t// OpenedCircuitKeys is a set of unique identifiers for any downstream\n\t// Add packets included in this commitment txn. After a restart, this\n\t// set of htlcs is acked from the link's incoming mailbox to ensure\n\t// there isn't an attempt to re-add them to this commitment txn.\n\tOpenedCircuitKeys []CircuitKey\n\n\t// ClosedCircuitKeys records the unique identifiers for any settle/fail\n\t// packets that were resolved by this commitment txn. After a restart,\n\t// this is used to ensure those circuits are removed from the circuit\n\t// map, and the downstream packets in the link's mailbox are removed.\n\tClosedCircuitKeys []CircuitKey\n\n\t// AddAcks specifies the locations (commit height, pkg index) of any\n\t// Adds that were failed/settled in this commit diff. This will ack\n\t// entries in *this* channel's forwarding packages.\n\t//\n\t// NOTE: This value is not serialized, it is used to atomically mark the\n\t// resolution of adds, such that they will not be reprocessed after a\n\t// restart.\n\tAddAcks []AddRef\n\n\t// SettleFailAcks specifies the locations (chan id, commit height, pkg\n\t// index) of any Settles or Fails that were locked into this commit\n\t// diff, and originate from *another* channel, i.e. the outgoing link.\n\t//\n\t// NOTE: This value is not serialized, it is used to atomically acks\n\t// settles and fails from the forwarding packages of other channels,\n\t// such that they will not be reforwarded internally after a restart.\n\tSettleFailAcks []SettleFailRef\n}\n\n// NetworkResult is the raw result received from the network after a payment\n// attempt has been made. Since the switch doesn't always have the necessary\n// data to decode the raw message, we store it together with some meta data,\n// and decode it when the router query for the final result.",
+      "length": 2473,
+      "tokens": 405,
+      "embedding": []
+    },
+    {
+      "slug": "type NetworkResult struct {",
+      "content": "type NetworkResult struct {\n\t// Msg is the received result. This should be of type UpdateFulfillHTLC\n\t// or UpdateFailHTLC.\n\tMsg lnwire.Message\n\n\t// unencrypted indicates whether the failure encoded in the message is\n\t// unencrypted, and hence doesn't need to be decrypted.\n\tUnencrypted bool\n\n\t// IsResolution indicates whether this is a resolution message, in\n\t// which the failure reason might not be included.\n\tIsResolution bool\n}\n\n// ClosureType is an enum like structure that details exactly _how_ a channel\n// was closed. Three closure types are currently possible: none, cooperative,\n// local force close, remote force close, and (remote) breach.",
+      "length": 610,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "type ClosureType uint8",
+      "content": "type ClosureType uint8\n\n// ChannelConstraints represents a set of constraints meant to allow a node to\n// limit their exposure, enact flow control and ensure that all HTLCs are\n// economically relevant. This struct will be mirrored for both sides of the\n// channel, as each side will enforce various constraints that MUST be adhered\n// to for the life time of the channel. The parameters for each of these\n// constraints are static for the duration of the channel, meaning the channel\n// must be torn down for them to change.",
+      "length": 495,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelConstraints struct {",
+      "content": "type ChannelConstraints struct {\n\t// DustLimit is the threshold (in satoshis) below which any outputs\n\t// should be trimmed. When an output is trimmed, it isn't materialized\n\t// as an actual output, but is instead burned to miner's fees.\n\tDustLimit btcutil.Amount\n\n\t// ChanReserve is an absolute reservation on the channel for the\n\t// owner of this set of constraints. This means that the current\n\t// settled balance for this node CANNOT dip below the reservation\n\t// amount. This acts as a defense against costless attacks when\n\t// either side no longer has any skin in the game.\n\tChanReserve btcutil.Amount\n\n\t// MaxPendingAmount is the maximum pending HTLC value that the\n\t// owner of these constraints can offer the remote node at a\n\t// particular time.\n\tMaxPendingAmount lnwire.MilliSatoshi\n\n\t// MinHTLC is the minimum HTLC value that the owner of these\n\t// constraints can offer the remote node. If any HTLCs below this\n\t// amount are offered, then the HTLC will be rejected. This, in\n\t// tandem with the dust limit allows a node to regulate the\n\t// smallest HTLC that it deems economically relevant.\n\tMinHTLC lnwire.MilliSatoshi\n\n\t// MaxAcceptedHtlcs is the maximum number of HTLCs that the owner of\n\t// this set of constraints can offer the remote node. This allows each\n\t// node to limit their over all exposure to HTLCs that may need to be\n\t// acted upon in the case of a unilateral channel closure or a contract\n\t// breach.\n\tMaxAcceptedHtlcs uint16\n\n\t// CsvDelay is the relative time lock delay expressed in blocks. Any\n\t// settled outputs that pay to the owner of this channel configuration\n\t// MUST ensure that the delay branch uses this value as the relative\n\t// time lock. Similarly, any HTLC's offered by this node should use\n\t// this value as well.\n\tCsvDelay uint16\n}\n\n// ChannelConfig is a struct that houses the various configuration opens for\n// channels. Each side maintains an instance of this configuration file as it\n// governs: how the funding and commitment transaction to be created, the\n// nature of HTLC's allotted, the keys to be used for delivery, and relative\n// time lock parameters.",
+      "length": 2039,
+      "tokens": 350,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelConfig struct {",
+      "content": "type ChannelConfig struct {\n\t// ChannelConstraints is the set of constraints that must be upheld for\n\t// the duration of the channel for the owner of this channel\n\t// configuration. Constraints govern a number of flow control related\n\t// parameters, also including the smallest HTLC that will be accepted\n\t// by a participant.\n\tChannelConstraints\n\n\t// MultiSigKey is the key to be used within the 2-of-2 output script\n\t// for the owner of this channel config.\n\tMultiSigKey keychain.KeyDescriptor\n\n\t// RevocationBasePoint is the base public key to be used when deriving\n\t// revocation keys for the remote node's commitment transaction. This\n\t// will be combined along with a per commitment secret to derive a\n\t// unique revocation key for each state.\n\tRevocationBasePoint keychain.KeyDescriptor\n\n\t// PaymentBasePoint is the base public key to be used when deriving\n\t// the key used within the non-delayed pay-to-self output on the\n\t// commitment transaction for a node. This will be combined with a\n\t// tweak derived from the per-commitment point to ensure unique keys\n\t// for each commitment transaction.\n\tPaymentBasePoint keychain.KeyDescriptor\n\n\t// DelayBasePoint is the base public key to be used when deriving the\n\t// key used within the delayed pay-to-self output on the commitment\n\t// transaction for a node. This will be combined with a tweak derived\n\t// from the per-commitment point to ensure unique keys for each\n\t// commitment transaction.\n\tDelayBasePoint keychain.KeyDescriptor\n\n\t// HtlcBasePoint is the base public key to be used when deriving the\n\t// local HTLC key. The derived key (combined with the tweak derived\n\t// from the per-commitment point) is used within the \"to self\" clause\n\t// within any HTLC output scripts.\n\tHtlcBasePoint keychain.KeyDescriptor\n}\n\n// ChannelCloseSummary contains the final state of a channel at the point it\n// was closed. Once a channel is closed, all the information pertaining to that\n// channel within the openChannelBucket is deleted, and a compact summary is\n// put in place instead.",
+      "length": 1967,
+      "tokens": 313,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelCloseSummary struct {",
+      "content": "type ChannelCloseSummary struct {\n\t// ChanPoint is the outpoint for this channel's funding transaction,\n\t// and is used as a unique identifier for the channel.\n\tChanPoint wire.OutPoint\n\n\t// ShortChanID encodes the exact location in the chain in which the\n\t// channel was initially confirmed. This includes: the block height,\n\t// transaction index, and the output within the target transaction.\n\tShortChanID lnwire.ShortChannelID\n\n\t// ChainHash is the hash of the genesis block that this channel resides\n\t// within.\n\tChainHash chainhash.Hash\n\n\t// ClosingTXID is the txid of the transaction which ultimately closed\n\t// this channel.\n\tClosingTXID chainhash.Hash\n\n\t// RemotePub is the public key of the remote peer that we formerly had\n\t// a channel with.\n\tRemotePub *btcec.PublicKey\n\n\t// Capacity was the total capacity of the channel.\n\tCapacity btcutil.Amount\n\n\t// CloseHeight is the height at which the funding transaction was\n\t// spent.\n\tCloseHeight uint32\n\n\t// SettledBalance is our total balance settled balance at the time of\n\t// channel closure. This _does not_ include the sum of any outputs that\n\t// have been time-locked as a result of the unilateral channel closure.\n\tSettledBalance btcutil.Amount\n\n\t// TimeLockedBalance is the sum of all the time-locked outputs at the\n\t// time of channel closure. If we triggered the force closure of this\n\t// channel, then this value will be non-zero if our settled output is\n\t// above the dust limit. If we were on the receiving side of a channel\n\t// force closure, then this value will be non-zero if we had any\n\t// outstanding outgoing HTLC's at the time of channel closure.\n\tTimeLockedBalance btcutil.Amount\n\n\t// CloseType details exactly _how_ the channel was closed. Five closure\n\t// types are possible: cooperative, local force, remote force, breach\n\t// and funding canceled.\n\tCloseType ClosureType\n\n\t// IsPending indicates whether this channel is in the 'pending close'\n\t// state, which means the channel closing transaction has been\n\t// confirmed, but not yet been fully resolved. In the case of a channel\n\t// that has been cooperatively closed, it will go straight into the\n\t// fully resolved state as soon as the closing transaction has been\n\t// confirmed. However, for channels that have been force closed, they'll\n\t// stay marked as \"pending\" until _all_ the pending funds have been\n\t// swept.\n\tIsPending bool\n\n\t// RemoteCurrentRevocation is the current revocation for their\n\t// commitment transaction. However, since this is the derived public key,\n\t// we don't yet have the private key so we aren't yet able to verify\n\t// that it's actually in the hash chain.\n\tRemoteCurrentRevocation *btcec.PublicKey\n\n\t// RemoteNextRevocation is the revocation key to be used for the *next*\n\t// commitment transaction we create for the local node. Within the\n\t// specification, this value is referred to as the\n\t// per-commitment-point.\n\tRemoteNextRevocation *btcec.PublicKey\n\n\t// LocalChanCfg is the channel configuration for the local node.\n\tLocalChanConfig ChannelConfig\n\n\t// LastChanSyncMsg is the ChannelReestablish message for this channel\n\t// for the state at the point where it was closed.\n\tLastChanSyncMsg *lnwire.ChannelReestablish\n}\n\n// FwdState is an enum used to describe the lifecycle of a FwdPkg.",
+      "length": 3145,
+      "tokens": 494,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdState byte",
+      "content": "type FwdState byte\n\nconst (\n\t// FwdStateLockedIn is the starting state for all forwarding packages.\n\t// Packages in this state have not yet committed to the exact set of\n\t// Adds to forward to the switch.\n\tFwdStateLockedIn FwdState = iota\n\n\t// FwdStateProcessed marks the state in which all Adds have been\n\t// locally processed and the forwarding decision to the switch has been\n\t// persisted.\n\tFwdStateProcessed\n\n\t// FwdStateCompleted signals that all Adds have been acked, and that all\n\t// settles and fails have been delivered to their sources. Packages in\n\t// this state can be removed permanently.\n\tFwdStateCompleted\n)\n\n// PkgFilter is used to compactly represent a particular subset of the Adds in a\n// forwarding package. Each filter is represented as a simple, statically-sized\n// bitvector, where the elements are intended to be the indices of the Adds as\n// they are written in the FwdPkg.",
+      "length": 859,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "type PkgFilter struct {",
+      "content": "type PkgFilter struct {\n\tcount  uint16\n\tfilter []byte\n}\n\n// NewPkgFilter initializes an empty PkgFilter supporting `count` elements.",
+      "length": 104,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPkgFilter(count uint16) *PkgFilter {",
+      "content": "func NewPkgFilter(count uint16) *PkgFilter {\n\t// We add 7 to ensure that the integer division yields properly rounded\n\t// values.\n\tfilterLen := (count + 7) / 8\n\n\treturn &PkgFilter{\n\t\tcount:  count,\n\t\tfilter: make([]byte, filterLen),\n\t}\n}\n\n// Count returns the number of elements represented by this PkgFilter.",
+      "length": 254,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Count() uint16 {",
+      "content": "func (f *PkgFilter) Count() uint16 {\n\treturn f.count\n}\n\n// Set marks the `i`-th element as included by this filter.\n// NOTE: It is assumed that i is always less than count.",
+      "length": 131,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Set(i uint16) {",
+      "content": "func (f *PkgFilter) Set(i uint16) {\n\tbyt := i / 8\n\tbit := i % 8\n\n\t// Set the i-th bit in the filter.\n\t// TODO(conner): ignore if > count to prevent panic?\n\tf.filter[byt] |= byte(1 << (7 - bit))\n}\n\n// Contains queries the filter for membership of index `i`.\n// NOTE: It is assumed that i is always less than count.",
+      "length": 268,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Contains(i uint16) bool {",
+      "content": "func (f *PkgFilter) Contains(i uint16) bool {\n\tbyt := i / 8\n\tbit := i % 8\n\n\t// Read the i-th bit in the filter.\n\t// TODO(conner): ignore if > count to prevent panic?\n\treturn f.filter[byt]&(1<<(7-bit)) != 0\n}\n\n// Equal checks two PkgFilters for equality.",
+      "length": 199,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Equal(f2 *PkgFilter) bool {",
+      "content": "func (f *PkgFilter) Equal(f2 *PkgFilter) bool {\n\tif f == f2 {\n\t\treturn true\n\t}\n\tif f.count != f2.count {\n\t\treturn false\n\t}\n\n\treturn bytes.Equal(f.filter, f2.filter)\n}\n\n// IsFull returns true if every element in the filter has been Set, and false\n// otherwise.",
+      "length": 200,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) IsFull() bool {",
+      "content": "func (f *PkgFilter) IsFull() bool {\n\t// Batch validate bytes that are fully used.\n\tfor i := uint16(0); i < f.count/8; i++ {\n\t\tif f.filter[i] != 0xFF {\n\t\t\treturn false\n\t\t}\n\t}\n\n\t// If the count is not a multiple of 8, check that the filter contains\n\t// all remaining bits.\n\trem := f.count % 8\n\tfor idx := f.count - rem; idx < f.count; idx++ {\n\t\tif !f.Contains(idx) {\n\t\t\treturn false\n\t\t}\n\t}\n\n\treturn true\n}\n\n// Size returns number of bytes produced when the PkgFilter is serialized.",
+      "length": 424,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Size() uint16 {",
+      "content": "func (f *PkgFilter) Size() uint16 {\n\t// 2 bytes for uint16 `count`, then round up number of bytes required to\n\t// represent `count` bits.\n\treturn 2 + (f.count+7)/8\n}\n\n// Encode writes the filter to the provided io.Writer.",
+      "length": 180,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Encode(w io.Writer) error {",
+      "content": "func (f *PkgFilter) Encode(w io.Writer) error {\n\tif err := binary.Write(w, binary.BigEndian, f.count); err != nil {\n\t\treturn err\n\t}\n\n\t_, err := w.Write(f.filter)\n\n\treturn err\n}\n\n// Decode reads the filter from the provided io.Reader.",
+      "length": 176,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Decode(r io.Reader) error {",
+      "content": "func (f *PkgFilter) Decode(r io.Reader) error {\n\tif err := binary.Read(r, binary.BigEndian, &f.count); err != nil {\n\t\treturn err\n\t}\n\n\tf.filter = make([]byte, f.Size()-2)\n\t_, err := io.ReadFull(r, f.filter)\n\n\treturn err\n}\n\n// FwdPkg records all adds, settles, and fails that were locked in as a result\n// of the remote peer sending us a revocation. Each package is identified by\n// the short chanid and remote commitment height corresponding to the revocation\n// that locked in the HTLCs. For everything except a locally initiated payment,\n// settles and fails in a forwarding package must have a corresponding Add in\n// another package, and can be removed individually once the source link has\n// received the fail/settle.\n//\n// Adds cannot be removed, as we need to present the same batch of Adds to\n// properly handle replay protection. Instead, we use a PkgFilter to mark that\n// we have finished processing a particular Add. A FwdPkg should only be deleted\n// after the AckFilter is full and all settles and fails have been persistently\n// removed.",
+      "length": 982,
+      "tokens": 170,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdPkg struct {",
+      "content": "type FwdPkg struct {\n\t// Source identifies the channel that wrote this forwarding package.\n\tSource lnwire.ShortChannelID\n\n\t// Height is the height of the remote commitment chain that locked in\n\t// this forwarding package.\n\tHeight uint64\n\n\t// State signals the persistent condition of the package and directs how\n\t// to reprocess the package in the event of failures.\n\tState FwdState\n\n\t// Adds contains all add messages which need to be processed and\n\t// forwarded to the switch. Adds does not change over the life of a\n\t// forwarding package.\n\tAdds []LogUpdate\n\n\t// FwdFilter is a filter containing the indices of all Adds that were\n\t// forwarded to the switch.\n\tFwdFilter *PkgFilter\n\n\t// AckFilter is a filter containing the indices of all Adds for which\n\t// the source has received a settle or fail and is reflected in the next\n\t// commitment txn. A package should not be removed until IsFull()\n\t// returns true.\n\tAckFilter *PkgFilter\n\n\t// SettleFails contains all settle and fail messages that should be\n\t// forwarded to the switch.\n\tSettleFails []LogUpdate\n\n\t// SettleFailFilter is a filter containing the indices of all Settle or\n\t// Fails originating in this package that have been received and locked\n\t// into the incoming link's commitment state.\n\tSettleFailFilter *PkgFilter\n}\n\n// NewFwdPkg initializes a new forwarding package in FwdStateLockedIn. This\n// should be used to create a package at the time we receive a revocation.",
+      "length": 1379,
+      "tokens": 227,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFwdPkg(source lnwire.ShortChannelID, height uint64,",
+      "content": "func NewFwdPkg(source lnwire.ShortChannelID, height uint64,\n\taddUpdates, settleFailUpdates []LogUpdate) *FwdPkg {\n\n\tnAddUpdates := uint16(len(addUpdates))\n\tnSettleFailUpdates := uint16(len(settleFailUpdates))\n\n\treturn &FwdPkg{\n\t\tSource:           source,\n\t\tHeight:           height,\n\t\tState:            FwdStateLockedIn,\n\t\tAdds:             addUpdates,\n\t\tFwdFilter:        NewPkgFilter(nAddUpdates),\n\t\tAckFilter:        NewPkgFilter(nAddUpdates),\n\t\tSettleFails:      settleFailUpdates,\n\t\tSettleFailFilter: NewPkgFilter(nSettleFailUpdates),\n\t}\n}\n",
+      "length": 469,
+      "tokens": 31,
+      "embedding": []
+    }
+  ]
+}

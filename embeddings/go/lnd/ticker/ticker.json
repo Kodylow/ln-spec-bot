@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/ticker/ticker.go",
+  "package": "ticker",
+  "sections": [
+    {
+      "slug": "type Ticker interface {",
+      "content": "type Ticker interface {\n\t// Ticks returns a read-only channel delivering ticks according to a\n\t// prescribed interval. The value returned does not need to be the same\n\t// channel, and may be nil.\n\t//\n\t// NOTE: Callers should assume that reads from Ticks() are stale after\n\t// any invocations of Resume, Pause, or Stop.\n\tTicks() <-chan time.Time\n\n\t// Resume starts or resumes the underlying ticker, such that Ticks()\n\t// will fire at regular intervals. After calling Resume, Ticks() should\n\t// minimally send ticks at the prescribed interval.\n\t//\n\t// NOTE: It MUST be safe to call Resume at any time, and more than once\n\t// successively.\n\tResume()\n\n\t// Pause suspends the underlying ticker, such that Ticks() stops\n\t// signaling at regular intervals. After calling Pause, the ticker\n\t// should not send any ticks scheduled with the chosen interval. Forced\n\t// ticks are still permissible, as in the case of the Force Ticker.\n\t//\n\t// NOTE: It MUST be safe to call Pause at any time, and more than once\n\t// successively.\n\tPause()\n\n\t// Stop suspends the underlying ticker, such that Ticks() stops\n\t// signaling at regular intervals, and permanently frees up any\n\t// remaining resources.\n\t//\n\t// NOTE: The behavior of a Ticker is undefined after calling Stop.\n\tStop()\n}\n\n// T is the production implementation of the resumable Ticker interface. This\n// allows various components to toggle their need for tick events, which may\n// vary depending on system load.",
+      "length": 1395,
+      "tokens": 238,
+      "embedding": []
+    },
+    {
+      "slug": "type T struct {",
+      "content": "type T struct {\n\t// interval is the desired duration between ticks when active.\n\tinterval time.Duration\n\n\t// ticker is the ephemeral, underlying time.Ticker. We keep a reference\n\t// to this ticker so that it can be stopped and cleaned up on Pause or\n\t// Stop.\n\tticker *time.Ticker\n}\n\n// A compile-time constraint to ensure T satisfies the Ticker interface.\nvar _ Ticker = (*T)(nil)\n\n// New returns a new ticker that signals with the given interval when not\n// paused. The ticker starts off inactive.",
+      "length": 470,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func New(interval time.Duration) *T {",
+      "content": "func New(interval time.Duration) *T {\n\treturn &T{\n\t\tinterval: interval,\n\t}\n}\n\n// Ticks returns a receive-only channel that delivers times at the ticker's\n// prescribed interval. This method returns nil when the ticker is paused.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 224,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *T) Ticks() <-chan time.Time {",
+      "content": "func (t *T) Ticks() <-chan time.Time {\n\tif t.ticker == nil {\n\t\treturn nil\n\t}\n\treturn t.ticker.C\n}\n\n// Resume starts underlying time.Ticker and causes the ticker to begin\n// delivering scheduled events.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 195,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *T) Resume() {",
+      "content": "func (t *T) Resume() {\n\tif t.ticker == nil {\n\t\tt.ticker = time.NewTicker(t.interval)\n\t}\n}\n\n// Pause suspends the underlying ticker, such that Ticks() stops signaling at\n// regular intervals.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 201,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *T) Pause() {",
+      "content": "func (t *T) Pause() {\n\tif t.ticker != nil {\n\t\tt.ticker.Stop()\n\t\tt.ticker = nil\n\t}\n}\n\n// Stop suspends the underlying ticker, such that Ticks() stops signaling at\n// regular intervals, and permanently frees up any resources. For this\n// implementation, this is equivalent to Pause.\n//\n// NOTE: Part of the Ticker interface.",
+      "length": 290,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *T) Stop() {",
+      "content": "func (t *T) Stop() {\n\tt.Pause()\n}\n",
+      "length": 11,
+      "tokens": 2,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,293 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/node/harness_node.go",
+  "package": "node",
+  "sections": [
+    {
+      "slug": "type HarnessNode struct {",
+      "content": "type HarnessNode struct {\n\t*testing.T\n\n\t// Cfg holds the config values for the node.\n\tCfg *BaseNodeConfig\n\n\t// RPC holds a list of RPC clients.\n\tRPC *rpc.HarnessRPC\n\n\t// State records the current state of the node.\n\tState *State\n\n\t// Watcher watches the node's topology updates.\n\tWatcher *nodeWatcher\n\n\t// PubKey is the serialized compressed identity public key of the node.\n\t// This field will only be populated once the node itself has been\n\t// started via the start() method.\n\tPubKey    [33]byte\n\tPubKeyStr string\n\n\t// conn is the underlying connection to the grpc endpoint of the node.\n\tconn *grpc.ClientConn\n\n\t// runCtx is a context with cancel method. It's used to signal when the\n\t// node needs to quit, and used as the parent context when spawning\n\t// children contexts for RPC requests.\n\trunCtx context.Context //nolint:containedctx\n\tcancel context.CancelFunc\n\n\t// filename is the log file's name.\n\tfilename string\n\n\tcmd     *exec.Cmd\n\tlogFile *os.File\n}\n\n// NewHarnessNode creates a new test lightning node instance from the passed\n// config.",
+      "length": 989,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func NewHarnessNode(t *testing.T, cfg *BaseNodeConfig) (*HarnessNode, error) {",
+      "content": "func NewHarnessNode(t *testing.T, cfg *BaseNodeConfig) (*HarnessNode, error) {\n\tif cfg.BaseDir == \"\" {\n\t\tvar err error\n\t\tcfg.BaseDir, err = ioutil.TempDir(\"\", \"lndtest-node\")\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\tcfg.DataDir = filepath.Join(cfg.BaseDir, \"data\")\n\tcfg.LogDir = filepath.Join(cfg.BaseDir, \"logs\")\n\tcfg.TLSCertPath = filepath.Join(cfg.BaseDir, \"tls.cert\")\n\tcfg.TLSKeyPath = filepath.Join(cfg.BaseDir, \"tls.key\")\n\n\tnetworkDir := filepath.Join(\n\t\tcfg.DataDir, \"chain\", \"bitcoin\", cfg.NetParams.Name,\n\t)\n\tcfg.AdminMacPath = filepath.Join(networkDir, \"admin.macaroon\")\n\tcfg.ReadMacPath = filepath.Join(networkDir, \"readonly.macaroon\")\n\tcfg.InvoiceMacPath = filepath.Join(networkDir, \"invoice.macaroon\")\n\n\tcfg.GenerateListeningPorts()\n\n\t// Create temporary database.\n\tvar dbName string\n\tif cfg.DBBackend == BackendPostgres {\n\t\tvar err error\n\t\tdbName, err = createTempPgDB()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tcfg.PostgresDsn = postgresDatabaseDsn(dbName)\n\t}\n\n\tcfg.OriginalExtraArgs = cfg.ExtraArgs\n\tcfg.postgresDBName = dbName\n\n\treturn &HarnessNode{\n\t\tT:   t,\n\t\tCfg: cfg,\n\t}, nil\n}\n\n// Initialize creates a list of new RPC clients using the passed connection,\n// initializes the node's internal state and creates a topology watcher.",
+      "length": 1134,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Initialize(c *grpc.ClientConn) {",
+      "content": "func (hn *HarnessNode) Initialize(c *grpc.ClientConn) {\n\thn.conn = c\n\n\t// Init all the rpc clients.\n\thn.RPC = rpc.NewHarnessRPC(hn.runCtx, hn.T, c, hn.Name())\n\n\t// Init the node's state.\n\t//\n\t// If we already have a state, it means we are restarting the node and\n\t// we will only reset its internal states. Otherwise we'll create a new\n\t// state.\n\tif hn.State != nil {\n\t\thn.State.resetEphermalStates(hn.RPC)\n\t} else {\n\t\thn.State = newState(hn.RPC)\n\t}\n\n\t// Init the topology watcher.\n\thn.Watcher = newNodeWatcher(hn.RPC, hn.State)\n}\n\n// Name returns the name of this node set during initialization.",
+      "length": 521,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Name() string {",
+      "content": "func (hn *HarnessNode) Name() string {\n\treturn hn.Cfg.Name\n}\n\n// UpdateState updates the node's internal state.",
+      "length": 69,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) UpdateState() {",
+      "content": "func (hn *HarnessNode) UpdateState() {\n\thn.State.updateState()\n}\n\n// String gives the internal state of the node which is useful for debugging.",
+      "length": 101,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) String() string {",
+      "content": "func (hn *HarnessNode) String() string {\n\ttype nodeCfg struct {\n\t\tLogFilenamePrefix string\n\t\tExtraArgs         []string\n\t\tSkipUnlock        bool\n\t\tPassword          []byte\n\t\tP2PPort           int\n\t\tRPCPort           int\n\t\tRESTPort          int\n\t\tAcceptKeySend     bool\n\t\tFeeURL            string\n\t}\n\n\tnodeState := struct {\n\t\tNodeID  uint32\n\t\tName    string\n\t\tPubKey  string\n\t\tState   *State\n\t\tNodeCfg nodeCfg\n\t}{\n\t\tNodeID: hn.Cfg.NodeID,\n\t\tName:   hn.Cfg.Name,\n\t\tPubKey: hn.PubKeyStr,\n\t\tState:  hn.State,\n\t\tNodeCfg: nodeCfg{\n\t\t\tSkipUnlock:        hn.Cfg.SkipUnlock,\n\t\t\tPassword:          hn.Cfg.Password,\n\t\t\tLogFilenamePrefix: hn.Cfg.LogFilenamePrefix,\n\t\t\tExtraArgs:         hn.Cfg.ExtraArgs,\n\t\t\tP2PPort:           hn.Cfg.P2PPort,\n\t\t\tRPCPort:           hn.Cfg.RPCPort,\n\t\t\tRESTPort:          hn.Cfg.RESTPort,\n\t\t},\n\t}\n\n\tstateBytes, err := json.MarshalIndent(nodeState, \"\", \"\\t\")\n\tif err != nil {\n\t\treturn fmt.Sprintf(\"\\n encode node state with err: %v\", err)\n\t}\n\n\treturn fmt.Sprintf(\"\\nnode state: %s\", stateBytes)\n}\n\n// WaitUntilStarted waits until the wallet state flips from \"WAITING_TO_START\".",
+      "length": 1012,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) WaitUntilStarted() error {",
+      "content": "func (hn *HarnessNode) WaitUntilStarted() error {\n\treturn hn.waitTillServerState(func(s lnrpc.WalletState) bool {\n\t\treturn s != lnrpc.WalletState_WAITING_TO_START\n\t})\n}\n\n// WaitUntilServerActive waits until the lnd daemon is fully started.",
+      "length": 184,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) WaitUntilServerActive() error {",
+      "content": "func (hn *HarnessNode) WaitUntilServerActive() error {\n\treturn hn.waitTillServerState(func(s lnrpc.WalletState) bool {\n\t\treturn s == lnrpc.WalletState_SERVER_ACTIVE\n\t})\n}\n\n// WaitUntilLeader attempts to finish the start procedure by initiating an RPC\n// connection and setting up the wallet unlocker client. This is needed when\n// a node that has recently been started was waiting to become the leader and\n// we're at the point when we expect that it is the leader now (awaiting\n// unlock).",
+      "length": 426,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) WaitUntilLeader(timeout time.Duration) error {",
+      "content": "func (hn *HarnessNode) WaitUntilLeader(timeout time.Duration) error {\n\tvar (\n\t\tconn    *grpc.ClientConn\n\t\tconnErr error\n\t)\n\n\tif err := wait.NoError(func() error {\n\t\tconn, connErr = hn.ConnectRPCWithMacaroon(nil)\n\t\treturn connErr\n\t}, timeout); err != nil {\n\t\treturn err\n\t}\n\n\t// Since the conn is not authed, only the `WalletUnlocker` and `State`\n\t// clients can be inited from this conn.\n\thn.conn = conn\n\thn.RPC = rpc.NewHarnessRPC(hn.runCtx, hn.T, conn, hn.Name())\n\n\t// Wait till the server is starting.\n\treturn hn.WaitUntilStarted()\n}\n\n// Unlock attempts to unlock the wallet of the target HarnessNode. This method\n// should be called after the restart of a HarnessNode that was created with a\n// seed+password. Once this method returns, the HarnessNode will be ready to\n// accept normal gRPC requests and harness command.",
+      "length": 729,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Unlock(unlockReq *lnrpc.UnlockWalletRequest) error {",
+      "content": "func (hn *HarnessNode) Unlock(unlockReq *lnrpc.UnlockWalletRequest) error {\n\t// Otherwise, we'll need to unlock the node before it's able to start\n\t// up properly.\n\thn.RPC.UnlockWallet(unlockReq)\n\n\t// Now that the wallet has been unlocked, we'll wait for the RPC client\n\t// to be ready, then establish the normal gRPC connection.\n\treturn hn.InitNode(nil)\n}\n\n// AddToLogf adds a line of choice to the node's logfile. This is useful\n// to interleave test output with output from the node.",
+      "length": 400,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) AddToLogf(format string, a ...interface{}) {",
+      "content": "func (hn *HarnessNode) AddToLogf(format string, a ...interface{}) {\n\t// If this node was not set up with a log file, just return early.\n\tif hn.logFile == nil {\n\t\treturn\n\t}\n\n\tdesc := fmt.Sprintf(\"itest: %s\\n\", fmt.Sprintf(format, a...))\n\tif _, err := hn.logFile.WriteString(desc); err != nil {\n\t\thn.printErrf(\"write to log err: %v\", err)\n\t}\n}\n\n// ReadMacaroon waits a given duration for the macaroon file to be created. If\n// the file is readable within the timeout, its content is de-serialized as a\n// macaroon and returned.",
+      "length": 444,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) ReadMacaroon(macPath string, timeout time.Duration) (",
+      "content": "func (hn *HarnessNode) ReadMacaroon(macPath string, timeout time.Duration) (\n\t*macaroon.Macaroon, error) {\n\n\t// Wait until macaroon file is created and has valid content before\n\t// using it.\n\tvar mac *macaroon.Macaroon\n\terr := wait.NoError(func() error {\n\t\tmacBytes, err := ioutil.ReadFile(macPath)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"error reading macaroon file: %v\",\n\t\t\t\terr)\n\t\t}\n\n\t\tnewMac := &macaroon.Macaroon{}\n\t\tif err = newMac.UnmarshalBinary(macBytes); err != nil {\n\t\t\treturn fmt.Errorf(\"error unmarshalling macaroon \"+\n\t\t\t\t\"file: %v\", err)\n\t\t}\n\t\tmac = newMac\n\n\t\treturn nil\n\t}, timeout)\n\n\treturn mac, err\n}\n\n// ConnectRPCWithMacaroon uses the TLS certificate and given macaroon to\n// create a gRPC client connection.",
+      "length": 625,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) ConnectRPCWithMacaroon(mac *macaroon.Macaroon) (",
+      "content": "func (hn *HarnessNode) ConnectRPCWithMacaroon(mac *macaroon.Macaroon) (\n\t*grpc.ClientConn, error) {\n\n\t// Wait until TLS certificate is created and has valid content before\n\t// using it, up to 30 sec.\n\tvar tlsCreds credentials.TransportCredentials\n\terr := wait.NoError(func() error {\n\t\tvar err error\n\t\ttlsCreds, err = credentials.NewClientTLSFromFile(\n\t\t\thn.Cfg.TLSCertPath, \"\",\n\t\t)\n\t\treturn err\n\t}, wait.DefaultTimeout)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error reading TLS cert: %v\", err)\n\t}\n\n\topts := []grpc.DialOption{\n\t\tgrpc.WithBlock(),\n\t\tgrpc.WithTransportCredentials(tlsCreds),\n\t}\n\n\tctx, cancel := context.WithTimeout(hn.runCtx, wait.DefaultTimeout)\n\tdefer cancel()\n\n\tif mac == nil {\n\t\treturn grpc.DialContext(ctx, hn.Cfg.RPCAddr(), opts...)\n\t}\n\tmacCred, err := macaroons.NewMacaroonCredential(mac)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error cloning mac: %v\", err)\n\t}\n\topts = append(opts, grpc.WithPerRPCCredentials(macCred))\n\n\treturn grpc.DialContext(ctx, hn.Cfg.RPCAddr(), opts...)\n}\n\n// ConnectRPC uses the TLS certificate and admin macaroon files written by the\n// lnd node to create a gRPC client connection.",
+      "length": 1024,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) ConnectRPC() (*grpc.ClientConn, error) {",
+      "content": "func (hn *HarnessNode) ConnectRPC() (*grpc.ClientConn, error) {\n\t// If we should use a macaroon, always take the admin macaroon as a\n\t// default.\n\tmac, err := hn.ReadMacaroon(hn.Cfg.AdminMacPath, wait.DefaultTimeout)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn hn.ConnectRPCWithMacaroon(mac)\n}\n\n// SetExtraArgs assigns the ExtraArgs field for the node's configuration. The\n// changes will take effect on restart.",
+      "length": 340,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) SetExtraArgs(extraArgs []string) {",
+      "content": "func (hn *HarnessNode) SetExtraArgs(extraArgs []string) {\n\thn.Cfg.ExtraArgs = extraArgs\n}\n\n// StartLndCmd handles the startup of lnd, creating log files, and possibly\n// kills the process when needed.",
+      "length": 138,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) StartLndCmd(ctxb context.Context) error {",
+      "content": "func (hn *HarnessNode) StartLndCmd(ctxb context.Context) error {\n\t// Init the run context.\n\thn.runCtx, hn.cancel = context.WithCancel(ctxb)\n\n\targs := hn.Cfg.GenArgs()\n\thn.cmd = exec.Command(hn.Cfg.LndBinary, args...)\n\n\t// Redirect stderr output to buffer\n\tvar errb bytes.Buffer\n\thn.cmd.Stderr = &errb\n\n\t// If the logoutput flag is passed, redirect output from the nodes to\n\t// log files.\n\tif *logOutput {\n\t\terr := addLogFile(hn)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Start the process.\n\tif err := hn.cmd.Start(); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// StartWithNoAuth will start the lnd process, creates the grpc connection\n// without macaroon auth, and waits until the server is reported as waiting to\n// start.\n//\n// NOTE: caller needs to take extra step to create and unlock the wallet.",
+      "length": 708,
+      "tokens": 119,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) StartWithNoAuth(ctxt context.Context) error {",
+      "content": "func (hn *HarnessNode) StartWithNoAuth(ctxt context.Context) error {\n\t// Start lnd process and prepare logs.\n\tif err := hn.StartLndCmd(ctxt); err != nil {\n\t\treturn fmt.Errorf(\"start lnd error: %w\", err)\n\t}\n\n\t// Create an unauthed connection.\n\tconn, err := hn.ConnectRPCWithMacaroon(nil)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"ConnectRPCWithMacaroon err: %w\", err)\n\t}\n\n\t// Since the conn is not authed, only the `WalletUnlocker` and `State`\n\t// clients can be inited from this conn.\n\thn.conn = conn\n\thn.RPC = rpc.NewHarnessRPC(hn.runCtx, hn.T, conn, hn.Name())\n\n\t// Wait till the server is starting.\n\treturn hn.WaitUntilStarted()\n}\n\n// Start will start the lnd process, creates the grpc connection, and waits\n// until the server is fully started.",
+      "length": 654,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Start(ctxt context.Context) error {",
+      "content": "func (hn *HarnessNode) Start(ctxt context.Context) error {\n\t// Start lnd process and prepare logs.\n\tif err := hn.StartLndCmd(ctxt); err != nil {\n\t\treturn fmt.Errorf(\"start lnd error: %w\", err)\n\t}\n\n\t// Since Stop uses the LightningClient to stop the node, if we fail to\n\t// get a connected client, we have to kill the process.\n\tconn, err := hn.ConnectRPC()\n\tif err != nil {\n\t\terr = fmt.Errorf(\"ConnectRPC err: %w\", err)\n\t\tcmdErr := hn.Kill()\n\t\tif cmdErr != nil {\n\t\t\terr = fmt.Errorf(\"kill process got err: %w: %v\",\n\t\t\t\tcmdErr, err)\n\t\t}\n\t\treturn err\n\t}\n\n\t// Init the node by creating the RPC clients, initializing node's\n\t// internal state and watcher.\n\thn.Initialize(conn)\n\n\t// Wait till the server is starting.\n\tif err := hn.WaitUntilStarted(); err != nil {\n\t\treturn fmt.Errorf(\"waiting for start got: %v\", err)\n\t}\n\n\t// Subscribe for topology updates.\n\treturn hn.initLightningClient()\n}\n\n// InitNode waits until the main gRPC server is detected as active, then\n// complete the normal HarnessNode gRPC connection creation. A non-nil\n// `macBytes` indicates the node is initialized stateless, otherwise it will\n// use the admin macaroon.",
+      "length": 1042,
+      "tokens": 171,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) InitNode(macBytes []byte) error {",
+      "content": "func (hn *HarnessNode) InitNode(macBytes []byte) error {\n\tvar (\n\t\tconn *grpc.ClientConn\n\t\terr  error\n\t)\n\n\t// If the node has been initialized stateless, we need to pass the\n\t// macaroon to the client.\n\tif macBytes != nil {\n\t\tadminMac := &macaroon.Macaroon{}\n\t\terr := adminMac.UnmarshalBinary(macBytes)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unmarshal failed: %w\", err)\n\t\t}\n\t\tconn, err = hn.ConnectRPCWithMacaroon(adminMac)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t} else {\n\t\t// Normal initialization, we expect a macaroon to be in the\n\t\t// file system.\n\t\tconn, err = hn.ConnectRPC()\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Init the node by creating the RPC clients, initializing node's\n\t// internal state and watcher.\n\thn.Initialize(conn)\n\n\t// Wait till the server is starting.\n\tif err := hn.WaitUntilStarted(); err != nil {\n\t\treturn fmt.Errorf(\"waiting for start got: %w\", err)\n\t}\n\n\treturn hn.initLightningClient()\n}\n\n// InitChangePassword initializes a harness node by passing the change password\n// request via RPC. After the request is submitted, this method will block until\n// a macaroon-authenticated RPC connection can be established to the harness\n// node. Once established, the new connection is used to initialize the\n// RPC clients and subscribes the HarnessNode to topology changes.",
+      "length": 1197,
+      "tokens": 190,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) ChangePasswordAndInit(",
+      "content": "func (hn *HarnessNode) ChangePasswordAndInit(\n\treq *lnrpc.ChangePasswordRequest) (\n\t*lnrpc.ChangePasswordResponse, error) {\n\n\tresponse := hn.RPC.ChangePassword(req)\n\treturn response, hn.InitNode(response.AdminMacaroon)\n}\n\n// waitTillServerState makes a subscription to the server's state change and\n// blocks until the server is in the targeted state.",
+      "length": 297,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) waitTillServerState(",
+      "content": "func (hn *HarnessNode) waitTillServerState(\n\tpredicate func(state lnrpc.WalletState) bool) error {\n\n\tclient := hn.RPC.SubscribeState()\n\n\terrChan := make(chan error, 1)\n\tdone := make(chan struct{})\n\tgo func() {\n\t\tfor {\n\t\t\tresp, err := client.Recv()\n\t\t\tif err != nil {\n\t\t\t\terrChan <- err\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\tif predicate(resp.State) {\n\t\t\t\tclose(done)\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}()\n\n\tfor {\n\t\tselect {\n\t\tcase <-time.After(wait.NodeStartTimeout):\n\t\t\treturn fmt.Errorf(\"timeout waiting for server state\")\n\t\tcase err := <-errChan:\n\t\t\treturn fmt.Errorf(\"receive server state err: %v\", err)\n\n\t\tcase <-done:\n\t\t\treturn nil\n\t\t}\n\t}\n}\n\n// initLightningClient blocks until the lnd server is fully started and\n// subscribes the harness node to graph topology updates. This method also\n// spawns a lightning network watcher for this node, which watches for topology\n// changes.",
+      "length": 774,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) initLightningClient() error {",
+      "content": "func (hn *HarnessNode) initLightningClient() error {\n\t// Wait until the server is fully started.\n\tif err := hn.WaitUntilServerActive(); err != nil {\n\t\treturn fmt.Errorf(\"waiting for server active: %w\", err)\n\t}\n\n\t// Set the harness node's pubkey to what the node claims in GetInfo.\n\t// The RPC must have been started at this point.\n\tif err := hn.attachPubKey(); err != nil {\n\t\treturn err\n\t}\n\n\t// Launch the watcher that will hook into graph related topology change\n\t// from the PoV of this node.\n\tstarted := make(chan error, 1)\n\tgo hn.Watcher.topologyWatcher(hn.runCtx, started)\n\n\tselect {\n\t// First time reading the channel indicates the topology client is\n\t// started.\n\tcase err := <-started:\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"create topology client stream \"+\n\t\t\t\t\"got err: %v\", err)\n\t\t}\n\n\tcase <-time.After(wait.DefaultTimeout):\n\t\treturn fmt.Errorf(\"timeout creating topology client stream\")\n\t}\n\n\t// Catch topology client stream error inside a goroutine.\n\tgo func() {\n\t\tselect {\n\t\tcase err := <-started:\n\t\t\thn.printErrf(\"topology client: %v\", err)\n\n\t\tcase <-hn.runCtx.Done():\n\t\t}\n\t}()\n\n\treturn nil\n}\n\n// attachPubKey queries an unlocked node to retrieve its public key.",
+      "length": 1082,
+      "tokens": 169,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) attachPubKey() error {",
+      "content": "func (hn *HarnessNode) attachPubKey() error {\n\t// Obtain the lnid of this node for quick identification purposes.\n\tinfo := hn.RPC.GetInfo()\n\thn.PubKeyStr = info.IdentityPubkey\n\n\tpubkey, err := hex.DecodeString(info.IdentityPubkey)\n\tif err != nil {\n\t\treturn err\n\t}\n\tcopy(hn.PubKey[:], pubkey)\n\n\treturn nil\n}\n\n// cleanup cleans up all the temporary files created by the node's process.",
+      "length": 324,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) cleanup() error {",
+      "content": "func (hn *HarnessNode) cleanup() error {\n\tif hn.Cfg.backupDBDir != \"\" {\n\t\terr := os.RemoveAll(hn.Cfg.backupDBDir)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to remove backup dir: %v\",\n\t\t\t\terr)\n\t\t}\n\t}\n\n\treturn os.RemoveAll(hn.Cfg.BaseDir)\n}\n\n// waitForProcessExit Launch a new goroutine which that bubbles up any\n// potential fatal process errors to the goroutine running the tests.",
+      "length": 332,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) waitForProcessExit() {",
+      "content": "func (hn *HarnessNode) waitForProcessExit() {\n\terrChan := make(chan error, 1)\n\tgo func() {\n\t\terr := hn.cmd.Wait()\n\t\terrChan <- err\n\t}()\n\n\tselect {\n\tcase err := <-errChan:\n\t\tif err == nil {\n\t\t\tbreak\n\t\t}\n\n\t\t// If the process has already been canceled, we can exit early\n\t\t// as the logs have already been saved.\n\t\tif strings.Contains(err.Error(), \"Wait was already called\") {\n\t\t\treturn\n\t\t}\n\n\t\t// Otherwise, we print the error, break the select and save\n\t\t// logs.\n\t\thn.printErrf(\"wait process exit got err: %v\", err)\n\n\t\tbreak\n\n\tcase <-time.After(wait.DefaultTimeout):\n\t\thn.printErrf(\"timeout waiting for process to exit\")\n\t}\n\n\t// Make sure log file is closed and renamed if necessary.\n\tfinalizeLogfile(hn)\n\n\t// Rename the etcd.log file if the node was running on embedded\n\t// etcd.\n\tfinalizeEtcdLog(hn)\n}\n\n// Stop attempts to stop the active lnd process.",
+      "length": 770,
+      "tokens": 124,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Stop() error {",
+      "content": "func (hn *HarnessNode) Stop() error {\n\t// Do nothing if the process is not running.\n\tif hn.runCtx == nil {\n\t\thn.printErrf(\"found nil run context\")\n\t\treturn nil\n\t}\n\n\t// Stop the runCtx.\n\thn.cancel()\n\n\t// Wait for lnd process to exit in the end.\n\tdefer hn.waitForProcessExit()\n\n\t// If we ever reaches the state where `Watcher` is initialized, it\n\t// means the node has an authed connection and all its RPC clients are\n\t// ready for use. Thus we will try to stop it via the RPC.\n\tif hn.Watcher != nil {\n\t\t// Don't watch for error because sometimes the RPC connection\n\t\t// gets closed before a response is returned.\n\t\treq := lnrpc.StopRequest{}\n\n\t\tctxt, cancel := context.WithCancel(context.Background())\n\t\tdefer cancel()\n\n\t\terr := wait.NoError(func() error {\n\t\t\t_, err := hn.RPC.LN.StopDaemon(ctxt, &req)\n\n\t\t\tswitch {\n\t\t\tcase err == nil:\n\t\t\t\treturn nil\n\n\t\t\t// Try again if a recovery/rescan is in progress.\n\t\t\tcase strings.Contains(\n\t\t\t\terr.Error(), \"recovery in progress\",\n\t\t\t):\n\t\t\t\treturn err\n\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}, wait.DefaultTimeout)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Wait for goroutines to be finished.\n\t\tdone := make(chan struct{})\n\t\tgo func() {\n\t\t\thn.Watcher.wg.Wait()\n\t\t\tclose(done)\n\t\t}()\n\n\t\t// If the goroutines fail to finish before timeout, we'll print\n\t\t// the error to console and continue.\n\t\tselect {\n\t\tcase <-time.After(wait.DefaultTimeout):\n\t\t\thn.printErrf(\"timeout on wait group\")\n\t\tcase <-done:\n\t\t}\n\t} else {\n\t\t// If the rpc clients are not initiated, we'd kill the process\n\t\t// manually.\n\t\thn.printErrf(\"found nil RPC clients\")\n\t\tif err := hn.Kill(); err != nil {\n\t\t\treturn fmt.Errorf(\"killing process got: %v\", err)\n\t\t}\n\t}\n\n\t// Close any attempts at further grpc connections.\n\tif hn.conn != nil {\n\t\tif err := hn.CloseConn(); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// CloseConn closes the grpc connection.",
+      "length": 1741,
+      "tokens": 277,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) CloseConn() error {",
+      "content": "func (hn *HarnessNode) CloseConn() error {\n\terr := status.Code(hn.conn.Close())\n\tswitch err {\n\tcase codes.OK:\n\t\treturn nil\n\n\t// When the context is canceled above, we might get the\n\t// following error as the context is no longer active.\n\tcase codes.Canceled:\n\t\treturn nil\n\n\tcase codes.Unknown:\n\t\treturn fmt.Errorf(\"unknown error attempting to stop \"+\n\t\t\t\"grpc client: %v\", err)\n\n\tdefault:\n\t\treturn fmt.Errorf(\"error attempting to stop \"+\n\t\t\t\"grpc client: %v\", err)\n\t}\n}\n\n// Shutdown stops the active lnd process and cleans up any temporary\n// directories created along the way.",
+      "length": 513,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Shutdown() error {",
+      "content": "func (hn *HarnessNode) Shutdown() error {\n\tif err := hn.Stop(); err != nil {\n\t\treturn err\n\t}\n\tif err := hn.cleanup(); err != nil {\n\t\treturn err\n\t}\n\treturn nil\n}\n\n// Kill kills the lnd process.",
+      "length": 141,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) Kill() error {",
+      "content": "func (hn *HarnessNode) Kill() error {\n\treturn hn.cmd.Process.Kill()\n}\n\n// printErrf prints an error to the console.",
+      "length": 74,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) printErrf(format string, a ...interface{}) {",
+      "content": "func (hn *HarnessNode) printErrf(format string, a ...interface{}) {\n\tfmt.Printf(\"itest error from [%s:%s]: %s\\n\", //nolint:forbidigo\n\t\thn.Cfg.LogFilenamePrefix, hn.Cfg.Name,\n\t\tfmt.Sprintf(format, a...))\n}\n\n// BackupDB creates a backup of the current database.",
+      "length": 186,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) BackupDB() error {",
+      "content": "func (hn *HarnessNode) BackupDB() error {\n\tif hn.Cfg.backupDBDir != \"\" {\n\t\treturn fmt.Errorf(\"backup already created\")\n\t}\n\n\tif hn.Cfg.postgresDBName != \"\" {\n\t\t// Backup database.\n\t\tbackupDBName := hn.Cfg.postgresDBName + \"_backup\"\n\t\terr := executePgQuery(\n\t\t\t\"CREATE DATABASE \" + backupDBName + \" WITH TEMPLATE \" +\n\t\t\t\thn.Cfg.postgresDBName,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t} else {\n\t\t// Backup files.\n\t\ttempDir, err := ioutil.TempDir(\"\", \"past-state\")\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to create temp db folder: %w\",\n\t\t\t\terr)\n\t\t}\n\n\t\tif err := copyAll(tempDir, hn.Cfg.DBDir()); err != nil {\n\t\t\treturn fmt.Errorf(\"unable to copy database files: %w\",\n\t\t\t\terr)\n\t\t}\n\n\t\thn.Cfg.backupDBDir = tempDir\n\t}\n\n\treturn nil\n}\n\n// RestoreDB restores a database backup.",
+      "length": 700,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func (hn *HarnessNode) RestoreDB() error {",
+      "content": "func (hn *HarnessNode) RestoreDB() error {\n\tif hn.Cfg.postgresDBName != \"\" {\n\t\t// Restore database.\n\t\tbackupDBName := hn.Cfg.postgresDBName + \"_backup\"\n\t\terr := executePgQuery(\n\t\t\t\"DROP DATABASE \" + hn.Cfg.postgresDBName,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\terr = executePgQuery(\n\t\t\t\"ALTER DATABASE \" + backupDBName + \" RENAME TO \" +\n\t\t\t\thn.Cfg.postgresDBName,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t} else {\n\t\t// Restore files.\n\t\tif hn.Cfg.backupDBDir == \"\" {\n\t\t\treturn fmt.Errorf(\"no database backup created\")\n\t\t}\n\n\t\terr := copyAll(hn.Cfg.DBDir(), hn.Cfg.backupDBDir)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to copy database files: %w\",\n\t\t\t\terr)\n\t\t}\n\n\t\tif err := os.RemoveAll(hn.Cfg.backupDBDir); err != nil {\n\t\t\treturn fmt.Errorf(\"unable to remove backup dir: %w\",\n\t\t\t\terr)\n\t\t}\n\t\thn.Cfg.backupDBDir = \"\"\n\t}\n\n\treturn nil\n}\n",
+      "length": 760,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func postgresDatabaseDsn(dbName string) string {",
+      "content": "func postgresDatabaseDsn(dbName string) string {\n\treturn fmt.Sprintf(postgresDsn, dbName)\n}\n\n// createTempPgDB creates a temp postgres database.",
+      "length": 92,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func createTempPgDB() (string, error) {",
+      "content": "func createTempPgDB() (string, error) {\n\t// Create random database name.\n\trandBytes := make([]byte, 8)\n\t_, err := rand.Read(randBytes)\n\tif err != nil {\n\t\treturn \"\", err\n\t}\n\tdbName := \"itest_\" + hex.EncodeToString(randBytes)\n\n\t// Create database.\n\terr = executePgQuery(\"CREATE DATABASE \" + dbName)\n\tif err != nil {\n\t\treturn \"\", err\n\t}\n\n\treturn dbName, nil\n}\n\n// executePgQuery executes a SQL statement in a postgres db.",
+      "length": 361,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func executePgQuery(query string) error {",
+      "content": "func executePgQuery(query string) error {\n\tpool, err := pgxpool.Connect(\n\t\tcontext.Background(),\n\t\tpostgresDatabaseDsn(\"postgres\"),\n\t)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to connect to database: %v\", err)\n\t}\n\tdefer pool.Close()\n\n\t_, err = pool.Exec(context.Background(), query)\n\treturn err\n}\n\n// renameFile is a helper to rename (log) files created during integration\n// tests.",
+      "length": 330,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func renameFile(fromFileName, toFileName string) {",
+      "content": "func renameFile(fromFileName, toFileName string) {\n\terr := os.Rename(fromFileName, toFileName)\n\tif err != nil {\n\t\tfmt.Printf(\"could not rename %s to %s: %v\\n\", // nolint:forbidigo\n\t\t\tfromFileName, toFileName, err)\n\t}\n}\n\n// getFinalizedLogFilePrefix returns the finalize log filename.",
+      "length": 225,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func getFinalizedLogFilePrefix(hn *HarnessNode) string {",
+      "content": "func getFinalizedLogFilePrefix(hn *HarnessNode) string {\n\tpubKeyHex := hex.EncodeToString(\n\t\thn.PubKey[:logPubKeyBytes],\n\t)\n\n\treturn fmt.Sprintf(\"%s/%d-%s-%s-%s\", GetLogDir(), hn.Cfg.NodeID,\n\t\thn.Cfg.LogFilenamePrefix, hn.Cfg.Name, pubKeyHex)\n}\n\n// finalizeLogfile makes sure the log file cleanup function is initialized,\n// even if no log file is created.",
+      "length": 290,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func finalizeLogfile(hn *HarnessNode) {",
+      "content": "func finalizeLogfile(hn *HarnessNode) {\n\t// Exit early if there's no log file.\n\tif hn.logFile == nil {\n\t\treturn\n\t}\n\n\thn.logFile.Close()\n\n\t// If logoutput flag is not set, return early.\n\tif !*logOutput {\n\t\treturn\n\t}\n\n\tnewFileName := fmt.Sprintf(\"%v.log\",\n\t\tgetFinalizedLogFilePrefix(hn),\n\t)\n\trenameFile(hn.filename, newFileName)\n}\n\n// finalizeEtcdLog saves the etcd log files when test ends.",
+      "length": 332,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func finalizeEtcdLog(hn *HarnessNode) {",
+      "content": "func finalizeEtcdLog(hn *HarnessNode) {\n\t// Exit early if this is not etcd backend.\n\tif hn.Cfg.DBBackend != BackendEtcd {\n\t\treturn\n\t}\n\n\tetcdLogFileName := fmt.Sprintf(\"%s/etcd.log\", hn.Cfg.LogDir)\n\tnewEtcdLogFileName := fmt.Sprintf(\"%v-etcd.log\",\n\t\tgetFinalizedLogFilePrefix(hn),\n\t)\n\n\trenameFile(etcdLogFileName, newEtcdLogFileName)\n}\n\n// addLogFile creates log files used by this node.",
+      "length": 333,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func addLogFile(hn *HarnessNode) error {",
+      "content": "func addLogFile(hn *HarnessNode) error {\n\tvar fileName string\n\n\tdir := GetLogDir()\n\tfileName = fmt.Sprintf(\"%s/%d-%s-%s-%s.log\", dir, hn.Cfg.NodeID,\n\t\thn.Cfg.LogFilenamePrefix, hn.Cfg.Name,\n\t\thex.EncodeToString(hn.PubKey[:logPubKeyBytes]))\n\n\t// If the node's PubKey is not yet initialized, create a temporary file\n\t// name. Later, after the PubKey has been initialized, the file can be\n\t// moved to its final name with the PubKey included.\n\tif bytes.Equal(hn.PubKey[:4], []byte{0, 0, 0, 0}) {\n\t\tfileName = fmt.Sprintf(\"%s/%d-%s-%s-tmp__.log\", dir,\n\t\t\thn.Cfg.NodeID, hn.Cfg.LogFilenamePrefix,\n\t\t\thn.Cfg.Name)\n\t}\n\n\t// Create file if not exists, otherwise append.\n\tfile, err := os.OpenFile(fileName,\n\t\tos.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Pass node's stderr to both errb and the file.\n\tw := io.MultiWriter(hn.cmd.Stderr, file)\n\thn.cmd.Stderr = w\n\n\t// Pass the node's stdout only to the file.\n\thn.cmd.Stdout = file\n\n\t// Let the node keep a reference to this file, such that we can add to\n\t// it if necessary.\n\thn.logFile = file\n\n\thn.filename = fileName\n\n\treturn nil\n}\n\n// copyAll copies all files and directories from srcDir to dstDir recursively.\n// Note that this function does not support links.",
+      "length": 1157,
+      "tokens": 166,
+      "embedding": []
+    },
+    {
+      "slug": "func copyAll(dstDir, srcDir string) error {",
+      "content": "func copyAll(dstDir, srcDir string) error {\n\tentries, err := ioutil.ReadDir(srcDir)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor _, entry := range entries {\n\t\tsrcPath := filepath.Join(srcDir, entry.Name())\n\t\tdstPath := filepath.Join(dstDir, entry.Name())\n\n\t\tinfo, err := os.Stat(srcPath)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif info.IsDir() {\n\t\t\terr := os.Mkdir(dstPath, info.Mode())\n\t\t\tif err != nil && !os.IsExist(err) {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\terr = copyAll(dstPath, srcPath)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t} else if err := CopyFile(dstPath, srcPath); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 535,
+      "tokens": 86,
+      "embedding": []
+    }
+  ]
+}

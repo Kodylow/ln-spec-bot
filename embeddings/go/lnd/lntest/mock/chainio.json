@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/mock/chainio.go",
+  "package": "mock",
+  "sections": [
+    {
+      "slug": "type ChainIO struct {",
+      "content": "type ChainIO struct {\n\tBestHeight int32\n}\n\n// GetBestBlock currently returns dummy values.",
+      "length": 65,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainIO) GetBestBlock() (*chainhash.Hash, int32, error) {",
+      "content": "func (c *ChainIO) GetBestBlock() (*chainhash.Hash, int32, error) {\n\treturn chaincfg.TestNet3Params.GenesisHash, c.BestHeight, nil\n}\n\n// GetUtxo currently returns dummy values.",
+      "length": 105,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainIO) GetUtxo(op *wire.OutPoint, _ []byte,",
+      "content": "func (c *ChainIO) GetUtxo(op *wire.OutPoint, _ []byte,\n\theightHint uint32, _ <-chan struct{}) (*wire.TxOut, error) {\n\n\treturn nil, nil\n}\n\n// GetBlockHash currently returns dummy values.",
+      "length": 125,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainIO) GetBlockHash(blockHeight int64) (*chainhash.Hash, error) {",
+      "content": "func (c *ChainIO) GetBlockHash(blockHeight int64) (*chainhash.Hash, error) {\n\treturn nil, nil\n}\n\n// GetBlock currently returns dummy values.",
+      "length": 60,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainIO) GetBlock(blockHash *chainhash.Hash) (*wire.MsgBlock, error) {",
+      "content": "func (c *ChainIO) GetBlock(blockHash *chainhash.Hash) (*wire.MsgBlock, error) {\n\treturn nil, nil\n}\n",
+      "length": 17,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

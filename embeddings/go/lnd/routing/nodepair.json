@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/routing/nodepair.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type DirectedNodePair struct {",
+      "content": "type DirectedNodePair struct {\n\tFrom, To route.Vertex\n}\n\n// NewDirectedNodePair instantiates a new DirectedNodePair struct.",
+      "length": 89,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func NewDirectedNodePair(from, to route.Vertex) DirectedNodePair {",
+      "content": "func NewDirectedNodePair(from, to route.Vertex) DirectedNodePair {\n\treturn DirectedNodePair{\n\t\tFrom: from,\n\t\tTo:   to,\n\t}\n}\n\n// String converts a node pair to its human readable representation.",
+      "length": 120,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (d DirectedNodePair) String() string {",
+      "content": "func (d DirectedNodePair) String() string {\n\treturn fmt.Sprintf(\"%v -> %v\", d.From, d.To)\n}\n\n// Reverse returns a reversed copy of the pair.",
+      "length": 93,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (d DirectedNodePair) Reverse() DirectedNodePair {",
+      "content": "func (d DirectedNodePair) Reverse() DirectedNodePair {\n\treturn DirectedNodePair{From: d.To, To: d.From}\n}\n",
+      "length": 49,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

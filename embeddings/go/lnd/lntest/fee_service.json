@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/fee_service.go",
+  "package": "lntest",
+  "sections": [
+    {
+      "slug": "type WebFeeService interface {",
+      "content": "type WebFeeService interface {\n\t// Start starts the service.\n\tStart() error\n\n\t// Stop stops the service.\n\tStop() error\n\n\t// URL returns the service's endpoint.\n\tURL() string\n\n\t// SetFeeRate sets the estimated fee rate for a given confirmation\n\t// target.\n\tSetFeeRate(feeRate chainfee.SatPerKWeight, conf uint32)\n}\n\nconst (\n\t// feeServiceTarget is the confirmation target for which a fee estimate\n\t// is returned. Requests for higher confirmation targets will fall back\n\t// to this.\n\tfeeServiceTarget = 1\n\n\t// DefaultFeeRateSatPerKw specifies the default fee rate used in the\n\t// tests.\n\tDefaultFeeRateSatPerKw = 12500\n)\n\n// FeeService runs a web service that provides fee estimation information.",
+      "length": 639,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "type FeeService struct {",
+      "content": "type FeeService struct {\n\t*testing.T\n\n\tfeeRateMap map[uint32]uint32\n\turl        string\n\n\tsrv  *http.Server\n\twg   sync.WaitGroup\n\tlock sync.Mutex\n}\n\n// Compile-time check for the WebFeeService interface.\nvar _ WebFeeService = (*FeeService)(nil)\n\n// Start spins up a go-routine to serve fee estimates.",
+      "length": 261,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFeeService(t *testing.T) *FeeService {",
+      "content": "func NewFeeService(t *testing.T) *FeeService {\n\tt.Helper()\n\n\tport := node.NextAvailablePort()\n\tf := FeeService{\n\t\tT: t,\n\t\turl: fmt.Sprintf(\n\t\t\t\"http://localhost:%v/fee-estimates.json\", port,\n\t\t),\n\t}\n\n\t// Initialize default fee estimate.\n\tf.feeRateMap = map[uint32]uint32{\n\t\tfeeServiceTarget: DefaultFeeRateSatPerKw,\n\t}\n\n\tlistenAddr := fmt.Sprintf(\":%v\", port)\n\tmux := http.NewServeMux()\n\tmux.HandleFunc(\"/fee-estimates.json\", f.handleRequest)\n\n\tf.srv = &http.Server{\n\t\tAddr:    listenAddr,\n\t\tHandler: mux,\n\t}\n\n\treturn &f\n}\n\n// Start starts the web server.",
+      "length": 481,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FeeService) Start() error {",
+      "content": "func (f *FeeService) Start() error {\n\tf.wg.Add(1)\n\tgo func() {\n\t\tdefer f.wg.Done()\n\n\t\tif err := f.srv.ListenAndServe(); err != http.ErrServerClosed {\n\t\t\trequire.NoErrorf(f, err, \"cannot start fee api\")\n\t\t}\n\t}()\n\n\treturn nil\n}\n\n// handleRequest handles a client request for fee estimates.",
+      "length": 238,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FeeService) handleRequest(w http.ResponseWriter, r *http.Request) {",
+      "content": "func (f *FeeService) handleRequest(w http.ResponseWriter, r *http.Request) {\n\tf.lock.Lock()\n\tdefer f.lock.Unlock()\n\n\tbytes, err := json.Marshal(\n\t\tstruct {\n\t\t\tFees map[uint32]uint32 `json:\"fee_by_block_target\"`\n\t\t}{\n\t\t\tFees: f.feeRateMap,\n\t\t},\n\t)\n\trequire.NoErrorf(f, err, \"cannot serialize estimates\")\n\n\t_, err = io.WriteString(w, string(bytes))\n\trequire.NoError(f, err, \"cannot send estimates\")\n}\n\n// Stop stops the web server.",
+      "length": 336,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FeeService) Stop() error {",
+      "content": "func (f *FeeService) Stop() error {\n\terr := f.srv.Shutdown(context.Background())\n\trequire.NoError(f, err, \"cannot stop fee api\")\n\n\tf.wg.Wait()\n\n\treturn nil\n}\n\n// SetFeeRate sets a fee for the given confirmation target.",
+      "length": 174,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FeeService) SetFeeRate(fee chainfee.SatPerKWeight, conf uint32) {",
+      "content": "func (f *FeeService) SetFeeRate(fee chainfee.SatPerKWeight, conf uint32) {\n\tf.lock.Lock()\n\tdefer f.lock.Unlock()\n\n\tf.feeRateMap[conf] = uint32(fee.FeePerKVByte())\n}\n\n// URL returns the service endpoint.",
+      "length": 121,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FeeService) URL() string {",
+      "content": "func (f *FeeService) URL() string {\n\treturn f.url\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

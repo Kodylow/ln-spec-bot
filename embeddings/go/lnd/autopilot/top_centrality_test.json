@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/top_centrality_test.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "func testTopCentrality(t *testing.T, graph testGraph,",
+      "content": "func testTopCentrality(t *testing.T, graph testGraph,\n\tgraphNodes map[int]*btcec.PublicKey, channelsWith []int) {\n\n\ttopCentrality := NewTopCentrality()\n\n\tvar channels []LocalChannel\n\tfor _, ch := range channelsWith {\n\t\tchannels = append(channels, LocalChannel{\n\t\t\tNode: NewNodeID(graphNodes[ch]),\n\t\t})\n\t}\n\n\t// Start iteration from -1 to also test the case where the node set\n\t// is empty.\n\tfor i := -1; i < len(graphNodes); i++ {\n\t\tnodes := make(map[NodeID]struct{})\n\t\texpected := make(map[NodeID]*NodeScore)\n\n\t\tfor j := 0; j <= i; j++ {\n\t\t\t// Add node to the interest set.\n\t\t\tnodeID := NewNodeID(graphNodes[j])\n\t\t\tnodes[nodeID] = struct{}{}\n\n\t\t\t// Add to the expected set unless it's a node we have\n\t\t\t// a channel with.\n\t\t\thaveChannel := false\n\t\t\tfor _, ch := range channels {\n\t\t\t\tif nodeID == ch.Node {\n\t\t\t\t\thaveChannel = true\n\t\t\t\t\tbreak\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif !haveChannel {\n\t\t\t\tscore := normalizedTestGraphCentrality[j]\n\t\t\t\texpected[nodeID] = &NodeScore{\n\t\t\t\t\tNodeID: nodeID,\n\t\t\t\t\tScore:  score,\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tconst chanSize = btcutil.SatoshiPerBitcoin\n\n\t\t// Attempt to get centrality scores and expect\n\t\t// that the result equals with the expected set.\n\t\tscores, err := topCentrality.NodeScores(\n\t\t\tgraph, channels, chanSize, nodes,\n\t\t)\n\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, expected, scores)\n\t}\n}\n\n// TestTopCentrality tests that we return the correct normalized centralitiy\n// values given a non empty graph, and given our node has an increasing amount\n// of channels from 0 to N-1 simulating the whole range from non-connected to\n// fully connected.",
+      "length": 1454,
+      "tokens": 212,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTopCentrality(t *testing.T) {",
+      "content": "func TestTopCentrality(t *testing.T) {\n\t// Generate channels: {}, {0}, {0, 1}, ... {0, 1, ..., N-1}\n\tchannelsWith := [][]int{nil}\n\n\tfor i := 0; i < centralityTestGraph.nodes; i++ {\n\t\tchannels := make([]int, i+1)\n\t\tfor j := 0; j <= i; j++ {\n\t\t\tchannels[j] = j\n\t\t}\n\t\tchannelsWith = append(channelsWith, channels)\n\t}\n\n\tfor _, chanGraph := range chanGraphs {\n\t\tchanGraph := chanGraph\n\n\t\tsuccess := t.Run(chanGraph.name, func(t1 *testing.T) {\n\t\t\tt1.Parallel()\n\n\t\t\tgraph, err := chanGraph.genFunc(t1)\n\t\t\trequire.NoError(t1, err, \"unable to create graph\")\n\n\t\t\t// Build the test graph.\n\t\t\tgraphNodes := buildTestGraph(\n\t\t\t\tt1, graph, centralityTestGraph,\n\t\t\t)\n\n\t\t\tfor _, chans := range channelsWith {\n\t\t\t\ttestTopCentrality(t1, graph, graphNodes, chans)\n\t\t\t}\n\t\t})\n\n\t\trequire.True(t, success)\n\t}\n}\n",
+      "length": 716,
+      "tokens": 102,
+      "embedding": []
+    }
+  ]
+}

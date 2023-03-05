@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/options.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "type Options struct {",
+      "content": "type Options struct {\n\t// RejectCacheSize is the maximum number of rejectCacheEntries to hold\n\t// in the rejection cache.\n\tRejectCacheSize int\n\n\t// ChannelCacheSize is the maximum number of ChannelEdges to hold in the\n\t// channel cache.\n\tChannelCacheSize int\n\n\t// NoFreelistSync, if true, prevents the database from syncing its\n\t// freelist to disk, resulting in improved performance at the expense of\n\t// increased startup time.\n\tNoFreelistSync bool\n\n\t// DBTimeout specifies the timeout value to use when opening the wallet\n\t// database.\n\tDBTimeout time.Duration\n}\n\n// DefaultOptions returns an Options populated with default values.",
+      "length": 594,
+      "tokens": 88,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultOptions() Options {",
+      "content": "func DefaultOptions() Options {\n\treturn Options{\n\t\tRejectCacheSize:  DefaultRejectCacheSize,\n\t\tChannelCacheSize: DefaultChannelCacheSize,\n\t\tNoFreelistSync:   true,\n\t\tDBTimeout:        DefaultDBTimeout,\n\t}\n}\n\n// OptionModifier is a function signature for modifying the default Options.",
+      "length": 244,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type OptionModifier func(*Options)",
+      "content": "type OptionModifier func(*Options)\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

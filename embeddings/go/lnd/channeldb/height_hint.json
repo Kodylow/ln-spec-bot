@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/height_hint.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type CacheConfig struct {",
+      "content": "type CacheConfig struct {\n\t// QueryDisable prevents reliance on the Height Hint Cache.  This is\n\t// necessary to recover from an edge case when the height recorded in\n\t// the cache is higher than the actual height of a spend, causing a\n\t// channel to become \"stuck\" in a pending close state.\n\tQueryDisable bool\n}\n\n// HeightHintCache is an implementation of the SpendHintCache and\n// ConfirmHintCache interfaces backed by a channeldb DB instance where the hints\n// will be stored.",
+      "length": 444,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "type HeightHintCache struct {",
+      "content": "type HeightHintCache struct {\n\tcfg CacheConfig\n\tdb  kvdb.Backend\n}\n\n// Compile-time checks to ensure HeightHintCache satisfies the SpendHintCache\n// and ConfirmHintCache interfaces.\nvar _ chainntnfs.SpendHintCache = (*HeightHintCache)(nil)\nvar _ chainntnfs.ConfirmHintCache = (*HeightHintCache)(nil)\n\n// NewHeightHintCache returns a new height hint cache backed by a database.",
+      "length": 337,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func NewHeightHintCache(cfg CacheConfig, db kvdb.Backend) (*HeightHintCache,",
+      "content": "func NewHeightHintCache(cfg CacheConfig, db kvdb.Backend) (*HeightHintCache,\n\terror) {\n\n\tcache := &HeightHintCache{cfg, db}\n\tif err := cache.initBuckets(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn cache, nil\n}\n\n// initBuckets ensures that the primary buckets used by the circuit are\n// initialized so that we can assume their existence after startup.",
+      "length": 264,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) initBuckets() error {",
+      "content": "func (c *HeightHintCache) initBuckets() error {\n\treturn kvdb.Batch(c.db, func(tx kvdb.RwTx) error {\n\t\t_, err := tx.CreateTopLevelBucket(spendHintBucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t_, err = tx.CreateTopLevelBucket(confirmHintBucket)\n\t\treturn err\n\t})\n}\n\n// CommitSpendHint commits a spend hint for the outpoints to the cache.",
+      "length": 276,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) CommitSpendHint(height uint32,",
+      "content": "func (c *HeightHintCache) CommitSpendHint(height uint32,\n\tspendRequests ...chainntnfs.SpendRequest) error {\n\n\tif len(spendRequests) == 0 {\n\t\treturn nil\n\t}\n\n\tlog.Tracef(\"Updating spend hint to height %d for %v\", height,\n\t\tspendRequests)\n\n\treturn kvdb.Batch(c.db, func(tx kvdb.RwTx) error {\n\t\tspendHints := tx.ReadWriteBucket(spendHintBucket)\n\t\tif spendHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tvar hint bytes.Buffer\n\t\tif err := WriteElement(&hint, height); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor _, spendRequest := range spendRequests {\n\t\t\tspendRequest := spendRequest\n\t\t\tspendHintKey, err := spendHintKey(&spendRequest)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\terr = spendHints.Put(spendHintKey, hint.Bytes())\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t})\n}\n\n// QuerySpendHint returns the latest spend hint for an outpoint.\n// ErrSpendHintNotFound is returned if a spend hint does not exist within the\n// cache for the outpoint.",
+      "length": 877,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) QuerySpendHint(",
+      "content": "func (c *HeightHintCache) QuerySpendHint(\n\tspendRequest chainntnfs.SpendRequest) (uint32, error) {\n\n\tvar hint uint32\n\tif c.cfg.QueryDisable {\n\t\tlog.Debugf(\"Ignoring spend height hint for %v (height hint \"+\n\t\t\t\"cache query disabled)\", spendRequest)\n\t\treturn 0, nil\n\t}\n\terr := kvdb.View(c.db, func(tx kvdb.RTx) error {\n\t\tspendHints := tx.ReadBucket(spendHintBucket)\n\t\tif spendHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tspendHintKey, err := spendHintKey(&spendRequest)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tspendHint := spendHints.Get(spendHintKey)\n\t\tif spendHint == nil {\n\t\t\treturn chainntnfs.ErrSpendHintNotFound\n\t\t}\n\n\t\treturn ReadElement(bytes.NewReader(spendHint), &hint)\n\t}, func() {\n\t\thint = 0\n\t})\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\treturn hint, nil\n}\n\n// PurgeSpendHint removes the spend hint for the outpoints from the cache.",
+      "length": 785,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) PurgeSpendHint(",
+      "content": "func (c *HeightHintCache) PurgeSpendHint(\n\tspendRequests ...chainntnfs.SpendRequest) error {\n\n\tif len(spendRequests) == 0 {\n\t\treturn nil\n\t}\n\n\tlog.Tracef(\"Removing spend hints for %v\", spendRequests)\n\n\treturn kvdb.Batch(c.db, func(tx kvdb.RwTx) error {\n\t\tspendHints := tx.ReadWriteBucket(spendHintBucket)\n\t\tif spendHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tfor _, spendRequest := range spendRequests {\n\t\t\tspendRequest := spendRequest\n\t\t\tspendHintKey, err := spendHintKey(&spendRequest)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tif err := spendHints.Delete(spendHintKey); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t})\n}\n\n// CommitConfirmHint commits a confirm hint for the transactions to the cache.",
+      "length": 664,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) CommitConfirmHint(height uint32,",
+      "content": "func (c *HeightHintCache) CommitConfirmHint(height uint32,\n\tconfRequests ...chainntnfs.ConfRequest) error {\n\n\tif len(confRequests) == 0 {\n\t\treturn nil\n\t}\n\n\tlog.Tracef(\"Updating confirm hints to height %d for %v\", height,\n\t\tconfRequests)\n\n\treturn kvdb.Batch(c.db, func(tx kvdb.RwTx) error {\n\t\tconfirmHints := tx.ReadWriteBucket(confirmHintBucket)\n\t\tif confirmHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tvar hint bytes.Buffer\n\t\tif err := WriteElement(&hint, height); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor _, confRequest := range confRequests {\n\t\t\tconfRequest := confRequest\n\t\t\tconfHintKey, err := confHintKey(&confRequest)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\terr = confirmHints.Put(confHintKey, hint.Bytes())\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t})\n}\n\n// QueryConfirmHint returns the latest confirm hint for a transaction hash.\n// ErrConfirmHintNotFound is returned if a confirm hint does not exist within\n// the cache for the transaction hash.",
+      "length": 899,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) QueryConfirmHint(",
+      "content": "func (c *HeightHintCache) QueryConfirmHint(\n\tconfRequest chainntnfs.ConfRequest) (uint32, error) {\n\n\tvar hint uint32\n\tif c.cfg.QueryDisable {\n\t\tlog.Debugf(\"Ignoring confirmation height hint for %v (height \"+\n\t\t\t\"hint cache query disabled)\", confRequest)\n\t\treturn 0, nil\n\t}\n\terr := kvdb.View(c.db, func(tx kvdb.RTx) error {\n\t\tconfirmHints := tx.ReadBucket(confirmHintBucket)\n\t\tif confirmHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tconfHintKey, err := confHintKey(&confRequest)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tconfirmHint := confirmHints.Get(confHintKey)\n\t\tif confirmHint == nil {\n\t\t\treturn chainntnfs.ErrConfirmHintNotFound\n\t\t}\n\n\t\treturn ReadElement(bytes.NewReader(confirmHint), &hint)\n\t}, func() {\n\t\thint = 0\n\t})\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\treturn hint, nil\n}\n\n// PurgeConfirmHint removes the confirm hint for the transactions from the\n// cache.",
+      "length": 810,
+      "tokens": 105,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *HeightHintCache) PurgeConfirmHint(",
+      "content": "func (c *HeightHintCache) PurgeConfirmHint(\n\tconfRequests ...chainntnfs.ConfRequest) error {\n\n\tif len(confRequests) == 0 {\n\t\treturn nil\n\t}\n\n\tlog.Tracef(\"Removing confirm hints for %v\", confRequests)\n\n\treturn kvdb.Batch(c.db, func(tx kvdb.RwTx) error {\n\t\tconfirmHints := tx.ReadWriteBucket(confirmHintBucket)\n\t\tif confirmHints == nil {\n\t\t\treturn chainntnfs.ErrCorruptedHeightHintCache\n\t\t}\n\n\t\tfor _, confRequest := range confRequests {\n\t\t\tconfRequest := confRequest\n\t\t\tconfHintKey, err := confHintKey(&confRequest)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tif err := confirmHints.Delete(confHintKey); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t})\n}\n\n// confHintKey returns the key that will be used to index the confirmation\n// request's hint within the height hint cache.",
+      "length": 705,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func confHintKey(r *chainntnfs.ConfRequest) ([]byte, error) {",
+      "content": "func confHintKey(r *chainntnfs.ConfRequest) ([]byte, error) {\n\tif r.TxID == chainntnfs.ZeroHash {\n\t\treturn r.PkScript.Script(), nil\n\t}\n\n\tvar txid bytes.Buffer\n\tif err := WriteElement(&txid, r.TxID); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn txid.Bytes(), nil\n}\n\n// spendHintKey returns the key that will be used to index the spend request's\n// hint within the height hint cache.",
+      "length": 304,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func spendHintKey(r *chainntnfs.SpendRequest) ([]byte, error) {",
+      "content": "func spendHintKey(r *chainntnfs.SpendRequest) ([]byte, error) {\n\tif r.OutPoint == chainntnfs.ZeroOutPoint {\n\t\treturn r.PkScript.Script(), nil\n\t}\n\n\tvar outpoint bytes.Buffer\n\terr := WriteElement(&outpoint, r.OutPoint)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn outpoint.Bytes(), nil\n}\n",
+      "length": 212,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

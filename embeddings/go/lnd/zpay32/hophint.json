@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/zpay32/hophint.go",
+  "package": "zpay32",
+  "sections": [
+    {
+      "slug": "type HopHint struct {",
+      "content": "type HopHint struct {\n\t// NodeID is the public key of the node at the start of the channel.\n\tNodeID *btcec.PublicKey\n\n\t// ChannelID is the unique identifier of the channel.\n\tChannelID uint64\n\n\t// FeeBaseMSat is the base fee of the channel in millisatoshis.\n\tFeeBaseMSat uint32\n\n\t// FeeProportionalMillionths is the fee rate, in millionths of a\n\t// satoshi, for every satoshi sent through the channel.\n\tFeeProportionalMillionths uint32\n\n\t// CLTVExpiryDelta is the time-lock delta of the channel.\n\tCLTVExpiryDelta uint16\n}\n\n// Copy returns a deep copy of the hop hint.",
+      "length": 527,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func (h HopHint) Copy() HopHint {",
+      "content": "func (h HopHint) Copy() HopHint {\n\tnodeID := *h.NodeID\n\treturn HopHint{\n\t\tNodeID:                    &nodeID,\n\t\tChannelID:                 h.ChannelID,\n\t\tFeeBaseMSat:               h.FeeBaseMSat,\n\t\tFeeProportionalMillionths: h.FeeProportionalMillionths,\n\t\tCLTVExpiryDelta:           h.CLTVExpiryDelta,\n\t}\n}\n",
+      "length": 264,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

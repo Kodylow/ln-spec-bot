@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/tor/cmd_onion.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "type OnionType int",
+      "content": "type OnionType int\n\nconst (\n\t// V2 denotes that the onion service is V2.\n\tV2 OnionType = iota\n\n\t// V3 denotes that the onion service is V3.\n\tV3\n)\n\nconst (\n\t// V2KeyParam is a parameter that Tor accepts for a new V2 service.\n\tV2KeyParam = \"RSA1024\"\n\n\t// V3KeyParam is a parameter that Tor accepts for a new V3 service.\n\tV3KeyParam = \"ED25519-V3\"\n)\n\n// OnionStore is a store containing information about a particular onion\n// service.",
+      "length": 395,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "type OnionStore interface {",
+      "content": "type OnionStore interface {\n\t// StorePrivateKey stores the private key according to the\n\t// implementation of the OnionStore interface.\n\tStorePrivateKey([]byte) error\n\n\t// PrivateKey retrieves a stored private key. If it is not found, then\n\t// ErrNoPrivateKey should be returned.\n\tPrivateKey() ([]byte, error)\n\n\t// DeletePrivateKey securely removes the private key from the store.\n\tDeletePrivateKey() error\n}\n\n// EncrypterDecrypter is used for encrypting and decrypting the onion service\n// private key.",
+      "length": 462,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "type EncrypterDecrypter interface {",
+      "content": "type EncrypterDecrypter interface {\n\tEncryptPayloadToWriter([]byte, io.Writer) error\n\tDecryptPayloadFromReader(io.Reader) ([]byte, error)\n}\n\n// OnionFile is a file-based implementation of the OnionStore interface that\n// stores an onion service's private key.",
+      "length": 218,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "type OnionFile struct {",
+      "content": "type OnionFile struct {\n\tprivateKeyPath string\n\tprivateKeyPerm os.FileMode\n\tencryptKey     bool\n\tencrypter      EncrypterDecrypter\n}\n\n// A compile-time constraint to ensure OnionFile satisfies the OnionStore\n// interface.\nvar _ OnionStore = (*OnionFile)(nil)\n\n// NewOnionFile creates a file-based implementation of the OnionStore interface\n// to store an onion service's private key.",
+      "length": 348,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func NewOnionFile(privateKeyPath string, privateKeyPerm os.FileMode,",
+      "content": "func NewOnionFile(privateKeyPath string, privateKeyPerm os.FileMode,\n\tencryptKey bool, encrypter EncrypterDecrypter) *OnionFile {\n\n\treturn &OnionFile{\n\t\tprivateKeyPath: privateKeyPath,\n\t\tprivateKeyPerm: privateKeyPerm,\n\t\tencryptKey:     encryptKey,\n\t\tencrypter:      encrypter,\n\t}\n}\n\n// StorePrivateKey stores the private key at its expected path. It also\n// encrypts the key before storing it if requested.",
+      "length": 327,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *OnionFile) StorePrivateKey(privateKey []byte) error {",
+      "content": "func (f *OnionFile) StorePrivateKey(privateKey []byte) error {\n\tprivateKeyContent := privateKey\n\n\tif f.encryptKey {\n\t\tvar b bytes.Buffer\n\t\terr := f.encrypter.EncryptPayloadToWriter(\n\t\t\tprivateKey, &b,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tprivateKeyContent = b.Bytes()\n\t}\n\n\terr := ioutil.WriteFile(\n\t\tf.privateKeyPath, privateKeyContent, f.privateKeyPerm,\n\t)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to write private key \"+\n\t\t\t\"to file: %v\", err)\n\t}\n\treturn nil\n}\n\n// PrivateKey retrieves the private key from its expected path. If the file does\n// not exist, then ErrNoPrivateKey is returned.",
+      "length": 514,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *OnionFile) PrivateKey() ([]byte, error) {",
+      "content": "func (f *OnionFile) PrivateKey() ([]byte, error) {\n\t_, err := os.Stat(f.privateKeyPath)\n\tif err != nil && errors.Is(err, os.ErrNotExist) {\n\t\treturn nil, ErrNoPrivateKey\n\t}\n\n\t// Try to read the Tor private key to pass into the AddOnion call.\n\tprivateKeyContent, err := ioutil.ReadFile(f.privateKeyPath)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If the privateKey starts with either v2 or v3 key params then\n\t// it's likely not encrypted and we can return the data as is.\n\tif bytes.HasPrefix(privateKeyContent, []byte(V2KeyParam)) ||\n\t\tbytes.HasPrefix(privateKeyContent, []byte(V3KeyParam)) {\n\n\t\treturn privateKeyContent, nil\n\t}\n\n\t// If the privateKeyContent is encrypted but --tor.encryptkey\n\t// wasn't set we return an error.\n\tif !f.encryptKey {\n\t\treturn nil, ErrEncryptedTorPrivateKey\n\t}\n\n\t// Attempt to decrypt the key.\n\treader := bytes.NewReader(privateKeyContent)\n\tprivateKeyContent, err = f.encrypter.DecryptPayloadFromReader(\n\t\treader,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn privateKeyContent, nil\n}\n\n// DeletePrivateKey removes the file containing the private key.",
+      "length": 995,
+      "tokens": 139,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *OnionFile) DeletePrivateKey() error {",
+      "content": "func (f *OnionFile) DeletePrivateKey() error {\n\treturn os.Remove(f.privateKeyPath)\n}\n\n// AddOnionConfig houses all of the required parameters in order to\n// successfully create a new onion service or restore an existing one.",
+      "length": 173,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type AddOnionConfig struct {",
+      "content": "type AddOnionConfig struct {\n\t// Type denotes the type of the onion service that should be created.\n\tType OnionType\n\n\t// VirtualPort is the externally reachable port of the onion address.\n\tVirtualPort int\n\n\t// TargetPorts is the set of ports that the service will be listening\n\t// on locally. The Tor server will use choose a random port from this\n\t// set to forward the traffic from the virtual port.\n\t//\n\t// NOTE: If nil/empty, the virtual port will be used as the only target\n\t// port.\n\tTargetPorts []int\n\n\t// Store is responsible for storing all onion service related\n\t// information.\n\t//\n\t// NOTE: If not specified, then nothing will be stored, making onion\n\t// services unrecoverable after shutdown.\n\tStore OnionStore\n}\n\n// prepareKeyparam takes a config and prepares the key param to be used inside\n// ADD_ONION.",
+      "length": 767,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Controller) prepareKeyparam(cfg AddOnionConfig) (string, error) {",
+      "content": "func (c *Controller) prepareKeyparam(cfg AddOnionConfig) (string, error) {\n\t// We'll start off by checking if the store contains an existing\n\t// private key. If it does not, then we should request the server to\n\t// create a new onion service and return its private key. Otherwise,\n\t// we'll request the server to recreate the onion server from our\n\t// private key.\n\tvar keyParam string\n\tswitch cfg.Type {\n\t// TODO(yy): drop support for v2.\n\tcase V2:\n\t\tkeyParam = \"NEW:\" + V2KeyParam\n\tcase V3:\n\t\tkeyParam = \"NEW:\" + V3KeyParam\n\t}\n\n\tif cfg.Store != nil {\n\t\tprivateKey, err := cfg.Store.PrivateKey()\n\t\tswitch err {\n\t\t// Proceed to request a new onion service.\n\t\tcase ErrNoPrivateKey:\n\n\t\t// Recover the onion service with the private key found.\n\t\tcase nil:\n\t\t\tkeyParam = string(privateKey)\n\n\t\tdefault:\n\t\t\treturn \"\", err\n\t\t}\n\t}\n\n\treturn keyParam, nil\n}\n\n// prepareAddOnion constructs a cmd command string based on the specified\n// config.",
+      "length": 825,
+      "tokens": 140,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Controller) prepareAddOnion(cfg AddOnionConfig) (string, string,",
+      "content": "func (c *Controller) prepareAddOnion(cfg AddOnionConfig) (string, string,\n\terror) {\n\n\t// Create the keyParam.\n\tkeyParam, err := c.prepareKeyparam(cfg)\n\tif err != nil {\n\t\treturn \"\", \"\", err\n\t}\n\n\t// Now, we'll create a mapping from the virtual port to each target\n\t// port. If no target ports were specified, we'll use the virtual port\n\t// to provide a one-to-one mapping.\n\tvar portParam string\n\n\t// Helper function which appends the correct Port param depending on\n\t// whether the user chose to use a custom target IP address or not.\n\tpushPortParam := func(targetPort int) {\n\t\tif c.targetIPAddress == \"\" {\n\t\t\tportParam += fmt.Sprintf(\"Port=%d,%d \", cfg.VirtualPort,\n\t\t\t\ttargetPort)\n\t\t} else {\n\t\t\tportParam += fmt.Sprintf(\"Port=%d,%s:%d \",\n\t\t\t\tcfg.VirtualPort, c.targetIPAddress, targetPort)\n\t\t}\n\t}\n\n\tif len(cfg.TargetPorts) == 0 {\n\t\tpushPortParam(cfg.VirtualPort)\n\t} else {\n\t\tfor _, targetPort := range cfg.TargetPorts {\n\t\t\tpushPortParam(targetPort)\n\t\t}\n\t}\n\n\t// Send the command to create the onion service to the Tor server and\n\t// await its response.\n\tcmd := fmt.Sprintf(\"ADD_ONION %s %s\", keyParam, portParam)\n\n\treturn cmd, keyParam, nil\n}\n\n// AddOnion creates an ephemeral onion service and returns its onion address.\n// Once created, the new onion service will remain active until either,\n//   - the onion service is removed via `DEL_ONION`.\n//   - the Tor daemon terminates.\n//   - the controller connection that originated the `ADD_ONION` is closed.\n//\n// Each connection can only see its own ephemeral services. If a service needs\n// to survive beyond current controller connection, use the \"Detach\" flag when\n// creating new service via `ADD_ONION`.",
+      "length": 1535,
+      "tokens": 240,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Controller) AddOnion(cfg AddOnionConfig) (*OnionAddr, error) {",
+      "content": "func (c *Controller) AddOnion(cfg AddOnionConfig) (*OnionAddr, error) {\n\t// Before sending the request to create an onion service to the Tor\n\t// server, we'll make sure that it supports V3 onion services if that\n\t// was the type requested.\n\t// TODO(yy): drop support for v2.\n\tif cfg.Type == V3 {\n\t\tif err := supportsV3(c.version); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Construct the cmd command.\n\tcmd, keyParam, err := c.prepareAddOnion(cfg)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Send the command to create the onion service to the Tor server and\n\t// await its response.\n\t_, reply, err := c.sendCommand(cmd)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If successful, the reply from the server should be of the following\n\t// format, depending on whether a private key has been requested:\n\t//\n\t//\tC: ADD_ONION RSA1024:[Blob Redacted] Port=80,8080\n\t//\tS: 250-ServiceID=testonion1234567\n\t//\tS: 250 OK\n\t//\n\t//\tC: ADD_ONION NEW:RSA1024 Port=80,8080\n\t//\tS: 250-ServiceID=testonion1234567\n\t//\tS: 250-PrivateKey=RSA1024:[Blob Redacted]\n\t//\tS: 250 OK\n\t//\n\t// We're interested in retrieving the service ID, which is the public\n\t// name of the service, and the private key if requested.\n\treplyParams := parseTorReply(reply)\n\tserviceID, ok := replyParams[\"ServiceID\"]\n\tif !ok {\n\t\treturn nil, errors.New(\"service id not found in reply\")\n\t}\n\n\t// If a new onion service was created, use the new private key for\n\t// storage.\n\tnewPrivateKey, ok := replyParams[\"PrivateKey\"]\n\tif ok {\n\t\tkeyParam = newPrivateKey\n\t}\n\n\t// If an onion store was provided and a key return wasn't requested,\n\t// we'll store its private key to disk in the event that it needs to\n\t// be recreated later on. We write the private key to disk every time\n\t// in case the user toggles the --tor.encryptkey flag.\n\tif cfg.Store != nil {\n\t\terr := cfg.Store.StorePrivateKey([]byte(keyParam))\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to write private key \"+\n\t\t\t\t\"to file: %v\", err)\n\t\t}\n\t}\n\n\tc.activeServiceID = serviceID\n\tlog.Debugf(\"serviceID:%s added to tor controller\", serviceID)\n\n\t// Finally, we'll return the onion address composed of the service ID,\n\t// along with the onion suffix, and the port this onion service can be\n\t// reached at externally.\n\treturn &OnionAddr{\n\t\tOnionService: serviceID + \".onion\",\n\t\tPort:         cfg.VirtualPort,\n\t\tPrivateKey:   keyParam,\n\t}, nil\n}\n\n// DelOnion tells the Tor daemon to remove an onion service, which satisfies\n// either,\n//   - the onion service was created on the same control connection as the\n//     \"DEL_ONION\" command.\n//   - the onion service was created using the \"Detach\" flag.",
+      "length": 2452,
+      "tokens": 404,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Controller) DelOnion(serviceID string) error {",
+      "content": "func (c *Controller) DelOnion(serviceID string) error {\n\tlog.Debugf(\"removing serviceID:%s from tor controller\", serviceID)\n\n\tcmd := fmt.Sprintf(\"DEL_ONION %s\", serviceID)\n\n\t// Send the command to create the onion service to the Tor server and\n\t// await its response.\n\tcode, _, err := c.sendCommand(cmd)\n\n\t// Tor replies with \"250 OK\" on success, or a 512 if there are an\n\t// invalid number of arguments, or a 552 if it doesn't recognize the\n\t// ServiceID.\n\tswitch code {\n\t// Replied 250 OK.\n\tcase success:\n\t\treturn nil\n\n\t// Replied 512 for invalid arguments. This is most likely that the\n\t// serviceID is not set(empty string).\n\tcase invalidNumOfArguments:\n\t\treturn fmt.Errorf(\"invalid arguments: %w\", err)\n\n\t// Replied 552, which means either,\n\t//   - the serviceID is invalid.\n\t//   - the onion service is not owned by the current control connection\n\t//     and,\n\t//   - the onion service is not a detached service.\n\t// In either case, we will ignore the error and log a warning as there\n\t// not much we can do from the controller side.\n\tcase serviceIDNotRecognized:\n\t\tlog.Warnf(\"removing serviceID:%v not found\", serviceID)\n\t\treturn nil\n\n\tdefault:\n\t\treturn fmt.Errorf(\"undefined response code: %v, err: %w\",\n\t\t\tcode, err)\n\t}\n}\n",
+      "length": 1138,
+      "tokens": 183,
+      "embedding": []
+    }
+  ]
+}

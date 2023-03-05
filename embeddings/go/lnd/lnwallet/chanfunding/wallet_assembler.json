@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chanfunding/wallet_assembler.go",
+  "package": "chanfunding",
+  "sections": [
+    {
+      "slug": "type FullIntent struct {",
+      "content": "type FullIntent struct {\n\tShimIntent\n\n\t// InputCoins are the set of coins selected as inputs to this funding\n\t// transaction.\n\tInputCoins []Coin\n\n\t// ChangeOutputs are the set of outputs that the Assembler will use as\n\t// change from the main funding transaction.\n\tChangeOutputs []*wire.TxOut\n\n\t// coinLocker is the Assembler's instance of the OutpointLocker\n\t// interface.\n\tcoinLocker OutpointLocker\n\n\t// coinSource is the Assembler's instance of the CoinSource interface.\n\tcoinSource CoinSource\n\n\t// signer is the Assembler's instance of the Singer interface.\n\tsigner input.Signer\n}\n\n// BindKeys is a method unique to the FullIntent variant. This allows the\n// caller to decide precisely which keys are used in the final funding\n// transaction. This is kept out of the main Assembler as these may may not\n// necessarily be under full control of the wallet. Only after this method has\n// been executed will CompileFundingTx succeed.",
+      "length": 883,
+      "tokens": 139,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FullIntent) BindKeys(localKey *keychain.KeyDescriptor,",
+      "content": "func (f *FullIntent) BindKeys(localKey *keychain.KeyDescriptor,\n\tremoteKey *btcec.PublicKey) {\n\n\tf.localKey = localKey\n\tf.remoteKey = remoteKey\n}\n\n// CompileFundingTx is to be called after BindKeys on the sub-intent has been\n// called. This method will construct the final funding transaction, and fully\n// sign all inputs that are known by the backing CoinSource. After this method\n// returns, the Intent is assumed to be complete, as the output can be created\n// at any point.",
+      "length": 404,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FullIntent) CompileFundingTx(extraInputs []*wire.TxIn,",
+      "content": "func (f *FullIntent) CompileFundingTx(extraInputs []*wire.TxIn,\n\textraOutputs []*wire.TxOut) (*wire.MsgTx, error) {\n\n\t// Create a blank, fresh transaction. Soon to be a complete funding\n\t// transaction which will allow opening a lightning channel.\n\tfundingTx := wire.NewMsgTx(2)\n\n\t// Add all multi-party inputs and outputs to the transaction.\n\tfor _, coin := range f.InputCoins {\n\t\tfundingTx.AddTxIn(&wire.TxIn{\n\t\t\tPreviousOutPoint: coin.OutPoint,\n\t\t})\n\t}\n\tfor _, theirInput := range extraInputs {\n\t\tfundingTx.AddTxIn(theirInput)\n\t}\n\tfor _, ourChangeOutput := range f.ChangeOutputs {\n\t\tfundingTx.AddTxOut(ourChangeOutput)\n\t}\n\tfor _, theirChangeOutput := range extraOutputs {\n\t\tfundingTx.AddTxOut(theirChangeOutput)\n\t}\n\n\t_, fundingOutput, err := f.FundingOutput()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Sort the transaction. Since both side agree to a canonical ordering,\n\t// by sorting we no longer need to send the entire transaction. Only\n\t// signatures will be exchanged.\n\tfundingTx.AddTxOut(fundingOutput)\n\ttxsort.InPlaceSort(fundingTx)\n\n\t// Now that the funding tx has been fully assembled, we'll locate the\n\t// index of the funding output so we can create our final channel\n\t// point.\n\t_, multiSigIndex := input.FindScriptOutputIndex(\n\t\tfundingTx, fundingOutput.PkScript,\n\t)\n\n\t// Next, sign all inputs that are ours, collecting the signatures in\n\t// order of the inputs.\n\tprevOutFetcher := NewSegWitV0DualFundingPrevOutputFetcher(\n\t\tf.coinSource, extraInputs,\n\t)\n\tsigHashes := txscript.NewTxSigHashes(fundingTx, prevOutFetcher)\n\tfor i, txIn := range fundingTx.TxIn {\n\t\tsignDesc := input.SignDescriptor{\n\t\t\tSigHashes:         sigHashes,\n\t\t\tPrevOutputFetcher: prevOutFetcher,\n\t\t}\n\t\t// We can only sign this input if it's ours, so we'll ask the\n\t\t// coin source if it can map this outpoint into a coin we own.\n\t\t// If not, then we'll continue as it isn't our input.\n\t\tinfo, err := f.coinSource.CoinFromOutPoint(\n\t\t\ttxIn.PreviousOutPoint,\n\t\t)\n\t\tif err != nil {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Now that we know the input is ours, we'll populate the\n\t\t// signDesc with the per input unique information.\n\t\tsignDesc.Output = &wire.TxOut{\n\t\t\tValue:    info.Value,\n\t\t\tPkScript: info.PkScript,\n\t\t}\n\t\tsignDesc.InputIndex = i\n\n\t\t// We support spending a p2tr input ourselves. But not as part\n\t\t// of their inputs.\n\t\tsignDesc.HashType = txscript.SigHashAll\n\t\tif txscript.IsPayToTaproot(info.PkScript) {\n\t\t\tsignDesc.HashType = txscript.SigHashDefault\n\t\t}\n\n\t\t// Finally, we'll sign the input as is, and populate the input\n\t\t// with the witness and sigScript (if needed).\n\t\tinputScript, err := f.signer.ComputeInputScript(\n\t\t\tfundingTx, &signDesc,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ttxIn.SignatureScript = inputScript.SigScript\n\t\ttxIn.Witness = inputScript.Witness\n\t}\n\n\t// Finally, we'll populate the chanPoint now that we've fully\n\t// constructed the funding transaction.\n\tf.chanPoint = &wire.OutPoint{\n\t\tHash:  fundingTx.TxHash(),\n\t\tIndex: multiSigIndex,\n\t}\n\n\treturn fundingTx, nil\n}\n\n// Inputs returns all inputs to the final funding transaction that we\n// know about. Since this funding transaction is created all from our wallet,\n// it will be all inputs.",
+      "length": 2991,
+      "tokens": 411,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FullIntent) Inputs() []wire.OutPoint {",
+      "content": "func (f *FullIntent) Inputs() []wire.OutPoint {\n\tvar ins []wire.OutPoint\n\tfor _, coin := range f.InputCoins {\n\t\tins = append(ins, coin.OutPoint)\n\t}\n\n\treturn ins\n}\n\n// Outputs returns all outputs of the final funding transaction that we\n// know about. This will be the funding output and the change outputs going\n// back to our wallet.",
+      "length": 276,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FullIntent) Outputs() []*wire.TxOut {",
+      "content": "func (f *FullIntent) Outputs() []*wire.TxOut {\n\touts := f.ShimIntent.Outputs()\n\touts = append(outs, f.ChangeOutputs...)\n\n\treturn outs\n}\n\n// Cancel allows the caller to cancel a funding Intent at any time.  This will\n// return any resources such as coins back to the eligible pool to be used in\n// order channel fundings.\n//\n// NOTE: Part of the chanfunding.Intent interface.",
+      "length": 317,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FullIntent) Cancel() {",
+      "content": "func (f *FullIntent) Cancel() {\n\tfor _, coin := range f.InputCoins {\n\t\tf.coinLocker.UnlockOutpoint(coin.OutPoint)\n\t}\n\n\tf.ShimIntent.Cancel()\n}\n\n// A compile-time check to ensure FullIntent meets the Intent interface.\nvar _ Intent = (*FullIntent)(nil)\n\n// WalletConfig is the main config of the WalletAssembler.",
+      "length": 268,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type WalletConfig struct {",
+      "content": "type WalletConfig struct {\n\t// CoinSource is what the WalletAssembler uses to list/locate coins.\n\tCoinSource CoinSource\n\n\t// CoinSelectionLocker allows the WalletAssembler to gain exclusive\n\t// access to the current set of coins returned by the CoinSource.\n\tCoinSelectLocker CoinSelectionLocker\n\n\t// CoinLocker is what the WalletAssembler uses to lock coins that may\n\t// be used as inputs for a new funding transaction.\n\tCoinLocker OutpointLocker\n\n\t// Signer allows the WalletAssembler to sign inputs on any potential\n\t// funding transactions.\n\tSigner input.Signer\n\n\t// DustLimit is the current dust limit. We'll use this to ensure that\n\t// we don't make dust outputs on the funding transaction.\n\tDustLimit btcutil.Amount\n}\n\n// WalletAssembler is an instance of the Assembler interface that is backed by\n// a full wallet. This variant of the Assembler interface will produce the\n// entirety of the funding transaction within the wallet. This implements the\n// typical funding flow that is initiated either on the p2p level or using the\n// CLi.",
+      "length": 992,
+      "tokens": 155,
+      "embedding": []
+    },
+    {
+      "slug": "type WalletAssembler struct {",
+      "content": "type WalletAssembler struct {\n\tcfg WalletConfig\n}\n\n// NewWalletAssembler creates a new instance of the WalletAssembler from a\n// fully populated wallet config.",
+      "length": 125,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWalletAssembler(cfg WalletConfig) *WalletAssembler {",
+      "content": "func NewWalletAssembler(cfg WalletConfig) *WalletAssembler {\n\treturn &WalletAssembler{\n\t\tcfg: cfg,\n\t}\n}\n\n// ProvisionChannel is the main entry point to begin a funding workflow given a\n// fully populated request. The internal WalletAssembler will perform coin\n// selection in a goroutine safe manner, returning an Intent that will allow\n// the caller to finalize the funding process.\n//\n// NOTE: To cancel the funding flow the Cancel() method on the returned Intent,\n// MUST be called.\n//\n// NOTE: This is a part of the chanfunding.Assembler interface.",
+      "length": 478,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *WalletAssembler) ProvisionChannel(r *Request) (Intent, error) {",
+      "content": "func (w *WalletAssembler) ProvisionChannel(r *Request) (Intent, error) {\n\tvar intent Intent\n\n\t// We hold the coin select mutex while querying for outputs, and\n\t// performing coin selection in order to avoid inadvertent double\n\t// spends across funding transactions.\n\terr := w.cfg.CoinSelectLocker.WithCoinSelectLock(func() error {\n\t\tlog.Infof(\"Performing funding tx coin selection using %v \"+\n\t\t\t\"sat/kw as fee rate\", int64(r.FeeRate))\n\n\t\t// Find all unlocked unspent witness outputs that satisfy the\n\t\t// minimum number of confirmations required. Coin selection in\n\t\t// this function currently ignores the configured coin selection\n\t\t// strategy.\n\t\tcoins, err := w.cfg.CoinSource.ListCoins(\n\t\t\tr.MinConfs, math.MaxInt32,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tvar (\n\t\t\tselectedCoins        []Coin\n\t\t\tlocalContributionAmt btcutil.Amount\n\t\t\tchangeAmt            btcutil.Amount\n\t\t)\n\n\t\t// Perform coin selection over our available, unlocked unspent\n\t\t// outputs in order to find enough coins to meet the funding\n\t\t// amount requirements.\n\t\tswitch {\n\t\t// If there's no funding amount at all (receiving an inbound\n\t\t// single funder request), then we don't need to perform any\n\t\t// coin selection at all.\n\t\tcase r.LocalAmt == 0:\n\t\t\tbreak\n\n\t\t// In case this request want the fees subtracted from the local\n\t\t// amount, we'll call the specialized method for that. This\n\t\t// ensures that we won't deduct more that the specified balance\n\t\t// from our wallet.\n\t\tcase r.SubtractFees:\n\t\t\tdustLimit := w.cfg.DustLimit\n\t\t\tselectedCoins, localContributionAmt, changeAmt, err = CoinSelectSubtractFees(\n\t\t\t\tr.FeeRate, r.LocalAmt, dustLimit, coins,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t// Otherwise do a normal coin selection where we target a given\n\t\t// funding amount.\n\t\tdefault:\n\t\t\tdustLimit := w.cfg.DustLimit\n\t\t\tlocalContributionAmt = r.LocalAmt\n\t\t\tselectedCoins, changeAmt, err = CoinSelect(\n\t\t\t\tr.FeeRate, r.LocalAmt, dustLimit, coins,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\t// Sanity check: The addition of the outputs should not lead to the\n\t\t// creation of dust.\n\t\tif changeAmt != 0 && changeAmt < w.cfg.DustLimit {\n\t\t\treturn fmt.Errorf(\"change amount(%v) after coin \"+\n\t\t\t\t\"select is below dust limit(%v)\", changeAmt,\n\t\t\t\tw.cfg.DustLimit)\n\t\t}\n\n\t\t// Record any change output(s) generated as a result of the\n\t\t// coin selection.\n\t\tvar changeOutput *wire.TxOut\n\t\tif changeAmt != 0 {\n\t\t\tchangeAddr, err := r.ChangeAddr()\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tchangeScript, err := txscript.PayToAddrScript(changeAddr)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tchangeOutput = &wire.TxOut{\n\t\t\t\tValue:    int64(changeAmt),\n\t\t\t\tPkScript: changeScript,\n\t\t\t}\n\t\t}\n\n\t\t// Lock the selected coins. These coins are now \"reserved\",\n\t\t// this prevents concurrent funding requests from referring to\n\t\t// and this double-spending the same set of coins.\n\t\tfor _, coin := range selectedCoins {\n\t\t\toutpoint := coin.OutPoint\n\n\t\t\tw.cfg.CoinLocker.LockOutpoint(outpoint)\n\t\t}\n\n\t\tnewIntent := &FullIntent{\n\t\t\tShimIntent: ShimIntent{\n\t\t\t\tlocalFundingAmt:  localContributionAmt,\n\t\t\t\tremoteFundingAmt: r.RemoteAmt,\n\t\t\t},\n\t\t\tInputCoins: selectedCoins,\n\t\t\tcoinLocker: w.cfg.CoinLocker,\n\t\t\tcoinSource: w.cfg.CoinSource,\n\t\t\tsigner:     w.cfg.Signer,\n\t\t}\n\n\t\tif changeOutput != nil {\n\t\t\tnewIntent.ChangeOutputs = []*wire.TxOut{changeOutput}\n\t\t}\n\n\t\tintent = newIntent\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn intent, nil\n}\n\n// FundingTxAvailable is an empty method that an assembler can implement to\n// signal to callers that its able to provide the funding transaction for the\n// channel via the intent it returns.\n//\n// NOTE: This method is a part of the FundingTxAssembler interface.",
+      "length": 3495,
+      "tokens": 489,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *WalletAssembler) FundingTxAvailable() {}",
+      "content": "func (w *WalletAssembler) FundingTxAvailable() {}\n\n// A compile-time assertion to ensure the WalletAssembler meets the\n// FundingTxAssembler interface.\nvar _ FundingTxAssembler = (*WalletAssembler)(nil)\n\n// SegWitV0DualFundingPrevOutputFetcher is a txscript.PrevOutputFetcher that\n// knows about local and remote funding inputs.\n//\n// TODO(guggero): Support dual funding with p2tr inputs, currently only segwit\n// v0 inputs are supported.",
+      "length": 379,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "type SegWitV0DualFundingPrevOutputFetcher struct {",
+      "content": "type SegWitV0DualFundingPrevOutputFetcher struct {\n\tlocal  CoinSource\n\tremote *txscript.MultiPrevOutFetcher\n}\n\nvar _ txscript.PrevOutputFetcher = (*SegWitV0DualFundingPrevOutputFetcher)(nil)\n\n// NewSegWitV0DualFundingPrevOutputFetcher creates a new\n// txscript.PrevOutputFetcher from the given local and remote inputs.\n//\n// NOTE: Since the actual pkScript and amounts aren't passed in, this will just\n// make sure that nothing will panic when creating a SegWit v0 sighash. But this\n// code will NOT WORK for transactions that spend any _remote_ Taproot inputs!\n// So basically dual-funding won't work with Taproot inputs unless the UTXO info\n// is exchanged between the peers.",
+      "length": 613,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSegWitV0DualFundingPrevOutputFetcher(localSource CoinSource,",
+      "content": "func NewSegWitV0DualFundingPrevOutputFetcher(localSource CoinSource,\n\tremoteInputs []*wire.TxIn) txscript.PrevOutputFetcher {\n\n\tremote := txscript.NewMultiPrevOutFetcher(nil)\n\tfor _, inp := range remoteInputs {\n\t\t// We add an empty output to prevent the sighash calculation\n\t\t// from panicking. But this will always detect the inputs as\n\t\t// SegWig v0!\n\t\tremote.AddPrevOut(inp.PreviousOutPoint, &wire.TxOut{})\n\t}\n\treturn &SegWitV0DualFundingPrevOutputFetcher{\n\t\tlocal:  localSource,\n\t\tremote: remote,\n\t}\n}\n\n// FetchPrevOutput attempts to fetch the previous output referenced by the\n// passed outpoint.\n//\n// NOTE: This is a part of the txscript.PrevOutputFetcher interface.",
+      "length": 586,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *SegWitV0DualFundingPrevOutputFetcher) FetchPrevOutput(",
+      "content": "func (d *SegWitV0DualFundingPrevOutputFetcher) FetchPrevOutput(\n\top wire.OutPoint) *wire.TxOut {\n\n\t// Try the local source first. This will return nil if our internal\n\t// wallet doesn't know the outpoint.\n\tcoin, err := d.local.CoinFromOutPoint(op)\n\tif err == nil && coin != nil {\n\t\treturn &coin.TxOut\n\t}\n\n\t// Fall back to the remote\n\treturn d.remote.FetchPrevOutput(op)\n}\n",
+      "length": 296,
+      "tokens": 48,
+      "embedding": []
+    }
+  ]
+}

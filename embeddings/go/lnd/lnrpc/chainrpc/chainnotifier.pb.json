@@ -1,0 +1,671 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/chainrpc/chainnotifier.pb.go",
+  "package": "chainrpc",
+  "sections": [
+    {
+      "slug": "type ConfRequest struct {",
+      "content": "type ConfRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The transaction hash for which we should request a confirmation notification\n\t// for. If set to a hash of all zeros, then the confirmation notification will\n\t// be requested for the script instead.\n\tTxid []byte `protobuf:\"bytes,1,opt,name=txid,proto3\" json:\"txid,omitempty\"`\n\t// An output script within a transaction with the hash above which will be used\n\t// by light clients to match block filters. If the transaction hash is set to a\n\t// hash of all zeros, then a confirmation notification will be requested for\n\t// this script instead.\n\tScript []byte `protobuf:\"bytes,2,opt,name=script,proto3\" json:\"script,omitempty\"`\n\t// The number of desired confirmations the transaction/output script should\n\t// reach before dispatching a confirmation notification.\n\tNumConfs uint32 `protobuf:\"varint,3,opt,name=num_confs,json=numConfs,proto3\" json:\"num_confs,omitempty\"`\n\t// The earliest height in the chain for which the transaction/output script\n\t// could have been included in a block. This should in most cases be set to the\n\t// broadcast height of the transaction/output script.\n\tHeightHint uint32 `protobuf:\"varint,4,opt,name=height_hint,json=heightHint,proto3\" json:\"height_hint,omitempty\"`\n\t// If true, then the block that mines the specified txid/script will be\n\t// included in eventual the notification event.\n\tIncludeBlock bool `protobuf:\"varint,5,opt,name=include_block,json=includeBlock,proto3\" json:\"include_block,omitempty\"`\n}\n",
+      "length": 1528,
+      "tokens": 182,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) Reset() {",
+      "content": "func (x *ConfRequest) Reset() {\n\t*x = ConfRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 186,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) String() string {",
+      "content": "func (x *ConfRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfRequest) ProtoMessage() {}",
+      "content": "func (*ConfRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ConfRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ConfRequest.ProtoReflect.Descriptor instead.",
+      "length": 313,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*ConfRequest) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) GetTxid() []byte {",
+      "content": "func (x *ConfRequest) GetTxid() []byte {\n\tif x != nil {\n\t\treturn x.Txid\n\t}\n\treturn nil\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) GetScript() []byte {",
+      "content": "func (x *ConfRequest) GetScript() []byte {\n\tif x != nil {\n\t\treturn x.Script\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) GetNumConfs() uint32 {",
+      "content": "func (x *ConfRequest) GetNumConfs() uint32 {\n\tif x != nil {\n\t\treturn x.NumConfs\n\t}\n\treturn 0\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) GetHeightHint() uint32 {",
+      "content": "func (x *ConfRequest) GetHeightHint() uint32 {\n\tif x != nil {\n\t\treturn x.HeightHint\n\t}\n\treturn 0\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfRequest) GetIncludeBlock() bool {",
+      "content": "func (x *ConfRequest) GetIncludeBlock() bool {\n\tif x != nil {\n\t\treturn x.IncludeBlock\n\t}\n\treturn false\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type ConfDetails struct {",
+      "content": "type ConfDetails struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The raw bytes of the confirmed transaction.\n\tRawTx []byte `protobuf:\"bytes,1,opt,name=raw_tx,json=rawTx,proto3\" json:\"raw_tx,omitempty\"`\n\t// The hash of the block in which the confirmed transaction was included in.\n\tBlockHash []byte `protobuf:\"bytes,2,opt,name=block_hash,json=blockHash,proto3\" json:\"block_hash,omitempty\"`\n\t// The height of the block in which the confirmed transaction was included\n\t// in.\n\tBlockHeight uint32 `protobuf:\"varint,3,opt,name=block_height,json=blockHeight,proto3\" json:\"block_height,omitempty\"`\n\t// The index of the confirmed transaction within the block.\n\tTxIndex uint32 `protobuf:\"varint,4,opt,name=tx_index,json=txIndex,proto3\" json:\"tx_index,omitempty\"`\n\t// The raw bytes of the block that mined the transaction. Only included if\n\t// include_block was set in the request.\n\tRawBlock []byte `protobuf:\"bytes,5,opt,name=raw_block,json=rawBlock,proto3\" json:\"raw_block,omitempty\"`\n}\n",
+      "length": 1014,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) Reset() {",
+      "content": "func (x *ConfDetails) Reset() {\n\t*x = ConfDetails{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 186,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) String() string {",
+      "content": "func (x *ConfDetails) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfDetails) ProtoMessage() {}",
+      "content": "func (*ConfDetails) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ConfDetails) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ConfDetails.ProtoReflect.Descriptor instead.",
+      "length": 313,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfDetails) Descriptor() ([]byte, []int) {",
+      "content": "func (*ConfDetails) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) GetRawTx() []byte {",
+      "content": "func (x *ConfDetails) GetRawTx() []byte {\n\tif x != nil {\n\t\treturn x.RawTx\n\t}\n\treturn nil\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) GetBlockHash() []byte {",
+      "content": "func (x *ConfDetails) GetBlockHash() []byte {\n\tif x != nil {\n\t\treturn x.BlockHash\n\t}\n\treturn nil\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) GetBlockHeight() uint32 {",
+      "content": "func (x *ConfDetails) GetBlockHeight() uint32 {\n\tif x != nil {\n\t\treturn x.BlockHeight\n\t}\n\treturn 0\n}\n",
+      "length": 48,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) GetTxIndex() uint32 {",
+      "content": "func (x *ConfDetails) GetTxIndex() uint32 {\n\tif x != nil {\n\t\treturn x.TxIndex\n\t}\n\treturn 0\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfDetails) GetRawBlock() []byte {",
+      "content": "func (x *ConfDetails) GetRawBlock() []byte {\n\tif x != nil {\n\t\treturn x.RawBlock\n\t}\n\treturn nil\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type Reorg struct {",
+      "content": "type Reorg struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Reorg) Reset() {",
+      "content": "func (x *Reorg) Reset() {\n\t*x = Reorg{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[2]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 180,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Reorg) String() string {",
+      "content": "func (x *Reorg) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Reorg) ProtoMessage() {}",
+      "content": "func (*Reorg) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Reorg) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *Reorg) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[2]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use Reorg.ProtoReflect.Descriptor instead.",
+      "length": 307,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Reorg) Descriptor() ([]byte, []int) {",
+      "content": "func (*Reorg) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{2}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type ConfEvent struct {",
+      "content": "type ConfEvent struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Types that are assignable to Event:\n\t//\n\t//\t*ConfEvent_Conf\n\t//\t*ConfEvent_Reorg\n\tEvent isConfEvent_Event `protobuf_oneof:\"event\"`\n}\n",
+      "length": 240,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfEvent) Reset() {",
+      "content": "func (x *ConfEvent) Reset() {\n\t*x = ConfEvent{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[3]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 184,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfEvent) String() string {",
+      "content": "func (x *ConfEvent) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfEvent) ProtoMessage() {}",
+      "content": "func (*ConfEvent) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfEvent) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ConfEvent) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[3]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ConfEvent.ProtoReflect.Descriptor instead.",
+      "length": 311,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfEvent) Descriptor() ([]byte, []int) {",
+      "content": "func (*ConfEvent) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{3}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ConfEvent) GetEvent() isConfEvent_Event {",
+      "content": "func (m *ConfEvent) GetEvent() isConfEvent_Event {\n\tif m != nil {\n\t\treturn m.Event\n\t}\n\treturn nil\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfEvent) GetConf() *ConfDetails {",
+      "content": "func (x *ConfEvent) GetConf() *ConfDetails {\n\tif x, ok := x.GetEvent().(*ConfEvent_Conf); ok {\n\t\treturn x.Conf\n\t}\n\treturn nil\n}\n",
+      "length": 78,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ConfEvent) GetReorg() *Reorg {",
+      "content": "func (x *ConfEvent) GetReorg() *Reorg {\n\tif x, ok := x.GetEvent().(*ConfEvent_Reorg); ok {\n\t\treturn x.Reorg\n\t}\n\treturn nil\n}\n",
+      "length": 80,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type isConfEvent_Event interface {",
+      "content": "type isConfEvent_Event interface {\n\tisConfEvent_Event()\n}\n",
+      "length": 21,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "type ConfEvent_Conf struct {",
+      "content": "type ConfEvent_Conf struct {\n\t// An event that includes the confirmation details of the request\n\t// (txid/ouput script).\n\tConf *ConfDetails `protobuf:\"bytes,1,opt,name=conf,proto3,oneof\"`\n}\n",
+      "length": 157,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type ConfEvent_Reorg struct {",
+      "content": "type ConfEvent_Reorg struct {\n\t// An event send when the transaction of the request is reorged out of the\n\t// chain.\n\tReorg *Reorg `protobuf:\"bytes,2,opt,name=reorg,proto3,oneof\"`\n}\n",
+      "length": 148,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfEvent_Conf) isConfEvent_Event() {}",
+      "content": "func (*ConfEvent_Conf) isConfEvent_Event() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ConfEvent_Reorg) isConfEvent_Event() {}",
+      "content": "func (*ConfEvent_Reorg) isConfEvent_Event() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type Outpoint struct {",
+      "content": "type Outpoint struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The hash of the transaction.\n\tHash []byte `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n\t// The index of the output within the transaction.\n\tIndex uint32 `protobuf:\"varint,2,opt,name=index,proto3\" json:\"index,omitempty\"`\n}\n",
+      "length": 349,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Outpoint) Reset() {",
+      "content": "func (x *Outpoint) Reset() {\n\t*x = Outpoint{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[4]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 183,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Outpoint) String() string {",
+      "content": "func (x *Outpoint) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Outpoint) ProtoMessage() {}",
+      "content": "func (*Outpoint) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Outpoint) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *Outpoint) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[4]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use Outpoint.ProtoReflect.Descriptor instead.",
+      "length": 310,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*Outpoint) Descriptor() ([]byte, []int) {",
+      "content": "func (*Outpoint) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{4}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Outpoint) GetHash() []byte {",
+      "content": "func (x *Outpoint) GetHash() []byte {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn nil\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *Outpoint) GetIndex() uint32 {",
+      "content": "func (x *Outpoint) GetIndex() uint32 {\n\tif x != nil {\n\t\treturn x.Index\n\t}\n\treturn 0\n}\n",
+      "length": 42,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type SpendRequest struct {",
+      "content": "type SpendRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The outpoint for which we should request a spend notification for. If set to\n\t// a zero outpoint, then the spend notification will be requested for the\n\t// script instead. A zero or nil outpoint is not supported for Taproot spends\n\t// because the output script cannot reliably be computed from the witness alone\n\t// and the spent output script is not always available in the rescan context.\n\t// So an outpoint must _always_ be specified when registering a spend\n\t// notification for a Taproot output.\n\tOutpoint *Outpoint `protobuf:\"bytes,1,opt,name=outpoint,proto3\" json:\"outpoint,omitempty\"`\n\t// The output script for the outpoint above. This will be used by light clients\n\t// to match block filters. If the outpoint is set to a zero outpoint, then a\n\t// spend notification will be requested for this script instead.\n\tScript []byte `protobuf:\"bytes,2,opt,name=script,proto3\" json:\"script,omitempty\"`\n\t// The earliest height in the chain for which the outpoint/output script could\n\t// have been spent. This should in most cases be set to the broadcast height of\n\t// the outpoint/output script.\n\tHeightHint uint32 `protobuf:\"varint,3,opt,name=height_hint,json=heightHint,proto3\" json:\"height_hint,omitempty\"`\n}\n",
+      "length": 1306,
+      "tokens": 180,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) Reset() {",
+      "content": "func (x *SpendRequest) Reset() {\n\t*x = SpendRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[5]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 187,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) String() string {",
+      "content": "func (x *SpendRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendRequest) ProtoMessage() {}",
+      "content": "func (*SpendRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *SpendRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[5]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use SpendRequest.ProtoReflect.Descriptor instead.",
+      "length": 314,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*SpendRequest) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{5}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) GetOutpoint() *Outpoint {",
+      "content": "func (x *SpendRequest) GetOutpoint() *Outpoint {\n\tif x != nil {\n\t\treturn x.Outpoint\n\t}\n\treturn nil\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) GetScript() []byte {",
+      "content": "func (x *SpendRequest) GetScript() []byte {\n\tif x != nil {\n\t\treturn x.Script\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendRequest) GetHeightHint() uint32 {",
+      "content": "func (x *SpendRequest) GetHeightHint() uint32 {\n\tif x != nil {\n\t\treturn x.HeightHint\n\t}\n\treturn 0\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type SpendDetails struct {",
+      "content": "type SpendDetails struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The outpoint was that spent.\n\tSpendingOutpoint *Outpoint `protobuf:\"bytes,1,opt,name=spending_outpoint,json=spendingOutpoint,proto3\" json:\"spending_outpoint,omitempty\"`\n\t// The raw bytes of the spending transaction.\n\tRawSpendingTx []byte `protobuf:\"bytes,2,opt,name=raw_spending_tx,json=rawSpendingTx,proto3\" json:\"raw_spending_tx,omitempty\"`\n\t// The hash of the spending transaction.\n\tSpendingTxHash []byte `protobuf:\"bytes,3,opt,name=spending_tx_hash,json=spendingTxHash,proto3\" json:\"spending_tx_hash,omitempty\"`\n\t// The input of the spending transaction that fulfilled the spend request.\n\tSpendingInputIndex uint32 `protobuf:\"varint,4,opt,name=spending_input_index,json=spendingInputIndex,proto3\" json:\"spending_input_index,omitempty\"`\n\t// The height at which the spending transaction was included in a block.\n\tSpendingHeight uint32 `protobuf:\"varint,5,opt,name=spending_height,json=spendingHeight,proto3\" json:\"spending_height,omitempty\"`\n}\n",
+      "length": 1048,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) Reset() {",
+      "content": "func (x *SpendDetails) Reset() {\n\t*x = SpendDetails{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[6]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 187,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) String() string {",
+      "content": "func (x *SpendDetails) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendDetails) ProtoMessage() {}",
+      "content": "func (*SpendDetails) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *SpendDetails) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[6]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use SpendDetails.ProtoReflect.Descriptor instead.",
+      "length": 314,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendDetails) Descriptor() ([]byte, []int) {",
+      "content": "func (*SpendDetails) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{6}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) GetSpendingOutpoint() *Outpoint {",
+      "content": "func (x *SpendDetails) GetSpendingOutpoint() *Outpoint {\n\tif x != nil {\n\t\treturn x.SpendingOutpoint\n\t}\n\treturn nil\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) GetRawSpendingTx() []byte {",
+      "content": "func (x *SpendDetails) GetRawSpendingTx() []byte {\n\tif x != nil {\n\t\treturn x.RawSpendingTx\n\t}\n\treturn nil\n}\n",
+      "length": 52,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) GetSpendingTxHash() []byte {",
+      "content": "func (x *SpendDetails) GetSpendingTxHash() []byte {\n\tif x != nil {\n\t\treturn x.SpendingTxHash\n\t}\n\treturn nil\n}\n",
+      "length": 53,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) GetSpendingInputIndex() uint32 {",
+      "content": "func (x *SpendDetails) GetSpendingInputIndex() uint32 {\n\tif x != nil {\n\t\treturn x.SpendingInputIndex\n\t}\n\treturn 0\n}\n",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendDetails) GetSpendingHeight() uint32 {",
+      "content": "func (x *SpendDetails) GetSpendingHeight() uint32 {\n\tif x != nil {\n\t\treturn x.SpendingHeight\n\t}\n\treturn 0\n}\n",
+      "length": 51,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type SpendEvent struct {",
+      "content": "type SpendEvent struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Types that are assignable to Event:\n\t//\n\t//\t*SpendEvent_Spend\n\t//\t*SpendEvent_Reorg\n\tEvent isSpendEvent_Event `protobuf_oneof:\"event\"`\n}\n",
+      "length": 244,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendEvent) Reset() {",
+      "content": "func (x *SpendEvent) Reset() {\n\t*x = SpendEvent{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[7]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 185,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendEvent) String() string {",
+      "content": "func (x *SpendEvent) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendEvent) ProtoMessage() {}",
+      "content": "func (*SpendEvent) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendEvent) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *SpendEvent) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[7]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use SpendEvent.ProtoReflect.Descriptor instead.",
+      "length": 312,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendEvent) Descriptor() ([]byte, []int) {",
+      "content": "func (*SpendEvent) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{7}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SpendEvent) GetEvent() isSpendEvent_Event {",
+      "content": "func (m *SpendEvent) GetEvent() isSpendEvent_Event {\n\tif m != nil {\n\t\treturn m.Event\n\t}\n\treturn nil\n}\n",
+      "length": 44,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendEvent) GetSpend() *SpendDetails {",
+      "content": "func (x *SpendEvent) GetSpend() *SpendDetails {\n\tif x, ok := x.GetEvent().(*SpendEvent_Spend); ok {\n\t\treturn x.Spend\n\t}\n\treturn nil\n}\n",
+      "length": 81,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SpendEvent) GetReorg() *Reorg {",
+      "content": "func (x *SpendEvent) GetReorg() *Reorg {\n\tif x, ok := x.GetEvent().(*SpendEvent_Reorg); ok {\n\t\treturn x.Reorg\n\t}\n\treturn nil\n}\n",
+      "length": 81,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type isSpendEvent_Event interface {",
+      "content": "type isSpendEvent_Event interface {\n\tisSpendEvent_Event()\n}\n",
+      "length": 22,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "type SpendEvent_Spend struct {",
+      "content": "type SpendEvent_Spend struct {\n\t// An event that includes the details of the spending transaction of the\n\t// request (outpoint/output script).\n\tSpend *SpendDetails `protobuf:\"bytes,1,opt,name=spend,proto3,oneof\"`\n}\n",
+      "length": 180,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type SpendEvent_Reorg struct {",
+      "content": "type SpendEvent_Reorg struct {\n\t// An event sent when the spending transaction of the request was\n\t// reorged out of the chain.\n\tReorg *Reorg `protobuf:\"bytes,2,opt,name=reorg,proto3,oneof\"`\n}\n",
+      "length": 158,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendEvent_Spend) isSpendEvent_Event() {}",
+      "content": "func (*SpendEvent_Spend) isSpendEvent_Event() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SpendEvent_Reorg) isSpendEvent_Event() {}",
+      "content": "func (*SpendEvent_Reorg) isSpendEvent_Event() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type BlockEpoch struct {",
+      "content": "type BlockEpoch struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The hash of the block.\n\tHash []byte `protobuf:\"bytes,1,opt,name=hash,proto3\" json:\"hash,omitempty\"`\n\t// The height of the block.\n\tHeight uint32 `protobuf:\"varint,2,opt,name=height,proto3\" json:\"height,omitempty\"`\n}\n",
+      "length": 323,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *BlockEpoch) Reset() {",
+      "content": "func (x *BlockEpoch) Reset() {\n\t*x = BlockEpoch{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[8]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 185,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *BlockEpoch) String() string {",
+      "content": "func (x *BlockEpoch) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*BlockEpoch) ProtoMessage() {}",
+      "content": "func (*BlockEpoch) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *BlockEpoch) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *BlockEpoch) ProtoReflect() protoreflect.Message {\n\tmi := &file_chainrpc_chainnotifier_proto_msgTypes[8]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use BlockEpoch.ProtoReflect.Descriptor instead.",
+      "length": 312,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*BlockEpoch) Descriptor() ([]byte, []int) {",
+      "content": "func (*BlockEpoch) Descriptor() ([]byte, []int) {\n\treturn file_chainrpc_chainnotifier_proto_rawDescGZIP(), []int{8}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *BlockEpoch) GetHash() []byte {",
+      "content": "func (x *BlockEpoch) GetHash() []byte {\n\tif x != nil {\n\t\treturn x.Hash\n\t}\n\treturn nil\n}\n",
+      "length": 43,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *BlockEpoch) GetHeight() uint32 {",
+      "content": "func (x *BlockEpoch) GetHeight() uint32 {\n\tif x != nil {\n\t\treturn x.Height\n\t}\n\treturn 0\n}\n\nvar File_chainrpc_chainnotifier_proto protoreflect.FileDescriptor\n\nvar file_chainrpc_chainnotifier_proto_rawDesc = []byte{\n\t0x0a, 0x1c, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x6e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08,\n\t0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x22, 0x9c, 0x01, 0x0a, 0x0b, 0x43, 0x6f, 0x6e,\n\t0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x69, 0x64,\n\t0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x74, 0x78, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06,\n\t0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x73, 0x63,\n\t0x72, 0x69, 0x70, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6e, 0x66,\n\t0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x75, 0x6d, 0x43, 0x6f, 0x6e, 0x66,\n\t0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x5f, 0x68, 0x69, 0x6e, 0x74,\n\t0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x48, 0x69,\n\t0x6e, 0x74, 0x12, 0x23, 0x0a, 0x0d, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x5f, 0x62, 0x6c,\n\t0x6f, 0x63, 0x6b, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0c, 0x69, 0x6e, 0x63, 0x6c, 0x75,\n\t0x64, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x9e, 0x01, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x66,\n\t0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x12, 0x15, 0x0a, 0x06, 0x72, 0x61, 0x77, 0x5f, 0x74,\n\t0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x72, 0x61, 0x77, 0x54, 0x78, 0x12, 0x1d,\n\t0x0a, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01,\n\t0x28, 0x0c, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x21, 0x0a,\n\t0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20,\n\t0x01, 0x28, 0x0d, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,\n\t0x12, 0x19, 0x0a, 0x08, 0x74, 0x78, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x04, 0x20, 0x01,\n\t0x28, 0x0d, 0x52, 0x07, 0x74, 0x78, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x1b, 0x0a, 0x09, 0x72,\n\t0x61, 0x77, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08,\n\t0x72, 0x61, 0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x07, 0x0a, 0x05, 0x52, 0x65, 0x6f, 0x72,\n\t0x67, 0x22, 0x6a, 0x0a, 0x09, 0x43, 0x6f, 0x6e, 0x66, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x2b,\n\t0x0a, 0x04, 0x63, 0x6f, 0x6e, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x63,\n\t0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x44, 0x65, 0x74, 0x61,\n\t0x69, 0x6c, 0x73, 0x48, 0x00, 0x52, 0x04, 0x63, 0x6f, 0x6e, 0x66, 0x12, 0x27, 0x0a, 0x05, 0x72,\n\t0x65, 0x6f, 0x72, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x63, 0x68, 0x61,\n\t0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x52, 0x65, 0x6f, 0x72, 0x67, 0x48, 0x00, 0x52, 0x05, 0x72,\n\t0x65, 0x6f, 0x72, 0x67, 0x42, 0x07, 0x0a, 0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x22, 0x34, 0x0a,\n\t0x08, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73,\n\t0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x14, 0x0a,\n\t0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x69, 0x6e,\n\t0x64, 0x65, 0x78, 0x22, 0x77, 0x0a, 0x0c, 0x53, 0x70, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75,\n\t0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x08, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x18,\n\t0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63,\n\t0x2e, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x08, 0x6f, 0x75, 0x74, 0x70, 0x6f,\n\t0x69, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x18, 0x02, 0x20,\n\t0x01, 0x28, 0x0c, 0x52, 0x06, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x68,\n\t0x65, 0x69, 0x67, 0x68, 0x74, 0x5f, 0x68, 0x69, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d,\n\t0x52, 0x0a, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x48, 0x69, 0x6e, 0x74, 0x22, 0xfc, 0x01, 0x0a,\n\t0x0c, 0x53, 0x70, 0x65, 0x6e, 0x64, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x12, 0x3f, 0x0a,\n\t0x11, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69,\n\t0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x72, 0x70, 0x63, 0x2e, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x10, 0x73, 0x70,\n\t0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x26,\n\t0x0a, 0x0f, 0x72, 0x61, 0x77, 0x5f, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x74,\n\t0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0d, 0x72, 0x61, 0x77, 0x53, 0x70, 0x65, 0x6e,\n\t0x64, 0x69, 0x6e, 0x67, 0x54, 0x78, 0x12, 0x28, 0x0a, 0x10, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69,\n\t0x6e, 0x67, 0x5f, 0x74, 0x78, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c,\n\t0x52, 0x0e, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x78, 0x48, 0x61, 0x73, 0x68,\n\t0x12, 0x30, 0x0a, 0x14, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x69, 0x6e, 0x70,\n\t0x75, 0x74, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x12,\n\t0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x49, 0x6e, 0x64,\n\t0x65, 0x78, 0x12, 0x27, 0x0a, 0x0f, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68,\n\t0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0e, 0x73, 0x70, 0x65,\n\t0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x6e, 0x0a, 0x0a, 0x53,\n\t0x70, 0x65, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x2e, 0x0a, 0x05, 0x73, 0x70, 0x65,\n\t0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x72, 0x70, 0x63, 0x2e, 0x53, 0x70, 0x65, 0x6e, 0x64, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73,\n\t0x48, 0x00, 0x52, 0x05, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x12, 0x27, 0x0a, 0x05, 0x72, 0x65, 0x6f,\n\t0x72, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e,\n\t0x72, 0x70, 0x63, 0x2e, 0x52, 0x65, 0x6f, 0x72, 0x67, 0x48, 0x00, 0x52, 0x05, 0x72, 0x65, 0x6f,\n\t0x72, 0x67, 0x42, 0x07, 0x0a, 0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x22, 0x38, 0x0a, 0x0a, 0x42,\n\t0x6c, 0x6f, 0x63, 0x6b, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73,\n\t0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x16, 0x0a,\n\t0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x68,\n\t0x65, 0x69, 0x67, 0x68, 0x74, 0x32, 0xe7, 0x01, 0x0a, 0x0d, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x4e,\n\t0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x49, 0x0a, 0x19, 0x52, 0x65, 0x67, 0x69, 0x73,\n\t0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,\n\t0x4e, 0x74, 0x66, 0x6e, 0x12, 0x15, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e,\n\t0x43, 0x6f, 0x6e, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x63, 0x68,\n\t0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x45, 0x76, 0x65, 0x6e, 0x74,\n\t0x30, 0x01, 0x12, 0x43, 0x0a, 0x11, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x70,\n\t0x65, 0x6e, 0x64, 0x4e, 0x74, 0x66, 0x6e, 0x12, 0x16, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72,\n\t0x70, 0x63, 0x2e, 0x53, 0x70, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,\n\t0x14, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x70, 0x65, 0x6e, 0x64,\n\t0x45, 0x76, 0x65, 0x6e, 0x74, 0x30, 0x01, 0x12, 0x46, 0x0a, 0x16, 0x52, 0x65, 0x67, 0x69, 0x73,\n\t0x74, 0x65, 0x72, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x4e, 0x74, 0x66,\n\t0x6e, 0x12, 0x14, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70, 0x63, 0x2e, 0x42, 0x6c, 0x6f,\n\t0x63, 0x6b, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x1a, 0x14, 0x2e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72,\n\t0x70, 0x63, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x30, 0x01, 0x42,\n\t0x30, 0x5a, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69,\n\t0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c,\n\t0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x72, 0x70,\n\t0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_chainrpc_chainnotifier_proto_rawDescOnce sync.Once\n\tfile_chainrpc_chainnotifier_proto_rawDescData = file_chainrpc_chainnotifier_proto_rawDesc\n)\n",
+      "length": 8530,
+      "tokens": 1396,
+      "embedding": []
+    },
+    {
+      "slug": "func file_chainrpc_chainnotifier_proto_rawDescGZIP() []byte {",
+      "content": "func file_chainrpc_chainnotifier_proto_rawDescGZIP() []byte {\n\tfile_chainrpc_chainnotifier_proto_rawDescOnce.Do(func() {\n\t\tfile_chainrpc_chainnotifier_proto_rawDescData = protoimpl.X.CompressGZIP(file_chainrpc_chainnotifier_proto_rawDescData)\n\t})\n\treturn file_chainrpc_chainnotifier_proto_rawDescData\n}\n\nvar file_chainrpc_chainnotifier_proto_msgTypes = make([]protoimpl.MessageInfo, 9)\nvar file_chainrpc_chainnotifier_proto_goTypes = []interface{}{\n\t(*ConfRequest)(nil),  // 0: chainrpc.ConfRequest\n\t(*ConfDetails)(nil),  // 1: chainrpc.ConfDetails\n\t(*Reorg)(nil),        // 2: chainrpc.Reorg\n\t(*ConfEvent)(nil),    // 3: chainrpc.ConfEvent\n\t(*Outpoint)(nil),     // 4: chainrpc.Outpoint\n\t(*SpendRequest)(nil), // 5: chainrpc.SpendRequest\n\t(*SpendDetails)(nil), // 6: chainrpc.SpendDetails\n\t(*SpendEvent)(nil),   // 7: chainrpc.SpendEvent\n\t(*BlockEpoch)(nil),   // 8: chainrpc.BlockEpoch\n}\nvar file_chainrpc_chainnotifier_proto_depIdxs = []int32{\n\t1, // 0: chainrpc.ConfEvent.conf:type_name -> chainrpc.ConfDetails\n\t2, // 1: chainrpc.ConfEvent.reorg:type_name -> chainrpc.Reorg\n\t4, // 2: chainrpc.SpendRequest.outpoint:type_name -> chainrpc.Outpoint\n\t4, // 3: chainrpc.SpendDetails.spending_outpoint:type_name -> chainrpc.Outpoint\n\t6, // 4: chainrpc.SpendEvent.spend:type_name -> chainrpc.SpendDetails\n\t2, // 5: chainrpc.SpendEvent.reorg:type_name -> chainrpc.Reorg\n\t0, // 6: chainrpc.ChainNotifier.RegisterConfirmationsNtfn:input_type -> chainrpc.ConfRequest\n\t5, // 7: chainrpc.ChainNotifier.RegisterSpendNtfn:input_type -> chainrpc.SpendRequest\n\t8, // 8: chainrpc.ChainNotifier.RegisterBlockEpochNtfn:input_type -> chainrpc.BlockEpoch\n\t3, // 9: chainrpc.ChainNotifier.RegisterConfirmationsNtfn:output_type -> chainrpc.ConfEvent\n\t7, // 10: chainrpc.ChainNotifier.RegisterSpendNtfn:output_type -> chainrpc.SpendEvent\n\t8, // 11: chainrpc.ChainNotifier.RegisterBlockEpochNtfn:output_type -> chainrpc.BlockEpoch\n\t9, // [9:12] is the sub-list for method output_type\n\t6, // [6:9] is the sub-list for method input_type\n\t6, // [6:6] is the sub-list for extension type_name\n\t6, // [6:6] is the sub-list for extension extendee\n\t0, // [0:6] is the sub-list for field type_name\n}\n",
+      "length": 2070,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_chainrpc_chainnotifier_proto_init() }",
+      "content": "func init() { file_chainrpc_chainnotifier_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_chainrpc_chainnotifier_proto_init() {",
+      "content": "func file_chainrpc_chainnotifier_proto_init() {\n\tif File_chainrpc_chainnotifier_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ConfRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ConfDetails); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*Reorg); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ConfEvent); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*Outpoint); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*SpendRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*SpendDetails); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*SpendEvent); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_chainrpc_chainnotifier_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*BlockEpoch); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\tfile_chainrpc_chainnotifier_proto_msgTypes[3].OneofWrappers = []interface{}{\n\t\t(*ConfEvent_Conf)(nil),\n\t\t(*ConfEvent_Reorg)(nil),\n\t}\n\tfile_chainrpc_chainnotifier_proto_msgTypes[7].OneofWrappers = []interface{}{\n\t\t(*SpendEvent_Spend)(nil),\n\t\t(*SpendEvent_Reorg)(nil),\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_chainrpc_chainnotifier_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   9,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_chainrpc_chainnotifier_proto_goTypes,\n\t\tDependencyIndexes: file_chainrpc_chainnotifier_proto_depIdxs,\n\t\tMessageInfos:      file_chainrpc_chainnotifier_proto_msgTypes,\n\t}.Build()\n\tFile_chainrpc_chainnotifier_proto = out.File\n\tfile_chainrpc_chainnotifier_proto_rawDesc = nil\n\tfile_chainrpc_chainnotifier_proto_goTypes = nil\n\tfile_chainrpc_chainnotifier_proto_depIdxs = nil\n}\n",
+      "length": 3392,
+      "tokens": 343,
+      "embedding": []
+    }
+  ]
+}

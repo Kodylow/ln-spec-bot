@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/verrpc/verrpc.pb.gw.go",
+  "package": "verrpc",
+  "sections": [
+    {
+      "slug": "func request_Versioner_GetVersion_0(ctx context.Context, marshaler runtime.Marshaler, client VersionerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {",
+      "content": "func request_Versioner_GetVersion_0(ctx context.Context, marshaler runtime.Marshaler, client VersionerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {\n\tvar protoReq VersionRequest\n\tvar metadata runtime.ServerMetadata\n\n\tmsg, err := client.GetVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))\n\treturn msg, metadata, err\n\n}\n",
+      "length": 205,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func local_request_Versioner_GetVersion_0(ctx context.Context, marshaler runtime.Marshaler, server VersionerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {",
+      "content": "func local_request_Versioner_GetVersion_0(ctx context.Context, marshaler runtime.Marshaler, server VersionerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {\n\tvar protoReq VersionRequest\n\tvar metadata runtime.ServerMetadata\n\n\tmsg, err := server.GetVersion(ctx, &protoReq)\n\treturn msg, metadata, err\n\n}\n\n// RegisterVersionerHandlerServer registers the http handlers for service Versioner to \"mux\".\n// UnaryRPC     :call VersionerServer directly.\n// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.\n// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterVersionerHandlerFromEndpoint instead.",
+      "length": 526,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterVersionerHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VersionerServer) error {",
+      "content": "func RegisterVersionerHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VersionerServer) error {\n\n\tmux.Handle(\"GET\", pattern_Versioner_GetVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\tctx, cancel := context.WithCancel(req.Context())\n\t\tdefer cancel()\n\t\tvar stream runtime.ServerTransportStream\n\t\tctx = grpc.NewContextWithServerTransportStream(ctx, &stream)\n\t\tinboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\trctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, \"/verrpc.Versioner/GetVersion\", runtime.WithHTTPPathPattern(\"/v2/versioner/version\"))\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\t\tresp, md, err := local_request_Versioner_GetVersion_0(rctx, inboundMarshaler, server, req, pathParams)\n\t\tmd.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())\n\t\tctx = runtime.NewServerMetadataContext(ctx, md)\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\n\t\tforward_Versioner_GetVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)\n\n\t})\n\n\treturn nil\n}\n\n// RegisterVersionerHandlerFromEndpoint is same as RegisterVersionerHandler but\n// automatically dials to \"endpoint\" and closes the connection when \"ctx\" gets done.",
+      "length": 1268,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterVersionerHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {",
+      "content": "func RegisterVersionerHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {\n\tconn, err := grpc.Dial(endpoint, opts...)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer func() {\n\t\tif err != nil {\n\t\t\tif cerr := conn.Close(); cerr != nil {\n\t\t\t\tgrpclog.Infof(\"Failed to close conn to %s: %v\", endpoint, cerr)\n\t\t\t}\n\t\t\treturn\n\t\t}\n\t\tgo func() {\n\t\t\t<-ctx.Done()\n\t\t\tif cerr := conn.Close(); cerr != nil {\n\t\t\t\tgrpclog.Infof(\"Failed to close conn to %s: %v\", endpoint, cerr)\n\t\t\t}\n\t\t}()\n\t}()\n\n\treturn RegisterVersionerHandler(ctx, mux, conn)\n}\n\n// RegisterVersionerHandler registers the http handlers for service Versioner to \"mux\".\n// The handlers forward requests to the grpc endpoint over \"conn\".",
+      "length": 579,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterVersionerHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {",
+      "content": "func RegisterVersionerHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {\n\treturn RegisterVersionerHandlerClient(ctx, mux, NewVersionerClient(conn))\n}\n\n// RegisterVersionerHandlerClient registers the http handlers for service Versioner\n// to \"mux\". The handlers forward requests to the grpc endpoint over the given implementation of \"VersionerClient\".\n// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in \"VersionerClient\"\n// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in\n// \"VersionerClient\" to call the correct interceptors.",
+      "length": 544,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterVersionerHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VersionerClient) error {",
+      "content": "func RegisterVersionerHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VersionerClient) error {\n\n\tmux.Handle(\"GET\", pattern_Versioner_GetVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {\n\t\tctx, cancel := context.WithCancel(req.Context())\n\t\tdefer cancel()\n\t\tinboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)\n\t\trctx, err := runtime.AnnotateContext(ctx, mux, req, \"/verrpc.Versioner/GetVersion\", runtime.WithHTTPPathPattern(\"/v2/versioner/version\"))\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\t\tresp, md, err := request_Versioner_GetVersion_0(rctx, inboundMarshaler, client, req, pathParams)\n\t\tctx = runtime.NewServerMetadataContext(ctx, md)\n\t\tif err != nil {\n\t\t\truntime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)\n\t\t\treturn\n\t\t}\n\n\t\tforward_Versioner_GetVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)\n\n\t})\n\n\treturn nil\n}\n\nvar (\n\tpattern_Versioner_GetVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{\"v2\", \"versioner\", \"version\"}, \"\"))\n)\n\nvar (\n\tforward_Versioner_GetVersion_0 = runtime.ForwardResponseMessage\n)\n",
+      "length": 1088,
+      "tokens": 100,
+      "embedding": []
+    }
+  ]
+}

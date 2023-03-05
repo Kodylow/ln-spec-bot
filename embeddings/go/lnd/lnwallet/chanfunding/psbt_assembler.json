@@ -1,0 +1,153 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chanfunding/psbt_assembler.go",
+  "package": "chanfunding",
+  "sections": [
+    {
+      "slug": "type PsbtState uint8",
+      "content": "type PsbtState uint8\n\nconst (\n\t// PsbtShimRegistered denotes a channel funding process has started with\n\t// a PSBT shim attached. This is the default state for a PsbtIntent. We\n\t// don't use iota here because the values have to be in sync with the\n\t// RPC constants.\n\tPsbtShimRegistered PsbtState = 1\n\n\t// PsbtOutputKnown denotes that the local and remote peer have\n\t// negotiated the multisig keys to be used as the channel funding output\n\t// and therefore the PSBT funding process can now start.\n\tPsbtOutputKnown PsbtState = 2\n\n\t// PsbtVerified denotes that a potential PSBT has been presented to the\n\t// intent and passed all checks. The verified PSBT can be given to a/the\n\t// signer(s).\n\tPsbtVerified PsbtState = 3\n\n\t// PsbtFinalized denotes that a fully signed PSBT has been given to the\n\t// intent that looks identical to the previously verified transaction\n\t// but has all witness data added and is therefore completely signed.\n\tPsbtFinalized PsbtState = 4\n\n\t// PsbtFundingTxCompiled denotes that the PSBT processed by this intent\n\t// has been successfully converted into a protocol transaction. It is\n\t// not yet completely certain that the resulting transaction will be\n\t// published because the commitment transactions between the channel\n\t// peers first need to be counter signed. But the job of the intent is\n\t// hereby completed.\n\tPsbtFundingTxCompiled PsbtState = 5\n\n\t// PsbtInitiatorCanceled denotes that the user has canceled the intent.\n\tPsbtInitiatorCanceled PsbtState = 6\n\n\t// PsbtResponderCanceled denotes that the remote peer has canceled the\n\t// funding, likely due to a timeout.\n\tPsbtResponderCanceled PsbtState = 7\n)\n\n// String returns a string representation of the PsbtState.",
+      "length": 1642,
+      "tokens": 264,
+      "embedding": []
+    },
+    {
+      "slug": "func (s PsbtState) String() string {",
+      "content": "func (s PsbtState) String() string {\n\tswitch s {\n\tcase PsbtShimRegistered:\n\t\treturn \"shim_registered\"\n\n\tcase PsbtOutputKnown:\n\t\treturn \"output_known\"\n\n\tcase PsbtVerified:\n\t\treturn \"verified\"\n\n\tcase PsbtFinalized:\n\t\treturn \"finalized\"\n\n\tcase PsbtFundingTxCompiled:\n\t\treturn \"funding_tx_compiled\"\n\n\tcase PsbtInitiatorCanceled:\n\t\treturn \"user_canceled\"\n\n\tcase PsbtResponderCanceled:\n\t\treturn \"remote_canceled\"\n\n\tdefault:\n\t\treturn fmt.Sprintf(\"<unknown(%d)>\", s)\n\t}\n}\n\nvar (\n\t// ErrRemoteCanceled is the error that is returned to the user if the\n\t// funding flow was canceled by the remote peer.\n\tErrRemoteCanceled = errors.New(\"remote canceled funding, possibly \" +\n\t\t\"timed out\")\n\n\t// ErrUserCanceled is the error that is returned through the PsbtReady\n\t// channel if the user canceled the funding flow.\n\tErrUserCanceled = errors.New(\"user canceled funding\")\n)\n\n// PsbtIntent is an intent created by the PsbtAssembler which represents a\n// funding output to be created by a PSBT. This might be used when a hardware\n// wallet, or a channel factory is the entity crafting the funding transaction,\n// and not lnd.",
+      "length": 1030,
+      "tokens": 142,
+      "embedding": []
+    },
+    {
+      "slug": "type PsbtIntent struct {",
+      "content": "type PsbtIntent struct {\n\t// ShimIntent is the wrapped basic intent that contains common fields\n\t// we also use in the PSBT funding case.\n\tShimIntent\n\n\t// State is the current state the intent state machine is in.\n\tState PsbtState\n\n\t// BasePsbt is the user-supplied base PSBT the channel output should be\n\t// added to. If this is nil we will create a new, empty PSBT as the base\n\t// for the funding transaction.\n\tBasePsbt *psbt.Packet\n\n\t// PendingPsbt is the parsed version of the current PSBT. This can be\n\t// in two stages: If the user has not yet provided any PSBT, this is\n\t// nil. Once the user sends us an unsigned funded PSBT, we verify that\n\t// we have a valid transaction that sends to the channel output PK\n\t// script and has an input large enough to pay for it. We keep this\n\t// verified but not yet signed version around until the fully signed\n\t// transaction is submitted by the user. At that point we make sure the\n\t// inputs and outputs haven't changed to what was previously verified.\n\t// Only witness data should be added after the verification process.\n\tPendingPsbt *psbt.Packet\n\n\t// FinalTX is the final, signed and ready to be published wire format\n\t// transaction. This is only set after the PsbtFinalize step was\n\t// completed successfully.\n\tFinalTX *wire.MsgTx\n\n\t// PsbtReady is an error channel the funding manager will listen for\n\t// a signal about the PSBT being ready to continue the funding flow. In\n\t// the normal, happy flow, this channel is only ever closed. If a\n\t// non-nil error is sent through the channel, the funding flow will be\n\t// canceled.\n\t//\n\t// NOTE: This channel must always be buffered.\n\tPsbtReady chan error\n\n\t// shouldPublish specifies if the intent assumes its assembler should\n\t// publish the transaction once the channel funding has completed. If\n\t// this is set to false then the finalize step can be skipped.\n\tshouldPublish bool\n\n\t// signalPsbtReady is a Once guard to make sure the PsbtReady channel is\n\t// only closed exactly once.\n\tsignalPsbtReady sync.Once\n\n\t// netParams are the network parameters used to encode the P2WSH funding\n\t// address.\n\tnetParams *chaincfg.Params\n}\n\n// BindKeys sets both the remote and local node's keys that will be used for the\n// channel funding multisig output.",
+      "length": 2172,
+      "tokens": 380,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) BindKeys(localKey *keychain.KeyDescriptor,",
+      "content": "func (i *PsbtIntent) BindKeys(localKey *keychain.KeyDescriptor,\n\tremoteKey *btcec.PublicKey) {\n\n\ti.localKey = localKey\n\ti.remoteKey = remoteKey\n\ti.State = PsbtOutputKnown\n}\n\n// FundingParams returns the parameters that are necessary to start funding the\n// channel output this intent was created for. It returns the P2WSH funding\n// address, the exact funding amount and a PSBT packet that contains exactly one\n// output that encodes the previous two parameters.",
+      "length": 388,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) FundingParams() (btcutil.Address, int64, *psbt.Packet,",
+      "content": "func (i *PsbtIntent) FundingParams() (btcutil.Address, int64, *psbt.Packet,\n\terror) {\n\n\tif i.State != PsbtOutputKnown {\n\t\treturn nil, 0, nil, fmt.Errorf(\"invalid state, got %v \"+\n\t\t\t\"expected %v\", i.State, PsbtOutputKnown)\n\t}\n\n\t// The funding output needs to be known already at this point, which\n\t// means we need to have the local and remote multisig keys bound\n\t// already.\n\twitnessScript, out, err := i.FundingOutput()\n\tif err != nil {\n\t\treturn nil, 0, nil, fmt.Errorf(\"unable to create funding \"+\n\t\t\t\"output: %v\", err)\n\t}\n\twitnessScriptHash := sha256.Sum256(witnessScript)\n\n\t// Encode the address in the human readable bech32 format.\n\taddr, err := btcutil.NewAddressWitnessScriptHash(\n\t\twitnessScriptHash[:], i.netParams,\n\t)\n\tif err != nil {\n\t\treturn nil, 0, nil, fmt.Errorf(\"unable to encode address: %v\",\n\t\t\terr)\n\t}\n\n\t// We'll also encode the address/amount in a machine readable raw PSBT\n\t// format. If the user supplied a base PSBT, we'll add the output to\n\t// that one, otherwise we'll create a new one.\n\tpacket := i.BasePsbt\n\tif packet == nil {\n\t\tpacket, err = psbt.New(nil, nil, 2, 0, nil)\n\t\tif err != nil {\n\t\t\treturn nil, 0, nil, fmt.Errorf(\"unable to create \"+\n\t\t\t\t\"PSBT: %v\", err)\n\t\t}\n\t}\n\tpacket.UnsignedTx.TxOut = append(packet.UnsignedTx.TxOut, out)\n\tpacket.Outputs = append(packet.Outputs, psbt.POutput{})\n\treturn addr, out.Value, packet, nil\n}\n\n// Verify makes sure the PSBT that is given to the intent has an output that\n// sends to the channel funding multisig address with the correct amount. A\n// simple check that at least a single input has been specified is performed.",
+      "length": 1474,
+      "tokens": 234,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) Verify(packet *psbt.Packet, skipFinalize bool) error {",
+      "content": "func (i *PsbtIntent) Verify(packet *psbt.Packet, skipFinalize bool) error {\n\tif packet == nil {\n\t\treturn fmt.Errorf(\"PSBT is nil\")\n\t}\n\tif i.State != PsbtOutputKnown {\n\t\treturn fmt.Errorf(\"invalid state. got %v expected %v\", i.State,\n\t\t\tPsbtOutputKnown)\n\t}\n\n\t// Try to locate the channel funding multisig output.\n\t_, expectedOutput, err := i.FundingOutput()\n\tif err != nil {\n\t\treturn fmt.Errorf(\"funding output cannot be created: %v\", err)\n\t}\n\toutputFound := false\n\toutputSum := int64(0)\n\tfor _, out := range packet.UnsignedTx.TxOut {\n\t\toutputSum += out.Value\n\t\tif psbt.TxOutsEqual(out, expectedOutput) {\n\t\t\toutputFound = true\n\t\t}\n\t}\n\tif !outputFound {\n\t\treturn fmt.Errorf(\"funding output not found in PSBT\")\n\t}\n\n\t// At least one input needs to be specified and it must be large enough\n\t// to pay for all outputs. We don't want to dive into fee estimation\n\t// here so we just assume that if the input amount exceeds the output\n\t// amount, the chosen fee is sufficient.\n\tif len(packet.UnsignedTx.TxIn) == 0 {\n\t\treturn fmt.Errorf(\"PSBT has no inputs\")\n\t}\n\tsum, err := psbt.SumUtxoInputValues(packet)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"error determining input sum: %v\", err)\n\t}\n\tif sum <= outputSum {\n\t\treturn fmt.Errorf(\"input amount sum must be larger than \" +\n\t\t\t\"output amount sum\")\n\t}\n\n\t// To avoid possible malleability, all inputs to a funding transaction\n\t// must be SegWit spends.\n\terr = verifyAllInputsSegWit(packet.UnsignedTx.TxIn, packet.Inputs)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"cannot use TX for channel funding, \"+\n\t\t\t\"not all inputs are SegWit spends, risk of \"+\n\t\t\t\"malleability: %v\", err)\n\t}\n\n\t// In case we aren't going to publish any transaction, we now have\n\t// everything we need and can skip the Finalize step.\n\ti.PendingPsbt = packet\n\tif !i.shouldPublish && skipFinalize {\n\t\ti.FinalTX = packet.UnsignedTx\n\t\ti.State = PsbtFinalized\n\n\t\t// Signal the funding manager that it can now continue with its\n\t\t// funding flow as the PSBT is now complete .\n\t\ti.signalPsbtReady.Do(func() {\n\t\t\tclose(i.PsbtReady)\n\t\t})\n\n\t\treturn nil\n\t}\n\n\ti.State = PsbtVerified\n\treturn nil\n}\n\n// Finalize makes sure the final PSBT that is given to the intent is fully valid\n// and signed but still contains the same UTXOs and outputs as the pending\n// transaction we previously verified. If everything checks out, the funding\n// manager is informed that the channel can now be opened and the funding\n// transaction be broadcast.",
+      "length": 2274,
+      "tokens": 363,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) Finalize(packet *psbt.Packet) error {",
+      "content": "func (i *PsbtIntent) Finalize(packet *psbt.Packet) error {\n\tif packet == nil {\n\t\treturn fmt.Errorf(\"PSBT is nil\")\n\t}\n\tif i.State != PsbtVerified {\n\t\treturn fmt.Errorf(\"invalid state. got %v expected %v\", i.State,\n\t\t\tPsbtVerified)\n\t}\n\n\t// Make sure the PSBT itself thinks it's finalized and ready to be\n\t// broadcast.\n\terr := psbt.MaybeFinalizeAll(packet)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"error finalizing PSBT: %v\", err)\n\t}\n\trawTx, err := psbt.Extract(packet)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to extract funding TX: %v\", err)\n\t}\n\n\treturn i.FinalizeRawTX(rawTx)\n}\n\n// FinalizeRawTX makes sure the final raw transaction that is given to the\n// intent is fully valid and signed but still contains the same UTXOs and\n// outputs as the pending transaction we previously verified. If everything\n// checks out, the funding manager is informed that the channel can now be\n// opened and the funding transaction be broadcast.",
+      "length": 847,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) FinalizeRawTX(rawTx *wire.MsgTx) error {",
+      "content": "func (i *PsbtIntent) FinalizeRawTX(rawTx *wire.MsgTx) error {\n\tif rawTx == nil {\n\t\treturn fmt.Errorf(\"raw transaction is nil\")\n\t}\n\tif i.State != PsbtVerified {\n\t\treturn fmt.Errorf(\"invalid state. got %v expected %v\", i.State,\n\t\t\tPsbtVerified)\n\t}\n\n\t// Do a basic check that this is still the same TX that we verified in\n\t// the previous step. This is to protect the user from unwanted\n\t// modifications. We only check the outputs and previous outpoints of\n\t// the inputs of the wire transaction because the fields in the PSBT\n\t// part are allowed to change.\n\tif i.PendingPsbt == nil {\n\t\treturn fmt.Errorf(\"PSBT was not verified first\")\n\t}\n\terr := psbt.VerifyOutputsEqual(\n\t\trawTx.TxOut, i.PendingPsbt.UnsignedTx.TxOut,\n\t)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"outputs differ from verified PSBT: %v\", err)\n\t}\n\terr = psbt.VerifyInputPrevOutpointsEqual(\n\t\trawTx.TxIn, i.PendingPsbt.UnsignedTx.TxIn,\n\t)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"inputs differ from verified PSBT: %v\", err)\n\t}\n\n\t// We also check that we have a signed TX. This is only necessary if the\n\t// FinalizeRawTX is called directly with a wire format TX instead of\n\t// extracting the TX from a PSBT.\n\terr = verifyInputsSigned(rawTx.TxIn)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"inputs not signed: %v\", err)\n\t}\n\n\t// As far as we can tell, this TX is ok to be used as a funding\n\t// transaction.\n\ti.State = PsbtFinalized\n\ti.FinalTX = rawTx\n\n\t// Signal the funding manager that it can now finally continue with its\n\t// funding flow as the PSBT is now ready to be converted into a real\n\t// transaction and be published.\n\ti.signalPsbtReady.Do(func() {\n\t\tclose(i.PsbtReady)\n\t})\n\treturn nil\n}\n\n// CompileFundingTx finalizes the previously verified PSBT and returns the\n// extracted binary serialized transaction from it. It also prepares the channel\n// point for which this funding intent was initiated for.",
+      "length": 1745,
+      "tokens": 283,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) CompileFundingTx() (*wire.MsgTx, error) {",
+      "content": "func (i *PsbtIntent) CompileFundingTx() (*wire.MsgTx, error) {\n\tif i.State != PsbtFinalized {\n\t\treturn nil, fmt.Errorf(\"invalid state. got %v expected %v\",\n\t\t\ti.State, PsbtFinalized)\n\t}\n\n\t// Identify our funding outpoint now that we know everything's ready.\n\t_, txOut, err := i.FundingOutput()\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"cannot get funding output: %v\", err)\n\t}\n\tok, idx := input.FindScriptOutputIndex(i.FinalTX, txOut.PkScript)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"funding output not found in PSBT\")\n\t}\n\ti.chanPoint = &wire.OutPoint{\n\t\tHash:  i.FinalTX.TxHash(),\n\t\tIndex: idx,\n\t}\n\ti.State = PsbtFundingTxCompiled\n\n\treturn i.FinalTX, nil\n}\n\n// RemoteCanceled informs the listener of the PSBT ready channel that the\n// funding has been canceled by the remote peer and that we can no longer\n// continue with it.",
+      "length": 735,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) RemoteCanceled() {",
+      "content": "func (i *PsbtIntent) RemoteCanceled() {\n\tlog.Debugf(\"PSBT funding intent canceled by remote, state=%v\", i.State)\n\ti.signalPsbtReady.Do(func() {\n\t\ti.PsbtReady <- ErrRemoteCanceled\n\t\ti.State = PsbtResponderCanceled\n\t})\n\ti.ShimIntent.Cancel()\n}\n\n// Cancel allows the caller to cancel a funding Intent at any time. This will\n// return make sure the channel funding flow with the remote peer is failed and\n// any reservations are canceled.\n//\n// NOTE: Part of the chanfunding.Intent interface.",
+      "length": 436,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) Cancel() {",
+      "content": "func (i *PsbtIntent) Cancel() {\n\tlog.Debugf(\"PSBT funding intent canceled, state=%v\", i.State)\n\ti.signalPsbtReady.Do(func() {\n\t\ti.PsbtReady <- ErrUserCanceled\n\t\ti.State = PsbtInitiatorCanceled\n\t})\n\ti.ShimIntent.Cancel()\n}\n\n// Inputs returns all inputs to the final funding transaction that we know\n// about. These are only known after the PSBT has been verified.",
+      "length": 321,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) Inputs() []wire.OutPoint {",
+      "content": "func (i *PsbtIntent) Inputs() []wire.OutPoint {\n\tvar inputs []wire.OutPoint\n\n\tswitch i.State {\n\t// We return the inputs to the pending psbt.\n\tcase PsbtVerified:\n\t\tfor _, in := range i.PendingPsbt.UnsignedTx.TxIn {\n\t\t\tinputs = append(inputs, in.PreviousOutPoint)\n\t\t}\n\n\t// We return the inputs to the final funding tx.\n\tcase PsbtFinalized, PsbtFundingTxCompiled:\n\t\tfor _, in := range i.FinalTX.TxIn {\n\t\t\tinputs = append(inputs, in.PreviousOutPoint)\n\t\t}\n\n\t// In all other states we cannot know the inputs to the funding tx, and\n\t// return an empty list.\n\tdefault:\n\t}\n\n\treturn inputs\n}\n\n// Outputs returns all outputs of the final funding transaction that we\n// know about. These are only known after the PSBT has been verified.",
+      "length": 652,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) Outputs() []*wire.TxOut {",
+      "content": "func (i *PsbtIntent) Outputs() []*wire.TxOut {\n\tswitch i.State {\n\t// We return the outputs of the pending psbt.\n\tcase PsbtVerified:\n\t\treturn i.PendingPsbt.UnsignedTx.TxOut\n\n\t// We return the outputs of the final funding tx.\n\tcase PsbtFinalized, PsbtFundingTxCompiled:\n\t\treturn i.FinalTX.TxOut\n\n\t// In all other states we cannot know the final outputs, and return an\n\t// empty list.\n\tdefault:\n\t\treturn nil\n\t}\n}\n\n// ShouldPublishFundingTX returns true if the intent assumes that its assembler\n// should publish the funding TX once the funding negotiation is complete.",
+      "length": 501,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *PsbtIntent) ShouldPublishFundingTX() bool {",
+      "content": "func (i *PsbtIntent) ShouldPublishFundingTX() bool {\n\treturn i.shouldPublish\n}\n\n// PsbtAssembler is a type of chanfunding.Assembler wherein the funding\n// transaction is constructed outside of lnd by using partially signed bitcoin\n// transactions (PSBT).",
+      "length": 196,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type PsbtAssembler struct {",
+      "content": "type PsbtAssembler struct {\n\t// fundingAmt is the total amount of coins in the funding output.\n\tfundingAmt btcutil.Amount\n\n\t// basePsbt is the user-supplied base PSBT the channel output should be\n\t// added to.\n\tbasePsbt *psbt.Packet\n\n\t// netParams are the network parameters used to encode the P2WSH funding\n\t// address.\n\tnetParams *chaincfg.Params\n\n\t// shouldPublish specifies if the assembler should publish the\n\t// transaction once the channel funding has completed.\n\tshouldPublish bool\n}\n\n// NewPsbtAssembler creates a new CannedAssembler from the material required\n// to construct a funding output and channel point. An optional base PSBT can\n// be supplied which will be used to add the channel output to instead of\n// creating a new one.",
+      "length": 697,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPsbtAssembler(fundingAmt btcutil.Amount, basePsbt *psbt.Packet,",
+      "content": "func NewPsbtAssembler(fundingAmt btcutil.Amount, basePsbt *psbt.Packet,\n\tnetParams *chaincfg.Params, shouldPublish bool) *PsbtAssembler {\n\n\treturn &PsbtAssembler{\n\t\tfundingAmt:    fundingAmt,\n\t\tbasePsbt:      basePsbt,\n\t\tnetParams:     netParams,\n\t\tshouldPublish: shouldPublish,\n\t}\n}\n\n// ProvisionChannel creates a new ShimIntent given the passed funding Request.\n// The returned intent is immediately able to provide the channel point and\n// funding output as they've already been created outside lnd.\n//\n// NOTE: This method satisfies the chanfunding.Assembler interface.",
+      "length": 487,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PsbtAssembler) ProvisionChannel(req *Request) (Intent, error) {",
+      "content": "func (p *PsbtAssembler) ProvisionChannel(req *Request) (Intent, error) {\n\t// We'll exit out if this field is set as the funding transaction will\n\t// be assembled externally, so we don't influence coin selection.\n\tif req.SubtractFees {\n\t\treturn nil, fmt.Errorf(\"SubtractFees not supported for PSBT\")\n\t}\n\n\tintent := &PsbtIntent{\n\t\tShimIntent: ShimIntent{\n\t\t\tlocalFundingAmt: p.fundingAmt,\n\t\t},\n\t\tState:         PsbtShimRegistered,\n\t\tBasePsbt:      p.basePsbt,\n\t\tPsbtReady:     make(chan error, 1),\n\t\tshouldPublish: p.shouldPublish,\n\t\tnetParams:     p.netParams,\n\t}\n\n\t// A simple sanity check to ensure the provisioned request matches the\n\t// re-made shim intent.\n\tif req.LocalAmt+req.RemoteAmt != p.fundingAmt {\n\t\treturn nil, fmt.Errorf(\"intent doesn't match PSBT \"+\n\t\t\t\"assembler: local_amt=%v, remote_amt=%v, funding_amt=%v\",\n\t\t\treq.LocalAmt, req.RemoteAmt, p.fundingAmt)\n\t}\n\n\treturn intent, nil\n}\n\n// ShouldPublishFundingTx is a method of the assembler that signals if the\n// funding transaction should be published after the channel negotiations are\n// completed with the remote peer.\n//\n// NOTE: This method is a part of the ConditionalPublishAssembler interface.",
+      "length": 1061,
+      "tokens": 137,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PsbtAssembler) ShouldPublishFundingTx() bool {",
+      "content": "func (p *PsbtAssembler) ShouldPublishFundingTx() bool {\n\treturn p.shouldPublish\n}\n\n// A compile-time assertion to ensure PsbtAssembler meets the\n// ConditionalPublishAssembler interface.\nvar _ ConditionalPublishAssembler = (*PsbtAssembler)(nil)\n\n// verifyInputsSigned verifies that the given list of inputs is non-empty and\n// that all the inputs either contain a script signature or a witness stack.",
+      "length": 336,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func verifyInputsSigned(ins []*wire.TxIn) error {",
+      "content": "func verifyInputsSigned(ins []*wire.TxIn) error {\n\tif len(ins) == 0 {\n\t\treturn fmt.Errorf(\"no inputs in transaction\")\n\t}\n\tfor idx, in := range ins {\n\t\tif len(in.SignatureScript) == 0 && len(in.Witness) == 0 {\n\t\t\treturn fmt.Errorf(\"input %d has no signature data \"+\n\t\t\t\t\"attached\", idx)\n\t\t}\n\t}\n\treturn nil\n}\n\n// verifyAllInputsSegWit makes sure all inputs to a transaction are SegWit\n// spends. This is a bit tricky because the PSBT spec doesn't require the\n// WitnessUtxo field to be set. Therefore if only a NonWitnessUtxo is given, we\n// need to look at it and make sure it's either a witness pkScript or a nested\n// SegWit spend.",
+      "length": 566,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func verifyAllInputsSegWit(txIns []*wire.TxIn, ins []psbt.PInput) error {",
+      "content": "func verifyAllInputsSegWit(txIns []*wire.TxIn, ins []psbt.PInput) error {\n\tfor idx, in := range ins {\n\t\tswitch {\n\t\t// The optimal case is that the witness UTXO is set explicitly.\n\t\tcase in.WitnessUtxo != nil:\n\n\t\t// Only the non witness UTXO field is set, we need to inspect it\n\t\t// to make sure it's not P2PKH or bare P2SH.\n\t\tcase in.NonWitnessUtxo != nil:\n\t\t\tutxo := in.NonWitnessUtxo\n\t\t\ttxIn := txIns[idx]\n\t\t\ttxOut := utxo.TxOut[txIn.PreviousOutPoint.Index]\n\n\t\t\tif !isSegWitScript(txOut.PkScript) &&\n\t\t\t\t!isSegWitScript(in.RedeemScript) {\n\n\t\t\t\treturn fmt.Errorf(\"input %d is non-SegWit \"+\n\t\t\t\t\t\"spend or missing redeem script\", idx)\n\t\t\t}\n\n\t\t// This should've already been caught by a previous check but we\n\t\t// keep it in for completeness' sake.\n\t\tdefault:\n\t\t\treturn fmt.Errorf(\"input %d has no UTXO information\",\n\t\t\t\tidx)\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// isSegWitScript returns true if the given pkScript can be parsed successfully\n// as a SegWit v0 spend.",
+      "length": 847,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func isSegWitScript(pkScript []byte) bool {",
+      "content": "func isSegWitScript(pkScript []byte) bool {\n\tif len(pkScript) == 0 {\n\t\treturn false\n\t}\n\n\tparsed, err := txscript.ParsePkScript(pkScript)\n\tif err != nil {\n\t\treturn false\n\t}\n\n\treturn parsed.Class() == txscript.WitnessV0PubKeyHashTy ||\n\t\tparsed.Class() == txscript.WitnessV0ScriptHashTy\n}\n",
+      "length": 230,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

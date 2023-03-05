@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lncfg/protocol_integration.go",
-  "package": "integration",
+  "package": "lncfg",
   "sections": [
+    {
+      "slug": "//go:build integration",
+      "content": "//go:build integration\n\npackage lncfg\n\n// ProtocolOptions is a struct that we use to be able to test backwards\n// compatibility of protocol additions, while defaulting to the latest within\n// lnd, or to enable experimental protocol changes.\n//\n// TODO(yy): delete this build flag to unify with `lncfg/protocol.go`.\n//\n//nolint:lll",
+      "length": 298,
+      "tokens": 48,
+      "embedding": []
+    },
     {
       "slug": "type ProtocolOptions struct {",
       "content": "type ProtocolOptions struct {\n\t// LegacyProtocol is a sub-config that houses all the legacy protocol\n\t// options.  These are mostly used for integration tests as most modern\n\t// nodes should always run with them on by default.\n\tLegacyProtocol `group:\"legacy\" namespace:\"legacy\"`\n\n\t// ExperimentalProtocol is a sub-config that houses any experimental\n\t// protocol features that also require a build-tag to activate.\n\tExperimentalProtocol\n\n\t// WumboChans should be set if we want to enable support for wumbo\n\t// (channels larger than 0.16 BTC) channels, which is the opposite of\n\t// mini.\n\tWumboChans bool `long:\"wumbo-channels\" description:\"if set, then lnd will create and accept requests for channels larger chan 0.16 BTC\"`\n\n\t// Anchors enables anchor commitments.\n\t// TODO(halseth): transition itests to anchors instead!\n\tAnchors bool `long:\"anchors\" description:\"enable support for anchor commitments\"`\n\n\t// ScriptEnforcedLease enables script enforced commitments for channel\n\t// leases.\n\t//\n\t// TODO: Move to experimental?\n\tScriptEnforcedLease bool `long:\"script-enforced-lease\" description:\"enable support for script enforced lease commitments\"`\n\n\t// OptionScidAlias should be set if we want to signal the\n\t// option-scid-alias feature bit. This allows scid aliases and the\n\t// option-scid-alias channel-type.\n\tOptionScidAlias bool `long:\"option-scid-alias\" description:\"enable support for option_scid_alias channels\"`\n\n\t// OptionZeroConf should be set if we want to signal the zero-conf\n\t// feature bit.\n\tOptionZeroConf bool `long:\"zero-conf\" description:\"enable support for zero-conf channels, must have option-scid-alias set also\"`\n\n\t// NoOptionAnySegwit should be set to true if we don't want to use any\n\t// Taproot (and beyond) addresses for co-op closing.\n\tNoOptionAnySegwit bool `long:\"no-any-segwit\" description:\"disallow using any segiwt witness version as a co-op close address\"`\n}\n\n// Wumbo returns true if lnd should permit the creation and acceptance of wumbo\n// channels.",

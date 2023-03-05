@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlite/db_test.go",
-  "package": "kvdb_sqlite",
+  "package": "sqlite",
   "sections": [
+    {
+      "slug": "//go:build kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64))",
+      "content": "//go:build kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64))\n\npackage sqlite\n\nimport (\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb/walletdbtest\"\n\t\"github.com/lightningnetwork/lnd/kvdb/sqlbase\"\n\t\"github.com/stretchr/testify/require\"\n\t\"golang.org/x/net/context\"\n)\n\n// TestInterface performs all interfaces tests for this database driver.",
+      "length": 278,
+      "tokens": 21,
+      "embedding": []
+    },
     {
       "slug": "func TestInterface(t *testing.T) {",
       "content": "func TestInterface(t *testing.T) {\n\t// dbType is the database type name for this driver.\n\tdir := t.TempDir()\n\tctx := context.Background()\n\n\tsqlbase.Init(0)\n\n\tcfg := &Config{\n\t\tBusyTimeout: time.Second * 5,\n\t}\n\n\tsqlDB, err := NewSqliteBackend(ctx, cfg, dir, \"tmp.db\", \"table\")\n\trequire.NoError(t, err)\n\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, sqlDB.Close())\n\t})\n\n\twalletdbtest.TestInterface(t, dbType, ctx, cfg, dir, \"tmp.db\", \"temp\")\n}\n",

@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/btcwallet/psbt_test.go",
+  "package": "btcwallet",
+  "sections": [
+    {
+      "slug": "type testInputType uint8",
+      "content": "type testInputType uint8\n\nconst (\n\tplainP2WKH                  testInputType = 0\n\ttweakedP2WKH                testInputType = 1\n\tnestedP2WKH                 testInputType = 2\n\tsingleKeyP2WSH              testInputType = 3\n\tsingleKeyDoubleTweakedP2WSH testInputType = 4\n)\n",
+      "length": 238,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (i testInputType) keyPath() []uint32 {",
+      "content": "func (i testInputType) keyPath() []uint32 {\n\tswitch i {\n\tcase nestedP2WKH:\n\t\treturn []uint32{\n\t\t\thardenedKey(waddrmgr.KeyScopeBIP0049Plus.Purpose),\n\t\t\thardenedKey(0),\n\t\t\thardenedKey(0),\n\t\t\t0, 0,\n\t\t}\n\n\tcase singleKeyP2WSH:\n\t\treturn []uint32{\n\t\t\thardenedKey(keychain.BIP0043Purpose),\n\t\t\thardenedKey(netParams.HDCoinType),\n\t\t\thardenedKey(uint32(keychain.KeyFamilyPaymentBase)),\n\t\t\t0, 7,\n\t\t}\n\n\tcase singleKeyDoubleTweakedP2WSH:\n\t\treturn []uint32{\n\t\t\thardenedKey(keychain.BIP0043Purpose),\n\t\t\thardenedKey(netParams.HDCoinType),\n\t\t\thardenedKey(uint32(keychain.KeyFamilyDelayBase)),\n\t\t\t0, 9,\n\t\t}\n\n\tdefault:\n\t\treturn []uint32{\n\t\t\thardenedKey(waddrmgr.KeyScopeBIP0084.Purpose),\n\t\t\thardenedKey(0),\n\t\t\thardenedKey(0),\n\t\t\t0, 0,\n\t\t}\n\t}\n}\n",
+      "length": 646,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (i testInputType) output(t *testing.T,",
+      "content": "func (i testInputType) output(t *testing.T,\n\tprivKey *btcec.PrivateKey) (*wire.TxOut, []byte) {\n\n\tvar (\n\t\taddr          btcutil.Address\n\t\twitnessScript []byte\n\t\terr           error\n\t)\n\tswitch i {\n\tcase plainP2WKH:\n\t\th := btcutil.Hash160(privKey.PubKey().SerializeCompressed())\n\t\taddr, err = btcutil.NewAddressWitnessPubKeyHash(h, netParams)\n\t\trequire.NoError(t, err)\n\n\tcase tweakedP2WKH:\n\t\tprivKey = input.TweakPrivKey(privKey, testTweakSingle)\n\n\t\th := btcutil.Hash160(privKey.PubKey().SerializeCompressed())\n\t\taddr, err = btcutil.NewAddressWitnessPubKeyHash(h, netParams)\n\t\trequire.NoError(t, err)\n\n\tcase nestedP2WKH:\n\t\th := btcutil.Hash160(privKey.PubKey().SerializeCompressed())\n\t\twitnessAddr, err := btcutil.NewAddressWitnessPubKeyHash(\n\t\t\th, netParams,\n\t\t)\n\t\trequire.NoError(t, err)\n\n\t\twitnessProgram, err := txscript.PayToAddrScript(witnessAddr)\n\t\trequire.NoError(t, err)\n\n\t\taddr, err = btcutil.NewAddressScriptHash(\n\t\t\twitnessProgram, netParams,\n\t\t)\n\t\trequire.NoError(t, err)\n\n\tcase singleKeyP2WSH:\n\t\t// We're simulating a delay-to-self script which we're going to\n\t\t// spend through the time lock path. We don't actually need to\n\t\t// know the private key of the remote revocation base key.\n\t\trevokeKey := input.DeriveRevocationPubkey(\n\t\t\tremoteRevocationBasePubKey, testCommitPoint,\n\t\t)\n\t\twitnessScript, err = input.CommitScriptToSelf(\n\t\t\ttestCSVTimeout, privKey.PubKey(), revokeKey,\n\t\t)\n\t\trequire.NoError(t, err)\n\n\t\th := sha256.Sum256(witnessScript)\n\t\taddr, err = btcutil.NewAddressWitnessScriptHash(h[:], netParams)\n\t\trequire.NoError(t, err)\n\n\tcase singleKeyDoubleTweakedP2WSH:\n\t\t// We're simulating breaching a remote party's delay-to-self\n\t\t// output which we're going to spend through the revocation\n\t\t// path. In that case the self key is the other party's self key\n\t\t// and, we only know the revocation base private key and commit\n\t\t// secret.\n\t\trevokeKey := input.DeriveRevocationPubkey(\n\t\t\tprivKey.PubKey(), testCommitPoint,\n\t\t)\n\t\twitnessScript, err = input.CommitScriptToSelf(\n\t\t\ttestCSVTimeout, remoteRevocationBasePubKey, revokeKey,\n\t\t)\n\t\trequire.NoError(t, err)\n\n\t\th := sha256.Sum256(witnessScript)\n\t\taddr, err = btcutil.NewAddressWitnessScriptHash(h[:], netParams)\n\t\trequire.NoError(t, err)\n\n\tdefault:\n\t\tt.Fatalf(\"invalid input type\")\n\t}\n\n\tpkScript, err := txscript.PayToAddrScript(addr)\n\trequire.NoError(t, err)\n\treturn &wire.TxOut{\n\t\tValue:    testValue,\n\t\tPkScript: pkScript,\n\t}, witnessScript\n}\n",
+      "length": 2297,
+      "tokens": 229,
+      "embedding": []
+    },
+    {
+      "slug": "func (i testInputType) decorateInput(t *testing.T, privKey *btcec.PrivateKey,",
+      "content": "func (i testInputType) decorateInput(t *testing.T, privKey *btcec.PrivateKey,\n\tin *psbt.PInput) {\n\n\tswitch i {\n\tcase tweakedP2WKH:\n\t\tin.Unknowns = []*psbt.Unknown{{\n\t\t\tKey:   PsbtKeyTypeInputSignatureTweakSingle,\n\t\t\tValue: testTweakSingle,\n\t\t}}\n\n\tcase nestedP2WKH:\n\t\th := btcutil.Hash160(privKey.PubKey().SerializeCompressed())\n\t\twitnessAddr, err := btcutil.NewAddressWitnessPubKeyHash(\n\t\t\th, netParams,\n\t\t)\n\t\trequire.NoError(t, err)\n\n\t\twitnessProgram, err := txscript.PayToAddrScript(witnessAddr)\n\t\trequire.NoError(t, err)\n\t\tin.RedeemScript = witnessProgram\n\n\tcase singleKeyDoubleTweakedP2WSH:\n\t\tin.Unknowns = []*psbt.Unknown{{\n\t\t\tKey:   PsbtKeyTypeInputSignatureTweakDouble,\n\t\t\tValue: testCommitSecret.Serialize(),\n\t\t}}\n\t}\n}\n",
+      "length": 622,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (i testInputType) finalize(t *testing.T, packet *psbt.Packet) {",
+      "content": "func (i testInputType) finalize(t *testing.T, packet *psbt.Packet) {\n\tin := &packet.Inputs[0]\n\tsigBytes := in.PartialSigs[0].Signature\n\n\tvar witnessStack wire.TxWitness\n\tswitch i {\n\tcase singleKeyP2WSH:\n\t\twitnessStack = make([][]byte, 3)\n\t\twitnessStack[0] = sigBytes\n\t\twitnessStack[1] = nil\n\t\twitnessStack[2] = in.WitnessScript\n\n\tcase singleKeyDoubleTweakedP2WSH:\n\t\t// Place a 1 as the first item in the evaluated witness stack to\n\t\t// force script execution to the revocation clause.\n\t\twitnessStack = make([][]byte, 3)\n\t\twitnessStack[0] = sigBytes\n\t\twitnessStack[1] = []byte{1}\n\t\twitnessStack[2] = in.WitnessScript\n\n\tdefault:\n\t\t// The PSBT finalizer knows what to do if we're not using a\n\t\t// custom script.\n\t\terr := psbt.MaybeFinalizeAll(packet)\n\t\trequire.NoError(t, err)\n\n\t\treturn\n\t}\n\n\tvar err error\n\tin.FinalScriptWitness, err = serializeTxWitness(witnessStack)\n\trequire.NoError(t, err)\n}\n\n// serializeTxWitness return the wire witness stack into raw bytes.",
+      "length": 859,
+      "tokens": 108,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeTxWitness(txWitness wire.TxWitness) ([]byte, error) {",
+      "content": "func serializeTxWitness(txWitness wire.TxWitness) ([]byte, error) {\n\tvar witnessBytes bytes.Buffer\n\terr := psbt.WriteTxWitness(&witnessBytes, txWitness)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error serializing witness: %v\", err)\n\t}\n\n\treturn witnessBytes.Bytes(), nil\n}\n\n// TestSignPsbt tests the PSBT signing functionality.",
+      "length": 250,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSignPsbt(t *testing.T) {",
+      "content": "func TestSignPsbt(t *testing.T) {\n\tw, _ := newTestWallet(t, netParams, seedBytes)\n\n\ttestCases := []struct {\n\t\tname      string\n\t\tinputType testInputType\n\t}{{\n\t\tname:      \"plain P2WKH\",\n\t\tinputType: plainP2WKH,\n\t}, {\n\t\tname:      \"tweaked P2WKH\",\n\t\tinputType: tweakedP2WKH,\n\t}, {\n\t\tname:      \"nested P2WKH\",\n\t\tinputType: nestedP2WKH,\n\t}, {\n\t\tname:      \"single key P2WSH\",\n\t\tinputType: singleKeyP2WSH,\n\t}, {\n\t\tname:      \"single key double tweaked P2WSH\",\n\t\tinputType: singleKeyDoubleTweakedP2WSH,\n\t}}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\t// This is the private key we're going to sign with.\n\t\tprivKey, err := w.deriveKeyByBIP32Path(tc.inputType.keyPath())\n\t\trequire.NoError(t, err)\n\n\t\ttxOut, witnessScript := tc.inputType.output(t, privKey)\n\n\t\t// Create the reference transaction that has the input that is\n\t\t// going to be spent by our PSBT.\n\t\trefTx := wire.NewMsgTx(2)\n\t\trefTx.AddTxIn(&wire.TxIn{})\n\t\trefTx.AddTxOut(txOut)\n\n\t\t// Create the unsigned spend transaction that is going to be the\n\t\t// main content of our PSBT.\n\t\tspendTx := wire.NewMsgTx(2)\n\t\tspendTx.LockTime = testCSVTimeout\n\t\tspendTx.AddTxIn(&wire.TxIn{\n\t\t\tPreviousOutPoint: wire.OutPoint{\n\t\t\t\tHash:  refTx.TxHash(),\n\t\t\t\tIndex: 0,\n\t\t\t},\n\t\t\tSequence: testCSVTimeout,\n\t\t})\n\t\tspendTx.AddTxOut(txOut)\n\n\t\t// Convert it to a PSBT now and add all required signing\n\t\t// metadata to it.\n\t\tpacket, err := psbt.NewFromUnsignedTx(spendTx)\n\t\trequire.NoError(t, err)\n\t\tpacket.Inputs[0].WitnessScript = witnessScript\n\t\tpacket.Inputs[0].SighashType = txscript.SigHashAll\n\t\tpacket.Inputs[0].WitnessUtxo = refTx.TxOut[0]\n\t\tpacket.Inputs[0].Bip32Derivation = []*psbt.Bip32Derivation{{\n\t\t\tPubKey:    privKey.PubKey().SerializeCompressed(),\n\t\t\tBip32Path: tc.inputType.keyPath(),\n\t\t}}\n\t\ttc.inputType.decorateInput(t, privKey, &packet.Inputs[0])\n\n\t\t// Let the wallet do its job. We expect to be the only signer\n\t\t// for this PSBT, so we'll be able to finalize it later.\n\t\tsignedInputs, err := w.SignPsbt(packet)\n\t\trequire.NoError(t, err)\n\n\t\t// We expect one signed input at index 0.\n\t\trequire.Len(t, signedInputs, 1)\n\t\trequire.EqualValues(t, 0, signedInputs[0])\n\n\t\t// If the witness stack needs to be assembled, give the caller\n\t\t// the option to do that now.\n\t\ttc.inputType.finalize(t, packet)\n\n\t\tfinalTx, err := psbt.Extract(packet)\n\t\trequire.NoError(t, err)\n\n\t\tvm, err := txscript.NewEngine(\n\t\t\trefTx.TxOut[0].PkScript, finalTx, 0,\n\t\t\ttxscript.StandardVerifyFlags, nil, nil,\n\t\t\trefTx.TxOut[0].Value,\n\t\t\ttxscript.NewCannedPrevOutputFetcher(\n\t\t\t\trefTx.TxOut[0].PkScript, refTx.TxOut[0].Value,\n\t\t\t),\n\t\t)\n\t\trequire.NoError(t, err)\n\t\trequire.NoError(t, vm.Execute())\n\t}\n}\n",
+      "length": 2500,
+      "tokens": 283,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_cursor.go",
-  "package": "kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n\nimport (\n\t\"database/sql\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\n// readWriteCursor holds a reference to the cursors bucket, the value\n// prefix and the current key used while iterating.",
+      "length": 200,
+      "tokens": 27,
+      "embedding": []
+    },
     {
       "slug": "type readWriteCursor struct {",
       "content": "type readWriteCursor struct {\n\tbucket *readWriteBucket\n\n\t// currKey holds the current key of the cursor.\n\tcurrKey []byte\n}\n",

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/itest/lnd_etcd_failover_test.go",
-  "package": "kvdb_etcd",
+  "package": "itest",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage itest\n\nimport (\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcd/btcutil\"\n\t\"github.com/lightningnetwork/lnd/cluster\"\n\t\"github.com/lightningnetwork/lnd/kvdb\"\n\t\"github.com/lightningnetwork/lnd/lncfg\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"github.com/lightningnetwork/lnd/lntest\"\n\t\"github.com/lightningnetwork/lnd/lntest/node\"\n\t\"github.com/stretchr/testify/require\"\n)\n",
+      "length": 379,
+      "tokens": 18,
+      "embedding": []
+    },
     {
       "slug": "func assertLeader(ht *lntest.HarnessTest, observer cluster.LeaderElector,",
       "content": "func assertLeader(ht *lntest.HarnessTest, observer cluster.LeaderElector,\n\texpected string) {\n\n\tleader, err := observer.Leader(ht.Context())\n\trequire.NoError(ht, err, \"Unable to query leader\")\n\trequire.Equalf(ht, expected, leader,\n\t\t\"Leader should be '%v', got: '%v'\", expected, leader)\n}\n\n// testEtcdFailover tests that in a cluster setup where two LND nodes form a\n// single cluster (sharing the same identity) one can hand over the leader role\n// to the other (failing over after graceful shutdown or forceful abort).",

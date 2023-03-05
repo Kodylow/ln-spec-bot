@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chanfunding/canned_assembler.go",
+  "package": "chanfunding",
+  "sections": [
+    {
+      "slug": "type ShimIntent struct {",
+      "content": "type ShimIntent struct {\n\t// localFundingAmt is the final amount we put into the funding output.\n\tlocalFundingAmt btcutil.Amount\n\n\t// remoteFundingAmt is the final amount the remote party put into the\n\t// funding output.\n\tremoteFundingAmt btcutil.Amount\n\n\t// localKey is our multi-sig key.\n\tlocalKey *keychain.KeyDescriptor\n\n\t// remoteKey is the remote party's multi-sig key.\n\tremoteKey *btcec.PublicKey\n\n\t// chanPoint is the final channel point for the to be created channel.\n\tchanPoint *wire.OutPoint\n\n\t// thawHeight, if non-zero is the height where this channel will become\n\t// a normal channel. Until this height, it's considered frozen, so it\n\t// can only be cooperatively closed by the responding party.\n\tthawHeight uint32\n}\n\n// FundingOutput returns the witness script, and the output that creates the\n// funding output.\n//\n// NOTE: This method satisfies the chanfunding.Intent interface.",
+      "length": 845,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) FundingOutput() ([]byte, *wire.TxOut, error) {",
+      "content": "func (s *ShimIntent) FundingOutput() ([]byte, *wire.TxOut, error) {\n\tif s.localKey == nil || s.remoteKey == nil {\n\t\treturn nil, nil, fmt.Errorf(\"unable to create witness \" +\n\t\t\t\"script, no funding keys\")\n\t}\n\n\ttotalAmt := s.localFundingAmt + s.remoteFundingAmt\n\treturn input.GenFundingPkScript(\n\t\ts.localKey.PubKey.SerializeCompressed(),\n\t\ts.remoteKey.SerializeCompressed(),\n\t\tint64(totalAmt),\n\t)\n}\n\n// Cancel allows the caller to cancel a funding Intent at any time.  This will\n// return any resources such as coins back to the eligible pool to be used in\n// order channel fundings.\n//\n// NOTE: This method satisfies the chanfunding.Intent interface.",
+      "length": 565,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) Cancel() {",
+      "content": "func (s *ShimIntent) Cancel() {\n}\n\n// LocalFundingAmt is the amount we put into the channel. This may differ from\n// the local amount requested, as depending on coin selection, we may bleed\n// from of that LocalAmt into fees to minimize change.\n//\n// NOTE: This method satisfies the chanfunding.Intent interface.",
+      "length": 274,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) LocalFundingAmt() btcutil.Amount {",
+      "content": "func (s *ShimIntent) LocalFundingAmt() btcutil.Amount {\n\treturn s.localFundingAmt\n}\n\n// RemoteFundingAmt is the amount the remote party put into the channel.\n//\n// NOTE: This method satisfies the chanfunding.Intent interface.",
+      "length": 164,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) RemoteFundingAmt() btcutil.Amount {",
+      "content": "func (s *ShimIntent) RemoteFundingAmt() btcutil.Amount {\n\treturn s.remoteFundingAmt\n}\n\n// ChanPoint returns the final outpoint that will create the funding output\n// described above.\n//\n// NOTE: This method satisfies the chanfunding.Intent interface.",
+      "length": 187,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) ChanPoint() (*wire.OutPoint, error) {",
+      "content": "func (s *ShimIntent) ChanPoint() (*wire.OutPoint, error) {\n\tif s.chanPoint == nil {\n\t\treturn nil, fmt.Errorf(\"chan point unknown, funding output \" +\n\t\t\t\"not constructed\")\n\t}\n\n\treturn s.chanPoint, nil\n}\n\n// ThawHeight returns the height where this channel goes back to being a normal\n// channel.",
+      "length": 226,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) ThawHeight() uint32 {",
+      "content": "func (s *ShimIntent) ThawHeight() uint32 {\n\treturn s.thawHeight\n}\n\n// Inputs returns all inputs to the final funding transaction that we\n// know about. For the ShimIntent this will always be none, since it is funded\n// externally.",
+      "length": 182,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) Inputs() []wire.OutPoint {",
+      "content": "func (s *ShimIntent) Inputs() []wire.OutPoint {\n\treturn nil\n}\n\n// Outputs returns all outputs of the final funding transaction that we\n// know about. Since this is an externally funded channel, the channel output\n// is the only known one.",
+      "length": 185,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) Outputs() []*wire.TxOut {",
+      "content": "func (s *ShimIntent) Outputs() []*wire.TxOut {\n\t_, txOut, err := s.FundingOutput()\n\tif err != nil {\n\t\tlog.Warnf(\"Unable to find funding output for shim intent: %v\",\n\t\t\terr)\n\n\t\t// Failed finding funding output, return empty list of known\n\t\t// outputs.\n\t\treturn nil\n\t}\n\n\treturn []*wire.TxOut{txOut}\n}\n\n// FundingKeys couples our multi-sig key along with the remote party's key.",
+      "length": 315,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type FundingKeys struct {",
+      "content": "type FundingKeys struct {\n\t// LocalKey is our multi-sig key.\n\tLocalKey *keychain.KeyDescriptor\n\n\t// RemoteKey is the multi-sig key of the remote party.\n\tRemoteKey *btcec.PublicKey\n}\n\n// MultiSigKeys returns the committed multi-sig keys, but only if they've been\n// specified/provided.",
+      "length": 250,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ShimIntent) MultiSigKeys() (*FundingKeys, error) {",
+      "content": "func (s *ShimIntent) MultiSigKeys() (*FundingKeys, error) {\n\tif s.localKey == nil || s.remoteKey == nil {\n\t\treturn nil, fmt.Errorf(\"unknown funding keys\")\n\t}\n\n\treturn &FundingKeys{\n\t\tLocalKey:  s.localKey,\n\t\tRemoteKey: s.remoteKey,\n\t}, nil\n}\n\n// A compile-time check to ensure ShimIntent adheres to the Intent interface.\nvar _ Intent = (*ShimIntent)(nil)\n\n// CannedAssembler is a type of chanfunding.Assembler wherein the funding\n// transaction is constructed outside of lnd, and may already exist. This\n// Assembler serves as a shim which gives the funding flow the only thing it\n// actually needs to proceed: the channel point.",
+      "length": 553,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "type CannedAssembler struct {",
+      "content": "type CannedAssembler struct {\n\t// fundingAmt is the total amount of coins in the funding output.\n\tfundingAmt btcutil.Amount\n\n\t// localKey is our multi-sig key.\n\tlocalKey *keychain.KeyDescriptor\n\n\t// remoteKey is the remote party's multi-sig key.\n\tremoteKey *btcec.PublicKey\n\n\t// chanPoint is the final channel point for the to be created channel.\n\tchanPoint wire.OutPoint\n\n\t// initiator indicates if we're the initiator or the channel or not.\n\tinitiator bool\n\n\t// thawHeight, if non-zero is the height where this channel will become\n\t// a normal channel. Until this height, it's considered frozen, so it\n\t// can only be cooperatively closed by the responding party.\n\tthawHeight uint32\n}\n\n// NewCannedAssembler creates a new CannedAssembler from the material required\n// to construct a funding output and channel point.",
+      "length": 766,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCannedAssembler(thawHeight uint32, chanPoint wire.OutPoint,",
+      "content": "func NewCannedAssembler(thawHeight uint32, chanPoint wire.OutPoint,\n\tfundingAmt btcutil.Amount, localKey *keychain.KeyDescriptor,\n\tremoteKey *btcec.PublicKey, initiator bool) *CannedAssembler {\n\n\treturn &CannedAssembler{\n\t\tinitiator:  initiator,\n\t\tlocalKey:   localKey,\n\t\tremoteKey:  remoteKey,\n\t\tfundingAmt: fundingAmt,\n\t\tchanPoint:  chanPoint,\n\t\tthawHeight: thawHeight,\n\t}\n}\n\n// ProvisionChannel creates a new ShimIntent given the passed funding Request.\n// The returned intent is immediately able to provide the channel point and\n// funding output as they've already been created outside lnd.\n//\n// NOTE: This method satisfies the chanfunding.Assembler interface.",
+      "length": 581,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CannedAssembler) ProvisionChannel(req *Request) (Intent, error) {",
+      "content": "func (c *CannedAssembler) ProvisionChannel(req *Request) (Intent, error) {\n\t// We'll exit out if this field is set as the funding transaction has\n\t// already been assembled, so we don't influence coin selection..\n\tif req.SubtractFees {\n\t\treturn nil, fmt.Errorf(\"SubtractFees ignored, funding \" +\n\t\t\t\"transaction is frozen\")\n\t}\n\n\tintent := &ShimIntent{\n\t\tlocalKey:   c.localKey,\n\t\tremoteKey:  c.remoteKey,\n\t\tchanPoint:  &c.chanPoint,\n\t\tthawHeight: c.thawHeight,\n\t}\n\n\tif c.initiator {\n\t\tintent.localFundingAmt = c.fundingAmt\n\t} else {\n\t\tintent.remoteFundingAmt = c.fundingAmt\n\t}\n\n\t// A simple sanity check to ensure the provisioned request matches the\n\t// re-made shim intent.\n\tif req.LocalAmt+req.RemoteAmt != c.fundingAmt {\n\t\treturn nil, fmt.Errorf(\"intent doesn't match canned \"+\n\t\t\t\"assembler: local_amt=%v, remote_amt=%v, funding_amt=%v\",\n\t\t\treq.LocalAmt, req.RemoteAmt, c.fundingAmt)\n\t}\n\n\treturn intent, nil\n}\n\n// A compile-time assertion to ensure CannedAssembler meets the Assembler\n// interface.\nvar _ Assembler = (*CannedAssembler)(nil)\n",
+      "length": 936,
+      "tokens": 120,
+      "embedding": []
+    }
+  ]
+}

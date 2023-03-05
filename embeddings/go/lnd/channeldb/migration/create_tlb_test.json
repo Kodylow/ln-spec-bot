@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/create_tlb_test.go",
+  "package": "migration_test",
+  "sections": [
+    {
+      "slug": "func TestCreateTLB(t *testing.T) {",
+      "content": "func TestCreateTLB(t *testing.T) {\n\tnewBucket := []byte(\"hello\")\n\n\ttests := []struct {\n\t\tname            string\n\t\tbeforeMigration func(kvdb.RwTx) error\n\t\tshouldFail      bool\n\t}{\n\t\t{\n\t\t\tname: \"already exists\",\n\t\t\tbeforeMigration: func(tx kvdb.RwTx) error {\n\t\t\t\t_, err := tx.CreateTopLevelBucket(newBucket)\n\t\t\t\treturn err\n\t\t\t},\n\t\t\tshouldFail: true,\n\t\t},\n\t\t{\n\t\t\tname:            \"does not exist\",\n\t\t\tbeforeMigration: func(_ kvdb.RwTx) error { return nil },\n\t\t\tshouldFail:      false,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt,\n\t\t\t\ttest.beforeMigration,\n\t\t\t\tfunc(tx kvdb.RwTx) error {\n\t\t\t\t\tif tx.ReadBucket(newBucket) != nil {\n\t\t\t\t\t\treturn nil\n\t\t\t\t\t}\n\t\t\t\t\treturn fmt.Errorf(\"bucket \\\"%s\\\" not \"+\n\t\t\t\t\t\t\"created\", newBucket)\n\t\t\t\t},\n\t\t\t\tmigration.CreateTLB(newBucket),\n\t\t\t\ttest.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 809,
+      "tokens": 94,
+      "embedding": []
+    }
+  ]
+}

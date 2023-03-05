@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/test/btcd/btcd_test.go",
+  "package": "btcd_test",
+  "sections": [
+    {
+      "slug": "func TestLightningWallet(t *testing.T) {",
+      "content": "func TestLightningWallet(t *testing.T) {\n\tlnwallettest.TestLightningWallet(t, \"btcd\")\n}\n",
+      "length": 45,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

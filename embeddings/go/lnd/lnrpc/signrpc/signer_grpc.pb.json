@@ -1,0 +1,293 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/signrpc/signer_grpc.pb.go",
+  "package": "signrpc",
+  "sections": [
+    {
+      "slug": "type SignerClient interface {",
+      "content": "type SignerClient interface {\n\t// SignOutputRaw is a method that can be used to generated a signature for a\n\t// set of inputs/outputs to a transaction. Each request specifies details\n\t// concerning how the outputs should be signed, which keys they should be\n\t// signed with, and also any optional tweaks. The return value is a fixed\n\t// 64-byte signature (the same format as we use on the wire in Lightning).\n\t//\n\t// If we are  unable to sign using the specified keys, then an error will be\n\t// returned.\n\tSignOutputRaw(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*SignResp, error)\n\t// ComputeInputScript generates a complete InputIndex for the passed\n\t// transaction with the signature as defined within the passed SignDescriptor.\n\t// This method should be capable of generating the proper input script for both\n\t// regular p2wkh/p2tr outputs and p2wkh outputs nested within a regular p2sh\n\t// output.\n\t//\n\t// Note that when using this method to sign inputs belonging to the wallet,\n\t// the only items of the SignDescriptor that need to be populated are pkScript\n\t// in the TxOut field, the value in that same field, and finally the input\n\t// index.\n\tComputeInputScript(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*InputScriptResp, error)\n\t// SignMessage signs a message with the key specified in the key locator. The\n\t// returned signature is fixed-size LN wire format encoded.\n\t//\n\t// The main difference to SignMessage in the main RPC is that a specific key is\n\t// used to sign the message instead of the node identity private key.\n\tSignMessage(ctx context.Context, in *SignMessageReq, opts ...grpc.CallOption) (*SignMessageResp, error)\n\t// VerifyMessage verifies a signature over a message using the public key\n\t// provided. The signature must be fixed-size LN wire format encoded.\n\t//\n\t// The main difference to VerifyMessage in the main RPC is that the public key\n\t// used to sign the message does not have to be a node known to the network.\n\tVerifyMessage(ctx context.Context, in *VerifyMessageReq, opts ...grpc.CallOption) (*VerifyMessageResp, error)\n\t// DeriveSharedKey returns a shared secret key by performing Diffie-Hellman key\n\t// derivation between the ephemeral public key in the request and the node's\n\t// key specified in the key_desc parameter. Either a key locator or a raw\n\t// public key is expected in the key_desc, if neither is supplied, defaults to\n\t// the node's identity private key:\n\t// P_shared = privKeyNode * ephemeralPubkey\n\t// The resulting shared public key is serialized in the compressed format and\n\t// hashed with sha256, resulting in the final key length of 256bit.\n\tDeriveSharedKey(ctx context.Context, in *SharedKeyRequest, opts ...grpc.CallOption) (*SharedKeyResponse, error)\n\t// MuSig2CombineKeys (experimental!) is a stateless helper RPC that can be used\n\t// to calculate the combined MuSig2 public key from a list of all participating\n\t// signers' public keys. This RPC is completely stateless and deterministic and\n\t// does not create any signing session. It can be used to determine the Taproot\n\t// public key that should be put in an on-chain output once all public keys are\n\t// known. A signing session is only needed later when that output should be\n\t// _spent_ again.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CombineKeys(ctx context.Context, in *MuSig2CombineKeysRequest, opts ...grpc.CallOption) (*MuSig2CombineKeysResponse, error)\n\t// MuSig2CreateSession (experimental!) creates a new MuSig2 signing session\n\t// using the local key identified by the key locator. The complete list of all\n\t// public keys of all signing parties must be provided, including the public\n\t// key of the local signing key. If nonces of other parties are already known,\n\t// they can be submitted as well to reduce the number of RPC calls necessary\n\t// later on.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CreateSession(ctx context.Context, in *MuSig2SessionRequest, opts ...grpc.CallOption) (*MuSig2SessionResponse, error)\n\t// MuSig2RegisterNonces (experimental!) registers one or more public nonces of\n\t// other signing participants for a session identified by its ID. This RPC can\n\t// be called multiple times until all nonces are registered.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2RegisterNonces(ctx context.Context, in *MuSig2RegisterNoncesRequest, opts ...grpc.CallOption) (*MuSig2RegisterNoncesResponse, error)\n\t// MuSig2Sign (experimental!) creates a partial signature using the local\n\t// signing key that was specified when the session was created. This can only\n\t// be called when all public nonces of all participants are known and have been\n\t// registered with the session. If this node isn't responsible for combining\n\t// all the partial signatures, then the cleanup flag should be set, indicating\n\t// that the session can be removed from memory once the signature was produced.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2Sign(ctx context.Context, in *MuSig2SignRequest, opts ...grpc.CallOption) (*MuSig2SignResponse, error)\n\t// MuSig2CombineSig (experimental!) combines the given partial signature(s)\n\t// with the local one, if it already exists. Once a partial signature of all\n\t// participants is registered, the final signature will be combined and\n\t// returned.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CombineSig(ctx context.Context, in *MuSig2CombineSigRequest, opts ...grpc.CallOption) (*MuSig2CombineSigResponse, error)\n\t// MuSig2Cleanup (experimental!) allows a caller to clean up a session early in\n\t// cases where it's obvious that the signing session won't succeed and the\n\t// resources can be released.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2Cleanup(ctx context.Context, in *MuSig2CleanupRequest, opts ...grpc.CallOption) (*MuSig2CleanupResponse, error)\n}\n",
+      "length": 6655,
+      "tokens": 1012,
+      "embedding": []
+    },
+    {
+      "slug": "type signerClient struct {",
+      "content": "type signerClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSignerClient(cc grpc.ClientConnInterface) SignerClient {",
+      "content": "func NewSignerClient(cc grpc.ClientConnInterface) SignerClient {\n\treturn &signerClient{cc}\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) SignOutputRaw(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*SignResp, error) {",
+      "content": "func (c *signerClient) SignOutputRaw(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*SignResp, error) {\n\tout := new(SignResp)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/SignOutputRaw\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 148,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) ComputeInputScript(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*InputScriptResp, error) {",
+      "content": "func (c *signerClient) ComputeInputScript(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*InputScriptResp, error) {\n\tout := new(InputScriptResp)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/ComputeInputScript\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 160,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) SignMessage(ctx context.Context, in *SignMessageReq, opts ...grpc.CallOption) (*SignMessageResp, error) {",
+      "content": "func (c *signerClient) SignMessage(ctx context.Context, in *SignMessageReq, opts ...grpc.CallOption) (*SignMessageResp, error) {\n\tout := new(SignMessageResp)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/SignMessage\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 153,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) VerifyMessage(ctx context.Context, in *VerifyMessageReq, opts ...grpc.CallOption) (*VerifyMessageResp, error) {",
+      "content": "func (c *signerClient) VerifyMessage(ctx context.Context, in *VerifyMessageReq, opts ...grpc.CallOption) (*VerifyMessageResp, error) {\n\tout := new(VerifyMessageResp)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/VerifyMessage\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 157,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) DeriveSharedKey(ctx context.Context, in *SharedKeyRequest, opts ...grpc.CallOption) (*SharedKeyResponse, error) {",
+      "content": "func (c *signerClient) DeriveSharedKey(ctx context.Context, in *SharedKeyRequest, opts ...grpc.CallOption) (*SharedKeyResponse, error) {\n\tout := new(SharedKeyResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/DeriveSharedKey\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 159,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2CombineKeys(ctx context.Context, in *MuSig2CombineKeysRequest, opts ...grpc.CallOption) (*MuSig2CombineKeysResponse, error) {",
+      "content": "func (c *signerClient) MuSig2CombineKeys(ctx context.Context, in *MuSig2CombineKeysRequest, opts ...grpc.CallOption) (*MuSig2CombineKeysResponse, error) {\n\tout := new(MuSig2CombineKeysResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2CombineKeys\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 169,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2CreateSession(ctx context.Context, in *MuSig2SessionRequest, opts ...grpc.CallOption) (*MuSig2SessionResponse, error) {",
+      "content": "func (c *signerClient) MuSig2CreateSession(ctx context.Context, in *MuSig2SessionRequest, opts ...grpc.CallOption) (*MuSig2SessionResponse, error) {\n\tout := new(MuSig2SessionResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2CreateSession\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 167,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2RegisterNonces(ctx context.Context, in *MuSig2RegisterNoncesRequest, opts ...grpc.CallOption) (*MuSig2RegisterNoncesResponse, error) {",
+      "content": "func (c *signerClient) MuSig2RegisterNonces(ctx context.Context, in *MuSig2RegisterNoncesRequest, opts ...grpc.CallOption) (*MuSig2RegisterNoncesResponse, error) {\n\tout := new(MuSig2RegisterNoncesResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2RegisterNonces\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 175,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2Sign(ctx context.Context, in *MuSig2SignRequest, opts ...grpc.CallOption) (*MuSig2SignResponse, error) {",
+      "content": "func (c *signerClient) MuSig2Sign(ctx context.Context, in *MuSig2SignRequest, opts ...grpc.CallOption) (*MuSig2SignResponse, error) {\n\tout := new(MuSig2SignResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2Sign\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 155,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2CombineSig(ctx context.Context, in *MuSig2CombineSigRequest, opts ...grpc.CallOption) (*MuSig2CombineSigResponse, error) {",
+      "content": "func (c *signerClient) MuSig2CombineSig(ctx context.Context, in *MuSig2CombineSigRequest, opts ...grpc.CallOption) (*MuSig2CombineSigResponse, error) {\n\tout := new(MuSig2CombineSigResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2CombineSig\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 167,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *signerClient) MuSig2Cleanup(ctx context.Context, in *MuSig2CleanupRequest, opts ...grpc.CallOption) (*MuSig2CleanupResponse, error) {",
+      "content": "func (c *signerClient) MuSig2Cleanup(ctx context.Context, in *MuSig2CleanupRequest, opts ...grpc.CallOption) (*MuSig2CleanupResponse, error) {\n\tout := new(MuSig2CleanupResponse)\n\terr := c.cc.Invoke(ctx, \"/signrpc.Signer/MuSig2Cleanup\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// SignerServer is the server API for Signer service.\n// All implementations must embed UnimplementedSignerServer\n// for forward compatibility",
+      "length": 301,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type SignerServer interface {",
+      "content": "type SignerServer interface {\n\t// SignOutputRaw is a method that can be used to generated a signature for a\n\t// set of inputs/outputs to a transaction. Each request specifies details\n\t// concerning how the outputs should be signed, which keys they should be\n\t// signed with, and also any optional tweaks. The return value is a fixed\n\t// 64-byte signature (the same format as we use on the wire in Lightning).\n\t//\n\t// If we are  unable to sign using the specified keys, then an error will be\n\t// returned.\n\tSignOutputRaw(context.Context, *SignReq) (*SignResp, error)\n\t// ComputeInputScript generates a complete InputIndex for the passed\n\t// transaction with the signature as defined within the passed SignDescriptor.\n\t// This method should be capable of generating the proper input script for both\n\t// regular p2wkh/p2tr outputs and p2wkh outputs nested within a regular p2sh\n\t// output.\n\t//\n\t// Note that when using this method to sign inputs belonging to the wallet,\n\t// the only items of the SignDescriptor that need to be populated are pkScript\n\t// in the TxOut field, the value in that same field, and finally the input\n\t// index.\n\tComputeInputScript(context.Context, *SignReq) (*InputScriptResp, error)\n\t// SignMessage signs a message with the key specified in the key locator. The\n\t// returned signature is fixed-size LN wire format encoded.\n\t//\n\t// The main difference to SignMessage in the main RPC is that a specific key is\n\t// used to sign the message instead of the node identity private key.\n\tSignMessage(context.Context, *SignMessageReq) (*SignMessageResp, error)\n\t// VerifyMessage verifies a signature over a message using the public key\n\t// provided. The signature must be fixed-size LN wire format encoded.\n\t//\n\t// The main difference to VerifyMessage in the main RPC is that the public key\n\t// used to sign the message does not have to be a node known to the network.\n\tVerifyMessage(context.Context, *VerifyMessageReq) (*VerifyMessageResp, error)\n\t// DeriveSharedKey returns a shared secret key by performing Diffie-Hellman key\n\t// derivation between the ephemeral public key in the request and the node's\n\t// key specified in the key_desc parameter. Either a key locator or a raw\n\t// public key is expected in the key_desc, if neither is supplied, defaults to\n\t// the node's identity private key:\n\t// P_shared = privKeyNode * ephemeralPubkey\n\t// The resulting shared public key is serialized in the compressed format and\n\t// hashed with sha256, resulting in the final key length of 256bit.\n\tDeriveSharedKey(context.Context, *SharedKeyRequest) (*SharedKeyResponse, error)\n\t// MuSig2CombineKeys (experimental!) is a stateless helper RPC that can be used\n\t// to calculate the combined MuSig2 public key from a list of all participating\n\t// signers' public keys. This RPC is completely stateless and deterministic and\n\t// does not create any signing session. It can be used to determine the Taproot\n\t// public key that should be put in an on-chain output once all public keys are\n\t// known. A signing session is only needed later when that output should be\n\t// _spent_ again.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CombineKeys(context.Context, *MuSig2CombineKeysRequest) (*MuSig2CombineKeysResponse, error)\n\t// MuSig2CreateSession (experimental!) creates a new MuSig2 signing session\n\t// using the local key identified by the key locator. The complete list of all\n\t// public keys of all signing parties must be provided, including the public\n\t// key of the local signing key. If nonces of other parties are already known,\n\t// they can be submitted as well to reduce the number of RPC calls necessary\n\t// later on.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CreateSession(context.Context, *MuSig2SessionRequest) (*MuSig2SessionResponse, error)\n\t// MuSig2RegisterNonces (experimental!) registers one or more public nonces of\n\t// other signing participants for a session identified by its ID. This RPC can\n\t// be called multiple times until all nonces are registered.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2RegisterNonces(context.Context, *MuSig2RegisterNoncesRequest) (*MuSig2RegisterNoncesResponse, error)\n\t// MuSig2Sign (experimental!) creates a partial signature using the local\n\t// signing key that was specified when the session was created. This can only\n\t// be called when all public nonces of all participants are known and have been\n\t// registered with the session. If this node isn't responsible for combining\n\t// all the partial signatures, then the cleanup flag should be set, indicating\n\t// that the session can be removed from memory once the signature was produced.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2Sign(context.Context, *MuSig2SignRequest) (*MuSig2SignResponse, error)\n\t// MuSig2CombineSig (experimental!) combines the given partial signature(s)\n\t// with the local one, if it already exists. Once a partial signature of all\n\t// participants is registered, the final signature will be combined and\n\t// returned.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2CombineSig(context.Context, *MuSig2CombineSigRequest) (*MuSig2CombineSigResponse, error)\n\t// MuSig2Cleanup (experimental!) allows a caller to clean up a session early in\n\t// cases where it's obvious that the signing session won't succeed and the\n\t// resources can be released.\n\t//\n\t// NOTE: The MuSig2 BIP is not final yet and therefore this API must be\n\t// considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming\n\t// releases. Backward compatibility is not guaranteed!\n\tMuSig2Cleanup(context.Context, *MuSig2CleanupRequest) (*MuSig2CleanupResponse, error)\n\tmustEmbedUnimplementedSignerServer()\n}\n\n// UnimplementedSignerServer must be embedded to have forward compatible implementations.",
+      "length": 6429,
+      "tokens": 979,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedSignerServer struct {",
+      "content": "type UnimplementedSignerServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) SignOutputRaw(context.Context, *SignReq) (*SignResp, error) {",
+      "content": "func (UnimplementedSignerServer) SignOutputRaw(context.Context, *SignReq) (*SignResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SignOutputRaw not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) ComputeInputScript(context.Context, *SignReq) (*InputScriptResp, error) {",
+      "content": "func (UnimplementedSignerServer) ComputeInputScript(context.Context, *SignReq) (*InputScriptResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method ComputeInputScript not implemented\")\n}",
+      "length": 93,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) SignMessage(context.Context, *SignMessageReq) (*SignMessageResp, error) {",
+      "content": "func (UnimplementedSignerServer) SignMessage(context.Context, *SignMessageReq) (*SignMessageResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SignMessage not implemented\")\n}",
+      "length": 86,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) VerifyMessage(context.Context, *VerifyMessageReq) (*VerifyMessageResp, error) {",
+      "content": "func (UnimplementedSignerServer) VerifyMessage(context.Context, *VerifyMessageReq) (*VerifyMessageResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method VerifyMessage not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) DeriveSharedKey(context.Context, *SharedKeyRequest) (*SharedKeyResponse, error) {",
+      "content": "func (UnimplementedSignerServer) DeriveSharedKey(context.Context, *SharedKeyRequest) (*SharedKeyResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method DeriveSharedKey not implemented\")\n}",
+      "length": 90,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2CombineKeys(context.Context, *MuSig2CombineKeysRequest) (*MuSig2CombineKeysResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2CombineKeys(context.Context, *MuSig2CombineKeysRequest) (*MuSig2CombineKeysResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2CombineKeys not implemented\")\n}",
+      "length": 92,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2CreateSession(context.Context, *MuSig2SessionRequest) (*MuSig2SessionResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2CreateSession(context.Context, *MuSig2SessionRequest) (*MuSig2SessionResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2CreateSession not implemented\")\n}",
+      "length": 94,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2RegisterNonces(context.Context, *MuSig2RegisterNoncesRequest) (*MuSig2RegisterNoncesResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2RegisterNonces(context.Context, *MuSig2RegisterNoncesRequest) (*MuSig2RegisterNoncesResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2RegisterNonces not implemented\")\n}",
+      "length": 95,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2Sign(context.Context, *MuSig2SignRequest) (*MuSig2SignResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2Sign(context.Context, *MuSig2SignRequest) (*MuSig2SignResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2Sign not implemented\")\n}",
+      "length": 85,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2CombineSig(context.Context, *MuSig2CombineSigRequest) (*MuSig2CombineSigResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2CombineSig(context.Context, *MuSig2CombineSigRequest) (*MuSig2CombineSigResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2CombineSig not implemented\")\n}",
+      "length": 91,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) MuSig2Cleanup(context.Context, *MuSig2CleanupRequest) (*MuSig2CleanupResponse, error) {",
+      "content": "func (UnimplementedSignerServer) MuSig2Cleanup(context.Context, *MuSig2CleanupRequest) (*MuSig2CleanupResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method MuSig2Cleanup not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedSignerServer) mustEmbedUnimplementedSignerServer() {}",
+      "content": "func (UnimplementedSignerServer) mustEmbedUnimplementedSignerServer() {}\n\n// UnsafeSignerServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to SignerServer will\n// result in compilation errors.",
+      "length": 205,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeSignerServer interface {",
+      "content": "type UnsafeSignerServer interface {\n\tmustEmbedUnimplementedSignerServer()\n}\n",
+      "length": 38,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterSignerServer(s grpc.ServiceRegistrar, srv SignerServer) {",
+      "content": "func RegisterSignerServer(s grpc.ServiceRegistrar, srv SignerServer) {\n\ts.RegisterService(&Signer_ServiceDesc, srv)\n}\n",
+      "length": 45,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_SignOutputRaw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_SignOutputRaw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SignReq)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).SignOutputRaw(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/SignOutputRaw\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).SignOutputRaw(ctx, req.(*SignReq))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 428,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_ComputeInputScript_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_ComputeInputScript_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SignReq)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).ComputeInputScript(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/ComputeInputScript\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).ComputeInputScript(ctx, req.(*SignReq))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 443,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_SignMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_SignMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SignMessageReq)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).SignMessage(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/SignMessage\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).SignMessage(ctx, req.(*SignMessageReq))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 436,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_VerifyMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_VerifyMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(VerifyMessageReq)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).VerifyMessage(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/VerifyMessage\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).VerifyMessage(ctx, req.(*VerifyMessageReq))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 446,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_DeriveSharedKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_DeriveSharedKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SharedKeyRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).DeriveSharedKey(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/DeriveSharedKey\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).DeriveSharedKey(ctx, req.(*SharedKeyRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 452,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2CombineKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2CombineKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2CombineKeysRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2CombineKeys(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2CombineKeys\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2CombineKeys(ctx, req.(*MuSig2CombineKeysRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 474,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2CreateSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2CreateSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2SessionRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2CreateSession(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2CreateSession\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2CreateSession(ctx, req.(*MuSig2SessionRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 472,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2RegisterNonces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2RegisterNonces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2RegisterNoncesRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2RegisterNonces(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2RegisterNonces\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2RegisterNonces(ctx, req.(*MuSig2RegisterNoncesRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 489,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2SignRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2Sign(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2Sign\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2Sign(ctx, req.(*MuSig2SignRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 439,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2CombineSig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2CombineSig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2CombineSigRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2CombineSig(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2CombineSig\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2CombineSig(ctx, req.(*MuSig2CombineSigRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 469,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Signer_MuSig2Cleanup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Signer_MuSig2Cleanup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(MuSig2CleanupRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(SignerServer).MuSig2Cleanup(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/signrpc.Signer/MuSig2Cleanup\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(SignerServer).MuSig2Cleanup(ctx, req.(*MuSig2CleanupRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// Signer_ServiceDesc is the grpc.ServiceDesc for Signer service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar Signer_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"signrpc.Signer\",\n\tHandlerType: (*SignerServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"SignOutputRaw\",\n\t\t\tHandler:    _Signer_SignOutputRaw_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"ComputeInputScript\",\n\t\t\tHandler:    _Signer_ComputeInputScript_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SignMessage\",\n\t\t\tHandler:    _Signer_SignMessage_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"VerifyMessage\",\n\t\t\tHandler:    _Signer_VerifyMessage_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"DeriveSharedKey\",\n\t\t\tHandler:    _Signer_DeriveSharedKey_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2CombineKeys\",\n\t\t\tHandler:    _Signer_MuSig2CombineKeys_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2CreateSession\",\n\t\t\tHandler:    _Signer_MuSig2CreateSession_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2RegisterNonces\",\n\t\t\tHandler:    _Signer_MuSig2RegisterNonces_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2Sign\",\n\t\t\tHandler:    _Signer_MuSig2Sign_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2CombineSig\",\n\t\t\tHandler:    _Signer_MuSig2CombineSig_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"MuSig2Cleanup\",\n\t\t\tHandler:    _Signer_MuSig2Cleanup_Handler,\n\t\t},\n\t},\n\tStreams:  []grpc.StreamDesc{},\n\tMetadata: \"signrpc/signer.proto\",\n}\n",
+      "length": 1802,
+      "tokens": 162,
+      "embedding": []
+    }
+  ]
+}

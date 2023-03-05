@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/externalscoreattach_test.go",
+  "package": "autopilot_test",
+  "sections": [
+    {
+      "slug": "func randKey() (*btcec.PublicKey, error) {",
+      "content": "func randKey() (*btcec.PublicKey, error) {\n\tpriv, err := btcec.NewPrivateKey()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn priv.PubKey(), nil\n}\n\n// TestSetNodeScores tests that the scores returned by the\n// ExternalScoreAttachment correctly reflects the scores we set last.",
+      "length": 224,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSetNodeScores(t *testing.T) {",
+      "content": "func TestSetNodeScores(t *testing.T) {\n\tt.Parallel()\n\n\tconst name = \"externalscore\"\n\n\th := autopilot.NewExternalScoreAttachment()\n\n\t// Create a list of random node IDs.\n\tconst numKeys = 20\n\tvar pubkeys []autopilot.NodeID\n\tfor i := 0; i < numKeys; i++ {\n\t\tk, err := randKey()\n\t\tif err != nil {\n\t\t\tt.Fatal(err)\n\t\t}\n\n\t\tnID := autopilot.NewNodeID(k)\n\t\tpubkeys = append(pubkeys, nID)\n\t}\n\n\t// Set the score of half of the nodes.\n\tscores := make(map[autopilot.NodeID]float64)\n\tfor i := 0; i < numKeys/2; i++ {\n\t\tnID := pubkeys[i]\n\t\tscores[nID] = 0.05 * float64(i)\n\t}\n\n\tapplied, err := h.SetNodeScores(name, scores)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif !applied {\n\t\tt.Fatalf(\"scores were not applied\")\n\t}\n\n\t// Query all scores, half should be set, half should be zero.\n\tq := make(map[autopilot.NodeID]struct{})\n\tfor _, nID := range pubkeys {\n\t\tq[nID] = struct{}{}\n\t}\n\tresp, err := h.NodeScores(\n\t\tnil, nil, btcutil.Amount(btcutil.SatoshiPerBitcoin), q,\n\t)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tfor i := 0; i < numKeys; i++ {\n\t\tvar expected float64\n\t\tif i < numKeys/2 {\n\t\t\texpected = 0.05 * float64(i)\n\t\t}\n\t\tnID := pubkeys[i]\n\n\t\tvar score float64\n\t\tif s, ok := resp[nID]; ok {\n\t\t\tscore = s.Score\n\t\t}\n\n\t\tif score != expected {\n\t\t\tt.Fatalf(\"expected score %v, got %v\",\n\t\t\t\texpected, score)\n\t\t}\n\n\t}\n\n\t// Try to apply scores with bogus name, should not be applied.\n\tapplied, err = h.SetNodeScores(\"dummy\", scores)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif applied {\n\t\tt.Fatalf(\"scores were applied\")\n\t}\n\n}\n",
+      "length": 1377,
+      "tokens": 229,
+      "embedding": []
+    }
+  ]
+}

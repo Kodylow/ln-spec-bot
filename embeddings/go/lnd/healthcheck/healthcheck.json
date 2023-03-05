@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/healthcheck/healthcheck.go",
-  "package": "Package",
+  "package": "healthcheck",
   "sections": [
     {
       "slug": "type Config struct {",

@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/chanbackup/recover_test.go",
+  "package": "chanbackup",
+  "sections": [
+    {
+      "slug": "type mockChannelRestorer struct {",
+      "content": "type mockChannelRestorer struct {\n\tfail bool\n\n\tcallCount int\n}\n",
+      "length": 25,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelRestorer) RestoreChansFromSingles(...Single) error {",
+      "content": "func (m *mockChannelRestorer) RestoreChansFromSingles(...Single) error {\n\tif m.fail {\n\t\treturn fmt.Errorf(\"fail\")\n\t}\n\n\tm.callCount++\n\n\treturn nil\n}\n",
+      "length": 67,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPeerConnector struct {",
+      "content": "type mockPeerConnector struct {\n\tfail bool\n\n\tcallCount int\n}\n",
+      "length": 25,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPeerConnector) ConnectPeer(node *btcec.PublicKey,",
+      "content": "func (m *mockPeerConnector) ConnectPeer(node *btcec.PublicKey,\n\taddrs []net.Addr) error {\n\n\tif m.fail {\n\t\treturn fmt.Errorf(\"fail\")\n\t}\n\n\tm.callCount++\n\n\treturn nil\n}\n\n// TestUnpackAndRecoverSingles tests that we're able to properly unpack and\n// recover a set of packed singles.",
+      "length": 203,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUnpackAndRecoverSingles(t *testing.T) {",
+      "content": "func TestUnpackAndRecoverSingles(t *testing.T) {\n\tt.Parallel()\n\n\tkeyRing := &lnencrypt.MockKeyRing{}\n\n\t// First, we'll create a number of single chan backups that we'll\n\t// shortly back to so we can begin our recovery attempt.\n\tnumSingles := 10\n\tbackups := make([]Single, 0, numSingles)\n\tvar packedBackups PackedSingles\n\tfor i := 0; i < numSingles; i++ {\n\t\tchannel, err := genRandomOpenChannelShell()\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable make channel: %v\", err)\n\t\t}\n\n\t\tsingle := NewSingle(channel, nil)\n\n\t\tvar b bytes.Buffer\n\t\tif err := single.PackToWriter(&b, keyRing); err != nil {\n\t\t\tt.Fatalf(\"unable to pack single: %v\", err)\n\t\t}\n\n\t\tbackups = append(backups, single)\n\t\tpackedBackups = append(packedBackups, b.Bytes())\n\t}\n\n\tchanRestorer := mockChannelRestorer{}\n\tpeerConnector := mockPeerConnector{}\n\n\t// Now that we have our backups (packed and unpacked), we'll attempt to\n\t// restore them all in a single batch.\n\n\t// If we make the channel restore fail, then the entire method should\n\t// as well\n\tchanRestorer.fail = true\n\terr := UnpackAndRecoverSingles(\n\t\tpackedBackups, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"restoration should have failed\")\n\t}\n\n\tchanRestorer.fail = false\n\n\t// If we make the peer connector fail, then the entire method should as\n\t// well\n\tpeerConnector.fail = true\n\terr = UnpackAndRecoverSingles(\n\t\tpackedBackups, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"restoration should have failed\")\n\t}\n\n\tchanRestorer.callCount--\n\tpeerConnector.fail = false\n\n\t// Next, we'll ensure that if all the interfaces function as expected,\n\t// then the channels will properly be unpacked and restored.\n\terr = UnpackAndRecoverSingles(\n\t\tpackedBackups, keyRing, &chanRestorer, &peerConnector,\n\t)\n\trequire.NoError(t, err, \"unable to recover chans\")\n\n\t// Both the restorer, and connector should have been called 10 times,\n\t// once for each backup.\n\tif chanRestorer.callCount != numSingles {\n\t\tt.Fatalf(\"expected %v calls, instead got %v\",\n\t\t\tnumSingles, chanRestorer.callCount)\n\t}\n\tif peerConnector.callCount != numSingles {\n\t\tt.Fatalf(\"expected %v calls, instead got %v\",\n\t\t\tnumSingles, peerConnector.callCount)\n\t}\n\n\t// If we modify the keyRing, then unpacking should fail.\n\tkeyRing.Fail = true\n\terr = UnpackAndRecoverSingles(\n\t\tpackedBackups, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"unpacking should have failed\")\n\t}\n\n\t// TODO(roasbeef): verify proper call args\n}\n\n// TestUnpackAndRecoverMulti tests that we're able to properly unpack and\n// recover a packed multi.",
+      "length": 2427,
+      "tokens": 336,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUnpackAndRecoverMulti(t *testing.T) {",
+      "content": "func TestUnpackAndRecoverMulti(t *testing.T) {\n\tt.Parallel()\n\n\tkeyRing := &lnencrypt.MockKeyRing{}\n\n\t// First, we'll create a number of single chan backups that we'll\n\t// shortly back to so we can begin our recovery attempt.\n\tnumSingles := 10\n\tbackups := make([]Single, 0, numSingles)\n\tfor i := 0; i < numSingles; i++ {\n\t\tchannel, err := genRandomOpenChannelShell()\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable make channel: %v\", err)\n\t\t}\n\n\t\tsingle := NewSingle(channel, nil)\n\n\t\tbackups = append(backups, single)\n\t}\n\n\tmulti := Multi{\n\t\tStaticBackups: backups,\n\t}\n\n\tvar b bytes.Buffer\n\tif err := multi.PackToWriter(&b, keyRing); err != nil {\n\t\tt.Fatalf(\"unable to pack multi: %v\", err)\n\t}\n\n\t// Next, we'll pack the set of singles into a packed multi, and also\n\t// create the set of interfaces we need to carry out the remainder of\n\t// the test.\n\tpackedMulti := PackedMulti(b.Bytes())\n\n\tchanRestorer := mockChannelRestorer{}\n\tpeerConnector := mockPeerConnector{}\n\n\t// If we make the channel restore fail, then the entire method should\n\t// as well\n\tchanRestorer.fail = true\n\terr := UnpackAndRecoverMulti(\n\t\tpackedMulti, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"restoration should have failed\")\n\t}\n\n\tchanRestorer.fail = false\n\n\t// If we make the peer connector fail, then the entire method should as\n\t// well\n\tpeerConnector.fail = true\n\terr = UnpackAndRecoverMulti(\n\t\tpackedMulti, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"restoration should have failed\")\n\t}\n\n\tchanRestorer.callCount--\n\tpeerConnector.fail = false\n\n\t// Next, we'll ensure that if all the interfaces function as expected,\n\t// then the channels will properly be unpacked and restored.\n\terr = UnpackAndRecoverMulti(\n\t\tpackedMulti, keyRing, &chanRestorer, &peerConnector,\n\t)\n\trequire.NoError(t, err, \"unable to recover chans\")\n\n\t// Both the restorer, and connector should have been called 10 times,\n\t// once for each backup.\n\tif chanRestorer.callCount != numSingles {\n\t\tt.Fatalf(\"expected %v calls, instead got %v\",\n\t\t\tnumSingles, chanRestorer.callCount)\n\t}\n\tif peerConnector.callCount != numSingles {\n\t\tt.Fatalf(\"expected %v calls, instead got %v\",\n\t\t\tnumSingles, peerConnector.callCount)\n\t}\n\n\t// If we modify the keyRing, then unpacking should fail.\n\tkeyRing.Fail = true\n\terr = UnpackAndRecoverMulti(\n\t\tpackedMulti, keyRing, &chanRestorer, &peerConnector,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"unpacking should have failed\")\n\t}\n\n\t// TODO(roasbeef): verify proper call args\n}\n",
+      "length": 2346,
+      "tokens": 333,
+      "embedding": []
+    }
+  ]
+}

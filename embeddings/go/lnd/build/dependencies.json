@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/dependencies.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build buildtagdoesnotexist",
+      "content": "//go:build buildtagdoesnotexist\n// +build buildtagdoesnotexist\n\npackage build\n\n// This file is a workaround to make sure go mod keeps around the btcd\n// dependencies in the go.sum file that we only use during certain tasks (such\n// as integration tests or fuzzing) or only for certain operating systems. For\n// example, the specific btcd import makes sure the indirect dependency\n// github.com/btcsuite/winsvc is kept in the go.sum file. Because of the build\n// tag, this dependency never ends up in the final lnd binary.\nimport (\n\t_ \"github.com/btcsuite/btcd\"\n)\n",
+      "length": 518,
+      "tokens": 87,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/watchtowerrpc/handler.go",
+  "package": "watchtowerrpc",
+  "sections": [
+    {
+      "slug": "//go:build watchtowerrpc",
+      "content": "//go:build watchtowerrpc\n// +build watchtowerrpc\n\npackage watchtowerrpc\n\nimport (\n\t\"context\"\n\t\"errors\"\n\t\"fmt\"\n\n\t\"github.com/grpc-ecosystem/grpc-gateway/v2/runtime\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"google.golang.org/grpc\"\n\t\"gopkg.in/macaroon-bakery.v2/bakery\"\n)\n\nconst (\n\t// subServerName is the name of the sub rpc server. We'll use this name\n\t// to register ourselves, and we also require that the main\n\t// SubServerConfigDispatcher instance recognizes it as the name of our\n\t// RPC service.\n\tsubServerName = \"WatchtowerRPC\"\n)\n\nvar (\n\t// macPermissions maps RPC calls to the permissions they require.\n\tmacPermissions = map[string][]bakery.Op{\n\t\t\"/watchtowerrpc.Watchtower/GetInfo\": {{\n\t\t\tEntity: \"info\",\n\t\t\tAction: \"read\",\n\t\t}},\n\t}\n\n\t// ErrTowerNotActive signals that RPC calls cannot be processed because\n\t// the watchtower is not active.\n\tErrTowerNotActive = errors.New(\"watchtower not active\")\n)\n\n// ServerShell is a shell struct holding a reference to the actual sub-server.\n// It is used to register the gRPC sub-server with the root server before we\n// have the necessary dependencies to populate the actual sub-server.",
+      "length": 1072,
+      "tokens": 142,
+      "embedding": []
+    },
+    {
+      "slug": "type ServerShell struct {",
+      "content": "type ServerShell struct {\n\tWatchtowerServer\n}\n\n// Handler is the RPC server we'll use to interact with the backing active\n// watchtower.",
+      "length": 106,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Handler struct {",
+      "content": "type Handler struct {\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\tUnimplementedWatchtowerServer\n\n\tcfg Config\n}\n\n// A compile time check to ensure that Handler fully implements the Handler gRPC\n// service.\nvar _ WatchtowerServer = (*Handler)(nil)\n\n// New returns a new instance of the Watchtower sub-server. We also return the\n// set of permissions for the macaroons that we may create within this method.\n// If the macaroons we need aren't found in the filepath, then we'll create them\n// on start up. If we're unable to locate, or create the macaroons we need, then\n// we'll return with an error.",
+      "length": 589,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Handler, lnrpc.MacaroonPerms, error) {",
+      "content": "func New(cfg *Config) (*Handler, lnrpc.MacaroonPerms, error) {\n\treturn &Handler{cfg: *cfg}, macPermissions, nil\n}\n\n// Start launches any helper goroutines required for the Handler to function.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 183,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Handler) Start() error {",
+      "content": "func (c *Handler) Start() error {\n\treturn nil\n}\n\n// Stop signals any active goroutines for a graceful closure.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 130,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Handler) Stop() error {",
+      "content": "func (c *Handler) Stop() error {\n\treturn nil\n}\n\n// Name returns a unique string representation of the sub-server. This can be\n// used to identify the sub-server and also de-duplicate them.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 208,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Handler) Name() string {",
+      "content": "func (c *Handler) Name() string {\n\treturn subServerName\n}\n\n// RegisterWithRootServer will be called by the root gRPC server to direct a sub\n// RPC server to register itself with the main gRPC root server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 315,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {",
+      "content": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {\n\t// We make sure that we register it with the main gRPC server to ensure\n\t// all our methods are routed properly.\n\tRegisterWatchtowerServer(grpcServer, r)\n\n\tlog.Debugf(\"Watchtower RPC server successfully register with root \" +\n\t\t\"gRPC server\")\n\n\treturn nil\n}\n\n// RegisterWithRestServer will be called by the root REST mux to direct a sub\n// RPC server to register itself with the main REST mux server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 539,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,",
+      "content": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,\n\tmux *runtime.ServeMux, dest string, opts []grpc.DialOption) error {\n\n\t// We make sure that we register it with the main REST server to ensure\n\t// all our methods are routed properly.\n\terr := RegisterWatchtowerHandlerFromEndpoint(ctx, mux, dest, opts)\n\tif err != nil {\n\t\tlog.Errorf(\"Could not register Watchtower REST server \"+\n\t\t\t\"with root REST server: %v\", err)\n\t\treturn err\n\t}\n\n\tlog.Debugf(\"Watchtower REST server successfully registered with \" +\n\t\t\"root REST server\")\n\treturn nil\n}\n\n// CreateSubServer populates the subserver's dependencies using the passed\n// SubServerConfigDispatcher. This method should fully initialize the\n// sub-server instance, making it ready for action. It returns the macaroon\n// permissions that the sub-server wishes to pass on to the root server for all\n// methods routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 857,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\tlnrpc.SubServer, lnrpc.MacaroonPerms, error) {\n\n\tsubServer, macPermissions, err := createNewSubServer(configRegistry)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tr.WatchtowerServer = subServer\n\treturn subServer, macPermissions, nil\n}\n\n// AddTower adds a new watchtower reachable at the given address and considers\n// it for new sessions. If the watchtower already exists, then any new addresses\n// included will be considered when dialing it for session negotiations and\n// backups.",
+      "length": 470,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Handler) GetInfo(ctx context.Context,",
+      "content": "func (c *Handler) GetInfo(ctx context.Context,\n\treq *GetInfoRequest) (*GetInfoResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tpubkey := c.cfg.Tower.PubKey().SerializeCompressed()\n\n\tvar listeners []string\n\tfor _, addr := range c.cfg.Tower.ListeningAddrs() {\n\t\tlisteners = append(listeners, addr.String())\n\t}\n\n\tvar uris []string\n\tfor _, addr := range c.cfg.Tower.ExternalIPs() {\n\t\turis = append(uris, fmt.Sprintf(\"%x@%v\", pubkey, addr))\n\t}\n\n\treturn &GetInfoResponse{\n\t\tPubkey:    pubkey,\n\t\tListeners: listeners,\n\t\tUris:      uris,\n\t}, nil\n}\n\n// isActive returns nil if the tower backend is initialized, and the Handler can\n// process RPC requests.",
+      "length": 605,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Handler) isActive() error {",
+      "content": "func (c *Handler) isActive() error {\n\tif c.cfg.Active {\n\t\treturn nil\n\t}\n\treturn ErrTowerNotActive\n}\n",
+      "length": 58,
+      "tokens": 9,
+      "embedding": []
+    }
+  ]
+}

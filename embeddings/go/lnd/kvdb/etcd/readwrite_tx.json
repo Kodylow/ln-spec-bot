@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_tx.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"sync\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\n// readWriteTx holds a reference to the STM transaction.",
+      "length": 144,
+      "tokens": 19,
+      "embedding": []
+    },
     {
       "slug": "type readWriteTx struct {",
       "content": "type readWriteTx struct {\n\t// stm is the reference to the parent STM.\n\tstm STM\n\n\t// rootBucketID holds the sha256 hash of the root bucket id, which is used\n\t// for key space spearation.\n\trootBucketID [bucketIDLength]byte\n\n\t// active is true if the transaction hasn't been committed yet.\n\tactive bool\n\n\t// lock is passed on for manual txns when the backend is instantiated\n\t// such that we read/write lock transactions to ensure a single writer.\n\tlock sync.Locker\n}\n\n// newReadWriteTx creates an rw transaction with the passed STM.",

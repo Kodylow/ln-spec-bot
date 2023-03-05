@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/db.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"runtime\"\n\t\"sync\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"go.etcd.io/etcd/client/pkg/v3/transport\"\n\tclientv3 \"go.etcd.io/etcd/client/v3\"\n\t\"go.etcd.io/etcd/client/v3/namespace\"\n)\n\nconst (\n\t// etcdConnectionTimeout is the timeout until successful connection to\n\t// the etcd instance.\n\tetcdConnectionTimeout = 10 * time.Second\n\n\t// etcdLongTimeout is a timeout for longer taking etcd operations.\n\tetcdLongTimeout = 30 * time.Second\n\n\t// etcdDefaultRootBucketId is used as the root bucket key. Note that\n\t// the actual key is not visible, since all bucket keys are hashed.\n\tetcdDefaultRootBucketId = \"@\"\n)\n\n// callerStats holds commit stats for a specific caller. Currently it only\n// holds the max stat, meaning that for a particular caller the largest\n// commit set is recorded.",
+      "length": 825,
+      "tokens": 112,
+      "embedding": []
+    },
     {
       "slug": "type callerStats struct {",
       "content": "type callerStats struct {\n\tcount       int\n\tcommitStats CommitStats\n}\n",

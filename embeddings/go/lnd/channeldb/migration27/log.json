@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration27/log.go",
+  "package": "migration27",
+  "sections": [
+    {
+      "slug": "func UseLogger(logger btclog.Logger) {",
+      "content": "func UseLogger(logger btclog.Logger) {\n\tlog = logger\n}\n",
+      "length": 14,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

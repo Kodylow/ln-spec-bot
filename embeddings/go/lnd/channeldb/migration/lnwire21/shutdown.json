@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/shutdown.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type Shutdown struct {",
+      "content": "type Shutdown struct {\n\t// ChannelID serves to identify which channel is to be closed.\n\tChannelID ChannelID\n\n\t// Address is the script to which the channel funds will be paid.\n\tAddress DeliveryAddress\n}\n\n// DeliveryAddress is used to communicate the address to which funds from a\n// closed channel should be sent. The address can be a p2wsh, p2pkh, p2sh or\n// p2wpkh.",
+      "length": 335,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "type DeliveryAddress []byte",
+      "content": "type DeliveryAddress []byte\n\n// deliveryAddressMaxSize is the maximum expected size in bytes of a\n// DeliveryAddress based on the types of scripts we know.\n// Following are the known scripts and their sizes in bytes.\n// - pay to witness script hash: 34\n// - pay to pubkey hash: 25\n// - pay to script hash: 22\n// - pay to witness pubkey hash: 22.\nconst deliveryAddressMaxSize = 34\n\n// NewShutdown creates a new Shutdown message.",
+      "length": 389,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func NewShutdown(cid ChannelID, addr DeliveryAddress) *Shutdown {",
+      "content": "func NewShutdown(cid ChannelID, addr DeliveryAddress) *Shutdown {\n\treturn &Shutdown{\n\t\tChannelID: cid,\n\t\tAddress:   addr,\n\t}\n}\n\n// A compile-time check to ensure Shutdown implements the lnwire.Message\n// interface.\nvar _ Message = (*Shutdown)(nil)\n\n// Decode deserializes a serialized Shutdown stored in the passed io.Reader\n// observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 342,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shutdown) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (s *Shutdown) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r, &s.ChannelID, &s.Address)\n}\n\n// Encode serializes the target Shutdown into the passed io.Writer observing\n// the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 210,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shutdown) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (s *Shutdown) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w, s.ChannelID, s.Address)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 183,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shutdown) MsgType() MessageType {",
+      "content": "func (s *Shutdown) MsgType() MessageType {\n\treturn MsgShutdown\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for this message\n// observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 191,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Shutdown) MaxPayloadLength(pver uint32) uint32 {",
+      "content": "func (s *Shutdown) MaxPayloadLength(pver uint32) uint32 {\n\tvar length uint32\n\n\t// ChannelID - 32bytes\n\tlength += 32\n\n\t// Len - 2 bytes\n\tlength += 2\n\n\t// ScriptPubKey - maximum delivery address size.\n\tlength += deliveryAddressMaxSize\n\n\treturn length\n}\n",
+      "length": 180,
+      "tokens": 31,
+      "embedding": []
+    }
+  ]
+}

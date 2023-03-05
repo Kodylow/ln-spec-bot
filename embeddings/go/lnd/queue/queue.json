@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/queue/queue.go",
+  "package": "queue",
+  "sections": [
+    {
+      "slug": "type ConcurrentQueue struct {",
+      "content": "type ConcurrentQueue struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tchanIn   chan interface{}\n\tchanOut  chan interface{}\n\toverflow *list.List\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// NewConcurrentQueue constructs a ConcurrentQueue. The bufferSize parameter is\n// the capacity of the output channel. When the size of the queue is below this\n// threshold, pushes do not incur the overhead of the less efficient overflow\n// structure.",
+      "length": 396,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func NewConcurrentQueue(bufferSize int) *ConcurrentQueue {",
+      "content": "func NewConcurrentQueue(bufferSize int) *ConcurrentQueue {\n\treturn &ConcurrentQueue{\n\t\tchanIn:   make(chan interface{}),\n\t\tchanOut:  make(chan interface{}, bufferSize),\n\t\toverflow: list.New(),\n\t\tquit:     make(chan struct{}),\n\t}\n}\n\n// ChanIn returns a channel that can be used to push new items into the queue.",
+      "length": 243,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (cq *ConcurrentQueue) ChanIn() chan<- interface{} {",
+      "content": "func (cq *ConcurrentQueue) ChanIn() chan<- interface{} {\n\treturn cq.chanIn\n}\n\n// ChanOut returns a channel that can be used to pop items from the queue.",
+      "length": 92,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (cq *ConcurrentQueue) ChanOut() <-chan interface{} {",
+      "content": "func (cq *ConcurrentQueue) ChanOut() <-chan interface{} {\n\treturn cq.chanOut\n}\n\n// Start begins a goroutine that manages moving items from the in channel to the\n// out channel. The queue tries to move items directly to the out channel\n// minimize overhead, but if the out channel is full it pushes items to an\n// overflow queue. This must be called before using the queue.",
+      "length": 308,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (cq *ConcurrentQueue) Start() {",
+      "content": "func (cq *ConcurrentQueue) Start() {\n\tcq.started.Do(cq.start)\n}\n",
+      "length": 25,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (cq *ConcurrentQueue) start() {",
+      "content": "func (cq *ConcurrentQueue) start() {\n\tcq.wg.Add(1)\n\tgo func() {\n\t\tdefer cq.wg.Done()\n\n\treadLoop:\n\t\tfor {\n\t\t\tnextElement := cq.overflow.Front()\n\t\t\tif nextElement == nil {\n\t\t\t\t// Overflow queue is empty so incoming items can be pushed\n\t\t\t\t// directly to the output channel. If output channel is full\n\t\t\t\t// though, push to overflow.\n\t\t\t\tselect {\n\t\t\t\tcase item, ok := <-cq.chanIn:\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tbreak readLoop\n\t\t\t\t\t}\n\t\t\t\t\tselect {\n\t\t\t\t\tcase cq.chanOut <- item:\n\t\t\t\t\t\t// Optimistically push directly to chanOut\n\t\t\t\t\tdefault:\n\t\t\t\t\t\tcq.overflow.PushBack(item)\n\t\t\t\t\t}\n\t\t\t\tcase <-cq.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\t// Overflow queue is not empty, so any new items get pushed to\n\t\t\t\t// the back to preserve order.\n\t\t\t\tselect {\n\t\t\t\tcase item, ok := <-cq.chanIn:\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tbreak readLoop\n\t\t\t\t\t}\n\t\t\t\t\tcq.overflow.PushBack(item)\n\t\t\t\tcase cq.chanOut <- nextElement.Value:\n\t\t\t\t\tcq.overflow.Remove(nextElement)\n\t\t\t\tcase <-cq.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// Incoming channel has been closed. Empty overflow queue into\n\t\t// the outgoing channel.\n\t\tnextElement := cq.overflow.Front()\n\t\tfor nextElement != nil {\n\t\t\tselect {\n\t\t\tcase cq.chanOut <- nextElement.Value:\n\t\t\t\tcq.overflow.Remove(nextElement)\n\t\t\tcase <-cq.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t\tnextElement = cq.overflow.Front()\n\t\t}\n\n\t\t// Close outgoing channel.\n\t\tclose(cq.chanOut)\n\t}()\n}\n\n// Stop ends the goroutine that moves items from the in channel to the out\n// channel. This does not clear the queue state, so the queue can be restarted\n// without dropping items.",
+      "length": 1427,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func (cq *ConcurrentQueue) Stop() {",
+      "content": "func (cq *ConcurrentQueue) Stop() {\n\tcq.stopped.Do(func() {\n\t\tclose(cq.quit)\n\t\tcq.wg.Wait()\n\t})\n}\n",
+      "length": 57,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

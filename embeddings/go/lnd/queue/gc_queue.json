@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/queue/gc_queue.go",
+  "package": "queue",
+  "sections": [
+    {
+      "slug": "type GCQueue struct {",
+      "content": "type GCQueue struct {\n\t// takeBuffer coordinates the delivery of items taken from the queue\n\t// such that they are delivered to requesters.\n\ttakeBuffer chan interface{}\n\n\t// returnBuffer coordinates the return of items back into the queue,\n\t// where they will be kept until retaken or released.\n\treturnBuffer chan interface{}\n\n\t// newItem is a constructor, used to generate new elements if none are\n\t// otherwise available for reuse.\n\tnewItem func() interface{}\n\n\t// expiryInterval is the minimum amount of time an element will remain\n\t// in the queue before being released.\n\texpiryInterval time.Duration\n\n\t// recycleTicker is a resumable ticker used to trigger a sweep to\n\t// release elements that have been in the queue longer than\n\t// expiryInterval.\n\trecycleTicker ticker.Ticker\n\n\t// freeList maintains a list of gcQueueEntries, sorted in order of\n\t// increasing time of arrival.\n\tfreeList *list.List\n\n\tquit chan struct{}\n}\n\n// NewGCQueue creates a new garbage collecting queue, which dynamically grows\n// and contracts based on load. If the queue has items which have been returned,\n// the queue will check every gcInterval amount of time to see if any elements\n// are eligible to be released back to the runtime. Elements that have been in\n// the queue for a duration of least expiryInterval will be released upon the\n// next iteration of the garbage collection, thus the maximum amount of time an\n// element remain in the queue is expiryInterval+gcInterval. The gc ticker will\n// be disabled after all items in the queue have been taken or released to\n// ensure that the GCQueue becomes quiescent, and imposes minimal overhead in\n// the steady state. The returnQueueSize parameter is used to size the maximal\n// number of items that can be returned without being dropped during large\n// bursts in attempts to return items to the GCQUeue.",
+      "length": 1783,
+      "tokens": 296,
+      "embedding": []
+    },
+    {
+      "slug": "func NewGCQueue(newItem func() interface{}, returnQueueSize int,",
+      "content": "func NewGCQueue(newItem func() interface{}, returnQueueSize int,\n\tgcInterval, expiryInterval time.Duration) *GCQueue {\n\n\tq := &GCQueue{\n\t\ttakeBuffer:     make(chan interface{}),\n\t\treturnBuffer:   make(chan interface{}, returnQueueSize),\n\t\texpiryInterval: expiryInterval,\n\t\tfreeList:       list.New(),\n\t\trecycleTicker:  ticker.New(gcInterval),\n\t\tnewItem:        newItem,\n\t\tquit:           make(chan struct{}),\n\t}\n\n\tgo q.queueManager()\n\n\treturn q\n}\n\n// Take returns either a recycled element from the queue, or creates a new item\n// if none are available.",
+      "length": 470,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *GCQueue) Take() interface{} {",
+      "content": "func (q *GCQueue) Take() interface{} {\n\tselect {\n\tcase item := <-q.takeBuffer:\n\t\treturn item\n\tcase <-time.After(time.Millisecond):\n\t\treturn q.newItem()\n\t}\n}\n\n// Return adds the returned item to freelist if the queue's returnBuffer has\n// available capacity. Under load, items may be dropped to ensure this method\n// does not block.",
+      "length": 282,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *GCQueue) Return(item interface{}) {",
+      "content": "func (q *GCQueue) Return(item interface{}) {\n\tselect {\n\tcase q.returnBuffer <- item:\n\tdefault:\n\t}\n}\n\n// gcQueueEntry is a tuple containing an interface{} and the time at which the\n// item was added to the queue. The recorded time is used to determine when the\n// entry becomes stale, and can be released if it has not already been taken.",
+      "length": 284,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "type gcQueueEntry struct {",
+      "content": "type gcQueueEntry struct {\n\titem interface{}\n\ttime time.Time\n}\n\n// queueManager maintains the free list of elements by popping the head of the\n// queue when items are needed, and appending them to the end of the queue when\n// items are returned. The queueManager will periodically attempt to release any\n// items that have been in the queue longer than the expiry interval.\n//\n// NOTE: This method SHOULD be run as a goroutine.",
+      "length": 391,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *GCQueue) queueManager() {",
+      "content": "func (q *GCQueue) queueManager() {\n\tfor {\n\t\t// If the pool is empty, initialize a buffer pool to serve a\n\t\t// client that takes a buffer immediately. If this happens, this\n\t\t// is either:\n\t\t//   1) the first iteration of the loop,\n\t\t//   2) after all entries were garbage collected, or\n\t\t//   3) the freelist was emptied after the last entry was taken.\n\t\t//\n\t\t// In all of these cases, it is safe to pause the recycle ticker\n\t\t// since it will be resumed as soon an entry is returned to the\n\t\t// freelist.\n\t\tif q.freeList.Len() == 0 {\n\t\t\tq.freeList.PushBack(gcQueueEntry{\n\t\t\t\titem: q.newItem(),\n\t\t\t\ttime: time.Now(),\n\t\t\t})\n\n\t\t\tq.recycleTicker.Pause()\n\t\t}\n\n\t\tnext := q.freeList.Front()\n\n\t\tselect {\n\n\t\t// If a client requests a new write buffer, deliver the buffer\n\t\t// at the head of the freelist to them.\n\t\tcase q.takeBuffer <- next.Value.(gcQueueEntry).item:\n\t\t\tq.freeList.Remove(next)\n\n\t\t// If a client is returning a write buffer, add it to the free\n\t\t// list and resume the recycle ticker so that it can be cleared\n\t\t// if the entries are not quickly reused.\n\t\tcase item := <-q.returnBuffer:\n\t\t\t// Add the returned buffer to the freelist, recording\n\t\t\t// the current time so we can determine when the entry\n\t\t\t// expires.\n\t\t\tq.freeList.PushBack(gcQueueEntry{\n\t\t\t\titem: item,\n\t\t\t\ttime: time.Now(),\n\t\t\t})\n\n\t\t\t// Adding the buffer implies that we now have a non-zero\n\t\t\t// number of elements in the free list. Resume the\n\t\t\t// recycle ticker to cleanup any entries that go unused.\n\t\t\tq.recycleTicker.Resume()\n\n\t\t// If the recycle ticker fires, we will aggressively release any\n\t\t// write buffers in the freelist for which the expiryInterval\n\t\t// has elapsed since their insertion. If after doing so, no\n\t\t// elements remain, we will pause the recycle ticker.\n\t\tcase <-q.recycleTicker.Ticks():\n\t\t\t// Since the insert time of all entries will be\n\t\t\t// monotonically increasing, iterate over elements and\n\t\t\t// remove all entries that have expired.\n\t\t\tvar next *list.Element\n\t\t\tfor e := q.freeList.Front(); e != nil; e = next {\n\t\t\t\t// Cache the next element, since it will become\n\t\t\t\t// unreachable from the current element if it is\n\t\t\t\t// removed.\n\t\t\t\tnext = e.Next()\n\t\t\t\tentry := e.Value.(gcQueueEntry)\n\n\t\t\t\t// Use now - insertTime <= expiryInterval to\n\t\t\t\t// determine if this entry has not expired.\n\t\t\t\tif time.Since(entry.time) <= q.expiryInterval {\n\t\t\t\t\t// If this entry hasn't expired, then\n\t\t\t\t\t// all entries that follow will still be\n\t\t\t\t\t// valid.\n\t\t\t\t\tbreak\n\t\t\t\t}\n\n\t\t\t\t// Otherwise, remove the expired entry from the\n\t\t\t\t// linked-list.\n\t\t\t\tq.freeList.Remove(e)\n\t\t\t\tentry.item = nil\n\t\t\t\te.Value = nil\n\t\t\t}\n\t\t}\n\t}\n}\n",
+      "length": 2510,
+      "tokens": 400,
+      "embedding": []
+    }
+  ]
+}

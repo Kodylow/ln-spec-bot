@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/peers_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func TestFlapCount(t *testing.T) {",
+      "content": "func TestFlapCount(t *testing.T) {\n\tdb, err := MakeTestDB(t)\n\trequire.NoError(t, err)\n\n\t// Try to read flap count for a peer that we have no records for.\n\t_, err = db.ReadFlapCount(testPub)\n\trequire.Equal(t, ErrNoPeerBucket, err)\n\n\tvar (\n\t\ttestPub2       = route.Vertex{2, 2, 2}\n\t\tpeer1FlapCount = &FlapCount{\n\t\t\tCount:    20,\n\t\t\tLastFlap: time.Unix(100, 23),\n\t\t}\n\t\tpeer2FlapCount = &FlapCount{\n\t\t\tCount:    39,\n\t\t\tLastFlap: time.Unix(200, 23),\n\t\t}\n\t)\n\n\tpeers := map[route.Vertex]*FlapCount{\n\t\ttestPub:  peer1FlapCount,\n\t\ttestPub2: peer2FlapCount,\n\t}\n\n\terr = db.WriteFlapCounts(peers)\n\trequire.NoError(t, err)\n\n\t// Lookup flap count for our first pubkey.\n\tcount, err := db.ReadFlapCount(testPub)\n\trequire.NoError(t, err)\n\trequire.Equal(t, peer1FlapCount, count)\n\n\t// Lookup our flap count for the second peer.\n\tcount, err = db.ReadFlapCount(testPub2)\n\trequire.NoError(t, err)\n\trequire.Equal(t, peer2FlapCount, count)\n}\n",
+      "length": 847,
+      "tokens": 103,
+      "embedding": []
+    }
+  ]
+}

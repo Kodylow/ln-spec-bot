@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/routing/bandwidth.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type bandwidthHints interface {",
+      "content": "type bandwidthHints interface {\n\t// availableChanBandwidth returns the total available bandwidth for a\n\t// channel and a bool indicating whether the channel hint was found.\n\t// The amount parameter is used to validate the outgoing htlc amount\n\t// that we wish to add to the channel against its flow restrictions. If\n\t// a zero amount is provided, the minimum htlc value for the channel\n\t// will be used. If the channel is unavailable, a zero amount is\n\t// returned.\n\tavailableChanBandwidth(channelID uint64,\n\t\tamount lnwire.MilliSatoshi) (lnwire.MilliSatoshi, bool)\n}\n\n// getLinkQuery is the function signature used to lookup a link.",
+      "length": 590,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "type getLinkQuery func(lnwire.ShortChannelID) (",
+      "content": "type getLinkQuery func(lnwire.ShortChannelID) (\n\thtlcswitch.ChannelLink, error)\n\n// bandwidthManager is an implementation of the bandwidthHints interface which\n// uses the link lookup provided to query the link for our latest local channel\n// balances.",
+      "length": 200,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "type bandwidthManager struct {",
+      "content": "type bandwidthManager struct {\n\tgetLink    getLinkQuery\n\tlocalChans map[lnwire.ShortChannelID]struct{}\n}\n\n// newBandwidthManager creates a bandwidth manager for the source node provided\n// which is used to obtain hints from the lower layer w.r.t the available\n// bandwidth of edges on the network. Currently, we'll only obtain bandwidth\n// hints for the edges we directly have open ourselves. Obtaining these hints\n// allows us to reduce the number of extraneous attempts as we can skip channels\n// that are inactive, or just don't have enough bandwidth to carry the payment.",
+      "length": 535,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func newBandwidthManager(graph routingGraph, sourceNode route.Vertex,",
+      "content": "func newBandwidthManager(graph routingGraph, sourceNode route.Vertex,\n\tlinkQuery getLinkQuery) (*bandwidthManager, error) {\n\n\tmanager := &bandwidthManager{\n\t\tgetLink:    linkQuery,\n\t\tlocalChans: make(map[lnwire.ShortChannelID]struct{}),\n\t}\n\n\t// First, we'll collect the set of outbound edges from the target\n\t// source node and add them to our bandwidth manager's map of channels.\n\terr := graph.forEachNodeChannel(sourceNode,\n\t\tfunc(channel *channeldb.DirectedChannel) error {\n\t\t\tshortID := lnwire.NewShortChanIDFromInt(\n\t\t\t\tchannel.ChannelID,\n\t\t\t)\n\t\t\tmanager.localChans[shortID] = struct{}{}\n\n\t\t\treturn nil\n\t\t})\n\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn manager, nil\n}\n\n// getBandwidth queries the current state of a link and gets its currently\n// available bandwidth. Note that this function assumes that the channel being\n// queried is one of our local channels, so any failure to retrieve the link\n// is interpreted as the link being offline.",
+      "length": 853,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *bandwidthManager) getBandwidth(cid lnwire.ShortChannelID,",
+      "content": "func (b *bandwidthManager) getBandwidth(cid lnwire.ShortChannelID,\n\tamount lnwire.MilliSatoshi) lnwire.MilliSatoshi {\n\n\tlink, err := b.getLink(cid)\n\tif err != nil {\n\t\t// If the link isn't online, then we'll report that it has\n\t\t// zero bandwidth.\n\t\tlog.Warnf(\"ShortChannelID=%v: link not found: %v\", cid, err)\n\t\treturn 0\n\t}\n\n\t// If the link is found within the switch, but it isn't yet eligible\n\t// to forward any HTLCs, then we'll treat it as if it isn't online in\n\t// the first place.\n\tif !link.EligibleToForward() {\n\t\tlog.Warnf(\"ShortChannelID=%v: not eligible to forward\", cid)\n\t\treturn 0\n\t}\n\n\t// If our link isn't currently in a state where it can  add another\n\t// outgoing htlc, treat the link as unusable.\n\tif err := link.MayAddOutgoingHtlc(amount); err != nil {\n\t\tlog.Warnf(\"ShortChannelID=%v: cannot add outgoing htlc: %v\",\n\t\t\tcid, err)\n\t\treturn 0\n\t}\n\n\t// Otherwise, we'll return the current best estimate for the available\n\t// bandwidth for the link.\n\treturn link.Bandwidth()\n}\n\n// availableChanBandwidth returns the total available bandwidth for a channel\n// and a bool indicating whether the channel hint was found. If the channel is\n// unavailable, a zero amount is returned.",
+      "length": 1088,
+      "tokens": 175,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *bandwidthManager) availableChanBandwidth(channelID uint64,",
+      "content": "func (b *bandwidthManager) availableChanBandwidth(channelID uint64,\n\tamount lnwire.MilliSatoshi) (lnwire.MilliSatoshi, bool) {\n\n\tshortID := lnwire.NewShortChanIDFromInt(channelID)\n\t_, ok := b.localChans[shortID]\n\tif !ok {\n\t\treturn 0, false\n\t}\n\n\treturn b.getBandwidth(shortID, amount), true\n}\n",
+      "length": 214,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

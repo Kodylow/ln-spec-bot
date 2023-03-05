@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/graph_test.go",
+  "package": "autopilot_test",
+  "sections": [
+    {
+      "slug": "func TestMedian(t *testing.T) {",
+      "content": "func TestMedian(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tvalues []btcutil.Amount\n\t\tmedian btcutil.Amount\n\t}{\n\t\t{\n\t\t\tvalues: []btcutil.Amount{},\n\t\t\tmedian: 0,\n\t\t},\n\t\t{\n\t\t\tvalues: []btcutil.Amount{10},\n\t\t\tmedian: 10,\n\t\t},\n\t\t{\n\t\t\tvalues: []btcutil.Amount{10, 20},\n\t\t\tmedian: 15,\n\t\t},\n\t\t{\n\t\t\tvalues: []btcutil.Amount{10, 20, 30},\n\t\t\tmedian: 20,\n\t\t},\n\t\t{\n\t\t\tvalues: []btcutil.Amount{30, 10, 20},\n\t\t\tmedian: 20,\n\t\t},\n\t\t{\n\t\t\tvalues: []btcutil.Amount{10, 10, 10, 10, 5000000},\n\t\t\tmedian: 10,\n\t\t},\n\t}\n\n\tfor _, test := range testCases {\n\t\tres := autopilot.Median(test.values)\n\t\tif res != test.median {\n\t\t\tt.Fatalf(\"expected median %v, got %v\", test.median, res)\n\t\t}\n\t}\n}\n",
+      "length": 607,
+      "tokens": 81,
+      "embedding": []
+    }
+  ]
+}

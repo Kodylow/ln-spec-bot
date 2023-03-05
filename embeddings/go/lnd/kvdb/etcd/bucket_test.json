@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/bucket_test.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"crypto/sha256\"\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/require\"\n)\n\n// TestBucketKey tests that a key for a bucket can be created correctly.",
+      "length": 176,
+      "tokens": 24,
+      "embedding": []
+    },
     {
       "slug": "func TestBucketKey(t *testing.T) {",
       "content": "func TestBucketKey(t *testing.T) {\n\trootID := sha256.Sum256([]byte(\"@\"))\n\tkey := append(rootID[:], []byte(\"foo\")...)\n\tkey = append(key, 0xff)\n\trequire.Equal(t, string(key), BucketKey(\"foo\"))\n}\n\n// TestBucketVal tests that a key for a bucket value can be created correctly.",

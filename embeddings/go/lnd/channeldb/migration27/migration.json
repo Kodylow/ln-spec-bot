@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration27/migration.go",
+  "package": "migration27",
+  "sections": [
+    {
+      "slug": "func MigrateHistoricalBalances(tx kvdb.RwTx) error {",
+      "content": "func MigrateHistoricalBalances(tx kvdb.RwTx) error {\n\tlog.Infof(\"Migrating historical local and remote balances...\")\n\n\t// First fetch the top level bucket which stores all data related to\n\t// historically stored channels.\n\trootBucket := tx.ReadWriteBucket(historicalChannelBucket)\n\n\t// If no bucket is found, we can exit early.\n\tif rootBucket == nil {\n\t\treturn nil\n\t}\n\n\t// Read a list of historical channels.\n\tchannels, err := findHistoricalChannels(rootBucket)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Migrate the balances.\n\tfor _, c := range channels {\n\t\tif err := migrateBalances(rootBucket, c); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn err\n}\n\n// findHistoricalChannels finds all historical channels.",
+      "length": 622,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func findHistoricalChannels(historicalBucket kvdb.RBucket) ([]*OpenChannel,",
+      "content": "func findHistoricalChannels(historicalBucket kvdb.RBucket) ([]*OpenChannel,\n\terror) {\n\n\tchannels := []*OpenChannel{}\n\n\t// readChannel is a helper closure that reads the channel info from the\n\t// historical sub-bucket.\n\treadChannel := func(rootBucket kvdb.RBucket, cp []byte) error {\n\t\tc := &OpenChannel{}\n\n\t\tchanPointBuf := bytes.NewBuffer(cp)\n\t\terr := mig.ReadOutpoint(chanPointBuf, &c.FundingOutpoint)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"read funding outpoint got: %v\", err)\n\t\t}\n\n\t\t// Read the sub-bucket.\n\t\tchanBucket := rootBucket.NestedReadBucket(cp)\n\t\tif chanBucket == nil {\n\t\t\tlog.Errorf(\"unable to read bucket for chanPoint=%s\",\n\t\t\t\tc.FundingOutpoint)\n\t\t\treturn nil\n\t\t}\n\n\t\t// Try to fetch channel info in old format.\n\t\terr = fetchChanInfoCompatible(chanBucket, c, true)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"%s: fetch chan info got: %v\",\n\t\t\t\tc.FundingOutpoint, err)\n\t\t}\n\n\t\tchannels = append(channels, c)\n\n\t\treturn nil\n\t}\n\n\t// Iterate the root bucket.\n\terr := historicalBucket.ForEach(func(cp, _ []byte) error {\n\t\treturn readChannel(historicalBucket, cp)\n\t})\n\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn channels, nil\n}\n\n// fetchChanInfoCompatible tries to fetch the channel info for a historical\n// channel. It will first fetch the info assuming `InitialLocalBalance` and\n// `InitialRemoteBalance` are not serialized. Upon receiving an error, it will\n// then fetch it again assuming the two fields are present in db.",
+      "length": 1307,
+      "tokens": 185,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchChanInfoCompatible(chanBucket kvdb.RBucket, c *OpenChannel,",
+      "content": "func fetchChanInfoCompatible(chanBucket kvdb.RBucket, c *OpenChannel,\n\tlegacy bool) error {\n\n\t// Try to fetch the channel info assuming the historical channel in in\n\t// the old format, where the two fields, `InitialLocalBalance` and\n\t// `InitialRemoteBalance` are not saved to db.\n\terr := FetchChanInfo(chanBucket, c, legacy)\n\tif err == nil {\n\t\treturn err\n\t}\n\n\t// If we got an error above, the historical channel may already have\n\t// the new fields saved. This could happen when a channel is closed\n\t// after applying migration 25. In this case, we'll borrow the\n\t// `FetchChanInfo` info method from migration 26 where we assume the\n\t// two fields are saved.\n\treturn mig26.FetchChanInfo(chanBucket, &c.OpenChannel, legacy)\n}\n\n// migrateBalances serializes the channel info using the new tlv format where\n// the two fields, `InitialLocalBalance` and `InitialRemoteBalance` are patched\n// with empty values.",
+      "length": 815,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateBalances(rootBucket kvdb.RwBucket, c *OpenChannel) error {",
+      "content": "func migrateBalances(rootBucket kvdb.RwBucket, c *OpenChannel) error {\n\tvar chanPointBuf bytes.Buffer\n\terr := mig.WriteOutpoint(&chanPointBuf, &c.FundingOutpoint)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Get the channel bucket.\n\tchanBucket := rootBucket.NestedReadWriteBucket(chanPointBuf.Bytes())\n\tif chanBucket == nil {\n\t\treturn fmt.Errorf(\"empty historical chan bucket\")\n\t}\n\n\t// Update the channel info.\n\tif err := PutChanInfo(chanBucket, c, false); err != nil {\n\t\treturn fmt.Errorf(\"unable to put chan info: %v\", err)\n\t}\n\n\treturn nil\n}\n",
+      "length": 447,
+      "tokens": 61,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/invoicesrpc/driver.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "//go:build invoicesrpc",
+      "content": "//go:build invoicesrpc\n// +build invoicesrpc\n\npackage invoicesrpc\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n)\n\n// createNewSubServer is a helper method that will create the new sub server\n// given the main config dispatcher method. If we're unable to find the config\n// that is meant for us in the config dispatcher, then we'll exit with an\n// error.",
+      "length": 331,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\t*Server, lnrpc.MacaroonPerms, error) {\n\n\t// We'll attempt to look up the config that we expect, according to our\n\t// subServerName name. If we can't find this, then we'll exit with an\n\t// error, as we're unable to properly initialize ourselves without this\n\t// config.\n\tsubServerConf, ok := configRegistry.FetchConfig(subServerName)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"unable to find config for \"+\n\t\t\t\"subserver type %s\", subServerName)\n\t}\n\n\t// Now that we've found an object mapping to our service name, we'll\n\t// ensure that it's the type we need.\n\tconfig, ok := subServerConf.(*Config)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"wrong type of config for \"+\n\t\t\t\"subserver %s, expected %T got %T\", subServerName,\n\t\t\t&Config{}, subServerConf)\n\t}\n\n\treturn New(config)\n}\n",
+      "length": 750,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\tsubServer := &lnrpc.SubServerDriver{\n\t\tSubServerName: subServerName,\n\t\tNewGrpcHandler: func() lnrpc.GrpcHandler {\n\t\t\treturn &ServerShell{}\n\t\t},\n\t}\n\n\t// If the build tag is active, then we'll register ourselves as a\n\t// sub-RPC server within the global lnrpc package namespace.\n\tif err := lnrpc.RegisterSubServer(subServer); err != nil {\n\t\tpanic(fmt.Sprintf(\"failed to register sub server driver \"+\n\t\t\t\"'%s': %v\", subServerName, err))\n\t}\n}\n",
+      "length": 426,
+      "tokens": 56,
+      "embedding": []
+    }
+  ]
+}

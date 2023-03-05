@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/bucket.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"crypto/sha256\"\n)\n\nconst (\n\tbucketIDLength = 32\n)\n\nvar (\n\tvaluePostfix   = []byte{0x00}\n\tbucketPostfix  = []byte{0xFF}\n\tsequencePrefix = []byte(\"$seq$\")\n)\n\n// makeBucketID returns a deterministic key for the passed byte slice.\n// Currently it returns the sha256 hash of the slice.",
+      "length": 306,
+      "tokens": 48,
+      "embedding": []
+    },
     {
       "slug": "func makeBucketID(key []byte) [bucketIDLength]byte {",
       "content": "func makeBucketID(key []byte) [bucketIDLength]byte {\n\treturn sha256.Sum256(key)\n}\n\n// isValidBucketID checks if the passed slice is the required length to be a\n// valid bucket id.",

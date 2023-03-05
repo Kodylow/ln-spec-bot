@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/itest/lnd_no_etcd_dummy_failover_test.go",
-  "package": "!kvdb_etcd",
+  "package": "itest",
   "sections": [
+    {
+      "slug": "//go:build !kvdb_etcd",
+      "content": "//go:build !kvdb_etcd\n// +build !kvdb_etcd\n\npackage itest\n\nimport \"github.com/lightningnetwork/lnd/lntest\"\n\n// testEtcdFailover is an empty itest when LND is not compiled with etcd\n// support.",
+      "length": 163,
+      "tokens": 22,
+      "embedding": []
+    },
     {
       "slug": "func testEtcdFailover(ht *lntest.HarnessTest) {}",
       "content": "func testEtcdFailover(ht *lntest.HarnessTest) {}\n",

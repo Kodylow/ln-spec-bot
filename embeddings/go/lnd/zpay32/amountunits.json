@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/zpay32/amountunits.go",
+  "package": "zpay32",
+  "sections": [
+    {
+      "slug": "func mBtcToMSat(m uint64) (lnwire.MilliSatoshi, error) {",
+      "content": "func mBtcToMSat(m uint64) (lnwire.MilliSatoshi, error) {\n\treturn lnwire.MilliSatoshi(m) * 100000000, nil\n}\n\n// uBtcToMSat converts the given amount in microBTC to millisatoshis.",
+      "length": 117,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func uBtcToMSat(u uint64) (lnwire.MilliSatoshi, error) {",
+      "content": "func uBtcToMSat(u uint64) (lnwire.MilliSatoshi, error) {\n\treturn lnwire.MilliSatoshi(u * 100000), nil\n}\n\n// nBtcToMSat converts the given amount in nanoBTC to millisatoshis.",
+      "length": 113,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func nBtcToMSat(n uint64) (lnwire.MilliSatoshi, error) {",
+      "content": "func nBtcToMSat(n uint64) (lnwire.MilliSatoshi, error) {\n\treturn lnwire.MilliSatoshi(n * 100), nil\n}\n\n// pBtcToMSat converts the given amount in picoBTC to millisatoshis.",
+      "length": 110,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func pBtcToMSat(p uint64) (lnwire.MilliSatoshi, error) {",
+      "content": "func pBtcToMSat(p uint64) (lnwire.MilliSatoshi, error) {\n\tif p < 10 {\n\t\treturn 0, fmt.Errorf(\"minimum amount is 10p\")\n\t}\n\tif p%10 != 0 {\n\t\treturn 0, fmt.Errorf(\"amount %d pBTC not expressible in msat\",\n\t\t\tp)\n\t}\n\treturn lnwire.MilliSatoshi(p / 10), nil\n}\n\n// mSatToMBtc converts the given amount in millisatoshis to milliBTC.",
+      "length": 257,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func mSatToMBtc(msat lnwire.MilliSatoshi) (uint64, error) {",
+      "content": "func mSatToMBtc(msat lnwire.MilliSatoshi) (uint64, error) {\n\tif msat%100000000 != 0 {\n\t\treturn 0, fmt.Errorf(\"%d msat not expressible \"+\n\t\t\t\"in mBTC\", msat)\n\t}\n\treturn uint64(msat / 100000000), nil\n}\n\n// mSatToUBtc converts the given amount in millisatoshis to microBTC.",
+      "length": 203,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func mSatToUBtc(msat lnwire.MilliSatoshi) (uint64, error) {",
+      "content": "func mSatToUBtc(msat lnwire.MilliSatoshi) (uint64, error) {\n\tif msat%100000 != 0 {\n\t\treturn 0, fmt.Errorf(\"%d msat not expressible \"+\n\t\t\t\"in uBTC\", msat)\n\t}\n\treturn uint64(msat / 100000), nil\n}\n\n// mSatToNBtc converts the given amount in millisatoshis to nanoBTC.",
+      "length": 196,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func mSatToNBtc(msat lnwire.MilliSatoshi) (uint64, error) {",
+      "content": "func mSatToNBtc(msat lnwire.MilliSatoshi) (uint64, error) {\n\tif msat%100 != 0 {\n\t\treturn 0, fmt.Errorf(\"%d msat not expressible in nBTC\", msat)\n\t}\n\treturn uint64(msat / 100), nil\n}\n\n// mSatToPBtc converts the given amount in millisatoshis to picoBTC.",
+      "length": 184,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func mSatToPBtc(msat lnwire.MilliSatoshi) (uint64, error) {",
+      "content": "func mSatToPBtc(msat lnwire.MilliSatoshi) (uint64, error) {\n\treturn uint64(msat * 10), nil\n}\n\n// decodeAmount returns the amount encoded by the provided string in\n// millisatoshi.",
+      "length": 115,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func decodeAmount(amount string) (lnwire.MilliSatoshi, error) {",
+      "content": "func decodeAmount(amount string) (lnwire.MilliSatoshi, error) {\n\tif len(amount) < 1 {\n\t\treturn 0, fmt.Errorf(\"amount must be non-empty\")\n\t}\n\n\t// If last character is a digit, then the amount can just be\n\t// interpreted as BTC.\n\tchar := amount[len(amount)-1]\n\tdigit := char - '0'\n\tif digit >= 0 && digit <= 9 {\n\t\tbtc, err := strconv.ParseUint(amount, 10, 64)\n\t\tif err != nil {\n\t\t\treturn 0, err\n\t\t}\n\t\treturn lnwire.MilliSatoshi(btc) * mSatPerBtc, nil\n\t}\n\n\t// If not a digit, it must be part of the known units.\n\tconv, ok := toMSat[char]\n\tif !ok {\n\t\treturn 0, fmt.Errorf(\"unknown multiplier %c\", char)\n\t}\n\n\t// Known unit.\n\tnum := amount[:len(amount)-1]\n\tif len(num) < 1 {\n\t\treturn 0, fmt.Errorf(\"number must be non-empty\")\n\t}\n\n\tam, err := strconv.ParseUint(num, 10, 64)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\treturn conv(am)\n}\n\n// encodeAmount encodes the provided millisatoshi amount using as few characters\n// as possible.",
+      "length": 819,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func encodeAmount(msat lnwire.MilliSatoshi) (string, error) {",
+      "content": "func encodeAmount(msat lnwire.MilliSatoshi) (string, error) {\n\t// If possible to express in BTC, that will always be the shortest\n\t// representation.\n\tif msat%mSatPerBtc == 0 {\n\t\treturn strconv.FormatInt(int64(msat/mSatPerBtc), 10), nil\n\t}\n\n\t// Should always be expressible in pico BTC.\n\tpico, err := fromMSat['p'](msat)\n\tif err != nil {\n\t\treturn \"\", fmt.Errorf(\"unable to express %d msat as pBTC: %v\",\n\t\t\tmsat, err)\n\t}\n\tshortened := strconv.FormatUint(pico, 10) + \"p\"\n\tfor unit, conv := range fromMSat {\n\t\tam, err := conv(msat)\n\t\tif err != nil {\n\t\t\t// Not expressible using this unit.\n\t\t\tcontinue\n\t\t}\n\n\t\t// Save the shortest found representation.\n\t\tstr := strconv.FormatUint(am, 10) + string(unit)\n\t\tif len(str) < len(shortened) {\n\t\t\tshortened = str\n\t\t}\n\t}\n\n\treturn shortened, nil\n}\n",
+      "length": 693,
+      "tokens": 111,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_tx.go",
-  "package": "kvdb_postgres",
+  "package": "sqlbase",
   "sections": [
+    {
+      "slug": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))",
+      "content": "//go:build kvdb_postgres || (kvdb_sqlite && !(windows && (arm || 386)) && !(linux && (ppc64 || mips || mipsle || mips64)))\n\npackage sqlbase\n\nimport (\n\t\"context\"\n\t\"database/sql\"\n\t\"sync\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\n// readWriteTx holds a reference to an open postgres transaction.",
+      "length": 162,
+      "tokens": 19,
+      "embedding": []
+    },
     {
       "slug": "type readWriteTx struct {",
       "content": "type readWriteTx struct {\n\tdb *db\n\ttx *sql.Tx\n\n\t// onCommit gets called upon commit.\n\tonCommit func()\n\n\t// active is true if the transaction hasn't been committed yet.\n\tactive bool\n\n\t// locker is a pointer to the global db lock.\n\tlocker sync.Locker\n}\n\n// newReadWriteTx creates an rw transaction using a connection from the\n// specified pool.",

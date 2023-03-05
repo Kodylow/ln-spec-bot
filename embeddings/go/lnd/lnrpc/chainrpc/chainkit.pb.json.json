@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/chainrpc/chainkit.pb.json.go",
+  "package": "chainrpc",
+  "sections": [
+    {
+      "slug": "func RegisterChainKitJSONCallbacks(registry map[string]func(ctx context.Context,",
+      "content": "func RegisterChainKitJSONCallbacks(registry map[string]func(ctx context.Context,\n\tconn *grpc.ClientConn, reqJSON string, callback func(string, error))) {\n\n\tmarshaler := &gateway.JSONPb{\n\t\tMarshalOptions: protojson.MarshalOptions{\n\t\t\tUseProtoNames:   true,\n\t\t\tEmitUnpopulated: true,\n\t\t},\n\t}\n\n\tregistry[\"chainrpc.ChainKit.GetBlock\"] = func(ctx context.Context,\n\t\tconn *grpc.ClientConn, reqJSON string, callback func(string, error)) {\n\n\t\treq := &GetBlockRequest{}\n\t\terr := marshaler.Unmarshal([]byte(reqJSON), req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\tclient := NewChainKitClient(conn)\n\t\tresp, err := client.GetBlock(ctx, req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\trespBytes, err := marshaler.Marshal(resp)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\t\tcallback(string(respBytes), nil)\n\t}\n\n\tregistry[\"chainrpc.ChainKit.GetBestBlock\"] = func(ctx context.Context,\n\t\tconn *grpc.ClientConn, reqJSON string, callback func(string, error)) {\n\n\t\treq := &GetBestBlockRequest{}\n\t\terr := marshaler.Unmarshal([]byte(reqJSON), req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\tclient := NewChainKitClient(conn)\n\t\tresp, err := client.GetBestBlock(ctx, req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\trespBytes, err := marshaler.Marshal(resp)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\t\tcallback(string(respBytes), nil)\n\t}\n\n\tregistry[\"chainrpc.ChainKit.GetBlockHash\"] = func(ctx context.Context,\n\t\tconn *grpc.ClientConn, reqJSON string, callback func(string, error)) {\n\n\t\treq := &GetBlockHashRequest{}\n\t\terr := marshaler.Unmarshal([]byte(reqJSON), req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\tclient := NewChainKitClient(conn)\n\t\tresp, err := client.GetBlockHash(ctx, req)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\n\t\trespBytes, err := marshaler.Marshal(resp)\n\t\tif err != nil {\n\t\t\tcallback(\"\", err)\n\t\t\treturn\n\t\t}\n\t\tcallback(string(respBytes), nil)\n\t}\n}\n",
+      "length": 1777,
+      "tokens": 203,
+      "embedding": []
+    }
+  ]
+}

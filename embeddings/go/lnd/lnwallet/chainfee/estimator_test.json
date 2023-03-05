@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chainfee/estimator_test.go",
+  "package": "chainfee",
+  "sections": [
+    {
+      "slug": "type mockSparseConfFeeSource struct {",
+      "content": "type mockSparseConfFeeSource struct {\n\turl  string\n\tfees map[uint32]uint32\n}\n",
+      "length": 36,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (e mockSparseConfFeeSource) GenQueryURL() string {",
+      "content": "func (e mockSparseConfFeeSource) GenQueryURL() string {\n\treturn e.url\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (e mockSparseConfFeeSource) ParseResponse(r io.Reader) (map[uint32]uint32, error) {",
+      "content": "func (e mockSparseConfFeeSource) ParseResponse(r io.Reader) (map[uint32]uint32, error) {\n\treturn e.fees, nil\n}\n\n// TestFeeRateTypes checks that converting fee rates between the\n// different types that represent fee rates and calculating fees\n// work as expected.",
+      "length": 168,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFeeRateTypes(t *testing.T) {",
+      "content": "func TestFeeRateTypes(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll be calculating the transaction fees for the given measurements\n\t// using different fee rates and expecting them to match.\n\tconst vsize = 300\n\tconst weight = vsize * 4\n\n\t// Test the conversion from sat/kw to sat/kb.\n\tfor feePerKw := SatPerKWeight(250); feePerKw < 10000; feePerKw += 50 {\n\t\tfeePerKB := feePerKw.FeePerKVByte()\n\t\tif feePerKB != SatPerKVByte(feePerKw*4) {\n\t\t\tt.Fatalf(\"expected %d sat/kb, got %d sat/kb when \"+\n\t\t\t\t\"converting from %d sat/kw\", feePerKw*4,\n\t\t\t\tfeePerKB, feePerKw)\n\t\t}\n\n\t\t// The resulting transaction fee should be the same when using\n\t\t// both rates.\n\t\texpectedFee := btcutil.Amount(feePerKw * weight / 1000)\n\t\tfee1 := feePerKw.FeeForWeight(weight)\n\t\tif fee1 != expectedFee {\n\t\t\tt.Fatalf(\"expected fee of %d sats, got %d sats\",\n\t\t\t\texpectedFee, fee1)\n\t\t}\n\t\tfee2 := feePerKB.FeeForVSize(vsize)\n\t\tif fee2 != expectedFee {\n\t\t\tt.Fatalf(\"expected fee of %d sats, got %d sats\",\n\t\t\t\texpectedFee, fee2)\n\t\t}\n\t}\n\n\t// Test the conversion from sat/kb to sat/kw.\n\tfor feePerKB := SatPerKVByte(1000); feePerKB < 40000; feePerKB += 1000 {\n\t\tfeePerKw := feePerKB.FeePerKWeight()\n\t\tif feePerKw != SatPerKWeight(feePerKB/4) {\n\t\t\tt.Fatalf(\"expected %d sat/kw, got %d sat/kw when \"+\n\t\t\t\t\"converting from %d sat/kb\", feePerKB/4,\n\t\t\t\tfeePerKw, feePerKB)\n\t\t}\n\n\t\t// The resulting transaction fee should be the same when using\n\t\t// both rates.\n\t\texpectedFee := btcutil.Amount(feePerKB * vsize / 1000)\n\t\tfee1 := feePerKB.FeeForVSize(vsize)\n\t\tif fee1 != expectedFee {\n\t\t\tt.Fatalf(\"expected fee of %d sats, got %d sats\",\n\t\t\t\texpectedFee, fee1)\n\t\t}\n\t\tfee2 := feePerKw.FeeForWeight(weight)\n\t\tif fee2 != expectedFee {\n\t\t\tt.Fatalf(\"expected fee of %d sats, got %d sats\",\n\t\t\t\texpectedFee, fee2)\n\t\t}\n\t}\n}\n\n// TestStaticFeeEstimator checks that the StaticFeeEstimator returns the\n// expected fee rate.",
+      "length": 1763,
+      "tokens": 251,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStaticFeeEstimator(t *testing.T) {",
+      "content": "func TestStaticFeeEstimator(t *testing.T) {\n\tt.Parallel()\n\n\tconst feePerKw = FeePerKwFloor\n\n\tfeeEstimator := NewStaticEstimator(feePerKw, 0)\n\tif err := feeEstimator.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start fee estimator: %v\", err)\n\t}\n\tdefer feeEstimator.Stop()\n\n\tfeeRate, err := feeEstimator.EstimateFeePerKW(6)\n\trequire.NoError(t, err, \"unable to get fee rate\")\n\n\tif feeRate != feePerKw {\n\t\tt.Fatalf(\"expected fee rate %v, got %v\", feePerKw, feeRate)\n\t}\n}\n\n// TestSparseConfFeeSource checks that SparseConfFeeSource generates URLs and\n// parses API responses as expected.",
+      "length": 518,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSparseConfFeeSource(t *testing.T) {",
+      "content": "func TestSparseConfFeeSource(t *testing.T) {\n\tt.Parallel()\n\n\t// Test that GenQueryURL returns the URL as is.\n\turl := \"test\"\n\tfeeSource := SparseConfFeeSource{URL: url}\n\tqueryURL := feeSource.GenQueryURL()\n\tif queryURL != url {\n\t\tt.Fatalf(\"expected query URL of %v, got %v\", url, queryURL)\n\t}\n\n\t// Test parsing a properly formatted JSON API response.\n\t// First, create the response as a bytes.Reader.\n\ttestFees := map[uint32]uint32{\n\t\t1: 12345,\n\t\t2: 42,\n\t\t3: 54321,\n\t}\n\ttestJSON := map[string]map[uint32]uint32{\"fee_by_block_target\": testFees}\n\tjsonResp, err := json.Marshal(testJSON)\n\trequire.NoError(t, err, \"unable to marshal JSON API response\")\n\treader := bytes.NewReader(jsonResp)\n\n\t// Finally, ensure the expected map is returned without error.\n\tfees, err := feeSource.ParseResponse(reader)\n\trequire.NoError(t, err, \"unable to parse API response\")\n\tif !reflect.DeepEqual(fees, testFees) {\n\t\tt.Fatalf(\"expected %v, got %v\", testFees, fees)\n\t}\n\n\t// Test parsing an improperly formatted JSON API response.\n\tbadFees := map[string]uint32{\"hi\": 12345, \"hello\": 42, \"satoshi\": 54321}\n\tbadJSON := map[string]map[string]uint32{\"fee_by_block_target\": badFees}\n\tjsonResp, err = json.Marshal(badJSON)\n\trequire.NoError(t, err, \"unable to marshal JSON API response\")\n\treader = bytes.NewReader(jsonResp)\n\n\t// Finally, ensure the improperly formatted fees error.\n\t_, err = feeSource.ParseResponse(reader)\n\tif err == nil {\n\t\tt.Fatalf(\"expected ParseResponse to fail\")\n\t}\n}\n\n// TestWebAPIFeeEstimator checks that the WebAPIFeeEstimator returns fee rates\n// as expected.",
+      "length": 1467,
+      "tokens": 184,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWebAPIFeeEstimator(t *testing.T) {",
+      "content": "func TestWebAPIFeeEstimator(t *testing.T) {\n\tt.Parallel()\n\tfeeFloor := uint32(FeePerKwFloor.FeePerKVByte())\n\ttestFeeRate := feeFloor * 100\n\n\ttestCases := []struct {\n\t\tname   string\n\t\ttarget uint32\n\t\tapiEst uint32\n\t\test    uint32\n\t\terr    string\n\t}{\n\t\t{\n\t\t\tname:   \"target_below_min\",\n\t\t\ttarget: 0,\n\t\t\tapiEst: 0,\n\t\t\test:    0,\n\t\t\terr:    \"too low, minimum\",\n\t\t},\n\t\t{\n\t\t\tname:   \"target_w_too-low_fee\",\n\t\t\ttarget: 100,\n\t\t\tapiEst: 42,\n\t\t\test:    feeFloor,\n\t\t\terr:    \"\",\n\t\t},\n\t\t{\n\t\t\tname:   \"API-omitted_target\",\n\t\t\ttarget: 2,\n\t\t\tapiEst: 0,\n\t\t\test:    testFeeRate,\n\t\t\terr:    \"\",\n\t\t},\n\t\t{\n\t\t\tname:   \"valid_target\",\n\t\t\ttarget: 20,\n\t\t\tapiEst: testFeeRate,\n\t\t\test:    testFeeRate,\n\t\t\terr:    \"\",\n\t\t},\n\t\t{\n\t\t\tname:   \"valid_target_extrapolated_fee\",\n\t\t\ttarget: 25,\n\t\t\tapiEst: 0,\n\t\t\test:    testFeeRate,\n\t\t\terr:    \"\",\n\t\t},\n\t}\n\n\t// Construct mock fee source for the Estimator to pull fees from.\n\ttestFees := make(map[uint32]uint32)\n\tfor _, tc := range testCases {\n\t\tif tc.apiEst != 0 {\n\t\t\ttestFees[tc.target] = tc.apiEst\n\t\t}\n\t}\n\n\tfeeSource := mockSparseConfFeeSource{\n\t\turl:  \"https://www.github.com\",\n\t\tfees: testFees,\n\t}\n\n\testimator := NewWebAPIEstimator(feeSource, false)\n\n\t// Test that requesting a fee when no fees have been cached fails.\n\tfeeRate, err := estimator.EstimateFeePerKW(5)\n\trequire.NoErrorf(t, err, \"expected no error\")\n\trequire.Equalf(t, FeePerKwFloor, feeRate, \"expected fee rate floor \"+\n\t\t\"returned when no cached fee rate found\")\n\n\tif err := estimator.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start fee estimator, got: %v\", err)\n\t}\n\tdefer estimator.Stop()\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\test, err := estimator.EstimateFeePerKW(tc.target)\n\t\t\tif tc.err != \"\" {\n\t\t\t\tif err == nil ||\n\t\t\t\t\t!strings.Contains(err.Error(), tc.err) {\n\n\t\t\t\t\tt.Fatalf(\"expected fee estimation to \"+\n\t\t\t\t\t\t\"fail, instead got: %v\", err)\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\texp := SatPerKVByte(tc.est).FeePerKWeight()\n\t\t\t\tif err != nil {\n\t\t\t\t\tt.Fatalf(\"unable to estimate fee for \"+\n\t\t\t\t\t\t\"%v block target, got: %v\",\n\t\t\t\t\t\ttc.target, err)\n\t\t\t\t}\n\t\t\t\tif est != exp {\n\t\t\t\t\tt.Fatalf(\"expected fee estimate of \"+\n\t\t\t\t\t\t\"%v, got %v\", exp, est)\n\t\t\t\t}\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestGetCachedFee checks that the fee caching logic works as expected.",
+      "length": 2115,
+      "tokens": 285,
+      "embedding": []
+    },
+    {
+      "slug": "func TestGetCachedFee(t *testing.T) {",
+      "content": "func TestGetCachedFee(t *testing.T) {\n\ttarget := uint32(2)\n\tfee := uint32(100)\n\n\t// Create a dummy estimator without WebAPIFeeSource.\n\testimator := NewWebAPIEstimator(nil, false)\n\n\t// When the cache is empty, an error should be returned.\n\tcachedFee, err := estimator.getCachedFee(target)\n\trequire.Zero(t, cachedFee)\n\trequire.ErrorIs(t, err, errEmptyCache)\n\n\t// Store a fee rate inside the cache.\n\testimator.feeByBlockTarget[target] = fee\n\n\ttestCases := []struct {\n\t\tname        string\n\t\tconfTarget  uint32\n\t\texpectedFee uint32\n\t\texpectErr   error\n\t}{\n\t\t{\n\t\t\t// When the target is cached, return it.\n\t\t\tname:        \"return cached fee\",\n\t\t\tconfTarget:  target,\n\t\t\texpectedFee: fee,\n\t\t\texpectErr:   nil,\n\t\t},\n\t\t{\n\t\t\t// When the target is not cached, return the next\n\t\t\t// lowest target that's cached.\n\t\t\tname:        \"return next cached fee\",\n\t\t\tconfTarget:  target + 1,\n\t\t\texpectedFee: fee,\n\t\t\texpectErr:   nil,\n\t\t},\n\t\t{\n\t\t\t// When the target is not cached, and the next lowest\n\t\t\t// target is not cached, return the nearest fee rate.\n\t\t\tname:        \"return highest cached fee\",\n\t\t\tconfTarget:  target - 1,\n\t\t\texpectedFee: fee,\n\t\t\texpectErr:   nil,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tcachedFee, err := estimator.getCachedFee(tc.confTarget)\n\n\t\t\trequire.Equal(t, tc.expectedFee, cachedFee)\n\t\t\trequire.ErrorIs(t, err, tc.expectErr)\n\t\t})\n\t}\n}\n",
+      "length": 1304,
+      "tokens": 175,
+      "embedding": []
+    }
+  ]
+}

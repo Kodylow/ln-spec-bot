@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/signal/signal.go",
+  "package": "signal",
+  "sections": [
+    {
+      "slug": "func systemdNotifyReady() error {",
+      "content": "func systemdNotifyReady() error {\n\tnotified, err := daemon.SdNotify(false, daemon.SdNotifyReady)\n\tif err != nil {\n\t\terr := fmt.Errorf(\"failed to notify systemd %v (if you aren't \"+\n\t\t\t\"running systemd clear the environment variable \"+\n\t\t\t\"NOTIFY_SOCKET)\", err)\n\t\tlog.Error(err)\n\n\t\t// The SdNotify doc says it's common to ignore the\n\t\t// error. We don't want to ignore it because if someone\n\t\t// set up systemd to wait for initialization other\n\t\t// processes would get stuck.\n\t\treturn err\n\t}\n\tif notified {\n\t\tlog.Info(\"Systemd was notified about our readiness\")\n\t} else {\n\t\tlog.Info(\"We're not running within systemd or the service \" +\n\t\t\t\"type is not 'notify'\")\n\t}\n\treturn nil\n}\n\n// systemdNotifyStop notifies systemd that LND is stopping and logs error if\n// the notification failed. It also logs if the notification was actually sent.\n// Systemd being unavailable is intentionally ignored.",
+      "length": 833,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func systemdNotifyStop() {",
+      "content": "func systemdNotifyStop() {\n\tnotified, err := daemon.SdNotify(false, daemon.SdNotifyStopping)\n\n\t// Just log - we're stopping anyway.\n\tif err != nil {\n\t\tlog.Errorf(\"Failed to notify systemd: %v\", err)\n\t}\n\tif notified {\n\t\tlog.Infof(\"Systemd was notified about stopping\")\n\t}\n}\n\n// Notifier handles notifications about status of LND.",
+      "length": 290,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type Notifier struct {",
+      "content": "type Notifier struct {\n\t// notifiedReady remembers whether Ready was sent to avoid sending it\n\t// multiple times.\n\tnotifiedReady bool\n}\n\n// NotifyReady notifies other applications that RPC is ready.",
+      "length": 170,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (notifier *Notifier) NotifyReady(walletUnlocked bool) error {",
+      "content": "func (notifier *Notifier) NotifyReady(walletUnlocked bool) error {\n\tif !notifier.notifiedReady {\n\t\terr := systemdNotifyReady()\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tnotifier.notifiedReady = true\n\t}\n\tif walletUnlocked {\n\t\t_, _ = daemon.SdNotify(false, \"STATUS=Wallet unlocked\")\n\t} else {\n\t\t_, _ = daemon.SdNotify(false, \"STATUS=Wallet locked\")\n\t}\n\n\treturn nil\n}\n\n// notifyStop notifies other applications that LND is stopping.",
+      "length": 342,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (notifier *Notifier) notifyStop() {",
+      "content": "func (notifier *Notifier) notifyStop() {\n\tsystemdNotifyStop()\n}\n\n// Interceptor contains channels and methods regarding application shutdown\n// and interrupt signals.",
+      "length": 121,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "type Interceptor struct {",
+      "content": "type Interceptor struct {\n\t// interruptChannel is used to receive SIGINT (Ctrl+C) signals.\n\tinterruptChannel chan os.Signal\n\n\t// shutdownChannel is closed once the main interrupt handler exits.\n\tshutdownChannel chan struct{}\n\n\t// shutdownRequestChannel is used to request the daemon to shutdown\n\t// gracefully, similar to when receiving SIGINT.\n\tshutdownRequestChannel chan struct{}\n\n\t// quit is closed when instructing the main interrupt handler to exit.\n\t// Note that to avoid losing notifications, only shutdown func may\n\t// close this channel.\n\tquit chan struct{}\n\n\t// Notifier handles sending shutdown notifications.\n\tNotifier Notifier\n}\n\n// Intercept starts the interception of interrupt signals and returns an `Interceptor` instance.\n// Note that any previous active interceptor must be stopped before a new one can be created.",
+      "length": 788,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func Intercept() (Interceptor, error) {",
+      "content": "func Intercept() (Interceptor, error) {\n\tif !atomic.CompareAndSwapInt32(&started, 0, 1) {\n\t\treturn Interceptor{}, errors.New(\"intercept already started\")\n\t}\n\n\tchannels := Interceptor{\n\t\tinterruptChannel:       make(chan os.Signal, 1),\n\t\tshutdownChannel:        make(chan struct{}),\n\t\tshutdownRequestChannel: make(chan struct{}),\n\t\tquit:                   make(chan struct{}),\n\t}\n\n\tsignalsToCatch := []os.Signal{\n\t\tos.Interrupt,\n\t\tos.Kill,\n\t\tsyscall.SIGTERM,\n\t\tsyscall.SIGQUIT,\n\t}\n\tsignal.Notify(channels.interruptChannel, signalsToCatch...)\n\tgo channels.mainInterruptHandler()\n\n\treturn channels, nil\n}\n\n// mainInterruptHandler listens for SIGINT (Ctrl+C) signals on the\n// interruptChannel and shutdown requests on the shutdownRequestChannel, and\n// invokes the registered interruptCallbacks accordingly. It also listens for\n// callback registration.\n// It must be run as a goroutine.",
+      "length": 817,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Interceptor) mainInterruptHandler() {",
+      "content": "func (c *Interceptor) mainInterruptHandler() {\n\tdefer atomic.StoreInt32(&started, 0)\n\t// isShutdown is a flag which is used to indicate whether or not\n\t// the shutdown signal has already been received and hence any future\n\t// attempts to add a new interrupt handler should invoke them\n\t// immediately.\n\tvar isShutdown bool\n\n\t// shutdown invokes the registered interrupt handlers, then signals the\n\t// shutdownChannel.\n\tshutdown := func() {\n\t\t// Ignore more than one shutdown signal.\n\t\tif isShutdown {\n\t\t\tlog.Infof(\"Already shutting down...\")\n\t\t\treturn\n\t\t}\n\t\tisShutdown = true\n\t\tlog.Infof(\"Shutting down...\")\n\t\tc.Notifier.notifyStop()\n\n\t\t// Signal the main interrupt handler to exit, and stop accept\n\t\t// post-facto requests.\n\t\tclose(c.quit)\n\t}\n\n\tfor {\n\t\tselect {\n\t\tcase signal := <-c.interruptChannel:\n\t\t\tlog.Infof(\"Received %v\", signal)\n\t\t\tshutdown()\n\n\t\tcase <-c.shutdownRequestChannel:\n\t\t\tlog.Infof(\"Received shutdown request.\")\n\t\t\tshutdown()\n\n\t\tcase <-c.quit:\n\t\t\tlog.Infof(\"Gracefully shutting down.\")\n\t\t\tclose(c.shutdownChannel)\n\t\t\tsignal.Stop(c.interruptChannel)\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// Listening returns true if the main interrupt handler has been started, and\n// has not been killed.",
+      "length": 1098,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Interceptor) Listening() bool {",
+      "content": "func (c *Interceptor) Listening() bool {\n\t// If our started field is not set, we are not yet listening for\n\t// interrupts.\n\tif atomic.LoadInt32(&started) != 1 {\n\t\treturn false\n\t}\n\n\t// If we have started our main goroutine, we check whether we have\n\t// stopped it yet.\n\treturn c.Alive()\n}\n\n// Alive returns true if the main interrupt handler has not been killed.",
+      "length": 309,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Interceptor) Alive() bool {",
+      "content": "func (c *Interceptor) Alive() bool {\n\tselect {\n\tcase <-c.quit:\n\t\treturn false\n\tdefault:\n\t\treturn true\n\t}\n}\n\n// RequestShutdown initiates a graceful shutdown from the application.",
+      "length": 133,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Interceptor) RequestShutdown() {",
+      "content": "func (c *Interceptor) RequestShutdown() {\n\tselect {\n\tcase c.shutdownRequestChannel <- struct{}{}:\n\tcase <-c.quit:\n\t}\n}\n\n// ShutdownChannel returns the channel that will be closed once the main\n// interrupt handler has exited.",
+      "length": 176,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Interceptor) ShutdownChannel() <-chan struct{} {",
+      "content": "func (c *Interceptor) ShutdownChannel() <-chan struct{} {\n\treturn c.shutdownChannel\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/routing/route/route_test.go",
+  "package": "route",
+  "sections": [
+    {
+      "slug": "func TestRouteTotalFees(t *testing.T) {",
+      "content": "func TestRouteTotalFees(t *testing.T) {\n\tt.Parallel()\n\n\t// Make sure empty route returns a 0 fee, and zero amount.\n\tr := &Route{}\n\tif r.TotalFees() != 0 {\n\t\tt.Fatalf(\"expected 0 fees, got %v\", r.TotalFees())\n\t}\n\tif r.ReceiverAmt() != 0 {\n\t\tt.Fatalf(\"expected 0 amt, got %v\", r.ReceiverAmt())\n\t}\n\n\t// Make sure empty route won't be allowed in the constructor.\n\tamt := lnwire.MilliSatoshi(1000)\n\t_, err := NewRouteFromHops(amt, 100, Vertex{}, []*Hop{})\n\tif err != ErrNoRouteHopsProvided {\n\t\tt.Fatalf(\"expected ErrNoRouteHopsProvided, got %v\", err)\n\t}\n\n\t// For one-hop routes the fee should be 0, since the last node will\n\t// receive the full amount.\n\thops := []*Hop{\n\t\t{\n\t\t\tPubKeyBytes:      Vertex{},\n\t\t\tChannelID:        1,\n\t\t\tOutgoingTimeLock: 44,\n\t\t\tAmtToForward:     amt,\n\t\t},\n\t}\n\tr, err = NewRouteFromHops(amt, 100, Vertex{}, hops)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif r.TotalFees() != 0 {\n\t\tt.Fatalf(\"expected 0 fees, got %v\", r.TotalFees())\n\t}\n\n\tif r.ReceiverAmt() != amt {\n\t\tt.Fatalf(\"expected %v amt, got %v\", amt, r.ReceiverAmt())\n\t}\n\n\t// Append the route with a node, making the first one take a fee.\n\tfee := lnwire.MilliSatoshi(100)\n\thops = append(hops, &Hop{\n\t\tPubKeyBytes:      Vertex{},\n\t\tChannelID:        2,\n\t\tOutgoingTimeLock: 33,\n\t\tAmtToForward:     amt - fee,\n\t},\n\t)\n\n\tr, err = NewRouteFromHops(amt, 100, Vertex{}, hops)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif r.TotalFees() != fee {\n\t\tt.Fatalf(\"expected %v fees, got %v\", fee, r.TotalFees())\n\t}\n\n\tif r.ReceiverAmt() != amt-fee {\n\t\tt.Fatalf(\"expected %v amt, got %v\", amt-fee, r.ReceiverAmt())\n\t}\n}\n\nvar (\n\ttestAmt  = lnwire.MilliSatoshi(1000)\n\ttestAddr = [32]byte{0x01, 0x02}\n)\n\n// TestMPPHop asserts that a Hop will encode a non-nil MPP to final nodes, and\n// fail when trying to send to intermediaries.",
+      "length": 1666,
+      "tokens": 251,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMPPHop(t *testing.T) {",
+      "content": "func TestMPPHop(t *testing.T) {\n\tt.Parallel()\n\n\thop := Hop{\n\t\tChannelID:        1,\n\t\tOutgoingTimeLock: 44,\n\t\tAmtToForward:     testAmt,\n\t\tLegacyPayload:    false,\n\t\tMPP:              record.NewMPP(testAmt, testAddr),\n\t}\n\n\t// Encoding an MPP record to an intermediate hop should result in a\n\t// failure.\n\tvar b bytes.Buffer\n\terr := hop.PackHopPayload(&b, 2)\n\tif err != ErrIntermediateMPPHop {\n\t\tt.Fatalf(\"expected err: %v, got: %v\",\n\t\t\tErrIntermediateMPPHop, err)\n\t}\n\n\t// Encoding an MPP record to a final hop should be successful.\n\tb.Reset()\n\terr = hop.PackHopPayload(&b, 0)\n\tif err != nil {\n\t\tt.Fatalf(\"expected err: %v, got: %v\", nil, err)\n\t}\n}\n\n// TestAMPHop asserts that a Hop will encode a non-nil AMP to final nodes of an\n// MPP record is also present, and fail otherwise.",
+      "length": 718,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAMPHop(t *testing.T) {",
+      "content": "func TestAMPHop(t *testing.T) {\n\tt.Parallel()\n\n\thop := Hop{\n\t\tChannelID:        1,\n\t\tOutgoingTimeLock: 44,\n\t\tAmtToForward:     testAmt,\n\t\tLegacyPayload:    false,\n\t\tAMP:              record.NewAMP([32]byte{}, [32]byte{}, 3),\n\t}\n\n\t// Encoding an AMP record to an intermediate hop w/o an MPP record\n\t// should result in a failure.\n\tvar b bytes.Buffer\n\terr := hop.PackHopPayload(&b, 2)\n\tif err != ErrAMPMissingMPP {\n\t\tt.Fatalf(\"expected err: %v, got: %v\",\n\t\t\tErrAMPMissingMPP, err)\n\t}\n\n\t// Encoding an AMP record to a final hop w/o an MPP record should result\n\t// in a failure.\n\tb.Reset()\n\terr = hop.PackHopPayload(&b, 0)\n\tif err != ErrAMPMissingMPP {\n\t\tt.Fatalf(\"expected err: %v, got: %v\",\n\t\t\tErrAMPMissingMPP, err)\n\t}\n\n\t// Encoding an AMP record to a final hop w/ an MPP record should be\n\t// successful.\n\thop.MPP = record.NewMPP(testAmt, testAddr)\n\tb.Reset()\n\terr = hop.PackHopPayload(&b, 0)\n\tif err != nil {\n\t\tt.Fatalf(\"expected err: %v, got: %v\", nil, err)\n\t}\n}\n\n// TestPayloadSize tests the payload size calculation that is provided by Hop\n// structs.",
+      "length": 983,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPayloadSize(t *testing.T) {",
+      "content": "func TestPayloadSize(t *testing.T) {\n\thops := []*Hop{\n\t\t{\n\t\t\tPubKeyBytes:      testPubKeyBytes,\n\t\t\tAmtToForward:     1000,\n\t\t\tOutgoingTimeLock: 600000,\n\t\t\tChannelID:        3432483437438,\n\t\t\tLegacyPayload:    true,\n\t\t},\n\t\t{\n\t\t\tPubKeyBytes:      testPubKeyBytes,\n\t\t\tAmtToForward:     1200,\n\t\t\tOutgoingTimeLock: 700000,\n\t\t\tChannelID:        63584534844,\n\t\t},\n\t\t{\n\t\t\tPubKeyBytes:      testPubKeyBytes,\n\t\t\tAmtToForward:     1200,\n\t\t\tOutgoingTimeLock: 700000,\n\t\t\tMPP:              record.NewMPP(500, [32]byte{}),\n\t\t\tAMP:              record.NewAMP([32]byte{}, [32]byte{}, 8),\n\t\t\tCustomRecords: map[uint64][]byte{\n\t\t\t\t100000:  {1, 2, 3},\n\t\t\t\t1000000: {4, 5},\n\t\t\t},\n\t\t\tMetadata: []byte{10, 11},\n\t\t},\n\t}\n\n\trt := Route{\n\t\tHops: hops,\n\t}\n\tpath, err := rt.ToSphinxPath()\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tfor i, onionHop := range path[:path.TrueRouteLength()] {\n\t\thop := hops[i]\n\t\tvar nextChan uint64\n\t\tif i < len(hops)-1 {\n\t\t\tnextChan = hops[i+1].ChannelID\n\t\t}\n\n\t\texpected := uint64(onionHop.HopPayload.NumBytes())\n\t\tactual := hop.PayloadSize(nextChan)\n\t\tif expected != actual {\n\t\t\tt.Fatalf(\"unexpected payload size at hop %v: \"+\n\t\t\t\t\"expected %v, got %v\",\n\t\t\t\ti, expected, actual)\n\t\t}\n\t}\n}\n",
+      "length": 1095,
+      "tokens": 121,
+      "embedding": []
+    }
+  ]
+}

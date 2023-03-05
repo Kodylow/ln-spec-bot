@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/top_centrality.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type TopCentrality struct {",
+      "content": "type TopCentrality struct {\n\tcentralityMetric *BetweennessCentrality\n}\n\n// A compile time assertion to ensure TopCentrality meets the\n// AttachmentHeuristic interface.\nvar _ AttachmentHeuristic = (*TopCentrality)(nil)\n\n// NewTopCentrality constructs and returns a new TopCentrality heuristic.",
+      "length": 257,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTopCentrality() *TopCentrality {",
+      "content": "func NewTopCentrality() *TopCentrality {\n\tmetric, err := NewBetweennessCentralityMetric(\n\t\truntime.NumCPU(),\n\t)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\treturn &TopCentrality{\n\t\tcentralityMetric: metric,\n\t}\n}\n\n// Name returns the name of the heuristic.",
+      "length": 193,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *TopCentrality) Name() string {",
+      "content": "func (g *TopCentrality) Name() string {\n\treturn \"top_centrality\"\n}\n\n// NodeScores will return a [0,1] normalized map of scores for the given nodes\n// except for the ones we already have channels with. The scores will simply\n// be the betweenness centrality values of the nodes.\n// As our current implementation of betweenness centrality is non-incremental,\n// NodeScores will recalculate the centrality values on every call, which is\n// slow for large graphs.",
+      "length": 411,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *TopCentrality) NodeScores(graph ChannelGraph, chans []LocalChannel,",
+      "content": "func (g *TopCentrality) NodeScores(graph ChannelGraph, chans []LocalChannel,\n\tchanSize btcutil.Amount, nodes map[NodeID]struct{}) (\n\tmap[NodeID]*NodeScore, error) {\n\n\t// Calculate betweenness centrality for the whole graph.\n\tif err := g.centralityMetric.Refresh(graph); err != nil {\n\t\treturn nil, err\n\t}\n\n\tnormalize := true\n\tcentrality := g.centralityMetric.GetMetric(normalize)\n\n\t// Create a map of the existing peers for faster filtering.\n\texistingPeers := make(map[NodeID]struct{})\n\tfor _, c := range chans {\n\t\texistingPeers[c.Node] = struct{}{}\n\t}\n\n\tresult := make(map[NodeID]*NodeScore, len(nodes))\n\tfor nodeID := range nodes {\n\t\t// Skip nodes we already have channel with.\n\t\tif _, ok := existingPeers[nodeID]; ok {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Skip passed nodes not in the graph. This could happen if\n\t\t// the graph changed before computing the centrality values as\n\t\t// the nodes we iterate are prefiltered by the autopilot agent.\n\t\tscore, ok := centrality[nodeID]\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\n\t\tresult[nodeID] = &NodeScore{\n\t\t\tNodeID: nodeID,\n\t\t\tScore:  score,\n\t\t}\n\t}\n\n\treturn result, nil\n}\n",
+      "length": 974,
+      "tokens": 141,
+      "embedding": []
+    }
+  ]
+}

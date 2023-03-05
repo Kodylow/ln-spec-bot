@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/tx_input_set_test.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "func TestTxInputSet(t *testing.T) {",
+      "content": "func TestTxInputSet(t *testing.T) {\n\tconst (\n\t\tfeeRate   = 1000\n\t\tmaxInputs = 10\n\t)\n\tset := newTxInputSet(nil, feeRate, maxInputs)\n\n\t// Create a 300 sat input. The fee to sweep this input to a P2WKH output\n\t// is 439 sats. That means that this input yields -139 sats and we\n\t// expect it not to be added.\n\tif set.add(createP2WKHInput(300), constraintsRegular) {\n\t\tt.Fatal(\"expected add of negatively yielding input to fail\")\n\t}\n\n\t// A 700 sat input should be accepted into the set, because it yields\n\t// positively.\n\tif !set.add(createP2WKHInput(700), constraintsRegular) {\n\t\tt.Fatal(\"expected add of positively yielding input to succeed\")\n\t}\n\n\tfee := set.weightEstimate(true).fee()\n\trequire.Equal(t, btcutil.Amount(439), fee)\n\n\t// The tx output should now be 700-439 = 261 sats. The dust limit isn't\n\t// reached yet.\n\tif set.totalOutput() != 261 {\n\t\tt.Fatal(\"unexpected output value\")\n\t}\n\tif set.enoughInput() {\n\t\tt.Fatal(\"expected dust limit not yet to be reached\")\n\t}\n\n\t// Add a 1000 sat input. This increases the tx fee to 712 sats. The tx\n\t// output should now be 1000+700 - 712 = 988 sats.\n\tif !set.add(createP2WKHInput(1000), constraintsRegular) {\n\t\tt.Fatal(\"expected add of positively yielding input to succeed\")\n\t}\n\tif set.totalOutput() != 988 {\n\t\tt.Fatal(\"unexpected output value\")\n\t}\n\tif !set.enoughInput() {\n\t\tt.Fatal(\"expected dust limit to be reached\")\n\t}\n}\n\n// TestTxInputSetFromWallet tests adding a wallet input to a TxInputSet to reach\n// the dust limit.",
+      "length": 1391,
+      "tokens": 214,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTxInputSetFromWallet(t *testing.T) {",
+      "content": "func TestTxInputSetFromWallet(t *testing.T) {\n\tconst (\n\t\tfeeRate   = 500\n\t\tmaxInputs = 10\n\t)\n\n\twallet := &mockWallet{}\n\tset := newTxInputSet(wallet, feeRate, maxInputs)\n\n\t// Add a 500 sat input to the set. It yields positively, but doesn't\n\t// reach the output dust limit.\n\tif !set.add(createP2WKHInput(500), constraintsRegular) {\n\t\tt.Fatal(\"expected add of positively yielding input to succeed\")\n\t}\n\tif set.enoughInput() {\n\t\tt.Fatal(\"expected dust limit not yet to be reached\")\n\t}\n\n\t// Expect that adding a negative yield input fails.\n\tif set.add(createP2WKHInput(50), constraintsRegular) {\n\t\tt.Fatal(\"expected negative yield input add to fail\")\n\t}\n\n\t// Force add the negative yield input. It should succeed.\n\tif !set.add(createP2WKHInput(50), constraintsForce) {\n\t\tt.Fatal(\"expected forced add to succeed\")\n\t}\n\n\terr := set.tryAddWalletInputsIfNeeded()\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif !set.enoughInput() {\n\t\tt.Fatal(\"expected dust limit to be reached\")\n\t}\n}\n\n// createP2WKHInput returns a P2WKH test input with the specified amount.",
+      "length": 958,
+      "tokens": 135,
+      "embedding": []
+    },
+    {
+      "slug": "func createP2WKHInput(amt btcutil.Amount) input.Input {",
+      "content": "func createP2WKHInput(amt btcutil.Amount) input.Input {\n\tinput := createTestInput(int64(amt), input.WitnessKeyHash)\n\treturn &input\n}\n",
+      "length": 74,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "type mockWallet struct {",
+      "content": "type mockWallet struct {\n\tWallet\n}\n",
+      "length": 8,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockWallet) ListUnspentWitnessFromDefaultAccount(minConfs, maxConfs int32) (",
+      "content": "func (m *mockWallet) ListUnspentWitnessFromDefaultAccount(minConfs, maxConfs int32) (\n\t[]*lnwallet.Utxo, error) {\n\n\treturn []*lnwallet.Utxo{\n\t\t{\n\t\t\tAddressType: lnwallet.WitnessPubKey,\n\t\t\tValue:       10000,\n\t\t},\n\t}, nil\n}\n",
+      "length": 128,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type reqInput struct {",
+      "content": "type reqInput struct {\n\tinput.Input\n\n\ttxOut *wire.TxOut\n}\n",
+      "length": 31,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *reqInput) RequiredTxOut() *wire.TxOut {",
+      "content": "func (r *reqInput) RequiredTxOut() *wire.TxOut {\n\treturn r.txOut\n}\n\n// TestTxInputSetRequiredOutput tests that the tx input set behaves as expected\n// when we add inputs that have required tx outs.",
+      "length": 144,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTxInputSetRequiredOutput(t *testing.T) {",
+      "content": "func TestTxInputSetRequiredOutput(t *testing.T) {\n\tconst (\n\t\tfeeRate   = 1000\n\t\tmaxInputs = 10\n\t)\n\tset := newTxInputSet(nil, feeRate, maxInputs)\n\n\t// Attempt to add an input with a required txout below the dust limit.\n\t// This should fail since we cannot trim such outputs.\n\tinp := &reqInput{\n\t\tInput: createP2WKHInput(500),\n\t\ttxOut: &wire.TxOut{\n\t\t\tValue:    500,\n\t\t\tPkScript: make([]byte, input.P2PKHSize),\n\t\t},\n\t}\n\trequire.False(t, set.add(inp, constraintsRegular),\n\t\t\"expected adding dust required tx out to fail\")\n\n\t// Create a 1000 sat input that also has a required TxOut of 1000 sat.\n\t// The fee to sweep this input to a P2WKH output is 439 sats.\n\tinp = &reqInput{\n\t\tInput: createP2WKHInput(1000),\n\t\ttxOut: &wire.TxOut{\n\t\t\tValue:    1000,\n\t\t\tPkScript: make([]byte, input.P2WPKHSize),\n\t\t},\n\t}\n\trequire.True(t, set.add(inp, constraintsRegular), \"failed adding input\")\n\n\t// The fee needed to pay for this input and output should be 439 sats.\n\tfee := set.weightEstimate(false).fee()\n\trequire.Equal(t, btcutil.Amount(439), fee)\n\n\t// Since the tx set currently pays no fees, we expect the current\n\t// change to actually be negative, since this is what it would cost us\n\t// in fees to add a change output.\n\tfeeWithChange := set.weightEstimate(true).fee()\n\tif set.changeOutput != -feeWithChange {\n\t\tt.Fatalf(\"expected negative change of %v, had %v\",\n\t\t\t-feeWithChange, set.changeOutput)\n\t}\n\n\t// This should also be reflected by not having enough input.\n\trequire.False(t, set.enoughInput())\n\n\t// Get a weight estimate without change output, and add an additional\n\t// input to it.\n\tdummyInput := createP2WKHInput(1000)\n\tweight := set.weightEstimate(false)\n\trequire.NoError(t, weight.add(dummyInput))\n\n\t// Now we add a an input that is large enough to pay the fee for the\n\t// transaction without a change output, but not large enough to afford\n\t// adding a change output.\n\textraInput1 := weight.fee() + 100\n\trequire.True(t, set.add(createP2WKHInput(extraInput1), constraintsRegular),\n\t\t\"expected add of positively yielding input to succeed\")\n\n\t// The change should be negative, since we would have to add a change\n\t// output, which we cannot yet afford.\n\tif set.changeOutput >= 0 {\n\t\tt.Fatal(\"expected change to be negaitve\")\n\t}\n\n\t// Even though we cannot afford a change output, the tx set is valid,\n\t// since we can pay the fees without the change output.\n\trequire.True(t, set.enoughInput())\n\n\t// Get another weight estimate, this time with a change output, and\n\t// figure out how much we must add to afford a change output.\n\tweight = set.weightEstimate(true)\n\trequire.NoError(t, weight.add(dummyInput))\n\n\t// We add what is left to reach this value.\n\textraInput2 := weight.fee() - extraInput1 + 100\n\n\t// Add this input, which should result in the change now being 100 sats.\n\trequire.True(t, set.add(createP2WKHInput(extraInput2), constraintsRegular))\n\n\t// The change should be 100, since this is what is left after paying\n\t// fees in case of a change output.\n\tchange := set.changeOutput\n\tif change != 100 {\n\t\tt.Fatalf(\"expected change be 100, was %v\", change)\n\t}\n\n\t// Even though the change output is dust, we have enough for fees, and\n\t// we have an output, so it should be considered enough to craft a\n\t// valid sweep transaction.\n\trequire.True(t, set.enoughInput())\n\n\t// Finally we add an input that should push the change output above the\n\t// dust limit.\n\tweight = set.weightEstimate(true)\n\trequire.NoError(t, weight.add(dummyInput))\n\n\t// We expect the change to everything that is left after paying the tx\n\t// fee.\n\textraInput3 := weight.fee() - extraInput1 - extraInput2 + 1000\n\trequire.True(t, set.add(createP2WKHInput(extraInput3), constraintsRegular))\n\n\tchange = set.changeOutput\n\tif change != 1000 {\n\t\tt.Fatalf(\"expected change to be %v, had %v\", 1000, change)\n\t}\n\trequire.True(t, set.enoughInput())\n}\n",
+      "length": 3654,
+      "tokens": 539,
+      "embedding": []
+    }
+  ]
+}

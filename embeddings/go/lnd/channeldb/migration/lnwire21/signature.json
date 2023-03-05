@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/signature.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type Sig [64]byte",
+      "content": "type Sig [64]byte\n\n// NewSigFromRawSignature returns a Sig from a Bitcoin raw signature encoded in\n// the canonical DER encoding.",
+      "length": 109,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSigFromRawSignature(sig []byte) (Sig, error) {",
+      "content": "func NewSigFromRawSignature(sig []byte) (Sig, error) {\n\tvar b Sig\n\n\tif len(sig) == 0 {\n\t\treturn b, fmt.Errorf(\"cannot decode empty signature\")\n\t}\n\n\t// Extract lengths of R and S. The DER representation is laid out as\n\t// 0x30 <length> 0x02 <length r> r 0x02 <length s> s\n\t// which means the length of R is the 4th byte and the length of S\n\t// is the second byte after R ends. 0x02 signifies a length-prefixed,\n\t// zero-padded, big-endian bigint. 0x30 signifies a DER signature.\n\t// See the Serialize() method for ecdsa.Signature for details.\n\trLen := sig[3]\n\tsLen := sig[5+rLen]\n\n\t// Check to make sure R and S can both fit into their intended buffers.\n\t// We check S first because these code blocks decrement sLen and rLen\n\t// in the case of a 33-byte 0-padded integer returned from Serialize()\n\t// and rLen is used in calculating array indices for S. We can track\n\t// this with additional variables, but it's more efficient to just\n\t// check S first.\n\tif sLen > 32 {\n\t\tif (sLen > 33) || (sig[6+rLen] != 0x00) {\n\t\t\treturn b, fmt.Errorf(\"S is over 32 bytes long \" +\n\t\t\t\t\"without padding\")\n\t\t}\n\t\tsLen--\n\t\tcopy(b[64-sLen:], sig[7+rLen:])\n\t} else {\n\t\tcopy(b[64-sLen:], sig[6+rLen:])\n\t}\n\n\t// Do the same for R as we did for S\n\tif rLen > 32 {\n\t\tif (rLen > 33) || (sig[4] != 0x00) {\n\t\t\treturn b, fmt.Errorf(\"R is over 32 bytes long \" +\n\t\t\t\t\"without padding\")\n\t\t}\n\t\trLen--\n\t\tcopy(b[32-rLen:], sig[5:5+rLen])\n\t} else {\n\t\tcopy(b[32-rLen:], sig[4:4+rLen])\n\t}\n\n\treturn b, nil\n}\n\n// NewSigFromSignature creates a new signature as used on the wire, from an\n// existing ecdsa.Signature.",
+      "length": 1469,
+      "tokens": 264,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSigFromSignature(e input.Signature) (Sig, error) {",
+      "content": "func NewSigFromSignature(e input.Signature) (Sig, error) {\n\tif e == nil {\n\t\treturn Sig{}, fmt.Errorf(\"cannot decode empty signature\")\n\t}\n\n\t// Serialize the signature with all the checks that entails.\n\treturn NewSigFromRawSignature(e.Serialize())\n}\n\n// ToSignature converts the fixed-sized signature to a ecdsa.Signature objects\n// which can be used for signature validation checks.",
+      "length": 313,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Sig) ToSignature() (*ecdsa.Signature, error) {",
+      "content": "func (b *Sig) ToSignature() (*ecdsa.Signature, error) {\n\t// Parse the signature with strict checks.\n\tsigBytes := b.ToSignatureBytes()\n\tsig, err := ecdsa.ParseDERSignature(sigBytes)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn sig, nil\n}\n\n// ToSignatureBytes serializes the target fixed-sized signature into the raw\n// bytes of a DER encoding.",
+      "length": 277,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *Sig) ToSignatureBytes() []byte {",
+      "content": "func (b *Sig) ToSignatureBytes() []byte {\n\t// Extract canonically-padded bigint representations from buffer\n\tr := extractCanonicalPadding(b[0:32])\n\ts := extractCanonicalPadding(b[32:64])\n\trLen := uint8(len(r))\n\tsLen := uint8(len(s))\n\n\t// Create a canonical serialized signature. DER format is:\n\t// 0x30 <length> 0x02 <length r> r 0x02 <length s> s\n\tsigBytes := make([]byte, 6+rLen+sLen)\n\tsigBytes[0] = 0x30            // DER signature magic value\n\tsigBytes[1] = 4 + rLen + sLen // Length of rest of signature\n\tsigBytes[2] = 0x02            // Big integer magic value\n\tsigBytes[3] = rLen            // Length of R\n\tsigBytes[rLen+4] = 0x02       // Big integer magic value\n\tsigBytes[rLen+5] = sLen       // Length of S\n\tcopy(sigBytes[4:], r)         // Copy R\n\tcopy(sigBytes[rLen+6:], s)    // Copy S\n\n\treturn sigBytes\n}\n\n// extractCanonicalPadding is a utility function to extract the canonical\n// padding of a big-endian integer from the wire encoding (a 0-padded\n// big-endian integer) such that it passes btcec.canonicalPadding test.",
+      "length": 970,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "func extractCanonicalPadding(b []byte) []byte {",
+      "content": "func extractCanonicalPadding(b []byte) []byte {\n\tfor i := 0; i < len(b); i++ {\n\t\t// Found first non-zero byte.\n\t\tif b[i] > 0 {\n\t\t\t// If the MSB is set, we need zero padding.\n\t\t\tif b[i]&0x80 == 0x80 {\n\t\t\t\treturn append([]byte{0x00}, b[i:]...)\n\t\t\t}\n\t\t\treturn b[i:]\n\t\t}\n\t}\n\treturn []byte{0x00}\n}\n",
+      "length": 233,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

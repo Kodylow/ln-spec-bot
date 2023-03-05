@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/tor/cmd_info.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "func (c *Controller) CheckOnionService() error {",
+      "content": "func (c *Controller) CheckOnionService() error {\n\t// Check that we have a hidden service created.\n\tif c.activeServiceID == \"\" {\n\t\treturn ErrServiceNotCreated\n\t}\n\n\t// Fetch the onion services that live in current control connection.\n\tcmd := \"GETINFO onions/current\"\n\tcode, reply, err := c.sendCommand(cmd)\n\n\t// Exit early if we got an error or Tor daemon didn't respond success.\n\t// TODO(yy): unify the usage of err and code so we could rely on a\n\t// single source to change our state.\n\tif err != nil || code != success {\n\t\tlog.Debugf(\"query service:%v got err:%v, reply:%v\",\n\t\t\tc.activeServiceID, err, reply)\n\n\t\treturn fmt.Errorf(\"%w: %v\", err, reply)\n\t}\n\n\t// Parse the reply, which should have the following format,\n\t//      onions/current=serviceID\n\t// After parsing, we get a map as,\n\t// \t[onion/current: serviceID]\n\t//\n\t// NOTE: our current tor controller does NOT support multiple onion\n\t// services to be created at the same time, thus we expect the reply to\n\t// only contain one serviceID. If multiple serviceIDs are returned, we\n\t// would expected the reply to have the following format,\n\t//      onions/current=serviceID1, serviceID2, serviceID3,...\n\t// Thus a new parser is need to parse that reply.\n\tresp := parseTorReply(reply)\n\tserviceID, ok := resp[\"onions/current\"]\n\tif !ok {\n\t\treturn ErrNoServiceFound\n\t}\n\n\t// Check that our active service is indeed the service acknowledged by\n\t// Tor daemon. The controller is only aware of a single service but the\n\t// Tor daemon might have multiple services registered (for example for\n\t// the watchtower as well as the node p2p connections). So we just want\n\t// to check that our current controller's ID is contained in the list of\n\t// registered services.\n\tif !strings.Contains(serviceID, c.activeServiceID) {\n\t\treturn fmt.Errorf(\"%w: controller has: %v, Tor daemon has: %v\",\n\t\t\tErrServiceIDMismatch, c.activeServiceID, serviceID)\n\t}\n\n\treturn nil\n}\n",
+      "length": 1806,
+      "tokens": 283,
+      "embedding": []
+    }
+  ]
+}

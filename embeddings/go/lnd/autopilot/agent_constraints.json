@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/agent_constraints.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type AgentConstraints interface {",
+      "content": "type AgentConstraints interface {\n\t// ChannelBudget should, given the passed parameters, return whether\n\t// more channels can be opened while still staying within the set\n\t// constraints. If the constraints allow us to open more channels, then\n\t// the first return value will represent the amount of additional funds\n\t// available towards creating channels. The second return value is the\n\t// exact *number* of additional channels available.\n\tChannelBudget(chans []LocalChannel, balance btcutil.Amount) (\n\t\tbtcutil.Amount, uint32)\n\n\t// MaxPendingOpens returns the maximum number of pending channel\n\t// establishment goroutines that can be lingering. We cap this value in\n\t// order to control the level of parallelism caused by the autopilot\n\t// agent.\n\tMaxPendingOpens() uint16\n\n\t// MinChanSize returns the smallest channel that the autopilot agent\n\t// should create.\n\tMinChanSize() btcutil.Amount\n\n\t// MaxChanSize returns largest channel that the autopilot agent should\n\t// create.\n\tMaxChanSize() btcutil.Amount\n}\n\n// agenConstraints is an implementation of the AgentConstraints interface that\n// indicate the constraints the autopilot agent must adhere to when opening\n// channels.",
+      "length": 1123,
+      "tokens": 161,
+      "embedding": []
+    },
+    {
+      "slug": "type agentConstraints struct {",
+      "content": "type agentConstraints struct {\n\t// minChanSize is the smallest channel that the autopilot agent should\n\t// create.\n\tminChanSize btcutil.Amount\n\n\t// maxChanSize is the largest channel that the autopilot agent should\n\t// create.\n\tmaxChanSize btcutil.Amount\n\n\t// chanLimit is the maximum number of channels that should be created.\n\tchanLimit uint16\n\n\t// allocation is the percentage of total funds that should be committed\n\t// to automatic channel establishment.\n\tallocation float64\n\n\t// maxPendingOpens is the maximum number of pending channel\n\t// establishment goroutines that can be lingering. We cap this value in\n\t// order to control the level of parallelism caused by the autopilot\n\t// agent.\n\tmaxPendingOpens uint16\n}\n\n// A compile time assertion to ensure agentConstraints satisfies the\n// AgentConstraints interface.\nvar _ AgentConstraints = (*agentConstraints)(nil)\n\n// NewConstraints returns a new AgentConstraints with the given limits.",
+      "length": 888,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func NewConstraints(minChanSize, maxChanSize btcutil.Amount, chanLimit,",
+      "content": "func NewConstraints(minChanSize, maxChanSize btcutil.Amount, chanLimit,\n\tmaxPendingOpens uint16, allocation float64) AgentConstraints {\n\n\treturn &agentConstraints{\n\t\tminChanSize:     minChanSize,\n\t\tmaxChanSize:     maxChanSize,\n\t\tchanLimit:       chanLimit,\n\t\tallocation:      allocation,\n\t\tmaxPendingOpens: maxPendingOpens,\n\t}\n}\n\n// ChannelBudget should, given the passed parameters, return whether more\n// channels can be be opened while still staying within the set constraints.\n// If the constraints allow us to open more channels, then the first return\n// value will represent the amount of additional funds available towards\n// creating channels. The second return value is the exact *number* of\n// additional channels available.\n//\n// Note: part of the AgentConstraints interface.",
+      "length": 697,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *agentConstraints) ChannelBudget(channels []LocalChannel,",
+      "content": "func (h *agentConstraints) ChannelBudget(channels []LocalChannel,\n\tfunds btcutil.Amount) (btcutil.Amount, uint32) {\n\n\t// If we're already over our maximum allowed number of channels, then\n\t// we'll instruct the controller not to create any more channels.\n\tif len(channels) >= int(h.chanLimit) {\n\t\treturn 0, 0\n\t}\n\n\t// The number of additional channels that should be opened is the\n\t// difference between the channel limit, and the number of channels we\n\t// already have open.\n\tnumAdditionalChans := uint32(h.chanLimit) - uint32(len(channels))\n\n\t// First, we'll tally up the total amount of funds that are currently\n\t// present within the set of active channels.\n\tvar totalChanAllocation btcutil.Amount\n\tfor _, channel := range channels {\n\t\ttotalChanAllocation += channel.Balance\n\t}\n\n\t// With this value known, we'll now compute the total amount of fund\n\t// allocated across regular utxo's and channel utxo's.\n\ttotalFunds := funds + totalChanAllocation\n\n\t// Once the total amount has been computed, we then calculate the\n\t// fraction of funds currently allocated to channels.\n\tfundsFraction := float64(totalChanAllocation) / float64(totalFunds)\n\n\t// If this fraction is below our threshold, then we'll return true, to\n\t// indicate the controller should call Select to obtain a candidate set\n\t// of channels to attempt to open.\n\tneedMore := fundsFraction < h.allocation\n\tif !needMore {\n\t\treturn 0, 0\n\t}\n\n\t// Now that we know we need more funds, we'll compute the amount of\n\t// additional funds we should allocate towards channels.\n\ttargetAllocation := btcutil.Amount(float64(totalFunds) * h.allocation)\n\tfundsAvailable := targetAllocation - totalChanAllocation\n\treturn fundsAvailable, numAdditionalChans\n}\n\n// MaxPendingOpens returns the maximum number of pending channel establishment\n// goroutines that can be lingering. We cap this value in order to control the\n// level of parallelism caused by the autopilot agent.\n//\n// Note: part of the AgentConstraints interface.",
+      "length": 1855,
+      "tokens": 278,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *agentConstraints) MaxPendingOpens() uint16 {",
+      "content": "func (h *agentConstraints) MaxPendingOpens() uint16 {\n\treturn h.maxPendingOpens\n}\n\n// MinChanSize returns the smallest channel that the autopilot agent should\n// create.\n//\n// Note: part of the AgentConstraints interface.",
+      "length": 161,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *agentConstraints) MinChanSize() btcutil.Amount {",
+      "content": "func (h *agentConstraints) MinChanSize() btcutil.Amount {\n\treturn h.minChanSize\n}\n\n// MaxChanSize returns largest channel that the autopilot agent should create.\n//\n// Note: part of the AgentConstraints interface.",
+      "length": 150,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *agentConstraints) MaxChanSize() btcutil.Amount {",
+      "content": "func (h *agentConstraints) MaxChanSize() btcutil.Amount {\n\treturn h.maxChanSize\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

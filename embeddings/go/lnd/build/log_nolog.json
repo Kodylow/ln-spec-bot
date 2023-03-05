@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/build/log_nolog.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build nolog",
+      "content": "//go:build nolog\n// +build nolog\n\npackage build\n\n// LoggingType is a log type that writes no logs.\nconst LoggingType = LogTypeNone\n\n// Write is a noop.",
+      "length": 127,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *LogWriter) Write(b []byte) (int, error) {",
+      "content": "func (w *LogWriter) Write(b []byte) (int, error) {\n\treturn len(b), nil\n}\n",
+      "length": 20,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

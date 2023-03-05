@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/chainrpc_active.go",
-  "package": "chainrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build chainrpc",
+      "content": "//go:build chainrpc\n// +build chainrpc\n\npackage main\n\nimport (\n\t\"bytes\"\n\t\"fmt\"\n\t\"strconv\"\n\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/btcsuite/btcd/wire\"\n\t\"github.com/lightningnetwork/lnd/lnrpc/chainrpc\"\n\t\"github.com/urfave/cli\"\n)\n\n// chainCommands will return the set of commands to enable for chainrpc builds.",
+      "length": 293,
+      "tokens": 28,
+      "embedding": []
+    },
     {
       "slug": "func chainCommands() []cli.Command {",
       "content": "func chainCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"chain\",\n\t\t\tCategory: \"On-chain\",\n\t\t\tUsage:    \"Interact with the bitcoin blockchain.\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tgetBlockCommand,\n\t\t\t\tgetBestBlockCommand,\n\t\t\t\tgetBlockHashCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",

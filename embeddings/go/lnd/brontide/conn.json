@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/brontide/conn.go",
+  "package": "brontide",
+  "sections": [
+    {
+      "slug": "type Conn struct {",
+      "content": "type Conn struct {\n\tconn net.Conn\n\n\tnoise *Machine\n\n\treadBuf bytes.Buffer\n}\n\n// A compile-time assertion to ensure that Conn meets the net.Conn interface.\nvar _ net.Conn = (*Conn)(nil)\n\n// Dial attempts to establish an encrypted+authenticated connection with the\n// remote peer located at address which has remotePub as its long-term static\n// public key. In the case of a handshake failure, the connection is closed and\n// a non-nil error is returned.",
+      "length": 420,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func Dial(local keychain.SingleKeyECDH, netAddr *lnwire.NetAddress,",
+      "content": "func Dial(local keychain.SingleKeyECDH, netAddr *lnwire.NetAddress,\n\ttimeout time.Duration, dialer tor.DialFunc) (*Conn, error) {\n\n\tipAddr := netAddr.Address.String()\n\tvar conn net.Conn\n\tvar err error\n\tconn, err = dialer(\"tcp\", ipAddr, timeout)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tb := &Conn{\n\t\tconn:  conn,\n\t\tnoise: NewBrontideMachine(true, local, netAddr.IdentityKey),\n\t}\n\n\t// Initiate the handshake by sending the first act to the receiver.\n\tactOne, err := b.noise.GenActOne()\n\tif err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\tif _, err := conn.Write(actOne[:]); err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\n\t// We'll ensure that we get ActTwo from the remote peer in a timely\n\t// manner. If they don't respond within handshakeReadTimeout, then\n\t// we'll kill the connection.\n\terr = conn.SetReadDeadline(time.Now().Add(handshakeReadTimeout))\n\tif err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\n\t// If the first act was successful (we know that address is actually\n\t// remotePub), then read the second act after which we'll be able to\n\t// send our static public key to the remote peer with strong forward\n\t// secrecy.\n\tvar actTwo [ActTwoSize]byte\n\tif _, err := io.ReadFull(conn, actTwo[:]); err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\tif err := b.noise.RecvActTwo(actTwo); err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\n\t// Finally, complete the handshake by sending over our encrypted static\n\t// key and execute the final ECDH operation.\n\tactThree, err := b.noise.GenActThree()\n\tif err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\tif _, err := conn.Write(actThree[:]); err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\n\t// We'll reset the deadline as it's no longer critical beyond the\n\t// initial handshake.\n\terr = conn.SetReadDeadline(time.Time{})\n\tif err != nil {\n\t\tb.conn.Close()\n\t\treturn nil, err\n\t}\n\n\treturn b, nil\n}\n\n// ReadNextMessage uses the connection in a message-oriented manner, instructing\n// it to read the next _full_ message with the brontide stream. This function\n// will block until the read of the header and body succeeds.\n//\n// NOTE: This method SHOULD NOT be used in the case that the connection may be\n// adversarial and induce long delays. If the caller needs to set read deadlines\n// appropriately, it is preferred that they use the split ReadNextHeader and\n// ReadNextBody methods so that the deadlines can be set appropriately on each.",
+      "length": 2259,
+      "tokens": 365,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) ReadNextMessage() ([]byte, error) {",
+      "content": "func (c *Conn) ReadNextMessage() ([]byte, error) {\n\treturn c.noise.ReadMessage(c.conn)\n}\n\n// ReadNextHeader uses the connection to read the next header from the brontide\n// stream. This function will block until the read of the header succeeds and\n// return the packet length (including MAC overhead) that is expected from the\n// subsequent call to ReadNextBody.",
+      "length": 305,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) ReadNextHeader() (uint32, error) {",
+      "content": "func (c *Conn) ReadNextHeader() (uint32, error) {\n\treturn c.noise.ReadHeader(c.conn)\n}\n\n// ReadNextBody uses the connection to read the next message body from the\n// brontide stream. This function will block until the read of the body succeeds\n// and return the decrypted payload. The provided buffer MUST be the packet\n// length returned by the preceding call to ReadNextHeader.",
+      "length": 323,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) ReadNextBody(buf []byte) ([]byte, error) {",
+      "content": "func (c *Conn) ReadNextBody(buf []byte) ([]byte, error) {\n\treturn c.noise.ReadBody(c.conn, buf)\n}\n\n// Read reads data from the connection.  Read can be made to time out and\n// return an Error with Timeout() == true after a fixed time limit; see\n// SetDeadline and SetReadDeadline.\n//\n// Part of the net.Conn interface.",
+      "length": 253,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) Read(b []byte) (n int, err error) {",
+      "content": "func (c *Conn) Read(b []byte) (n int, err error) {\n\t// In order to reconcile the differences between the record abstraction\n\t// of our AEAD connection, and the stream abstraction of TCP, we\n\t// maintain an intermediate read buffer. If this buffer becomes\n\t// depleted, then we read the next record, and feed it into the\n\t// buffer. Otherwise, we read directly from the buffer.\n\tif c.readBuf.Len() == 0 {\n\t\tplaintext, err := c.noise.ReadMessage(c.conn)\n\t\tif err != nil {\n\t\t\treturn 0, err\n\t\t}\n\n\t\tif _, err := c.readBuf.Write(plaintext); err != nil {\n\t\t\treturn 0, err\n\t\t}\n\t}\n\n\treturn c.readBuf.Read(b)\n}\n\n// Write writes data to the connection.  Write can be made to time out and\n// return an Error with Timeout() == true after a fixed time limit; see\n// SetDeadline and SetWriteDeadline.\n//\n// Part of the net.Conn interface.",
+      "length": 749,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) Write(b []byte) (n int, err error) {",
+      "content": "func (c *Conn) Write(b []byte) (n int, err error) {\n\t// If the message doesn't require any chunking, then we can go ahead\n\t// with a single write.\n\tif len(b) <= math.MaxUint16 {\n\t\terr = c.noise.WriteMessage(b)\n\t\tif err != nil {\n\t\t\treturn 0, err\n\t\t}\n\t\treturn c.noise.Flush(c.conn)\n\t}\n\n\t// If we need to split the message into fragments, then we'll write\n\t// chunks which maximize usage of the available payload.\n\tchunkSize := math.MaxUint16\n\n\tbytesToWrite := len(b)\n\tbytesWritten := 0\n\tfor bytesWritten < bytesToWrite {\n\t\t// If we're on the last chunk, then truncate the chunk size as\n\t\t// necessary to avoid an out-of-bounds array memory access.\n\t\tif bytesWritten+chunkSize > len(b) {\n\t\t\tchunkSize = len(b) - bytesWritten\n\t\t}\n\n\t\t// Slice off the next chunk to be written based on our running\n\t\t// counter and next chunk size.\n\t\tchunk := b[bytesWritten : bytesWritten+chunkSize]\n\t\tif err := c.noise.WriteMessage(chunk); err != nil {\n\t\t\treturn bytesWritten, err\n\t\t}\n\n\t\tn, err := c.noise.Flush(c.conn)\n\t\tbytesWritten += n\n\t\tif err != nil {\n\t\t\treturn bytesWritten, err\n\t\t}\n\t}\n\n\treturn bytesWritten, nil\n}\n\n// WriteMessage encrypts and buffers the next message p for the connection. The\n// ciphertext of the message is prepended with an encrypt+auth'd length which\n// must be used as the AD to the AEAD construction when being decrypted by the\n// other side.\n//\n// NOTE: This DOES NOT write the message to the wire, it should be followed by a\n// call to Flush to ensure the message is written.",
+      "length": 1390,
+      "tokens": 236,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) WriteMessage(b []byte) error {",
+      "content": "func (c *Conn) WriteMessage(b []byte) error {\n\treturn c.noise.WriteMessage(b)\n}\n\n// Flush attempts to write a message buffered using WriteMessage to the\n// underlying connection. If no buffered message exists, this will result in a\n// NOP. Otherwise, it will continue to write the remaining bytes, picking up\n// where the byte stream left off in the event of a partial write. The number of\n// bytes returned reflects the number of plaintext bytes in the payload, and\n// does not account for the overhead of the header or MACs.\n//\n// NOTE: It is safe to call this method again iff a timeout error is returned.",
+      "length": 552,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) Flush() (int, error) {",
+      "content": "func (c *Conn) Flush() (int, error) {\n\treturn c.noise.Flush(c.conn)\n}\n\n// Close closes the connection. Any blocked Read or Write operations will be\n// unblocked and return errors.\n//\n// Part of the net.Conn interface.",
+      "length": 173,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) Close() error {",
+      "content": "func (c *Conn) Close() error {\n\t// TODO(roasbeef): reset brontide state?\n\treturn c.conn.Close()\n}\n\n// LocalAddr returns the local network address.\n//\n// Part of the net.Conn interface.",
+      "length": 147,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) LocalAddr() net.Addr {",
+      "content": "func (c *Conn) LocalAddr() net.Addr {\n\treturn c.conn.LocalAddr()\n}\n\n// RemoteAddr returns the remote network address.\n//\n// Part of the net.Conn interface.",
+      "length": 112,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) RemoteAddr() net.Addr {",
+      "content": "func (c *Conn) RemoteAddr() net.Addr {\n\treturn c.conn.RemoteAddr()\n}\n\n// SetDeadline sets the read and write deadlines associated with the\n// connection. It is equivalent to calling both SetReadDeadline and\n// SetWriteDeadline.\n//\n// Part of the net.Conn interface.",
+      "length": 219,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) SetDeadline(t time.Time) error {",
+      "content": "func (c *Conn) SetDeadline(t time.Time) error {\n\treturn c.conn.SetDeadline(t)\n}\n\n// SetReadDeadline sets the deadline for future Read calls. A zero value for t\n// means Read will not time out.\n//\n// Part of the net.Conn interface.",
+      "length": 176,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) SetReadDeadline(t time.Time) error {",
+      "content": "func (c *Conn) SetReadDeadline(t time.Time) error {\n\treturn c.conn.SetReadDeadline(t)\n}\n\n// SetWriteDeadline sets the deadline for future Write calls. Even if write\n// times out, it may return n > 0, indicating that some of the data was\n// successfully written. A zero value for t means Write will not time out.\n//\n// Part of the net.Conn interface.",
+      "length": 290,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) SetWriteDeadline(t time.Time) error {",
+      "content": "func (c *Conn) SetWriteDeadline(t time.Time) error {\n\treturn c.conn.SetWriteDeadline(t)\n}\n\n// RemotePub returns the remote peer's static public key.",
+      "length": 92,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) RemotePub() *btcec.PublicKey {",
+      "content": "func (c *Conn) RemotePub() *btcec.PublicKey {\n\treturn c.noise.remoteStatic\n}\n\n// LocalPub returns the local peer's static public key.",
+      "length": 84,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conn) LocalPub() *btcec.PublicKey {",
+      "content": "func (c *Conn) LocalPub() *btcec.PublicKey {\n\treturn c.noise.localStatic.PubKey()\n}\n",
+      "length": 37,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

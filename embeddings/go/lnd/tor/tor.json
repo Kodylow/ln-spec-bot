@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/tor/tor.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "type proxyConn struct {",
+      "content": "type proxyConn struct {\n\tnet.Conn\n\tremoteAddr net.Addr\n}\n",
+      "length": 30,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *proxyConn) RemoteAddr() net.Addr {",
+      "content": "func (c *proxyConn) RemoteAddr() net.Addr {\n\treturn c.remoteAddr\n}\n\n// Dial is a wrapper over the non-exported dial function that returns a wrapper\n// around net.Conn in order to expose the actual remote address we're dialing,\n// rather than the proxy's address.",
+      "length": 213,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func Dial(address, socksAddr string, streamIsolation bool,",
+      "content": "func Dial(address, socksAddr string, streamIsolation bool,\n\tskipProxyForClearNetTargets bool,\n\ttimeout time.Duration) (net.Conn, error) {\n\n\tconn, err := dialProxy(\n\t\taddress, socksAddr, streamIsolation,\n\t\tskipProxyForClearNetTargets, timeout,\n\t)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"dial proxy failed: %w\", err)\n\t}\n\n\t// Now that the connection is established, we'll create our internal\n\t// proxyConn that will serve in populating the correct remote address\n\t// of the connection, rather than using the proxy's address.\n\tremoteAddr, err := ParseAddr(address, socksAddr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &proxyConn{\n\t\tConn:       conn,\n\t\tremoteAddr: remoteAddr,\n\t}, nil\n}\n\n// dialProxy establishes a connection to the address via the provided TOR SOCKS\n// proxy. Only TCP traffic may be routed via Tor.\n//\n// streamIsolation determines if we should force stream isolation for this new\n// connection. If enabled, new connections will use a fresh circuit, rather than\n// possibly re-using an existing circuit.\n//\n// skipProxyForClearNetTargets argument allows the dialer to directly connect\n// to the provided address if it does not represent an union service, skipping\n// the SOCKS proxy.",
+      "length": 1112,
+      "tokens": 168,
+      "embedding": []
+    },
+    {
+      "slug": "func dialProxy(address, socksAddr string, streamIsolation bool,",
+      "content": "func dialProxy(address, socksAddr string, streamIsolation bool,\n\tskipProxyForClearNetTargets bool,\n\ttimeout time.Duration) (net.Conn, error) {\n\n\t// If we were requested to force stream isolation for this connection,\n\t// we'll populate the authentication credentials with random data as\n\t// Tor will create a new circuit for each set of credentials.\n\tvar auth *proxy.Auth\n\tif streamIsolation {\n\t\tvar b [16]byte\n\t\tif _, err := rand.Read(b[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tauth = &proxy.Auth{\n\t\t\tUser:     hex.EncodeToString(b[:8]),\n\t\t\tPassword: hex.EncodeToString(b[8:]),\n\t\t}\n\t}\n\n\tclearDialer := &net.Dialer{Timeout: timeout}\n\tif skipProxyForClearNetTargets {\n\t\thost, _, err := net.SplitHostPort(address)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// The SOCKS proxy is skipped if the target\n\t\t// is not an union address.\n\t\tif !IsOnionHost(host) {\n\t\t\treturn clearDialer.Dial(\"tcp\", address)\n\t\t}\n\t}\n\n\t// Establish the connection through Tor's SOCKS proxy.\n\tdialer, err := proxy.SOCKS5(\"tcp\", socksAddr, auth, clearDialer)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"establish sock proxy: %w\", err)\n\t}\n\n\treturn dialer.Dial(\"tcp\", address)\n}\n\n// LookupHost performs DNS resolution on a given host via Tor's native resolver.\n// Only IPv4 addresses are returned.",
+      "length": 1159,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func LookupHost(host, socksAddr string) ([]string, error) {",
+      "content": "func LookupHost(host, socksAddr string) ([]string, error) {\n\tip, err := connmgr.TorLookupIP(host, socksAddr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Only one IPv4 address is returned by the TorLookupIP function.\n\treturn []string{ip[0].String()}, nil\n}\n\n// LookupSRV uses Tor's SOCKS proxy to route DNS SRV queries. Tor does not\n// natively support SRV queries so we must route all SRV queries through the\n// proxy by connecting directly to a DNS server and querying it. The DNS server\n// must have TCP resolution enabled for the given port.",
+      "length": 471,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func LookupSRV(service, proto, name, socksAddr,",
+      "content": "func LookupSRV(service, proto, name, socksAddr,\n\tdnsServer string, streamIsolation bool, skipProxyForClearNetTargets bool,\n\ttimeout time.Duration) (string, []*net.SRV, error) {\n\n\t// Connect to the DNS server we'll be using to query SRV records.\n\tconn, err := dialProxy(\n\t\tdnsServer, socksAddr, streamIsolation,\n\t\tskipProxyForClearNetTargets, timeout,\n\t)\n\tif err != nil {\n\t\treturn \"\", nil, err\n\t}\n\n\tdnsConn := &dns.Conn{Conn: conn}\n\tdefer dnsConn.Close()\n\n\t// Once connected, we'll construct the SRV request for the host\n\t// following the format _service._proto.name. as described in RFC #2782.\n\thost := fmt.Sprintf(\"_%s._%s.%s.\", service, proto, name)\n\tmsg := new(dns.Msg).SetQuestion(host, dns.TypeSRV)\n\n\t// Send the request to the DNS server and read its response.\n\tif err := dnsConn.WriteMsg(msg); err != nil {\n\t\treturn \"\", nil, err\n\t}\n\tresp, err := dnsConn.ReadMsg()\n\tif err != nil {\n\t\treturn \"\", nil, err\n\t}\n\n\t// We'll fail if we were unable to query the DNS server for our record.\n\tif resp.Rcode != dns.RcodeSuccess {\n\t\treturn \"\", nil, fmt.Errorf(\"unable to query for SRV records: \"+\n\t\t\t\"%s\", dnsCodes[resp.Rcode])\n\t}\n\n\t// Retrieve the RR(s) of the Answer section.\n\tvar rrs []*net.SRV\n\tfor _, rr := range resp.Answer {\n\t\tsrv := rr.(*dns.SRV)\n\t\trrs = append(rrs, &net.SRV{\n\t\t\tTarget:   srv.Target,\n\t\t\tPort:     srv.Port,\n\t\t\tPriority: srv.Priority,\n\t\t\tWeight:   srv.Weight,\n\t\t})\n\t}\n\n\treturn \"\", rrs, nil\n}\n\n// ResolveTCPAddr uses Tor's proxy to resolve TCP addresses instead of the\n// standard system resolver provided in the `net` package.",
+      "length": 1445,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func ResolveTCPAddr(address, socksAddr string) (*net.TCPAddr, error) {",
+      "content": "func ResolveTCPAddr(address, socksAddr string) (*net.TCPAddr, error) {\n\t// Split host:port since the lookup function does not take a port.\n\thost, port, err := net.SplitHostPort(address)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tip, err := LookupHost(host, socksAddr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tp, err := strconv.Atoi(port)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &net.TCPAddr{\n\t\tIP:   net.ParseIP(ip[0]),\n\t\tPort: p,\n\t}, nil\n}\n\n// ParseAddr parses an address from its string format to a net.Addr.",
+      "length": 420,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseAddr(address, socksAddr string) (net.Addr, error) {",
+      "content": "func ParseAddr(address, socksAddr string) (net.Addr, error) {\n\thost, portStr, err := net.SplitHostPort(address)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tport, err := strconv.Atoi(portStr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif IsOnionHost(host) {\n\t\treturn &OnionAddr{OnionService: host, Port: port}, nil\n\t}\n\n\treturn ResolveTCPAddr(address, socksAddr)\n}\n\n// IsOnionHost determines whether a host is part of an onion address.",
+      "length": 347,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func IsOnionHost(host string) bool {",
+      "content": "func IsOnionHost(host string) bool {\n\t// Note the starting index of the onion suffix in the host depending\n\t// on its length.\n\tvar suffixIndex int\n\tswitch len(host) {\n\tcase V2Len:\n\t\tsuffixIndex = V2Len - OnionSuffixLen\n\tcase V3Len:\n\t\tsuffixIndex = V3Len - OnionSuffixLen\n\tdefault:\n\t\treturn false\n\t}\n\n\t// Make sure the host ends with the \".onion\" suffix.\n\tif host[suffixIndex:] != OnionSuffix {\n\t\treturn false\n\t}\n\n\t// We'll now attempt to decode the host without its suffix, as the\n\t// suffix includes invalid characters. This will tell us if the host is\n\t// actually valid if successful.\n\thost = host[:suffixIndex]\n\tif _, err := Base32Encoding.DecodeString(host); err != nil {\n\t\treturn false\n\t}\n\n\treturn true\n}\n\n// IsOnionFakeIP checks whether a given net.Addr is a fake IPv6 address that\n// encodes an Onion v2 address.",
+      "length": 754,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func IsOnionFakeIP(addr net.Addr) bool {",
+      "content": "func IsOnionFakeIP(addr net.Addr) bool {\n\t_, err := FakeIPToOnionHost(addr)\n\treturn err == nil\n}\n\n// OnionHostToFakeIP encodes an Onion v2 address into a fake IPv6 address that\n// encodes the same information but can be used for libraries that operate on an\n// IP address base only, like btcd's address manager. For example, this will\n// turn the onion host ld47qlr6h2b7hrrf.onion into the ip6 address\n// fd87:d87e:eb43:58f9:f82e:3e3e:83f3:c625.",
+      "length": 396,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func OnionHostToFakeIP(host string) (net.IP, error) {",
+      "content": "func OnionHostToFakeIP(host string) (net.IP, error) {\n\tif len(host) != V2Len {\n\t\treturn nil, fmt.Errorf(\"invalid onion v2 host: %v\", host)\n\t}\n\n\tdata, err := Base32Encoding.DecodeString(host[:V2Len-OnionSuffixLen])\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tip := make([]byte, len(onionPrefixBytes)+len(data))\n\tcopy(ip, onionPrefixBytes)\n\tcopy(ip[len(onionPrefixBytes):], data)\n\treturn ip, nil\n}\n\n// FakeIPToOnionHost turns a fake IPv6 address that encodes an Onion v2 address\n// back into its onion host address representation. For example, this will turn\n// the fake tcp6 address [fd87:d87e:eb43:58f9:f82e:3e3e:83f3:c625]:8333 back\n// into ld47qlr6h2b7hrrf.onion:8333.",
+      "length": 594,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func FakeIPToOnionHost(fakeIP net.Addr) (net.Addr, error) {",
+      "content": "func FakeIPToOnionHost(fakeIP net.Addr) (net.Addr, error) {\n\ttcpAddr, ok := fakeIP.(*net.TCPAddr)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"invalid fake onion IP address: %v\",\n\t\t\tfakeIP)\n\t}\n\n\tip := tcpAddr.IP\n\tif len(ip) != len(onionPrefixBytes)+V2DecodedLen {\n\t\treturn nil, fmt.Errorf(\"invalid fake onion IP address length: \"+\n\t\t\t\"%v\", fakeIP)\n\t}\n\n\tif !bytes.Equal(ip[:len(onionPrefixBytes)], onionPrefixBytes) {\n\t\treturn nil, fmt.Errorf(\"invalid fake onion IP address prefix: \"+\n\t\t\t\"%v\", fakeIP)\n\t}\n\n\thost := Base32Encoding.EncodeToString(ip[len(onionPrefixBytes):])\n\treturn &OnionAddr{\n\t\tOnionService: host + \".onion\",\n\t\tPort:         tcpAddr.Port,\n\t}, nil\n}\n",
+      "length": 573,
+      "tokens": 67,
+      "embedding": []
+    }
+  ]
+}

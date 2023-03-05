@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/subscribe/subscribe.go",
+  "package": "subscribe",
+  "sections": [
+    {
+      "slug": "type Client struct {",
+      "content": "type Client struct {\n\t// cancel should be called in case the client no longer wants to\n\t// subscribe for updates from the server.\n\tcancel func()\n\n\tupdates *queue.ConcurrentQueue\n\tquit    chan struct{}\n}\n\n// Updates returns a read-only channel where the updates the client has\n// subscribed to will be delivered.",
+      "length": 281,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Client) Updates() <-chan interface{} {",
+      "content": "func (c *Client) Updates() <-chan interface{} {\n\treturn c.updates.ChanOut()\n}\n\n// Quit is a channel that will be closed in case the server decides to no\n// longer deliver updates to this client.",
+      "length": 142,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Client) Quit() <-chan struct{} {",
+      "content": "func (c *Client) Quit() <-chan struct{} {\n\treturn c.quit\n}\n\n// Cancel should be called in case the client no longer wants to\n// subscribe for updates from the server.",
+      "length": 120,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Client) Cancel() {",
+      "content": "func (c *Client) Cancel() {\n\tc.cancel()\n}\n\n// Server is a struct that manages a set of subscriptions and their\n// corresponding clients. Any update will be delivered to all active clients.",
+      "length": 156,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "type Server struct {",
+      "content": "type Server struct {\n\tclientCounter uint64 // To be used atomically.\n\n\tstarted uint32 // To be used atomically.\n\tstopped uint32 // To be used atomically.\n\n\tclients       map[uint64]*Client\n\tclientUpdates chan *clientUpdate\n\n\tupdates chan interface{}\n\n\tquit chan struct{}\n\twg   sync.WaitGroup\n}\n\n// clientUpdate is an internal message sent to the subscriptionHandler to\n// either register a new client for subscription or cancel an existing\n// subscription.",
+      "length": 419,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "type clientUpdate struct {",
+      "content": "type clientUpdate struct {\n\t// cancel indicates if the update to the client is cancelling an\n\t// existing client's subscription. If not then this update will be to\n\t// subscribe a new client.\n\tcancel bool\n\n\t// clientID is the unique identifier for this client. Any further\n\t// updates (deleting or adding) to this notification client will be\n\t// dispatched according to the target clientID.\n\tclientID uint64\n\n\t// client is the new client that will receive updates. Will be nil in\n\t// case this is a cancallation update.\n\tclient *Client\n}\n\n// NewServer returns a new Server.",
+      "length": 531,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func NewServer() *Server {",
+      "content": "func NewServer() *Server {\n\treturn &Server{\n\t\tclients:       make(map[uint64]*Client),\n\t\tclientUpdates: make(chan *clientUpdate),\n\t\tupdates:       make(chan interface{}),\n\t\tquit:          make(chan struct{}),\n\t}\n}\n\n// Start starts the Server, making it ready to accept subscriptions and\n// updates.",
+      "length": 262,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Start() error {",
+      "content": "func (s *Server) Start() error {\n\tif !atomic.CompareAndSwapUint32(&s.started, 0, 1) {\n\t\treturn nil\n\t}\n\n\ts.wg.Add(1)\n\tgo s.subscriptionHandler()\n\n\treturn nil\n}\n\n// Stop stops the server.",
+      "length": 142,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Stop() error {",
+      "content": "func (s *Server) Stop() error {\n\tif !atomic.CompareAndSwapUint32(&s.stopped, 0, 1) {\n\t\treturn nil\n\t}\n\n\tclose(s.quit)\n\ts.wg.Wait()\n\n\treturn nil\n}\n\n// Subscribe returns a Client that will receive updates any time the Server is\n// made aware of a new event.",
+      "length": 211,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Subscribe() (*Client, error) {",
+      "content": "func (s *Server) Subscribe() (*Client, error) {\n\t// We'll first atomically obtain the next ID for this client from the\n\t// incrementing client ID counter.\n\tclientID := atomic.AddUint64(&s.clientCounter, 1)\n\n\t// Create the client that will be returned. The Cancel method is\n\t// populated to send the cancellation intent to the\n\t// subscriptionHandler.\n\tclient := &Client{\n\t\tupdates: queue.NewConcurrentQueue(20),\n\t\tquit:    make(chan struct{}),\n\t\tcancel: func() {\n\t\t\tselect {\n\t\t\tcase s.clientUpdates <- &clientUpdate{\n\t\t\t\tcancel:   true,\n\t\t\t\tclientID: clientID,\n\t\t\t}:\n\t\t\tcase <-s.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t},\n\t}\n\n\tselect {\n\tcase s.clientUpdates <- &clientUpdate{\n\t\tcancel:   false,\n\t\tclientID: clientID,\n\t\tclient:   client,\n\t}:\n\tcase <-s.quit:\n\t\treturn nil, ErrServerShuttingDown\n\t}\n\n\treturn client, nil\n}\n\n// SendUpdate is called to send the passed update to all currently active\n// subscription clients.",
+      "length": 818,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) SendUpdate(update interface{}) error {",
+      "content": "func (s *Server) SendUpdate(update interface{}) error {\n\n\tselect {\n\tcase s.updates <- update:\n\t\treturn nil\n\tcase <-s.quit:\n\t\treturn ErrServerShuttingDown\n\t}\n}\n\n// subscriptionHandler is the main handler for the Server. It will handle\n// incoming updates and subscriptions, and forward the incoming updates to the\n// registered clients.\n//\n// NOTE: MUST be run as a goroutine.",
+      "length": 306,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) subscriptionHandler() {",
+      "content": "func (s *Server) subscriptionHandler() {\n\tdefer s.wg.Done()\n\n\tfor {\n\t\tselect {\n\n\t\t// If a client update is received, the either a new\n\t\t// subscription becomes active, or we cancel and existing one.\n\t\tcase update := <-s.clientUpdates:\n\t\t\tclientID := update.clientID\n\n\t\t\t// In case this is a cancellation, stop the client's\n\t\t\t// underlying queue, and remove the client from the set\n\t\t\t// of active subscription clients.\n\t\t\tif update.cancel {\n\t\t\t\tclient, ok := s.clients[update.clientID]\n\t\t\t\tif ok {\n\t\t\t\t\tclient.updates.Stop()\n\t\t\t\t\tclose(client.quit)\n\t\t\t\t\tdelete(s.clients, clientID)\n\t\t\t\t}\n\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// If this was not a cancellation, start the underlying\n\t\t\t// queue and add the client to our set of subscription\n\t\t\t// clients. It will be notified about any new updates\n\t\t\t// the server receives.\n\t\t\tupdate.client.updates.Start()\n\t\t\ts.clients[update.clientID] = update.client\n\n\t\t// A new update was received, forward it to all active clients.\n\t\tcase upd := <-s.updates:\n\t\t\tfor _, client := range s.clients {\n\t\t\t\tselect {\n\t\t\t\tcase client.updates.ChanIn() <- upd:\n\t\t\t\tcase <-client.quit:\n\t\t\t\tcase <-s.quit:\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t}\n\n\t\t// In case the server is shutting down, stop the clients and\n\t\t// close the quit channels to notify them.\n\t\tcase <-s.quit:\n\t\t\tfor _, client := range s.clients {\n\t\t\t\tclient.updates.Stop()\n\t\t\t\tclose(client.quit)\n\t\t\t}\n\t\t\treturn\n\t\t}\n\t}\n}\n",
+      "length": 1284,
+      "tokens": 187,
+      "embedding": []
+    }
+  ]
+}

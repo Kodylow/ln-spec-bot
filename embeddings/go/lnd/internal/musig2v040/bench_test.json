@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/internal/musig2v040/bench_test.go",
-  "package": "Copyright",
+  "package": "musig2v040",
   "sections": [
     {
       "slug": "func hexToBytes(s string) []byte {",

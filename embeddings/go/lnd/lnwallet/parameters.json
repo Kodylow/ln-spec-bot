@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/parameters.go",
+  "package": "lnwallet",
+  "sections": [
+    {
+      "slug": "func DefaultRoutingFeeLimitForAmount(a lnwire.MilliSatoshi) lnwire.MilliSatoshi {",
+      "content": "func DefaultRoutingFeeLimitForAmount(a lnwire.MilliSatoshi) lnwire.MilliSatoshi {\n\t// Allow 100% fees up to a certain amount to accommodate for base fees.\n\tif a <= RoutingFee100PercentUpTo {\n\t\treturn a\n\t}\n\n\t// Everything larger than the cut-off amount will get a default fee\n\t// percentage.\n\treturn a * DefaultRoutingFeePercentage / 100\n}\n\n// DustLimitForSize retrieves the dust limit for a given pkscript size. Given\n// the size, it automatically determines whether the script is a witness script\n// or not. It calls btcd's GetDustThreshold method under the hood. It must be\n// called with a proper size parameter or else a panic occurs.",
+      "length": 543,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func DustLimitForSize(scriptSize int) btcutil.Amount {",
+      "content": "func DustLimitForSize(scriptSize int) btcutil.Amount {\n\tvar (\n\t\tdustlimit btcutil.Amount\n\t\tpkscript  []byte\n\t)\n\n\t// With the size of the script, determine which type of pkscript to\n\t// create. This will be used in the call to GetDustThreshold. We pass\n\t// in an empty byte slice since the contents of the script itself don't\n\t// matter.\n\tswitch scriptSize {\n\tcase input.P2WPKHSize:\n\t\tpkscript, _ = input.WitnessPubKeyHash([]byte{})\n\n\tcase input.P2WSHSize:\n\t\tpkscript, _ = input.WitnessScriptHash([]byte{})\n\n\tcase input.P2SHSize:\n\t\tpkscript, _ = input.GenerateP2SH([]byte{})\n\n\tcase input.P2PKHSize:\n\t\tpkscript, _ = input.GenerateP2PKH([]byte{})\n\n\tcase input.UnknownWitnessSize:\n\t\tpkscript, _ = input.GenerateUnknownWitness()\n\n\tdefault:\n\t\tpanic(\"invalid script size\")\n\t}\n\n\t// Call GetDustThreshold with a TxOut containing the generated\n\t// pkscript.\n\ttxout := &wire.TxOut{PkScript: pkscript}\n\tdustlimit = btcutil.Amount(mempool.GetDustThreshold(txout))\n\n\treturn dustlimit\n}\n",
+      "length": 881,
+      "tokens": 108,
+      "embedding": []
+    }
+  ]
+}

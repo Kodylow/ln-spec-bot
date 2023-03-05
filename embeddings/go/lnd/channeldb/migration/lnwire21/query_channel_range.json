@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/query_channel_range.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type QueryChannelRange struct {",
+      "content": "type QueryChannelRange struct {\n\t// ChainHash denotes the target chain that we're trying to synchronize\n\t// channel graph state for.\n\tChainHash chainhash.Hash\n\n\t// FirstBlockHeight is the first block in the query range. The\n\t// responder should send all new short channel IDs from this block\n\t// until this block plus the specified number of blocks.\n\tFirstBlockHeight uint32\n\n\t// NumBlocks is the number of blocks beyond the first block that short\n\t// channel ID's should be sent for.\n\tNumBlocks uint32\n}\n\n// NewQueryChannelRange creates a new empty QueryChannelRange message.",
+      "length": 530,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func NewQueryChannelRange() *QueryChannelRange {",
+      "content": "func NewQueryChannelRange() *QueryChannelRange {\n\treturn &QueryChannelRange{}\n}\n\n// A compile time check to ensure QueryChannelRange implements the\n// lnwire.Message interface.\nvar _ Message = (*QueryChannelRange)(nil)\n\n// Decode deserializes a serialized QueryChannelRange message stored in the\n// passed io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 350,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *QueryChannelRange) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (q *QueryChannelRange) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\tq.ChainHash[:],\n\t\t&q.FirstBlockHeight,\n\t\t&q.NumBlocks,\n\t)\n}\n\n// Encode serializes the target QueryChannelRange into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 249,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *QueryChannelRange) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (q *QueryChannelRange) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tq.ChainHash[:],\n\t\tq.FirstBlockHeight,\n\t\tq.NumBlocks,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 213,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *QueryChannelRange) MsgType() MessageType {",
+      "content": "func (q *QueryChannelRange) MsgType() MessageType {\n\treturn MsgQueryChannelRange\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a\n// QueryChannelRange complete message observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 224,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *QueryChannelRange) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (q *QueryChannelRange) MaxPayloadLength(uint32) uint32 {\n\t// 32 + 4 + 4\n\treturn 40\n}\n\n// LastBlockHeight returns the last block height covered by the range of a\n// QueryChannelRange message.",
+      "length": 128,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *QueryChannelRange) LastBlockHeight() uint32 {",
+      "content": "func (q *QueryChannelRange) LastBlockHeight() uint32 {\n\t// Handle overflows by casting to uint64.\n\tlastBlockHeight := uint64(q.FirstBlockHeight) + uint64(q.NumBlocks) - 1\n\tif lastBlockHeight > math.MaxUint32 {\n\t\treturn math.MaxUint32\n\t}\n\treturn uint32(lastBlockHeight)\n}\n",
+      "length": 209,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

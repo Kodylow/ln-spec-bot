@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/manager.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type ManagerCfg struct {",
+      "content": "type ManagerCfg struct {\n\t// Self is the public key of the lnd instance. It is used to making\n\t// sure the autopilot is not opening channels to itself.\n\tSelf *btcec.PublicKey\n\n\t// PilotCfg is the config of the autopilot agent managed by the\n\t// Manager.\n\tPilotCfg *Config\n\n\t// ChannelState is a function closure that returns the current set of\n\t// channels managed by this node.\n\tChannelState func() ([]LocalChannel, error)\n\n\t// ChannelInfo is a function closure that returns the channel managed\n\t// by the node given by the passed channel point.\n\tChannelInfo func(wire.OutPoint) (*LocalChannel, error)\n\n\t// SubscribeTransactions is used to get a subscription for transactions\n\t// relevant to this node's wallet.\n\tSubscribeTransactions func() (lnwallet.TransactionSubscription, error)\n\n\t// SubscribeTopology is used to get a subscription for topology changes\n\t// on the network.\n\tSubscribeTopology func() (*routing.TopologyClient, error)\n}\n\n// Manager is struct that manages an autopilot agent, making it possible to\n// enable and disable it at will, and hand it relevant external information.\n// It implements the autopilot grpc service, which is used to get data about\n// the running autopilot, and gives it relevant information.",
+      "length": 1178,
+      "tokens": 179,
+      "embedding": []
+    },
+    {
+      "slug": "type Manager struct {",
+      "content": "type Manager struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tcfg *ManagerCfg\n\n\t// pilot is the current autopilot agent. It will be nil if the agent is\n\t// disabled.\n\tpilot *Agent\n\n\tquit chan struct{}\n\twg   sync.WaitGroup\n\tsync.Mutex\n}\n\n// NewManager creates a new instance of the Manager from the passed config.",
+      "length": 276,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func NewManager(cfg *ManagerCfg) (*Manager, error) {",
+      "content": "func NewManager(cfg *ManagerCfg) (*Manager, error) {\n\treturn &Manager{\n\t\tcfg:  cfg,\n\t\tquit: make(chan struct{}),\n\t}, nil\n}\n\n// Start starts the Manager.",
+      "length": 93,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) Start() error {",
+      "content": "func (m *Manager) Start() error {\n\tm.started.Do(func() {})\n\treturn nil\n}\n\n// Stop stops the Manager. If an autopilot agent is active, it will also be\n// stopped.",
+      "length": 122,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) Stop() error {",
+      "content": "func (m *Manager) Stop() error {\n\tm.stopped.Do(func() {\n\t\tif err := m.StopAgent(); err != nil {\n\t\t\tlog.Errorf(\"Unable to stop pilot: %v\", err)\n\t\t}\n\n\t\tclose(m.quit)\n\t\tm.wg.Wait()\n\t})\n\treturn nil\n}\n\n// IsActive returns whether the autopilot agent is currently active.",
+      "length": 221,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) IsActive() bool {",
+      "content": "func (m *Manager) IsActive() bool {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\treturn m.pilot != nil\n}\n\n// StartAgent creates and starts an autopilot agent from the Manager's\n// config.",
+      "length": 129,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) StartAgent() error {",
+      "content": "func (m *Manager) StartAgent() error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Already active.\n\tif m.pilot != nil {\n\t\treturn nil\n\t}\n\n\t// Next, we'll fetch the current state of open channels from the\n\t// database to use as initial state for the auto-pilot agent.\n\tinitialChanState, err := m.cfg.ChannelState()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now that we have all the initial dependencies, we can create the\n\t// auto-pilot instance itself.\n\tpilot, err := New(*m.cfg.PilotCfg, initialChanState)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif err := pilot.Start(); err != nil {\n\t\treturn err\n\t}\n\n\t// Finally, we'll need to subscribe to two things: incoming\n\t// transactions that modify the wallet's balance, and also any graph\n\t// topology updates.\n\ttxnSubscription, err := m.cfg.SubscribeTransactions()\n\tif err != nil {\n\t\tpilot.Stop()\n\t\treturn err\n\t}\n\tgraphSubscription, err := m.cfg.SubscribeTopology()\n\tif err != nil {\n\t\ttxnSubscription.Cancel()\n\t\tpilot.Stop()\n\t\treturn err\n\t}\n\n\tm.pilot = pilot\n\n\t// We'll launch a goroutine to provide the agent with notifications\n\t// whenever the balance of the wallet changes.\n\t// TODO(halseth): can lead to panic if in process of shutting down.\n\tm.wg.Add(1)\n\tgo func() {\n\t\tdefer txnSubscription.Cancel()\n\t\tdefer m.wg.Done()\n\n\t\tfor {\n\t\t\tselect {\n\t\t\tcase <-txnSubscription.ConfirmedTransactions():\n\t\t\t\tpilot.OnBalanceChange()\n\n\t\t\t// We won't act upon new unconfirmed transaction, as\n\t\t\t// we'll only use confirmed outputs when funding.\n\t\t\t// However, we will still drain this request in order\n\t\t\t// to avoid goroutine leaks, and ensure we promptly\n\t\t\t// read from the channel if available.\n\t\t\tcase <-txnSubscription.UnconfirmedTransactions():\n\t\t\tcase <-pilot.quit:\n\t\t\t\treturn\n\t\t\tcase <-m.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\n\t}()\n\n\t// We'll also launch a goroutine to provide the agent with\n\t// notifications for when the graph topology controlled by the node\n\t// changes.\n\tm.wg.Add(1)\n\tgo func() {\n\t\tdefer graphSubscription.Cancel()\n\t\tdefer m.wg.Done()\n\n\t\tfor {\n\t\t\tselect {\n\t\t\tcase topChange, ok := <-graphSubscription.TopologyChanges:\n\t\t\t\t// If the router is shutting down, then we will\n\t\t\t\t// as well.\n\t\t\t\tif !ok {\n\t\t\t\t\treturn\n\t\t\t\t}\n\n\t\t\t\tfor _, edgeUpdate := range topChange.ChannelEdgeUpdates {\n\t\t\t\t\t// If this isn't an advertisement by\n\t\t\t\t\t// the backing lnd node, then we'll\n\t\t\t\t\t// continue as we only want to add\n\t\t\t\t\t// channels that we've created\n\t\t\t\t\t// ourselves.\n\t\t\t\t\tif !edgeUpdate.AdvertisingNode.IsEqual(m.cfg.Self) {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\n\t\t\t\t\t// If this is indeed a channel we\n\t\t\t\t\t// opened, then we'll convert it to the\n\t\t\t\t\t// autopilot.Channel format, and notify\n\t\t\t\t\t// the pilot of the new channel.\n\t\t\t\t\tcp := edgeUpdate.ChanPoint\n\t\t\t\t\tedge, err := m.cfg.ChannelInfo(cp)\n\t\t\t\t\tif err != nil {\n\t\t\t\t\t\tlog.Errorf(\"Unable to fetch \"+\n\t\t\t\t\t\t\t\"channel info for %v: \"+\n\t\t\t\t\t\t\t\"%v\", cp, err)\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\n\t\t\t\t\tpilot.OnChannelOpen(*edge)\n\t\t\t\t}\n\n\t\t\t\t// For each closed channel, we'll obtain\n\t\t\t\t// the chanID of the closed channel and send it\n\t\t\t\t// to the pilot.\n\t\t\t\tfor _, chanClose := range topChange.ClosedChannels {\n\t\t\t\t\tchanID := lnwire.NewShortChanIDFromInt(\n\t\t\t\t\t\tchanClose.ChanID,\n\t\t\t\t\t)\n\n\t\t\t\t\tpilot.OnChannelClose(chanID)\n\t\t\t\t}\n\n\t\t\t\t// If new nodes were added to the graph, or\n\t\t\t\t// node information has changed, we'll poke\n\t\t\t\t// autopilot to see if it can make use of them.\n\t\t\t\tif len(topChange.NodeUpdates) > 0 {\n\t\t\t\t\tpilot.OnNodeUpdates()\n\t\t\t\t}\n\n\t\t\tcase <-pilot.quit:\n\t\t\t\treturn\n\t\t\tcase <-m.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}()\n\n\tlog.Debugf(\"Manager started autopilot agent\")\n\n\treturn nil\n}\n\n// StopAgent stops any active autopilot agent.",
+      "length": 3401,
+      "tokens": 493,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) StopAgent() error {",
+      "content": "func (m *Manager) StopAgent() error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// Not active, so we can return early.\n\tif m.pilot == nil {\n\t\treturn nil\n\t}\n\n\tif err := m.pilot.Stop(); err != nil {\n\t\treturn err\n\t}\n\n\t// Make sure to nil the current agent, indicating it is no longer\n\t// active.\n\tm.pilot = nil\n\n\tlog.Debugf(\"Manager stopped autopilot agent\")\n\n\treturn nil\n}\n\n// QueryHeuristics queries the available autopilot heuristics for node scores.",
+      "length": 379,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) QueryHeuristics(nodes []NodeID, localState bool) (",
+      "content": "func (m *Manager) QueryHeuristics(nodes []NodeID, localState bool) (\n\tHeuristicScores, error) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tn := make(map[NodeID]struct{})\n\tfor _, node := range nodes {\n\t\tn[node] = struct{}{}\n\t}\n\n\tlog.Debugf(\"Querying heuristics for %d nodes\", len(n))\n\treturn m.queryHeuristics(n, localState)\n}\n\n// HeuristicScores is an alias for a map that maps heuristic names to a map of\n// scores for pubkeys.",
+      "length": 332,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type HeuristicScores map[string]map[NodeID]float64",
+      "content": "type HeuristicScores map[string]map[NodeID]float64\n\n// queryHeuristics gets node scores from all available simple heuristics, and\n// the agent's current active heuristic.\n//\n// NOTE: Must be called with the manager's lock.",
+      "length": 167,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) queryHeuristics(nodes map[NodeID]struct{}, localState bool) (",
+      "content": "func (m *Manager) queryHeuristics(nodes map[NodeID]struct{}, localState bool) (\n\tHeuristicScores, error) {\n\n\t// If we want to take the local state into action when querying the\n\t// heuristics, we fetch it. If not we'll just pass an emply slice to\n\t// the heuristic.\n\tvar totalChans []LocalChannel\n\tvar err error\n\tif localState {\n\t\t// Fetch the current set of channels.\n\t\ttotalChans, err = m.cfg.ChannelState()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// If the agent is active, we can merge the channel state with\n\t\t// the channels pending open.\n\t\tif m.pilot != nil {\n\t\t\tm.pilot.chanStateMtx.Lock()\n\t\t\tm.pilot.pendingMtx.Lock()\n\t\t\ttotalChans = mergeChanState(\n\t\t\t\tm.pilot.pendingOpens, m.pilot.chanState,\n\t\t\t)\n\t\t\tm.pilot.pendingMtx.Unlock()\n\t\t\tm.pilot.chanStateMtx.Unlock()\n\t\t}\n\t}\n\n\t// As channel size we'll use the maximum size.\n\tchanSize := m.cfg.PilotCfg.Constraints.MaxChanSize()\n\n\t// We'll start by getting the scores from each available sub-heuristic,\n\t// in addition the current agent heuristic.\n\tvar heuristics []AttachmentHeuristic\n\theuristics = append(heuristics, availableHeuristics...)\n\theuristics = append(heuristics, m.cfg.PilotCfg.Heuristic)\n\n\treport := make(HeuristicScores)\n\tfor _, h := range heuristics {\n\t\tname := h.Name()\n\n\t\t// If the agent heuristic is among the simple heuristics it\n\t\t// might get queried more than once. As an optimization we'll\n\t\t// just skip it the second time.\n\t\tif _, ok := report[name]; ok {\n\t\t\tcontinue\n\t\t}\n\n\t\ts, err := h.NodeScores(\n\t\t\tm.cfg.PilotCfg.Graph, totalChans, chanSize, nodes,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to get sub score: %v\",\n\t\t\t\terr)\n\t\t}\n\n\t\tlog.Debugf(\"Heuristic \\\"%v\\\" scored %d nodes\", name, len(s))\n\n\t\tscores := make(map[NodeID]float64)\n\t\tfor nID, score := range s {\n\t\t\tscores[nID] = score.Score\n\t\t}\n\n\t\treport[name] = scores\n\t}\n\n\treturn report, nil\n}\n\n// SetNodeScores is used to set the scores of the given heuristic, if it is\n// active, and ScoreSettable.",
+      "length": 1802,
+      "tokens": 262,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *Manager) SetNodeScores(name string, scores map[NodeID]float64) error {",
+      "content": "func (m *Manager) SetNodeScores(name string, scores map[NodeID]float64) error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\t// It must be ScoreSettable to be available for external\n\t// scores.\n\ts, ok := m.cfg.PilotCfg.Heuristic.(ScoreSettable)\n\tif !ok {\n\t\treturn fmt.Errorf(\"current heuristic doesn't support \" +\n\t\t\t\"external scoring\")\n\t}\n\n\t// Heuristic was found, set its node scores.\n\tapplied, err := s.SetNodeScores(name, scores)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif !applied {\n\t\treturn fmt.Errorf(\"heuristic with name %v not found\", name)\n\t}\n\n\t// If the autopilot agent is active, notify about the updated\n\t// heuristic.\n\tif m.pilot != nil {\n\t\tm.pilot.OnHeuristicUpdate(m.cfg.PilotCfg.Heuristic)\n\t}\n\n\treturn nil\n}\n",
+      "length": 596,
+      "tokens": 88,
+      "embedding": []
+    }
+  ]
+}

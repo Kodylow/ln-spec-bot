@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/signrpc/signer_utils.go",
+  "package": "signrpc",
+  "sections": [
+    {
+      "slug": "func UnmarshalMuSig2Version(rpcVersion MuSig2Version) (input.MuSig2Version,",
+      "content": "func UnmarshalMuSig2Version(rpcVersion MuSig2Version) (input.MuSig2Version,\n\terror) {\n\n\tswitch rpcVersion {\n\tcase MuSig2Version_MUSIG2_VERSION_V040:\n\t\treturn input.MuSig2Version040, nil\n\n\tcase MuSig2Version_MUSIG2_VERSION_V100RC2:\n\t\treturn input.MuSig2Version100RC2, nil\n\n\tdefault:\n\t\treturn 0, fmt.Errorf(\"unknown MuSig2 version <%v>, make sure \"+\n\t\t\t\"your client software is up to date, the version \"+\n\t\t\t\"field is mandatory for this release of lnd\",\n\t\t\trpcVersion.String())\n\t}\n}\n\n// MarshalMuSig2Version turns the native MuSig2 version into its RPC\n// counterpart.",
+      "length": 472,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func MarshalMuSig2Version(version input.MuSig2Version) (MuSig2Version, error) {",
+      "content": "func MarshalMuSig2Version(version input.MuSig2Version) (MuSig2Version, error) {\n\tswitch version {\n\tcase input.MuSig2Version040:\n\t\treturn MuSig2Version_MUSIG2_VERSION_V040, nil\n\n\tcase input.MuSig2Version100RC2:\n\t\treturn MuSig2Version_MUSIG2_VERSION_V100RC2, nil\n\n\tdefault:\n\t\treturn 0, fmt.Errorf(\"unknown MuSig2 version <%d>\", version)\n\t}\n}\n",
+      "length": 249,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

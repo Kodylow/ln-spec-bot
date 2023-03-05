@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration13/migration_test.go",
+  "package": "migration13",
+  "sections": [
+    {
+      "slug": "func TestMigrateMpp(t *testing.T) {",
+      "content": "func TestMigrateMpp(t *testing.T) {\n\tvar paymentsRootBucket = []byte(\"payments-root-bucket\")\n\n\tmigtest.ApplyMigration(\n\t\tt,\n\t\tfunc(tx kvdb.RwTx) error {\n\t\t\treturn migtest.RestoreDB(tx, paymentsRootBucket, pre)\n\t\t},\n\t\tfunc(tx kvdb.RwTx) error {\n\t\t\treturn migtest.VerifyDB(tx, paymentsRootBucket, post)\n\t\t},\n\t\tMigrateMPP,\n\t\tfalse,\n\t)\n}\n",
+      "length": 284,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

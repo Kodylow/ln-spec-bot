@@ -1,0 +1,216 @@
+{
+  "filepath": "../implementations/go/lnd/routing/notifications_test.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "func createTestNode() (*channeldb.LightningNode, error) {",
+      "content": "func createTestNode() (*channeldb.LightningNode, error) {\n\tupdateTime := prand.Int63()\n\n\tpriv, err := btcec.NewPrivateKey()\n\tif err != nil {\n\t\treturn nil, errors.Errorf(\"unable create private key: %v\", err)\n\t}\n\n\tpub := priv.PubKey().SerializeCompressed()\n\tn := &channeldb.LightningNode{\n\t\tHaveNodeAnnouncement: true,\n\t\tLastUpdate:           time.Unix(updateTime, 0),\n\t\tAddresses:            testAddrs,\n\t\tColor:                color.RGBA{1, 2, 3, 0},\n\t\tAlias:                \"kek\" + string(pub[:]),\n\t\tAuthSigBytes:         testSig.Serialize(),\n\t\tFeatures:             testFeatures,\n\t}\n\tcopy(n.PubKeyBytes[:], pub)\n\n\treturn n, nil\n}\n",
+      "length": 552,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func randEdgePolicy(chanID *lnwire.ShortChannelID,",
+      "content": "func randEdgePolicy(chanID *lnwire.ShortChannelID,\n\tnode *channeldb.LightningNode) *channeldb.ChannelEdgePolicy {\n\n\treturn &channeldb.ChannelEdgePolicy{\n\t\tSigBytes:                  testSig.Serialize(),\n\t\tChannelID:                 chanID.ToUint64(),\n\t\tLastUpdate:                time.Unix(int64(prand.Int31()), 0),\n\t\tTimeLockDelta:             uint16(prand.Int63()),\n\t\tMinHTLC:                   lnwire.MilliSatoshi(prand.Int31()),\n\t\tMaxHTLC:                   lnwire.MilliSatoshi(prand.Int31()),\n\t\tFeeBaseMSat:               lnwire.MilliSatoshi(prand.Int31()),\n\t\tFeeProportionalMillionths: lnwire.MilliSatoshi(prand.Int31()),\n\t\tNode:                      node,\n\t}\n}\n",
+      "length": 603,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func createChannelEdge(ctx *testCtx, bitcoinKey1, bitcoinKey2 []byte,",
+      "content": "func createChannelEdge(ctx *testCtx, bitcoinKey1, bitcoinKey2 []byte,\n\tchanValue btcutil.Amount, fundingHeight uint32) (*wire.MsgTx, *wire.OutPoint,\n\t*lnwire.ShortChannelID, error) {\n\n\tfundingTx := wire.NewMsgTx(2)\n\t_, tx, err := input.GenFundingPkScript(\n\t\tbitcoinKey1,\n\t\tbitcoinKey2,\n\t\tint64(chanValue),\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\n\tfundingTx.TxOut = append(fundingTx.TxOut, tx)\n\tchanUtxo := wire.OutPoint{\n\t\tHash:  fundingTx.TxHash(),\n\t\tIndex: 0,\n\t}\n\n\t// With the utxo constructed, we'll mark it as closed.\n\tctx.chain.addUtxo(chanUtxo, tx)\n\n\t// Our fake channel will be \"confirmed\" at height 101.\n\tchanID := &lnwire.ShortChannelID{\n\t\tBlockHeight: fundingHeight,\n\t\tTxIndex:     0,\n\t\tTxPosition:  0,\n\t}\n\n\treturn fundingTx, &chanUtxo, chanID, nil\n}\n",
+      "length": 672,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChain struct {",
+      "content": "type mockChain struct {\n\tblocks           map[chainhash.Hash]*wire.MsgBlock\n\tblockIndex       map[uint32]chainhash.Hash\n\tblockHeightIndex map[chainhash.Hash]uint32\n\n\tutxos map[wire.OutPoint]wire.TxOut\n\n\tbestHeight int32\n\n\tsync.RWMutex\n}\n\n// A compile time check to ensure mockChain implements the\n// lnwallet.BlockChainIO interface.\nvar _ lnwallet.BlockChainIO = (*mockChain)(nil)\n",
+      "length": 343,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockChain(currentHeight uint32) *mockChain {",
+      "content": "func newMockChain(currentHeight uint32) *mockChain {\n\treturn &mockChain{\n\t\tbestHeight:       int32(currentHeight),\n\t\tblocks:           make(map[chainhash.Hash]*wire.MsgBlock),\n\t\tutxos:            make(map[wire.OutPoint]wire.TxOut),\n\t\tblockIndex:       make(map[uint32]chainhash.Hash),\n\t\tblockHeightIndex: make(map[chainhash.Hash]uint32),\n\t}\n}\n",
+      "length": 282,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) setBestBlock(height int32) {",
+      "content": "func (m *mockChain) setBestBlock(height int32) {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tm.bestHeight = height\n}\n",
+      "length": 49,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) GetBestBlock() (*chainhash.Hash, int32, error) {",
+      "content": "func (m *mockChain) GetBestBlock() (*chainhash.Hash, int32, error) {\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\tblockHash := m.blockIndex[uint32(m.bestHeight)]\n\n\treturn &blockHash, m.bestHeight, nil\n}\n",
+      "length": 114,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) GetTransaction(txid *chainhash.Hash) (*wire.MsgTx, error) {",
+      "content": "func (m *mockChain) GetTransaction(txid *chainhash.Hash) (*wire.MsgTx, error) {\n\treturn nil, nil\n}\n",
+      "length": 17,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) GetBlockHash(blockHeight int64) (*chainhash.Hash, error) {",
+      "content": "func (m *mockChain) GetBlockHash(blockHeight int64) (*chainhash.Hash, error) {\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\thash, ok := m.blockIndex[uint32(blockHeight)]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"block number out of range: %v\",\n\t\t\tblockHeight)\n\t}\n\n\treturn &hash, nil\n}\n",
+      "length": 176,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) addUtxo(op wire.OutPoint, out *wire.TxOut) {",
+      "content": "func (m *mockChain) addUtxo(op wire.OutPoint, out *wire.TxOut) {\n\tm.Lock()\n\tm.utxos[op] = *out\n\tm.Unlock()\n}\n",
+      "length": 40,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) delUtxo(op wire.OutPoint) {",
+      "content": "func (m *mockChain) delUtxo(op wire.OutPoint) {\n\tm.Lock()\n\tdelete(m.utxos, op)\n\tm.Unlock()\n}\n",
+      "length": 41,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) GetUtxo(op *wire.OutPoint, _ []byte, _ uint32,",
+      "content": "func (m *mockChain) GetUtxo(op *wire.OutPoint, _ []byte, _ uint32,\n\t_ <-chan struct{}) (*wire.TxOut, error) {\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\tutxo, ok := m.utxos[*op]\n\tif !ok {\n\t\treturn nil, btcwallet.ErrOutputSpent\n\t}\n\n\treturn &utxo, nil\n}\n",
+      "length": 163,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) addBlock(block *wire.MsgBlock, height uint32, nonce uint32) {",
+      "content": "func (m *mockChain) addBlock(block *wire.MsgBlock, height uint32, nonce uint32) {\n\tm.Lock()\n\tblock.Header.Nonce = nonce\n\thash := block.Header.BlockHash()\n\tm.blocks[hash] = block\n\tm.blockIndex[height] = hash\n\tm.blockHeightIndex[hash] = height\n\tm.Unlock()\n}\n",
+      "length": 166,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChain) GetBlock(blockHash *chainhash.Hash) (*wire.MsgBlock, error) {",
+      "content": "func (m *mockChain) GetBlock(blockHash *chainhash.Hash) (*wire.MsgBlock, error) {\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\tblock, ok := m.blocks[*blockHash]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"block not found\")\n\t}\n\n\treturn block, nil\n}\n",
+      "length": 135,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChainView struct {",
+      "content": "type mockChainView struct {\n\tsync.RWMutex\n\n\tnewBlocks           chan *chainview.FilteredBlock\n\tstaleBlocks         chan *chainview.FilteredBlock\n\tnotifyBlockAck      chan struct{}\n\tnotifyStaleBlockAck chan struct{}\n\n\tchain lnwallet.BlockChainIO\n\n\tfilter map[wire.OutPoint]struct{}\n\n\tquit chan struct{}\n}\n\n// A compile time check to ensure mockChainView implements the\n// chainview.FilteredChainView.\nvar _ chainview.FilteredChainView = (*mockChainView)(nil)\n",
+      "length": 413,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockChainView(chain lnwallet.BlockChainIO) *mockChainView {",
+      "content": "func newMockChainView(chain lnwallet.BlockChainIO) *mockChainView {\n\treturn &mockChainView{\n\t\tchain:       chain,\n\t\tnewBlocks:   make(chan *chainview.FilteredBlock, 10),\n\t\tstaleBlocks: make(chan *chainview.FilteredBlock, 10),\n\t\tfilter:      make(map[wire.OutPoint]struct{}),\n\t\tquit:        make(chan struct{}),\n\t}\n}\n",
+      "length": 240,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) Reset() {",
+      "content": "func (m *mockChainView) Reset() {\n\tm.filter = make(map[wire.OutPoint]struct{})\n\tm.quit = make(chan struct{})\n\tm.newBlocks = make(chan *chainview.FilteredBlock, 10)\n\tm.staleBlocks = make(chan *chainview.FilteredBlock, 10)\n}\n",
+      "length": 184,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) UpdateFilter(ops []channeldb.EdgePoint, updateHeight uint32) error {",
+      "content": "func (m *mockChainView) UpdateFilter(ops []channeldb.EdgePoint, updateHeight uint32) error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tfor _, op := range ops {\n\t\tm.filter[op.OutPoint] = struct{}{}\n\t}\n\n\treturn nil\n}\n",
+      "length": 101,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) notifyBlock(hash chainhash.Hash, height uint32,",
+      "content": "func (m *mockChainView) notifyBlock(hash chainhash.Hash, height uint32,\n\ttxns []*wire.MsgTx, t *testing.T) {\n\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\tselect {\n\tcase m.newBlocks <- &chainview.FilteredBlock{\n\t\tHash:         hash,\n\t\tHeight:       height,\n\t\tTransactions: txns,\n\t}:\n\tcase <-m.quit:\n\t\treturn\n\t}\n\n\t// Do not ack the block if our notify channel is nil.\n\tif m.notifyBlockAck == nil {\n\t\treturn\n\t}\n\n\tselect {\n\tcase m.notifyBlockAck <- struct{}{}:\n\tcase <-time.After(timeout):\n\t\tt.Fatal(\"expected block to be delivered\")\n\tcase <-m.quit:\n\t\treturn\n\t}\n}\n",
+      "length": 448,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) notifyStaleBlock(hash chainhash.Hash, height uint32,",
+      "content": "func (m *mockChainView) notifyStaleBlock(hash chainhash.Hash, height uint32,\n\ttxns []*wire.MsgTx, t *testing.T) {\n\n\tm.RLock()\n\tdefer m.RUnlock()\n\n\tselect {\n\tcase m.staleBlocks <- &chainview.FilteredBlock{\n\t\tHash:         hash,\n\t\tHeight:       height,\n\t\tTransactions: txns,\n\t}:\n\tcase <-m.quit:\n\t\treturn\n\t}\n\n\t// Do not ack the block if our notify channel is nil.\n\tif m.notifyStaleBlockAck == nil {\n\t\treturn\n\t}\n\n\tselect {\n\tcase m.notifyStaleBlockAck <- struct{}{}:\n\tcase <-time.After(timeout):\n\t\tt.Fatal(\"expected stale block to be delivered\")\n\tcase <-m.quit:\n\t\treturn\n\t}\n}\n",
+      "length": 466,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) FilteredBlocks() <-chan *chainview.FilteredBlock {",
+      "content": "func (m *mockChainView) FilteredBlocks() <-chan *chainview.FilteredBlock {\n\treturn m.newBlocks\n}\n",
+      "length": 20,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) DisconnectedBlocks() <-chan *chainview.FilteredBlock {",
+      "content": "func (m *mockChainView) DisconnectedBlocks() <-chan *chainview.FilteredBlock {\n\treturn m.staleBlocks\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) FilterBlock(blockHash *chainhash.Hash) (*chainview.FilteredBlock, error) {",
+      "content": "func (m *mockChainView) FilterBlock(blockHash *chainhash.Hash) (*chainview.FilteredBlock, error) {\n\n\tblock, err := m.chain.GetBlock(blockHash)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tchain := m.chain.(*mockChain)\n\n\tchain.Lock()\n\tfilteredBlock := &chainview.FilteredBlock{\n\t\tHash:   *blockHash,\n\t\tHeight: chain.blockHeightIndex[*blockHash],\n\t}\n\tchain.Unlock()\n\tfor _, tx := range block.Transactions {\n\t\tfor _, txIn := range tx.TxIn {\n\t\t\tprevOp := txIn.PreviousOutPoint\n\t\t\tif _, ok := m.filter[prevOp]; ok {\n\t\t\t\tfilteredBlock.Transactions = append(\n\t\t\t\t\tfilteredBlock.Transactions, tx,\n\t\t\t\t)\n\n\t\t\t\tm.Lock()\n\t\t\t\tdelete(m.filter, prevOp)\n\t\t\t\tm.Unlock()\n\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\t}\n\n\treturn filteredBlock, nil\n}\n",
+      "length": 569,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) Start() error {",
+      "content": "func (m *mockChainView) Start() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainView) Stop() error {",
+      "content": "func (m *mockChainView) Stop() error {\n\tclose(m.quit)\n\treturn nil\n}\n\n// TestEdgeUpdateNotification tests that when edges are updated or added,\n// a proper notification is sent of to all registered clients.",
+      "length": 161,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEdgeUpdateNotification(t *testing.T) {",
+      "content": "func TestEdgeUpdateNotification(t *testing.T) {\n\tt.Parallel()\n\n\tctx := createTestCtxSingleNode(t, 0)\n\n\t// First we'll create the utxo for the channel to be \"closed\"\n\tconst chanValue = 10000\n\tfundingTx, chanPoint, chanID, err := createChannelEdge(ctx,\n\t\tbitcoinKey1.SerializeCompressed(), bitcoinKey2.SerializeCompressed(),\n\t\tchanValue, 0)\n\trequire.NoError(t, err, \"unable create channel edge\")\n\n\t// We'll also add a record for the block that included our funding\n\t// transaction.\n\tfundingBlock := &wire.MsgBlock{\n\t\tTransactions: []*wire.MsgTx{fundingTx},\n\t}\n\tctx.chain.addBlock(fundingBlock, chanID.BlockHeight, chanID.BlockHeight)\n\n\t// Next we'll create two test nodes that the fake channel will be open\n\t// between.\n\tnode1, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\tnode2, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\n\t// Finally, to conclude our test set up, we'll create a channel\n\t// update to announce the created channel between the two nodes.\n\tedge := &channeldb.ChannelEdgeInfo{\n\t\tChannelID:     chanID.ToUint64(),\n\t\tNodeKey1Bytes: node1.PubKeyBytes,\n\t\tNodeKey2Bytes: node2.PubKeyBytes,\n\t\tAuthProof: &channeldb.ChannelAuthProof{\n\t\t\tNodeSig1Bytes:    testSig.Serialize(),\n\t\t\tNodeSig2Bytes:    testSig.Serialize(),\n\t\t\tBitcoinSig1Bytes: testSig.Serialize(),\n\t\t\tBitcoinSig2Bytes: testSig.Serialize(),\n\t\t},\n\t}\n\tcopy(edge.BitcoinKey1Bytes[:], bitcoinKey1.SerializeCompressed())\n\tcopy(edge.BitcoinKey2Bytes[:], bitcoinKey2.SerializeCompressed())\n\n\tif err := ctx.router.AddEdge(edge); err != nil {\n\t\tt.Fatalf(\"unable to add edge: %v\", err)\n\t}\n\n\t// With the channel edge now in place, we'll subscribe for topology\n\t// notifications.\n\tntfnClient, err := ctx.router.SubscribeTopology()\n\trequire.NoError(t, err, \"unable to subscribe for channel notifications\")\n\n\t// Create random policy edges that are stemmed to the channel id\n\t// created above.\n\tedge1 := randEdgePolicy(chanID, node1)\n\tedge1.ChannelFlags = 0\n\tedge2 := randEdgePolicy(chanID, node2)\n\tedge2.ChannelFlags = 1\n\n\tif err := ctx.router.UpdateEdge(edge1); err != nil {\n\t\tt.Fatalf(\"unable to add edge update: %v\", err)\n\t}\n\tif err := ctx.router.UpdateEdge(edge2); err != nil {\n\t\tt.Fatalf(\"unable to add edge update: %v\", err)\n\t}\n\n\tassertEdgeCorrect := func(t *testing.T, edgeUpdate *ChannelEdgeUpdate,\n\t\tedgeAnn *channeldb.ChannelEdgePolicy) {\n\t\tif edgeUpdate.ChanID != edgeAnn.ChannelID {\n\t\t\tt.Fatalf(\"channel ID of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", chanID.ToUint64(), edgeUpdate.ChanID)\n\t\t}\n\t\tif edgeUpdate.ChanPoint != *chanPoint {\n\t\t\tt.Fatalf(\"channel don't match: expected %v, got %v\",\n\t\t\t\tchanPoint, edgeUpdate.ChanPoint)\n\t\t}\n\t\t// TODO(roasbeef): this is a hack, needs to be removed\n\t\t// after commitment fees are dynamic.\n\t\tif edgeUpdate.Capacity != chanValue {\n\t\t\tt.Fatalf(\"capacity of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", chanValue, edgeUpdate.Capacity)\n\t\t}\n\t\tif edgeUpdate.MinHTLC != edgeAnn.MinHTLC {\n\t\t\tt.Fatalf(\"min HTLC of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", edgeAnn.MinHTLC,\n\t\t\t\tedgeUpdate.MinHTLC)\n\t\t}\n\t\tif edgeUpdate.MaxHTLC != edgeAnn.MaxHTLC {\n\t\t\tt.Fatalf(\"max HTLC of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", edgeAnn.MaxHTLC,\n\t\t\t\tedgeUpdate.MaxHTLC)\n\t\t}\n\t\tif edgeUpdate.BaseFee != edgeAnn.FeeBaseMSat {\n\t\t\tt.Fatalf(\"base fee of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", edgeAnn.FeeBaseMSat,\n\t\t\t\tedgeUpdate.BaseFee)\n\t\t}\n\t\tif edgeUpdate.FeeRate != edgeAnn.FeeProportionalMillionths {\n\t\t\tt.Fatalf(\"fee rate of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", edgeAnn.FeeProportionalMillionths,\n\t\t\t\tedgeUpdate.FeeRate)\n\t\t}\n\t\tif edgeUpdate.TimeLockDelta != edgeAnn.TimeLockDelta {\n\t\t\tt.Fatalf(\"time lock delta of edge doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", edgeAnn.TimeLockDelta,\n\t\t\t\tedgeUpdate.TimeLockDelta)\n\t\t}\n\t}\n\n\t// Create lookup map for notifications we are intending to receive. Entries\n\t// are removed from the map when the anticipated notification is received.\n\tvar waitingFor = map[route.Vertex]int{\n\t\troute.Vertex(node1.PubKeyBytes): 1,\n\t\troute.Vertex(node2.PubKeyBytes): 2,\n\t}\n\n\tnode1Pub, err := node1.PubKey()\n\trequire.NoError(t, err, \"unable to encode key\")\n\tnode2Pub, err := node2.PubKey()\n\trequire.NoError(t, err, \"unable to encode key\")\n\n\tconst numEdgePolicies = 2\n\tfor i := 0; i < numEdgePolicies; i++ {\n\t\tselect {\n\t\tcase ntfn := <-ntfnClient.TopologyChanges:\n\t\t\t// For each processed announcement we should only receive a\n\t\t\t// single announcement in a batch.\n\t\t\tif len(ntfn.ChannelEdgeUpdates) != 1 {\n\t\t\t\tt.Fatalf(\"expected 1 notification, instead have %v\",\n\t\t\t\t\tlen(ntfn.ChannelEdgeUpdates))\n\t\t\t}\n\n\t\t\tedgeUpdate := ntfn.ChannelEdgeUpdates[0]\n\t\t\tnodeVertex := route.NewVertex(edgeUpdate.AdvertisingNode)\n\n\t\t\tif idx, ok := waitingFor[nodeVertex]; ok {\n\t\t\t\tswitch idx {\n\t\t\t\tcase 1:\n\t\t\t\t\t// Received notification corresponding to edge1.\n\t\t\t\t\tassertEdgeCorrect(t, edgeUpdate, edge1)\n\t\t\t\t\tif !edgeUpdate.AdvertisingNode.IsEqual(node1Pub) {\n\t\t\t\t\t\tt.Fatal(\"advertising node mismatch\")\n\t\t\t\t\t}\n\t\t\t\t\tif !edgeUpdate.ConnectingNode.IsEqual(node2Pub) {\n\t\t\t\t\t\tt.Fatal(\"connecting node mismatch\")\n\t\t\t\t\t}\n\n\t\t\t\tcase 2:\n\t\t\t\t\t// Received notification corresponding to edge2.\n\t\t\t\t\tassertEdgeCorrect(t, edgeUpdate, edge2)\n\t\t\t\t\tif !edgeUpdate.AdvertisingNode.IsEqual(node2Pub) {\n\t\t\t\t\t\tt.Fatal(\"advertising node mismatch\")\n\t\t\t\t\t}\n\t\t\t\t\tif !edgeUpdate.ConnectingNode.IsEqual(node1Pub) {\n\t\t\t\t\t\tt.Fatal(\"connecting node mismatch\")\n\t\t\t\t\t}\n\n\t\t\t\tdefault:\n\t\t\t\t\tt.Fatal(\"invalid edge index\")\n\t\t\t\t}\n\n\t\t\t\t// Remove entry from waitingFor map to ensure\n\t\t\t\t// we don't double count a repeat notification.\n\t\t\t\tdelete(waitingFor, nodeVertex)\n\n\t\t\t} else {\n\t\t\t\tt.Fatal(\"unexpected edge update received\")\n\t\t\t}\n\n\t\tcase <-time.After(time.Second * 5):\n\t\t\tt.Fatal(\"edge update not received\")\n\t\t}\n\t}\n}\n\n// TestNodeUpdateNotification tests that notifications are sent out when nodes\n// either join the network for the first time, or update their authenticated\n// attributes with new data.",
+      "length": 5750,
+      "tokens": 660,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNodeUpdateNotification(t *testing.T) {",
+      "content": "func TestNodeUpdateNotification(t *testing.T) {\n\tt.Parallel()\n\n\tconst startingBlockHeight = 101\n\tctx := createTestCtxSingleNode(t, startingBlockHeight)\n\n\t// We only accept node announcements from nodes having a known channel,\n\t// so create one now.\n\tconst chanValue = 10000\n\tfundingTx, _, chanID, err := createChannelEdge(ctx,\n\t\tbitcoinKey1.SerializeCompressed(),\n\t\tbitcoinKey2.SerializeCompressed(),\n\t\tchanValue, startingBlockHeight)\n\trequire.NoError(t, err, \"unable create channel edge\")\n\n\t// We'll also add a record for the block that included our funding\n\t// transaction.\n\tfundingBlock := &wire.MsgBlock{\n\t\tTransactions: []*wire.MsgTx{fundingTx},\n\t}\n\tctx.chain.addBlock(fundingBlock, chanID.BlockHeight, chanID.BlockHeight)\n\n\t// Create two nodes acting as endpoints in the created channel, and use\n\t// them to trigger notifications by sending updated node announcement\n\t// messages.\n\tnode1, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\tnode2, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\n\ttestFeaturesBuf := new(bytes.Buffer)\n\trequire.NoError(t, testFeatures.Encode(testFeaturesBuf))\n\n\tedge := &channeldb.ChannelEdgeInfo{\n\t\tChannelID:     chanID.ToUint64(),\n\t\tNodeKey1Bytes: node1.PubKeyBytes,\n\t\tNodeKey2Bytes: node2.PubKeyBytes,\n\t\tAuthProof: &channeldb.ChannelAuthProof{\n\t\t\tNodeSig1Bytes:    testSig.Serialize(),\n\t\t\tNodeSig2Bytes:    testSig.Serialize(),\n\t\t\tBitcoinSig1Bytes: testSig.Serialize(),\n\t\t\tBitcoinSig2Bytes: testSig.Serialize(),\n\t\t},\n\t}\n\tcopy(edge.BitcoinKey1Bytes[:], bitcoinKey1.SerializeCompressed())\n\tcopy(edge.BitcoinKey2Bytes[:], bitcoinKey2.SerializeCompressed())\n\n\t// Adding the edge will add the nodes to the graph, but with no info\n\t// except the pubkey known.\n\tif err := ctx.router.AddEdge(edge); err != nil {\n\t\tt.Fatalf(\"unable to add edge: %v\", err)\n\t}\n\n\t// Create a new client to receive notifications.\n\tntfnClient, err := ctx.router.SubscribeTopology()\n\trequire.NoError(t, err, \"unable to subscribe for channel notifications\")\n\n\t// Change network topology by adding the updated info for the two nodes\n\t// to the channel router.\n\tif err := ctx.router.AddNode(node1); err != nil {\n\t\tt.Fatalf(\"unable to add node: %v\", err)\n\t}\n\tif err := ctx.router.AddNode(node2); err != nil {\n\t\tt.Fatalf(\"unable to add node: %v\", err)\n\t}\n\n\tassertNodeNtfnCorrect := func(t *testing.T, ann *channeldb.LightningNode,\n\t\tnodeUpdate *NetworkNodeUpdate) {\n\n\t\tnodeKey, _ := ann.PubKey()\n\n\t\t// The notification received should directly map the\n\t\t// announcement originally sent.\n\t\tif nodeUpdate.Addresses[0] != ann.Addresses[0] {\n\t\t\tt.Fatalf(\"node address doesn't match: expected %v, got %v\",\n\t\t\t\tnodeUpdate.Addresses[0], ann.Addresses[0])\n\t\t}\n\t\tif !nodeUpdate.IdentityKey.IsEqual(nodeKey) {\n\t\t\tt.Fatalf(\"node identity keys don't match: expected %x, \"+\n\t\t\t\t\"got %x\", nodeKey.SerializeCompressed(),\n\t\t\t\tnodeUpdate.IdentityKey.SerializeCompressed())\n\t\t}\n\n\t\tfeaturesBuf := new(bytes.Buffer)\n\t\trequire.NoError(t, nodeUpdate.Features.Encode(featuresBuf))\n\n\t\trequire.Equal(\n\t\t\tt, testFeaturesBuf.Bytes(), featuresBuf.Bytes(),\n\t\t)\n\n\t\tif nodeUpdate.Alias != ann.Alias {\n\t\t\tt.Fatalf(\"node alias doesn't match: expected %v, got %v\",\n\t\t\t\tann.Alias, nodeUpdate.Alias)\n\t\t}\n\t\tif nodeUpdate.Color != EncodeHexColor(ann.Color) {\n\t\t\tt.Fatalf(\"node color doesn't match: expected %v, got %v\",\n\t\t\t\tEncodeHexColor(ann.Color), nodeUpdate.Color)\n\t\t}\n\t}\n\n\t// Create lookup map for notifications we are intending to receive. Entries\n\t// are removed from the map when the anticipated notification is received.\n\tvar waitingFor = map[route.Vertex]int{\n\t\troute.Vertex(node1.PubKeyBytes): 1,\n\t\troute.Vertex(node2.PubKeyBytes): 2,\n\t}\n\n\t// Exactly two notifications should be sent, each corresponding to the\n\t// node announcement messages sent above.\n\tconst numAnns = 2\n\tfor i := 0; i < numAnns; i++ {\n\t\tselect {\n\t\tcase ntfn := <-ntfnClient.TopologyChanges:\n\t\t\t// For each processed announcement we should only receive a\n\t\t\t// single announcement in a batch.\n\t\t\tif len(ntfn.NodeUpdates) != 1 {\n\t\t\t\tt.Fatalf(\"expected 1 notification, instead have %v\",\n\t\t\t\t\tlen(ntfn.NodeUpdates))\n\t\t\t}\n\n\t\t\tnodeUpdate := ntfn.NodeUpdates[0]\n\t\t\tnodeVertex := route.NewVertex(nodeUpdate.IdentityKey)\n\t\t\tif idx, ok := waitingFor[nodeVertex]; ok {\n\t\t\t\tswitch idx {\n\t\t\t\tcase 1:\n\t\t\t\t\t// Received notification corresponding to node1.\n\t\t\t\t\tassertNodeNtfnCorrect(t, node1, nodeUpdate)\n\n\t\t\t\tcase 2:\n\t\t\t\t\t// Received notification corresponding to node2.\n\t\t\t\t\tassertNodeNtfnCorrect(t, node2, nodeUpdate)\n\n\t\t\t\tdefault:\n\t\t\t\t\tt.Fatal(\"invalid node index\")\n\t\t\t\t}\n\n\t\t\t\t// Remove entry from waitingFor map to ensure we don't double count a\n\t\t\t\t// repeat notification.\n\t\t\t\tdelete(waitingFor, nodeVertex)\n\n\t\t\t} else {\n\t\t\t\tt.Fatal(\"unexpected node update received\")\n\t\t\t}\n\n\t\tcase <-time.After(time.Second * 5):\n\t\t\tt.Fatal(\"node update not received\")\n\t\t}\n\t}\n\n\t// If we receive a new update from a node (with a higher timestamp),\n\t// then it should trigger a new notification.\n\t// TODO(roasbeef): assume monotonic time.\n\tnodeUpdateAnn := *node1\n\tnodeUpdateAnn.LastUpdate = node1.LastUpdate.Add(300 * time.Millisecond)\n\n\t// Add new node topology update to the channel router.\n\tif err := ctx.router.AddNode(&nodeUpdateAnn); err != nil {\n\t\tt.Fatalf(\"unable to add node: %v\", err)\n\t}\n\n\t// Once again a notification should be received reflecting the up to\n\t// date node announcement.\n\tselect {\n\tcase ntfn := <-ntfnClient.TopologyChanges:\n\t\t// For each processed announcement we should only receive a\n\t\t// single announcement in a batch.\n\t\tif len(ntfn.NodeUpdates) != 1 {\n\t\t\tt.Fatalf(\"expected 1 notification, instead have %v\",\n\t\t\t\tlen(ntfn.NodeUpdates))\n\t\t}\n\n\t\tnodeUpdate := ntfn.NodeUpdates[0]\n\t\tassertNodeNtfnCorrect(t, &nodeUpdateAnn, nodeUpdate)\n\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatal(\"update not received\")\n\t}\n}\n\n// TestNotificationCancellation tests that notifications are properly canceled\n// when the client wishes to exit.",
+      "length": 5706,
+      "tokens": 668,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNotificationCancellation(t *testing.T) {",
+      "content": "func TestNotificationCancellation(t *testing.T) {\n\tt.Parallel()\n\n\tconst startingBlockHeight = 101\n\tctx := createTestCtxSingleNode(t, startingBlockHeight)\n\n\t// Create a new client to receive notifications.\n\tntfnClient, err := ctx.router.SubscribeTopology()\n\trequire.NoError(t, err, \"unable to subscribe for channel notifications\")\n\n\t// We'll create the utxo for a new channel.\n\tconst chanValue = 10000\n\tfundingTx, _, chanID, err := createChannelEdge(ctx,\n\t\tbitcoinKey1.SerializeCompressed(),\n\t\tbitcoinKey2.SerializeCompressed(),\n\t\tchanValue, startingBlockHeight)\n\trequire.NoError(t, err, \"unable create channel edge\")\n\n\t// We'll also add a record for the block that included our funding\n\t// transaction.\n\tfundingBlock := &wire.MsgBlock{\n\t\tTransactions: []*wire.MsgTx{fundingTx},\n\t}\n\tctx.chain.addBlock(fundingBlock, chanID.BlockHeight, chanID.BlockHeight)\n\n\t// We'll create a fresh new node topology update to feed to the channel\n\t// router.\n\tnode1, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\tnode2, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\n\t// Before we send the message to the channel router, we'll cancel the\n\t// notifications for this client. As a result, the notification\n\t// triggered by accepting the channel announcements shouldn't be sent\n\t// to the client.\n\tntfnClient.Cancel()\n\n\tedge := &channeldb.ChannelEdgeInfo{\n\t\tChannelID:     chanID.ToUint64(),\n\t\tNodeKey1Bytes: node1.PubKeyBytes,\n\t\tNodeKey2Bytes: node2.PubKeyBytes,\n\t\tAuthProof: &channeldb.ChannelAuthProof{\n\t\t\tNodeSig1Bytes:    testSig.Serialize(),\n\t\t\tNodeSig2Bytes:    testSig.Serialize(),\n\t\t\tBitcoinSig1Bytes: testSig.Serialize(),\n\t\t\tBitcoinSig2Bytes: testSig.Serialize(),\n\t\t},\n\t}\n\tcopy(edge.BitcoinKey1Bytes[:], bitcoinKey1.SerializeCompressed())\n\tcopy(edge.BitcoinKey2Bytes[:], bitcoinKey2.SerializeCompressed())\n\tif err := ctx.router.AddEdge(edge); err != nil {\n\t\tt.Fatalf(\"unable to add edge: %v\", err)\n\t}\n\n\tif err := ctx.router.AddNode(node1); err != nil {\n\t\tt.Fatalf(\"unable to add node: %v\", err)\n\t}\n\n\tif err := ctx.router.AddNode(node2); err != nil {\n\t\tt.Fatalf(\"unable to add node: %v\", err)\n\t}\n\n\tselect {\n\t// The notifications shouldn't be sent, however, the channel should be\n\t// closed, causing the second read-value to be false.\n\tcase _, ok := <-ntfnClient.TopologyChanges:\n\t\tif !ok {\n\t\t\treturn\n\t\t}\n\n\t\tt.Fatal(\"notification sent but shouldn't have been\")\n\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatal(\"notification client never canceled\")\n\t}\n}\n\n// TestChannelCloseNotification tests that channel closure notifications are\n// properly dispatched to all registered clients.",
+      "length": 2504,
+      "tokens": 291,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChannelCloseNotification(t *testing.T) {",
+      "content": "func TestChannelCloseNotification(t *testing.T) {\n\tt.Parallel()\n\n\tconst startingBlockHeight = 101\n\tctx := createTestCtxSingleNode(t, startingBlockHeight)\n\n\t// First we'll create the utxo for the channel to be \"closed\"\n\tconst chanValue = 10000\n\tfundingTx, chanUtxo, chanID, err := createChannelEdge(ctx,\n\t\tbitcoinKey1.SerializeCompressed(), bitcoinKey2.SerializeCompressed(),\n\t\tchanValue, startingBlockHeight)\n\trequire.NoError(t, err, \"unable create channel edge\")\n\n\t// We'll also add a record for the block that included our funding\n\t// transaction.\n\tfundingBlock := &wire.MsgBlock{\n\t\tTransactions: []*wire.MsgTx{fundingTx},\n\t}\n\tctx.chain.addBlock(fundingBlock, chanID.BlockHeight, chanID.BlockHeight)\n\n\t// Next we'll create two test nodes that the fake channel will be open\n\t// between.\n\tnode1, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\tnode2, err := createTestNode()\n\trequire.NoError(t, err, \"unable to create test node\")\n\n\t// Finally, to conclude our test set up, we'll create a channel\n\t// announcement to announce the created channel between the two nodes.\n\tedge := &channeldb.ChannelEdgeInfo{\n\t\tChannelID:     chanID.ToUint64(),\n\t\tNodeKey1Bytes: node1.PubKeyBytes,\n\t\tNodeKey2Bytes: node2.PubKeyBytes,\n\t\tAuthProof: &channeldb.ChannelAuthProof{\n\t\t\tNodeSig1Bytes:    testSig.Serialize(),\n\t\t\tNodeSig2Bytes:    testSig.Serialize(),\n\t\t\tBitcoinSig1Bytes: testSig.Serialize(),\n\t\t\tBitcoinSig2Bytes: testSig.Serialize(),\n\t\t},\n\t}\n\tcopy(edge.BitcoinKey1Bytes[:], bitcoinKey1.SerializeCompressed())\n\tcopy(edge.BitcoinKey2Bytes[:], bitcoinKey2.SerializeCompressed())\n\tif err := ctx.router.AddEdge(edge); err != nil {\n\t\tt.Fatalf(\"unable to add edge: %v\", err)\n\t}\n\n\t// With the channel edge now in place, we'll subscribe for topology\n\t// notifications.\n\tntfnClient, err := ctx.router.SubscribeTopology()\n\trequire.NoError(t, err, \"unable to subscribe for channel notifications\")\n\n\t// Next, we'll simulate the closure of our channel by generating a new\n\t// block at height 102 which spends the original multi-sig output of\n\t// the channel.\n\tblockHeight := uint32(102)\n\tnewBlock := &wire.MsgBlock{\n\t\tTransactions: []*wire.MsgTx{\n\t\t\t{\n\t\t\t\tTxIn: []*wire.TxIn{\n\t\t\t\t\t{\n\t\t\t\t\t\tPreviousOutPoint: *chanUtxo,\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\tctx.chain.addBlock(newBlock, blockHeight, blockHeight)\n\tctx.chainView.notifyBlock(newBlock.Header.BlockHash(), blockHeight,\n\t\tnewBlock.Transactions, t)\n\n\t// The notification registered above should be sent, if not we'll time\n\t// out and mark the test as failed.\n\tselect {\n\tcase ntfn := <-ntfnClient.TopologyChanges:\n\t\t// We should have exactly a single notification for the channel\n\t\t// \"closed\" above.\n\t\tclosedChans := ntfn.ClosedChannels\n\t\tif len(closedChans) == 0 {\n\t\t\tt.Fatal(\"close channel ntfn not populated\")\n\t\t} else if len(closedChans) != 1 {\n\t\t\tt.Fatalf(\"only one should have been detected as closed, \"+\n\t\t\t\t\"instead %v were\", len(closedChans))\n\t\t}\n\n\t\t// Ensure that the notification we received includes the proper\n\t\t// update the for the channel that was closed in the generated\n\t\t// block.\n\t\tclosedChan := closedChans[0]\n\t\tif closedChan.ChanID != chanID.ToUint64() {\n\t\t\tt.Fatalf(\"channel ID of closed channel doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", chanID.ToUint64(), closedChan.ChanID)\n\t\t}\n\t\t// TODO(roasbeef): this is a hack, needs to be removed\n\t\t// after commitment fees are dynamic.\n\t\tif closedChan.Capacity != chanValue {\n\t\t\tt.Fatalf(\"capacity of closed channel doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", chanValue, closedChan.Capacity)\n\t\t}\n\t\tif closedChan.ClosedHeight != blockHeight {\n\t\t\tt.Fatalf(\"close height of closed channel doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", blockHeight, closedChan.ClosedHeight)\n\t\t}\n\t\tif closedChan.ChanPoint != *chanUtxo {\n\t\t\tt.Fatalf(\"chan point of closed channel doesn't match: \"+\n\t\t\t\t\"expected %v, got %v\", chanUtxo, closedChan.ChanPoint)\n\t\t}\n\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatal(\"notification not sent\")\n\t}\n}\n\n// TestEncodeHexColor tests that the string used to represent a node color is\n// correctly encoded.",
+      "length": 3879,
+      "tokens": 467,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEncodeHexColor(t *testing.T) {",
+      "content": "func TestEncodeHexColor(t *testing.T) {\n\tvar colorTestCases = []struct {\n\t\tR       uint8\n\t\tG       uint8\n\t\tB       uint8\n\t\tencoded string\n\t\tisValid bool\n\t}{\n\t\t{0, 0, 0, \"#000000\", true},\n\t\t{255, 255, 255, \"#ffffff\", true},\n\t\t{255, 117, 215, \"#ff75d7\", true},\n\t\t{0, 0, 0, \"000000\", false},\n\t\t{1, 2, 3, \"\", false},\n\t\t{1, 2, 3, \"#\", false},\n\t}\n\n\tfor _, tc := range colorTestCases {\n\t\tencoded := EncodeHexColor(color.RGBA{tc.R, tc.G, tc.B, 0})\n\t\tif (encoded == tc.encoded) != tc.isValid {\n\t\t\tt.Fatalf(\"incorrect color encoding, \"+\n\t\t\t\t\"want: %v, got: %v\", tc.encoded, encoded)\n\t\t}\n\t}\n}\n",
+      "length": 519,
+      "tokens": 80,
+      "embedding": []
+    }
+  ]
+}

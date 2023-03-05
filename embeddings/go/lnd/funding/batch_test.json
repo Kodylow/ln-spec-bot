@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/funding/batch_test.go",
+  "package": "funding",
+  "sections": [
+    {
+      "slug": "type fundingIntent struct {",
+      "content": "type fundingIntent struct {\n\tchanIndex  uint32\n\tupdateChan chan *lnrpc.OpenStatusUpdate\n\terrChan    chan error\n}\n",
+      "length": 81,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type testHarness struct {",
+      "content": "type testHarness struct {\n\tt       *testing.T\n\tbatcher *Batcher\n\n\tfailUpdate1 bool\n\tfailUpdate2 bool\n\tfailPublish bool\n\n\tintentsCreated    map[[32]byte]*fundingIntent\n\tintentsCanceled   map[[32]byte]struct{}\n\tabandonedChannels map[wire.OutPoint]struct{}\n\treleasedUTXOs     map[wire.OutPoint]struct{}\n\n\tpendingPacket *psbt.Packet\n\tpendingTx     *wire.MsgTx\n\n\ttxPublished bool\n}\n",
+      "length": 334,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestHarness(t *testing.T, failUpdate1, failUpdate2,",
+      "content": "func newTestHarness(t *testing.T, failUpdate1, failUpdate2,\n\tfailPublish bool) *testHarness {\n\n\th := &testHarness{\n\t\tt:                 t,\n\t\tfailUpdate1:       failUpdate1,\n\t\tfailUpdate2:       failUpdate2,\n\t\tfailPublish:       failPublish,\n\t\tintentsCreated:    make(map[[32]byte]*fundingIntent),\n\t\tintentsCanceled:   make(map[[32]byte]struct{}),\n\t\tabandonedChannels: make(map[wire.OutPoint]struct{}),\n\t\treleasedUTXOs:     make(map[wire.OutPoint]struct{}),\n\t\tpendingTx: &wire.MsgTx{\n\t\t\tVersion: 2,\n\t\t\tTxIn: []*wire.TxIn{{\n\t\t\t\t// Our one input that pays for everything.\n\t\t\t\tPreviousOutPoint: testOutPoint,\n\t\t\t}},\n\t\t\tTxOut: []*wire.TxOut{{\n\t\t\t\t// Our static change output.\n\t\t\t\tPkScript: []byte{1, 2, 3},\n\t\t\t\tValue:    99,\n\t\t\t}},\n\t\t},\n\t}\n\th.batcher = NewBatcher(&BatchConfig{\n\t\tRequestParser:    h.parseRequest,\n\t\tChannelOpener:    h.openChannel,\n\t\tChannelAbandoner: h.abandonChannel,\n\t\tWalletKitServer:  h,\n\t\tWallet:           h,\n\t\tQuit:             make(chan struct{}),\n\t})\n\treturn h\n}\n",
+      "length": 891,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) parseRequest(",
+      "content": "func (h *testHarness) parseRequest(\n\tin *lnrpc.OpenChannelRequest) (*InitFundingMsg, error) {\n\n\tpubKey, err := btcec.ParsePubKey(in.NodePubkey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &InitFundingMsg{\n\t\tTargetPubkey:    pubKey,\n\t\tLocalFundingAmt: btcutil.Amount(in.LocalFundingAmount),\n\t\tPushAmt: lnwire.NewMSatFromSatoshis(\n\t\t\tbtcutil.Amount(in.PushSat),\n\t\t),\n\t\tFundingFeePerKw: chainfee.SatPerKVByte(\n\t\t\tin.SatPerVbyte * 1000,\n\t\t).FeePerKWeight(),\n\t\tPrivate:        in.Private,\n\t\tRemoteCsvDelay: uint16(in.RemoteCsvDelay),\n\t\tMinConfs:       in.MinConfs,\n\t\tMaxLocalCsv:    uint16(in.MaxLocalCsv),\n\t}, nil\n}\n",
+      "length": 557,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) openChannel(",
+      "content": "func (h *testHarness) openChannel(\n\treq *InitFundingMsg) (chan *lnrpc.OpenStatusUpdate, chan error) {\n\n\tupdateChan := make(chan *lnrpc.OpenStatusUpdate, 2)\n\terrChan := make(chan error, 1)\n\n\t// The change output is always index 0.\n\tchanIndex := uint32(len(h.intentsCreated) + 1)\n\n\th.intentsCreated[req.PendingChanID] = &fundingIntent{\n\t\tchanIndex:  chanIndex,\n\t\tupdateChan: updateChan,\n\t\terrChan:    errChan,\n\t}\n\th.pendingTx.TxOut = append(h.pendingTx.TxOut, &wire.TxOut{\n\t\tPkScript: []byte{1, 2, 3, byte(chanIndex)},\n\t\tValue:    int64(req.LocalFundingAmt),\n\t})\n\n\tif h.failUpdate1 {\n\t\terrChan <- errFundingFailed\n\n\t\t// Once we fail we don't send any more updates.\n\t\treturn updateChan, errChan\n\t}\n\n\tupdateChan <- &lnrpc.OpenStatusUpdate{\n\t\tPendingChanId: req.PendingChanID[:],\n\t\tUpdate: &lnrpc.OpenStatusUpdate_PsbtFund{\n\t\t\tPsbtFund: &lnrpc.ReadyForPsbtFunding{\n\t\t\t\tFundingAmount: int64(\n\t\t\t\t\treq.LocalFundingAmt,\n\t\t\t\t),\n\t\t\t\tFundingAddress: fmt.Sprintf(\"foo%d\", chanIndex),\n\t\t\t},\n\t\t},\n\t}\n\n\treturn updateChan, errChan\n}\n",
+      "length": 943,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) abandonChannel(op *wire.OutPoint) error {",
+      "content": "func (h *testHarness) abandonChannel(op *wire.OutPoint) error {\n\th.abandonedChannels[*op] = struct{}{}\n\n\treturn nil\n}\n",
+      "length": 50,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) FundPsbt(context.Context,",
+      "content": "func (h *testHarness) FundPsbt(context.Context,\n\t*walletrpc.FundPsbtRequest) (*walletrpc.FundPsbtResponse, error) {\n\n\tpacket, err := psbt.NewFromUnsignedTx(h.pendingTx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\th.pendingPacket = packet\n\n\tvar buf bytes.Buffer\n\tif err := packet.Serialize(&buf); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &walletrpc.FundPsbtResponse{\n\t\tFundedPsbt: buf.Bytes(),\n\t\tLockedUtxos: []*walletrpc.UtxoLease{{\n\t\t\tId: []byte{1, 2, 3},\n\t\t\tOutpoint: &lnrpc.OutPoint{\n\t\t\t\tTxidBytes:   testOutPoint.Hash[:],\n\t\t\t\tOutputIndex: testOutPoint.Index,\n\t\t\t},\n\t\t}},\n\t}, nil\n}\n",
+      "length": 510,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) FinalizePsbt(context.Context,",
+      "content": "func (h *testHarness) FinalizePsbt(context.Context,\n\t*walletrpc.FinalizePsbtRequest) (*walletrpc.FinalizePsbtResponse,\n\terror) {\n\n\tvar psbtBuf bytes.Buffer\n\tif err := h.pendingPacket.Serialize(&psbtBuf); err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar txBuf bytes.Buffer\n\tif err := h.pendingTx.Serialize(&txBuf); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &walletrpc.FinalizePsbtResponse{\n\t\tSignedPsbt: psbtBuf.Bytes(),\n\t\tRawFinalTx: txBuf.Bytes(),\n\t}, nil\n}\n",
+      "length": 381,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) ReleaseOutput(_ context.Context,",
+      "content": "func (h *testHarness) ReleaseOutput(_ context.Context,\n\tr *walletrpc.ReleaseOutputRequest) (*walletrpc.ReleaseOutputResponse,\n\terror) {\n\n\thash, err := chainhash.NewHash(r.Outpoint.TxidBytes)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\top := wire.OutPoint{\n\t\tHash:  *hash,\n\t\tIndex: r.Outpoint.OutputIndex,\n\t}\n\n\th.releasedUTXOs[op] = struct{}{}\n\n\treturn &walletrpc.ReleaseOutputResponse{}, nil\n}\n",
+      "length": 318,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) PsbtFundingVerify([32]byte, *psbt.Packet, bool) error {",
+      "content": "func (h *testHarness) PsbtFundingVerify([32]byte, *psbt.Packet, bool) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) PsbtFundingFinalize(pid [32]byte, _ *psbt.Packet,",
+      "content": "func (h *testHarness) PsbtFundingFinalize(pid [32]byte, _ *psbt.Packet,\n\t_ *wire.MsgTx) error {\n\n\t// During the finalize phase we can now prepare the next update to send.\n\t// For this we first need to find the intent that has the channels we\n\t// need to send on.\n\tintent, ok := h.intentsCreated[pid]\n\tif !ok {\n\t\treturn fmt.Errorf(\"intent %x not found\", pid)\n\t}\n\n\t// We should now also have the final TX, let's get its hash.\n\thash := h.pendingTx.TxHash()\n\n\t// For the second update we fail on the second channel only so the first\n\t// is actually pending.\n\tif h.failUpdate2 && intent.chanIndex == 2 {\n\t\tintent.errChan <- errFundingFailed\n\t} else {\n\t\tintent.updateChan <- &lnrpc.OpenStatusUpdate{\n\t\t\tPendingChanId: pid[:],\n\t\t\tUpdate: &lnrpc.OpenStatusUpdate_ChanPending{\n\t\t\t\tChanPending: &lnrpc.PendingUpdate{\n\t\t\t\t\tTxid:        hash[:],\n\t\t\t\t\tOutputIndex: intent.chanIndex,\n\t\t\t\t},\n\t\t\t},\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 802,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) PublishTransaction(*wire.MsgTx, string) error {",
+      "content": "func (h *testHarness) PublishTransaction(*wire.MsgTx, string) error {\n\tif h.failPublish {\n\t\treturn errFundingFailed\n\t}\n\n\th.txPublished = true\n\n\treturn nil\n}\n",
+      "length": 79,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) CancelFundingIntent(pid [32]byte) error {",
+      "content": "func (h *testHarness) CancelFundingIntent(pid [32]byte) error {\n\th.intentsCanceled[pid] = struct{}{}\n\n\treturn nil\n}\n\n// TestBatchFund tests different success and error scenarios of the atomic batch\n// channel funding.",
+      "length": 147,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBatchFund(t *testing.T) {",
+      "content": "func TestBatchFund(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tname        string\n\t\tfailUpdate1 bool\n\t\tfailUpdate2 bool\n\t\tfailPublish bool\n\t\tchannels    []*lnrpc.BatchOpenChannel\n\t\texpectedErr string\n\t}{{\n\t\tname: \"happy path\",\n\t\tchannels: []*lnrpc.BatchOpenChannel{{\n\t\t\tNodePubkey:         testPubKey1Bytes,\n\t\t\tLocalFundingAmount: 1234,\n\t\t}, {\n\t\t\tNodePubkey:         testPubKey2Bytes,\n\t\t\tLocalFundingAmount: 4321,\n\t\t}},\n\t}, {\n\t\tname:        \"initial negotiation failure\",\n\t\tfailUpdate1: true,\n\t\tchannels: []*lnrpc.BatchOpenChannel{{\n\t\t\tNodePubkey:         testPubKey1Bytes,\n\t\t\tLocalFundingAmount: 1234,\n\t\t}, {\n\t\t\tNodePubkey:         testPubKey2Bytes,\n\t\t\tLocalFundingAmount: 4321,\n\t\t}},\n\t\texpectedErr: \"initial negotiation failed\",\n\t}, {\n\t\tname:        \"final negotiation failure\",\n\t\tfailUpdate2: true,\n\t\tchannels: []*lnrpc.BatchOpenChannel{{\n\t\t\tNodePubkey:         testPubKey1Bytes,\n\t\t\tLocalFundingAmount: 1234,\n\t\t}, {\n\t\t\tNodePubkey:         testPubKey2Bytes,\n\t\t\tLocalFundingAmount: 4321,\n\t\t}},\n\t\texpectedErr: \"final negotiation failed\",\n\t}, {\n\t\tname:        \"publish failure\",\n\t\tfailPublish: true,\n\t\tchannels: []*lnrpc.BatchOpenChannel{{\n\t\t\tNodePubkey:         testPubKey1Bytes,\n\t\t\tLocalFundingAmount: 1234,\n\t\t}, {\n\t\t\tNodePubkey:         testPubKey2Bytes,\n\t\t\tLocalFundingAmount: 4321,\n\t\t}},\n\t\texpectedErr: \"error publishing final batch transaction\",\n\t}}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\th := newTestHarness(\n\t\t\t\tt, tc.failUpdate1, tc.failUpdate2,\n\t\t\t\ttc.failPublish,\n\t\t\t)\n\n\t\t\treq := &lnrpc.BatchOpenChannelRequest{\n\t\t\t\tChannels:    tc.channels,\n\t\t\t\tSatPerVbyte: 5,\n\t\t\t\tMinConfs:    1,\n\t\t\t}\n\t\t\tupdates, err := h.batcher.BatchFund(\n\t\t\t\tcontext.Background(), req,\n\t\t\t)\n\n\t\t\tif tc.failUpdate1 || tc.failUpdate2 || tc.failPublish {\n\t\t\t\trequire.Error(t, err)\n\t\t\t\trequire.Contains(t, err.Error(), tc.expectedErr)\n\t\t\t} else {\n\t\t\t\trequire.NoError(t, err)\n\t\t\t\trequire.Len(t, updates, len(tc.channels))\n\t\t\t}\n\n\t\t\tif tc.failUpdate1 {\n\t\t\t\trequire.Len(t, h.releasedUTXOs, 0)\n\t\t\t\trequire.Len(t, h.intentsCreated, 2)\n\t\t\t\tfor pid := range h.intentsCreated {\n\t\t\t\t\trequire.Contains(\n\t\t\t\t\t\tt, h.intentsCanceled, pid,\n\t\t\t\t\t)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\thash := h.pendingTx.TxHash()\n\t\t\tif tc.failUpdate2 {\n\t\t\t\trequire.Len(t, h.releasedUTXOs, 1)\n\t\t\t\trequire.Len(t, h.intentsCreated, 2)\n\n\t\t\t\t// If we fail on update 2 we do so on the second\n\t\t\t\t// channel so one will be pending and one not\n\t\t\t\t// yet.\n\t\t\t\trequire.Len(t, h.intentsCanceled, 1)\n\t\t\t\trequire.Len(t, h.abandonedChannels, 1)\n\t\t\t\trequire.Contains(\n\t\t\t\t\tt, h.abandonedChannels, wire.OutPoint{\n\t\t\t\t\t\tHash:  hash,\n\t\t\t\t\t\tIndex: 1,\n\t\t\t\t\t},\n\t\t\t\t)\n\t\t\t}\n\n\t\t\tif tc.failPublish {\n\t\t\t\trequire.Len(t, h.releasedUTXOs, 1)\n\t\t\t\trequire.Len(t, h.intentsCreated, 2)\n\n\t\t\t\trequire.Len(t, h.intentsCanceled, 0)\n\t\t\t\trequire.Len(t, h.abandonedChannels, 2)\n\t\t\t\trequire.Contains(\n\t\t\t\t\tt, h.abandonedChannels, wire.OutPoint{\n\t\t\t\t\t\tHash:  hash,\n\t\t\t\t\t\tIndex: 1,\n\t\t\t\t\t},\n\t\t\t\t)\n\t\t\t\trequire.Contains(\n\t\t\t\t\tt, h.abandonedChannels, wire.OutPoint{\n\t\t\t\t\t\tHash:  hash,\n\t\t\t\t\t\tIndex: 2,\n\t\t\t\t\t},\n\t\t\t\t)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 2920,
+      "tokens": 287,
+      "embedding": []
+    }
+  ]
+}

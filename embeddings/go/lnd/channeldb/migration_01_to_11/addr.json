@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/addr.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "type addressType uint8",
+      "content": "type addressType uint8\n\nconst (\n\t// tcp4Addr denotes an IPv4 TCP address.\n\ttcp4Addr addressType = 0\n\n\t// tcp6Addr denotes an IPv6 TCP address.\n\ttcp6Addr addressType = 1\n\n\t// v2OnionAddr denotes a version 2 Tor onion service address.\n\tv2OnionAddr addressType = 2\n\n\t// v3OnionAddr denotes a version 3 Tor (prop224) onion service address.\n\tv3OnionAddr addressType = 3\n)\n\n// encodeTCPAddr serializes a TCP address into its compact raw bytes\n// representation.",
+      "length": 416,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func encodeTCPAddr(w io.Writer, addr *net.TCPAddr) error {",
+      "content": "func encodeTCPAddr(w io.Writer, addr *net.TCPAddr) error {\n\tvar (\n\t\taddrType byte\n\t\tip       []byte\n\t)\n\n\tif addr.IP.To4() != nil {\n\t\taddrType = byte(tcp4Addr)\n\t\tip = addr.IP.To4()\n\t} else {\n\t\taddrType = byte(tcp6Addr)\n\t\tip = addr.IP.To16()\n\t}\n\n\tif ip == nil {\n\t\treturn fmt.Errorf(\"unable to encode IP %v\", addr.IP)\n\t}\n\n\tif _, err := w.Write([]byte{addrType}); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := w.Write(ip); err != nil {\n\t\treturn err\n\t}\n\n\tvar port [2]byte\n\tbyteOrder.PutUint16(port[:], uint16(addr.Port))\n\tif _, err := w.Write(port[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// encodeOnionAddr serializes an onion address into its compact raw bytes\n// representation.",
+      "length": 589,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func encodeOnionAddr(w io.Writer, addr *tor.OnionAddr) error {",
+      "content": "func encodeOnionAddr(w io.Writer, addr *tor.OnionAddr) error {\n\tvar suffixIndex int\n\thostLen := len(addr.OnionService)\n\tswitch hostLen {\n\tcase tor.V2Len:\n\t\tif _, err := w.Write([]byte{byte(v2OnionAddr)}); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tsuffixIndex = tor.V2Len - tor.OnionSuffixLen\n\tcase tor.V3Len:\n\t\tif _, err := w.Write([]byte{byte(v3OnionAddr)}); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tsuffixIndex = tor.V3Len - tor.OnionSuffixLen\n\tdefault:\n\t\treturn errors.New(\"unknown onion service length\")\n\t}\n\n\tsuffix := addr.OnionService[suffixIndex:]\n\tif suffix != tor.OnionSuffix {\n\t\treturn fmt.Errorf(\"invalid suffix \\\"%v\\\"\", suffix)\n\t}\n\n\thost, err := tor.Base32Encoding.DecodeString(\n\t\taddr.OnionService[:suffixIndex],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Sanity check the decoded length.\n\tswitch {\n\tcase hostLen == tor.V2Len && len(host) != tor.V2DecodedLen:\n\t\treturn fmt.Errorf(\"onion service %v decoded to invalid host %x\",\n\t\t\taddr.OnionService, host)\n\n\tcase hostLen == tor.V3Len && len(host) != tor.V3DecodedLen:\n\t\treturn fmt.Errorf(\"onion service %v decoded to invalid host %x\",\n\t\t\taddr.OnionService, host)\n\t}\n\n\tif _, err := w.Write(host); err != nil {\n\t\treturn err\n\t}\n\n\tvar port [2]byte\n\tbyteOrder.PutUint16(port[:], uint16(addr.Port))\n\tif _, err := w.Write(port[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// deserializeAddr reads the serialized raw representation of an address and\n// deserializes it into the actual address. This allows us to avoid address\n// resolution within the channeldb package.",
+      "length": 1391,
+      "tokens": 191,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeAddr(r io.Reader) (net.Addr, error) {",
+      "content": "func deserializeAddr(r io.Reader) (net.Addr, error) {\n\tvar addrType [1]byte\n\tif _, err := r.Read(addrType[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar address net.Addr\n\tswitch addressType(addrType[0]) {\n\tcase tcp4Addr:\n\t\tvar ip [4]byte\n\t\tif _, err := r.Read(ip[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tvar port [2]byte\n\t\tif _, err := r.Read(port[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\taddress = &net.TCPAddr{\n\t\t\tIP:   net.IP(ip[:]),\n\t\t\tPort: int(binary.BigEndian.Uint16(port[:])),\n\t\t}\n\tcase tcp6Addr:\n\t\tvar ip [16]byte\n\t\tif _, err := r.Read(ip[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tvar port [2]byte\n\t\tif _, err := r.Read(port[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\taddress = &net.TCPAddr{\n\t\t\tIP:   net.IP(ip[:]),\n\t\t\tPort: int(binary.BigEndian.Uint16(port[:])),\n\t\t}\n\tcase v2OnionAddr:\n\t\tvar h [tor.V2DecodedLen]byte\n\t\tif _, err := r.Read(h[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tvar p [2]byte\n\t\tif _, err := r.Read(p[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tonionService := tor.Base32Encoding.EncodeToString(h[:])\n\t\tonionService += tor.OnionSuffix\n\t\tport := int(binary.BigEndian.Uint16(p[:]))\n\n\t\taddress = &tor.OnionAddr{\n\t\t\tOnionService: onionService,\n\t\t\tPort:         port,\n\t\t}\n\tcase v3OnionAddr:\n\t\tvar h [tor.V3DecodedLen]byte\n\t\tif _, err := r.Read(h[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tvar p [2]byte\n\t\tif _, err := r.Read(p[:]); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tonionService := tor.Base32Encoding.EncodeToString(h[:])\n\t\tonionService += tor.OnionSuffix\n\t\tport := int(binary.BigEndian.Uint16(p[:]))\n\n\t\taddress = &tor.OnionAddr{\n\t\t\tOnionService: onionService,\n\t\t\tPort:         port,\n\t\t}\n\tdefault:\n\t\treturn nil, ErrUnknownAddressType\n\t}\n\n\treturn address, nil\n}\n\n// serializeAddr serializes an address into its raw bytes representation so that\n// it can be deserialized without requiring address resolution.",
+      "length": 1709,
+      "tokens": 238,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeAddr(w io.Writer, address net.Addr) error {",
+      "content": "func serializeAddr(w io.Writer, address net.Addr) error {\n\tswitch addr := address.(type) {\n\tcase *net.TCPAddr:\n\t\treturn encodeTCPAddr(w, addr)\n\tcase *tor.OnionAddr:\n\t\treturn encodeOnionAddr(w, addr)\n\tdefault:\n\t\treturn ErrUnknownAddressType\n\t}\n}\n",
+      "length": 178,
+      "tokens": 20,
+      "embedding": []
+    }
+  ]
+}

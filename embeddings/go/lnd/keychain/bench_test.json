@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/keychain/bench_test.go",
+  "package": "keychain",
+  "sections": [
+    {
+      "slug": "func BenchmarkDerivePrivKey(t *testing.B) {",
+      "content": "func BenchmarkDerivePrivKey(t *testing.B) {\n\twallet, err := createTestBtcWallet(t, CoinTypeBitcoin)\n\trequire.NoError(t, err, \"unable to create wallet\")\n\n\tkeyRing := NewBtcWalletKeyRing(wallet, CoinTypeBitcoin)\n\n\tvar (\n\t\tprivKey *btcec.PrivateKey\n\t)\n\n\tkeyDesc := KeyDescriptor{\n\t\tKeyLocator: KeyLocator{\n\t\t\tFamily: KeyFamilyMultiSig,\n\t\t\tIndex:  1,\n\t\t},\n\t}\n\n\tt.ReportAllocs()\n\tt.ResetTimer()\n\n\tfor i := 0; i < t.N; i++ {\n\t\tprivKey, err = keyRing.DerivePrivKey(keyDesc)\n\t}\n\trequire.NoError(t, err)\n\trequire.NotNil(t, privKey)\n}\n",
+      "length": 456,
+      "tokens": 52,
+      "embedding": []
+    }
+  ]
+}

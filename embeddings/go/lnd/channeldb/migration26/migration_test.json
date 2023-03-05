@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration26/migration_test.go",
+  "package": "migration26",
+  "sections": [
+    {
+      "slug": "func TestMigrateBalancesToTlvRecords(t *testing.T) {",
+      "content": "func TestMigrateBalancesToTlvRecords(t *testing.T) {\n\ttestCases := []struct {\n\t\tname                string\n\t\tourAmt              lnwire.MilliSatoshi\n\t\ttheirAmt            lnwire.MilliSatoshi\n\t\tbeforeMigrationFunc func(kvdb.RwTx) error\n\t\tafterMigrationFunc  func(kvdb.RwTx) error\n\t\tshouldFail          bool\n\t}{\n\t\t{\n\t\t\t// Test when both balance fields are non-zero.\n\t\t\tname:                \"non-zero local and remote\",\n\t\t\tourAmt:              testOurAmt,\n\t\t\ttheirAmt:            testTheirAmt,\n\t\t\tbeforeMigrationFunc: genBeforeMigration(testChannel),\n\t\t\tafterMigrationFunc:  genAfterMigration(testChannel),\n\t\t},\n\t\t{\n\t\t\t// Test when local balance is non-zero.\n\t\t\tname:                \"non-zero local balance\",\n\t\t\tourAmt:              testOurAmt,\n\t\t\ttheirAmt:            0,\n\t\t\tbeforeMigrationFunc: genBeforeMigration(testChannel),\n\t\t\tafterMigrationFunc:  genAfterMigration(testChannel),\n\t\t},\n\t\t{\n\t\t\t// Test when remote balance is non-zero.\n\t\t\tname:                \"non-zero remote balance\",\n\t\t\tourAmt:              0,\n\t\t\ttheirAmt:            testTheirAmt,\n\t\t\tbeforeMigrationFunc: genBeforeMigration(testChannel),\n\t\t\tafterMigrationFunc:  genAfterMigration(testChannel),\n\t\t},\n\t\t{\n\t\t\t// Test when both balance fields are zero.\n\t\t\tname:                \"zero local and remote\",\n\t\t\tourAmt:              0,\n\t\t\ttheirAmt:            0,\n\t\t\tbeforeMigrationFunc: genBeforeMigration(testChannel),\n\t\t\tafterMigrationFunc:  genAfterMigration(testChannel),\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\t// Before running the test, set the balance fields based on the\n\t\t// test params.\n\t\ttestChannel.InitialLocalBalance = tc.ourAmt\n\t\ttestChannel.InitialRemoteBalance = tc.theirAmt\n\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt,\n\t\t\t\ttc.beforeMigrationFunc,\n\t\t\t\ttc.afterMigrationFunc,\n\t\t\t\tMigrateBalancesToTlvRecords,\n\t\t\t\ttc.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1748,
+      "tokens": 153,
+      "embedding": []
+    },
+    {
+      "slug": "func genBeforeMigration(c *OpenChannel) func(kvdb.RwTx) error {",
+      "content": "func genBeforeMigration(c *OpenChannel) func(kvdb.RwTx) error {\n\treturn func(tx kvdb.RwTx) error {\n\t\t// Create the channel bucket.\n\t\tchanBucket, err := mig25.CreateChanBucket(tx, &c.OpenChannel)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Save the channel info using legacy format.\n\t\tif err := PutChanInfo(chanBucket, c, true); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn nil\n\t}\n}\n",
+      "length": 297,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func genAfterMigration(c *OpenChannel) func(kvdb.RwTx) error {",
+      "content": "func genAfterMigration(c *OpenChannel) func(kvdb.RwTx) error {\n\treturn func(tx kvdb.RwTx) error {\n\t\tchanBucket, err := mig25.FetchChanBucket(tx, &c.OpenChannel)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tnewChan := &OpenChannel{}\n\n\t\t// Fetch the channel info using the new format.\n\t\terr = FetchChanInfo(chanBucket, newChan, false)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Check our initial amount is correct.\n\t\tif newChan.InitialLocalBalance != c.InitialLocalBalance {\n\t\t\treturn fmt.Errorf(\"wrong local balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialLocalBalance,\n\t\t\t\tc.InitialLocalBalance)\n\t\t}\n\n\t\t// Check their initial amount is correct.\n\t\tif newChan.InitialRemoteBalance != c.InitialRemoteBalance {\n\t\t\treturn fmt.Errorf(\"wrong remote balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialRemoteBalance,\n\t\t\t\tc.InitialRemoteBalance)\n\t\t}\n\n\t\t// We also check the relevant channel info fields stay the\n\t\t// same.\n\t\tif !newChan.IdentityPub.IsEqual(dummyPubKey) {\n\t\t\treturn fmt.Errorf(\"wrong IdentityPub\")\n\t\t}\n\t\tif newChan.FundingOutpoint != dummyOp {\n\t\t\treturn fmt.Errorf(\"wrong FundingOutpoint\")\n\t\t}\n\n\t\treturn nil\n\t}\n}\n",
+      "length": 1010,
+      "tokens": 124,
+      "embedding": []
+    }
+  ]
+}

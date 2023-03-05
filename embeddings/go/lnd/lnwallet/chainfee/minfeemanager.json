@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chainfee/minfeemanager.go",
+  "package": "chainfee",
+  "sections": [
+    {
+      "slug": "type minFeeManager struct {",
+      "content": "type minFeeManager struct {\n\tmu                sync.Mutex\n\tminFeePerKW       SatPerKWeight\n\tlastUpdatedTime   time.Time\n\tminUpdateInterval time.Duration\n\tfetchFeeFunc      fetchFee\n}\n\n// fetchFee represents a function that can be used to fetch a fee.",
+      "length": 215,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type fetchFee func() (SatPerKWeight, error)",
+      "content": "type fetchFee func() (SatPerKWeight, error)\n\n// newMinFeeManager creates a new minFeeManager and uses the\n// given fetchMinFee function to set the minFeePerKW of the minFeeManager.\n// This function requires the fetchMinFee function to succeed.",
+      "length": 196,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func newMinFeeManager(minUpdateInterval time.Duration,",
+      "content": "func newMinFeeManager(minUpdateInterval time.Duration,\n\tfetchMinFee fetchFee) (*minFeeManager, error) {\n\n\tminFee, err := fetchMinFee()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Ensure that the minimum fee we use is always clamped by our fee\n\t// floor.\n\tif minFee < FeePerKwFloor {\n\t\tminFee = FeePerKwFloor\n\t}\n\n\treturn &minFeeManager{\n\t\tminFeePerKW:       minFee,\n\t\tlastUpdatedTime:   time.Now(),\n\t\tminUpdateInterval: minUpdateInterval,\n\t\tfetchFeeFunc:      fetchMinFee,\n\t}, nil\n}\n\n// fetchMinFee returns the stored minFeePerKW if it has been updated recently\n// or if the call to the chain backend fails. Otherwise, it sets the stored\n// minFeePerKW to the fee returned from the backend and floors it based on\n// our fee floor.",
+      "length": 649,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *minFeeManager) fetchMinFee() SatPerKWeight {",
+      "content": "func (m *minFeeManager) fetchMinFee() SatPerKWeight {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tif time.Since(m.lastUpdatedTime) < m.minUpdateInterval {\n\t\treturn m.minFeePerKW\n\t}\n\n\tnewMinFee, err := m.fetchFeeFunc()\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to fetch updated min fee from chain \"+\n\t\t\t\"backend. Using last known min fee instead: %v\", err)\n\n\t\treturn m.minFeePerKW\n\t}\n\n\t// By default, we'll use the backend node's minimum fee as the\n\t// minimum fee rate we'll propose for transactions. However, if this\n\t// happens to be lower than our fee floor, we'll enforce that instead.\n\tm.minFeePerKW = newMinFee\n\tif m.minFeePerKW < FeePerKwFloor {\n\t\tm.minFeePerKW = FeePerKwFloor\n\t}\n\tm.lastUpdatedTime = time.Now()\n\n\tlog.Debugf(\"Using minimum fee rate of %v sat/kw\",\n\t\tint64(m.minFeePerKW))\n\n\treturn m.minFeePerKW\n}\n",
+      "length": 726,
+      "tokens": 103,
+      "embedding": []
+    }
+  ]
+}

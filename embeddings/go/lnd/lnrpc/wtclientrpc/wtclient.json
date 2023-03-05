@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/wtclientrpc/wtclient.go",
+  "package": "wtclientrpc",
+  "sections": [
+    {
+      "slug": "type ServerShell struct {",
+      "content": "type ServerShell struct {\n\tWatchtowerClientServer\n}\n\n// WatchtowerClient is the RPC server we'll use to interact with the backing\n// active watchtower client.\n//\n// TODO(wilmer): better name?",
+      "length": 159,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type WatchtowerClient struct {",
+      "content": "type WatchtowerClient struct {\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\tUnimplementedWatchtowerClientServer\n\n\tcfg Config\n}\n\n// A compile time check to ensure that WatchtowerClient fully implements the\n// WatchtowerClientWatchtowerClient gRPC service.\nvar _ WatchtowerClientServer = (*WatchtowerClient)(nil)\n\n// New returns a new instance of the wtclientrpc WatchtowerClient sub-server.\n// We also return the set of permissions for the macaroons that we may create\n// within this method. If the macaroons we need aren't found in the filepath,\n// then we'll create them on start up. If we're unable to locate, or create the\n// macaroons we need, then we'll return with an error.",
+      "length": 662,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*WatchtowerClient, lnrpc.MacaroonPerms, error) {",
+      "content": "func New(cfg *Config) (*WatchtowerClient, lnrpc.MacaroonPerms, error) {\n\treturn &WatchtowerClient{cfg: *cfg}, macPermissions, nil\n}\n\n// Start launches any helper goroutines required for the WatchtowerClient to\n// function.\n//\n// NOTE: This is part of the lnrpc.SubWatchtowerClient interface.",
+      "length": 213,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) Start() error {",
+      "content": "func (c *WatchtowerClient) Start() error {\n\treturn nil\n}\n\n// Stop signals any active goroutines for a graceful closure.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 130,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) Stop() error {",
+      "content": "func (c *WatchtowerClient) Stop() error {\n\treturn nil\n}\n\n// Name returns a unique string representation of the sub-server. This can be\n// used to identify the sub-server and also de-duplicate them.\n//\n// NOTE: This is part of the lnrpc.SubServer interface.",
+      "length": 208,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) Name() string {",
+      "content": "func (c *WatchtowerClient) Name() string {\n\treturn subServerName\n}\n\n// RegisterWithRootServer will be called by the root gRPC server to direct a sub\n// RPC server to register itself with the main gRPC root server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 315,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {",
+      "content": "func (r *ServerShell) RegisterWithRootServer(grpcServer *grpc.Server) error {\n\t// We make sure that we register it with the main gRPC server to ensure\n\t// all our methods are routed properly.\n\tRegisterWatchtowerClientServer(grpcServer, r)\n\n\treturn nil\n}\n\n// RegisterWithRestServer will be called by the root REST mux to direct a sub\n// RPC server to register itself with the main REST mux server. Until this is\n// called, each sub-server won't be able to have requests routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 459,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,",
+      "content": "func (r *ServerShell) RegisterWithRestServer(ctx context.Context,\n\tmux *runtime.ServeMux, dest string, opts []grpc.DialOption) error {\n\n\t// We make sure that we register it with the main REST server to ensure\n\t// all our methods are routed properly.\n\terr := RegisterWatchtowerClientHandlerFromEndpoint(ctx, mux, dest, opts)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// CreateSubServer populates the subserver's dependencies using the passed\n// SubServerConfigDispatcher. This method should fully initialize the\n// sub-server instance, making it ready for action. It returns the macaroon\n// permissions that the sub-server wishes to pass on to the root server for all\n// methods routed towards it.\n//\n// NOTE: This is part of the lnrpc.GrpcHandler interface.",
+      "length": 680,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\tlnrpc.SubServer, lnrpc.MacaroonPerms, error) {\n\n\tsubServer, macPermissions, err := createNewSubServer(configRegistry)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tr.WatchtowerClientServer = subServer\n\treturn subServer, macPermissions, nil\n}\n\n// isActive returns nil if the watchtower client is initialized so that we can\n// process RPC requests.",
+      "length": 334,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) isActive() error {",
+      "content": "func (c *WatchtowerClient) isActive() error {\n\tif c.cfg.Active {\n\t\treturn nil\n\t}\n\treturn ErrWtclientNotActive\n}\n\n// AddTower adds a new watchtower reachable at the given address and considers\n// it for new sessions. If the watchtower already exists, then any new addresses\n// included will be considered when dialing it for session negotiations and\n// backups.",
+      "length": 305,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) AddTower(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) AddTower(ctx context.Context,\n\treq *AddTowerRequest) (*AddTowerResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tpubKey, err := btcec.ParsePubKey(req.Pubkey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\taddr, err := lncfg.ParseAddressString(\n\t\treq.Address, strconv.Itoa(watchtower.DefaultPeerPort),\n\t\tc.cfg.Resolver,\n\t)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"invalid address %v: %v\", req.Address, err)\n\t}\n\n\ttowerAddr := &lnwire.NetAddress{\n\t\tIdentityKey: pubKey,\n\t\tAddress:     addr,\n\t}\n\n\t// TODO(conner): make atomic via multiplexed client\n\tif err := c.cfg.Client.AddTower(towerAddr); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := c.cfg.AnchorClient.AddTower(towerAddr); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &AddTowerResponse{}, nil\n}\n\n// RemoveTower removes a watchtower from being considered for future session\n// negotiations and from being used for any subsequent backups until it's added\n// again. If an address is provided, then this RPC only serves as a way of\n// removing the address from the watchtower instead.",
+      "length": 988,
+      "tokens": 143,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) RemoveTower(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) RemoveTower(ctx context.Context,\n\treq *RemoveTowerRequest) (*RemoveTowerResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tpubKey, err := btcec.ParsePubKey(req.Pubkey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar addr net.Addr\n\tif req.Address != \"\" {\n\t\taddr, err = lncfg.ParseAddressString(\n\t\t\treq.Address, strconv.Itoa(watchtower.DefaultPeerPort),\n\t\t\tc.cfg.Resolver,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to parse tower \"+\n\t\t\t\t\"address %v: %v\", req.Address, err)\n\t\t}\n\t}\n\n\t// TODO(conner): make atomic via multiplexed client\n\terr = c.cfg.Client.RemoveTower(pubKey, addr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\terr = c.cfg.AnchorClient.RemoveTower(pubKey, addr)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &RemoveTowerResponse{}, nil\n}\n\n// ListTowers returns the list of watchtowers registered with the client.",
+      "length": 790,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) ListTowers(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) ListTowers(ctx context.Context,\n\treq *ListTowersRequest) (*ListTowersResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\topts, ackCounts, committedUpdateCounts := constructFunctionalOptions(\n\t\treq.IncludeSessions,\n\t)\n\n\tanchorTowers, err := c.cfg.AnchorClient.RegisteredTowers(opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tlegacyTowers, err := c.cfg.Client.RegisteredTowers(opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Filter duplicates.\n\ttowers := make(map[wtdb.TowerID]*wtclient.RegisteredTower)\n\tfor _, tower := range anchorTowers {\n\t\ttowers[tower.Tower.ID] = tower\n\t}\n\tfor _, tower := range legacyTowers {\n\t\ttowers[tower.Tower.ID] = tower\n\t}\n\n\trpcTowers := make([]*Tower, 0, len(towers))\n\tfor _, tower := range towers {\n\t\trpcTower := marshallTower(\n\t\t\ttower, req.IncludeSessions, ackCounts,\n\t\t\tcommittedUpdateCounts,\n\t\t)\n\t\trpcTowers = append(rpcTowers, rpcTower)\n\t}\n\n\treturn &ListTowersResponse{Towers: rpcTowers}, nil\n}\n\n// GetTowerInfo retrieves information for a registered watchtower.",
+      "length": 957,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) GetTowerInfo(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) GetTowerInfo(ctx context.Context,\n\treq *GetTowerInfoRequest) (*Tower, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tpubKey, err := btcec.ParsePubKey(req.Pubkey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\topts, ackCounts, committedUpdateCounts := constructFunctionalOptions(\n\t\treq.IncludeSessions,\n\t)\n\n\tvar tower *wtclient.RegisteredTower\n\ttower, err = c.cfg.Client.LookupTower(pubKey, opts...)\n\tif err == wtdb.ErrTowerNotFound {\n\t\ttower, err = c.cfg.AnchorClient.LookupTower(pubKey, opts...)\n\t}\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn marshallTower(\n\t\ttower, req.IncludeSessions, ackCounts, committedUpdateCounts,\n\t), nil\n}\n\n// constructFunctionalOptions is a helper function that constructs a list of\n// functional options to be used when fetching a tower from the DB. It also\n// returns a map of acked-update counts and one for un-acked-update counts that\n// will be populated once the db call has been made.",
+      "length": 873,
+      "tokens": 124,
+      "embedding": []
+    },
+    {
+      "slug": "func constructFunctionalOptions(includeSessions bool) (",
+      "content": "func constructFunctionalOptions(includeSessions bool) (\n\t[]wtdb.ClientSessionListOption, map[wtdb.SessionID]uint16,\n\tmap[wtdb.SessionID]uint16) {\n\n\tvar (\n\t\topts                  []wtdb.ClientSessionListOption\n\t\tcommittedUpdateCounts = make(map[wtdb.SessionID]uint16)\n\t\tackCounts             = make(map[wtdb.SessionID]uint16)\n\t)\n\tif !includeSessions {\n\t\treturn opts, ackCounts, committedUpdateCounts\n\t}\n\n\tperNumAckedUpdates := func(s *wtdb.ClientSession, id lnwire.ChannelID,\n\t\tnumUpdates uint16) {\n\n\t\tackCounts[s.ID] += numUpdates\n\t}\n\n\tperCommittedUpdate := func(s *wtdb.ClientSession,\n\t\tu *wtdb.CommittedUpdate) {\n\n\t\tcommittedUpdateCounts[s.ID]++\n\t}\n\n\topts = []wtdb.ClientSessionListOption{\n\t\twtdb.WithPerNumAckedUpdates(perNumAckedUpdates),\n\t\twtdb.WithPerCommittedUpdate(perCommittedUpdate),\n\t}\n\n\treturn opts, ackCounts, committedUpdateCounts\n}\n\n// Stats returns the in-memory statistics of the client since startup.",
+      "length": 830,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) Stats(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) Stats(ctx context.Context,\n\treq *StatsRequest) (*StatsResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tclientStats := []wtclient.ClientStats{\n\t\tc.cfg.Client.Stats(),\n\t\tc.cfg.AnchorClient.Stats(),\n\t}\n\n\tvar stats wtclient.ClientStats\n\tfor i := range clientStats {\n\t\t// Grab a reference to the slice index rather than copying bc\n\t\t// ClientStats contains a lock which cannot be copied by value.\n\t\tstat := &clientStats[i]\n\n\t\tstats.NumTasksAccepted += stat.NumTasksAccepted\n\t\tstats.NumTasksIneligible += stat.NumTasksIneligible\n\t\tstats.NumTasksPending += stat.NumTasksPending\n\t\tstats.NumSessionsAcquired += stat.NumSessionsAcquired\n\t\tstats.NumSessionsExhausted += stat.NumSessionsExhausted\n\t}\n\n\treturn &StatsResponse{\n\t\tNumBackups:           uint32(stats.NumTasksAccepted),\n\t\tNumFailedBackups:     uint32(stats.NumTasksIneligible),\n\t\tNumPendingBackups:    uint32(stats.NumTasksPending),\n\t\tNumSessionsAcquired:  uint32(stats.NumSessionsAcquired),\n\t\tNumSessionsExhausted: uint32(stats.NumSessionsExhausted),\n\t}, nil\n}\n\n// Policy returns the active watchtower client policy configuration.",
+      "length": 1052,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *WatchtowerClient) Policy(ctx context.Context,",
+      "content": "func (c *WatchtowerClient) Policy(ctx context.Context,\n\treq *PolicyRequest) (*PolicyResponse, error) {\n\n\tif err := c.isActive(); err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar policy wtpolicy.Policy\n\tswitch req.PolicyType {\n\tcase PolicyType_LEGACY:\n\t\tpolicy = c.cfg.Client.Policy()\n\tcase PolicyType_ANCHOR:\n\t\tpolicy = c.cfg.AnchorClient.Policy()\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unknown policy type: %v\",\n\t\t\treq.PolicyType)\n\t}\n\n\treturn &PolicyResponse{\n\t\tMaxUpdates: uint32(policy.MaxUpdates),\n\t\tSweepSatPerVbyte: uint32(\n\t\t\tpolicy.SweepFeeRate.FeePerKVByte() / 1000,\n\t\t),\n\n\t\t// Deprecated field.\n\t\tSweepSatPerByte: uint32(\n\t\t\tpolicy.SweepFeeRate.FeePerKVByte() / 1000,\n\t\t),\n\t}, nil\n}\n\n// marshallTower converts a client registered watchtower into its corresponding\n// RPC type.",
+      "length": 688,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func marshallTower(tower *wtclient.RegisteredTower, includeSessions bool,",
+      "content": "func marshallTower(tower *wtclient.RegisteredTower, includeSessions bool,\n\tackCounts map[wtdb.SessionID]uint16,\n\tpendingCounts map[wtdb.SessionID]uint16) *Tower {\n\n\trpcAddrs := make([]string, 0, len(tower.Addresses))\n\tfor _, addr := range tower.Addresses {\n\t\trpcAddrs = append(rpcAddrs, addr.String())\n\t}\n\n\tvar rpcSessions []*TowerSession\n\tif includeSessions {\n\t\trpcSessions = make([]*TowerSession, 0, len(tower.Sessions))\n\t\tfor _, session := range tower.Sessions {\n\t\t\tsatPerVByte := session.Policy.SweepFeeRate.FeePerKVByte() / 1000\n\t\t\trpcSessions = append(rpcSessions, &TowerSession{\n\t\t\t\tNumBackups:        uint32(ackCounts[session.ID]),\n\t\t\t\tNumPendingBackups: uint32(pendingCounts[session.ID]),\n\t\t\t\tMaxBackups:        uint32(session.Policy.MaxUpdates),\n\t\t\t\tSweepSatPerVbyte:  uint32(satPerVByte),\n\n\t\t\t\t// Deprecated field.\n\t\t\t\tSweepSatPerByte: uint32(satPerVByte),\n\t\t\t})\n\t\t}\n\t}\n\n\treturn &Tower{\n\t\tPubkey:                 tower.IdentityKey.SerializeCompressed(),\n\t\tAddresses:              rpcAddrs,\n\t\tActiveSessionCandidate: tower.ActiveSessionCandidate,\n\t\tNumSessions:            uint32(len(tower.Sessions)),\n\t\tSessions:               rpcSessions,\n\t}\n}\n",
+      "length": 1049,
+      "tokens": 80,
+      "embedding": []
+    }
+  ]
+}

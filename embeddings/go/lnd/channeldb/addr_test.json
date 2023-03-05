@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/addr_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type unknownAddrType struct{}",
+      "content": "type unknownAddrType struct{}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (t unknownAddrType) Network() string { return \"unknown\" }",
+      "content": "func (t unknownAddrType) Network() string { return \"unknown\" }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (t unknownAddrType) String() string  { return \"unknown\" }",
+      "content": "func (t unknownAddrType) String() string  { return \"unknown\" }\n\nvar testIP4 = net.ParseIP(\"192.168.1.1\")\nvar testIP6 = net.ParseIP(\"2001:0db8:0000:0000:0000:ff00:0042:8329\")\n\nvar addrTests = []struct {\n\texpAddr net.Addr\n\tserErr  string\n}{\n\t// Valid addresses.\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\tIP:   testIP4,\n\t\t\tPort: 12345,\n\t\t},\n\t},\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\tIP:   testIP6,\n\t\t\tPort: 65535,\n\t\t},\n\t},\n\t{\n\t\texpAddr: &tor.OnionAddr{\n\t\t\tOnionService: \"3g2upl4pq6kufc4m.onion\",\n\t\t\tPort:         9735,\n\t\t},\n\t},\n\t{\n\t\texpAddr: &tor.OnionAddr{\n\t\t\tOnionService: \"vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.onion\",\n\t\t\tPort:         80,\n\t\t},\n\t},\n\n\t// Invalid addresses.\n\t{\n\t\texpAddr: unknownAddrType{},\n\t\tserErr:  ErrUnknownAddressType.Error(),\n\t},\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\t// Remove last byte of IPv4 address.\n\t\t\tIP:   testIP4[:len(testIP4)-1],\n\t\t\tPort: 12345,\n\t\t},\n\t\tserErr: \"unable to encode\",\n\t},\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\t// Add an extra byte of IPv4 address.\n\t\t\tIP:   append(testIP4, 0xff),\n\t\t\tPort: 12345,\n\t\t},\n\t\tserErr: \"unable to encode\",\n\t},\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\t// Remove last byte of IPv6 address.\n\t\t\tIP:   testIP6[:len(testIP6)-1],\n\t\t\tPort: 65535,\n\t\t},\n\t\tserErr: \"unable to encode\",\n\t},\n\t{\n\t\texpAddr: &net.TCPAddr{\n\t\t\t// Add an extra byte to the IPv6 address.\n\t\t\tIP:   append(testIP6, 0xff),\n\t\t\tPort: 65535,\n\t\t},\n\t\tserErr: \"unable to encode\",\n\t},\n\t{\n\t\texpAddr: &tor.OnionAddr{\n\t\t\t// Invalid suffix.\n\t\t\tOnionService: \"vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.inion\",\n\t\t\tPort:         80,\n\t\t},\n\t\tserErr: \"invalid suffix\",\n\t},\n\t{\n\t\texpAddr: &tor.OnionAddr{\n\t\t\t// Invalid length.\n\t\t\tOnionService: \"vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyy.onion\",\n\t\t\tPort:         80,\n\t\t},\n\t\tserErr: \"unknown onion service length\",\n\t},\n\t{\n\t\texpAddr: &tor.OnionAddr{\n\t\t\t// Invalid encoding.\n\t\t\tOnionService: \"vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyA.onion\",\n\t\t\tPort:         80,\n\t\t},\n\t\tserErr: \"illegal base32\",\n\t},\n}\n\n// TestAddrSerialization tests that the serialization method used by channeldb\n// for net.Addr's works as intended.",
+      "length": 1936,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAddrSerialization(t *testing.T) {",
+      "content": "func TestAddrSerialization(t *testing.T) {\n\tt.Parallel()\n\n\tvar b bytes.Buffer\n\tfor _, test := range addrTests {\n\t\terr := serializeAddr(&b, test.expAddr)\n\t\tswitch {\n\t\tcase err == nil && test.serErr != \"\":\n\t\t\tt.Fatalf(\"expected serialization err for addr %v\",\n\t\t\t\ttest.expAddr)\n\n\t\tcase err != nil && test.serErr == \"\":\n\t\t\tt.Fatalf(\"unexpected serialization err for addr %v: %v\",\n\t\t\t\ttest.expAddr, err)\n\n\t\tcase err != nil && !strings.Contains(err.Error(), test.serErr):\n\t\t\tt.Fatalf(\"unexpected serialization err for addr %v, \"+\n\t\t\t\t\"want: %v, got %v\", test.expAddr, test.serErr,\n\t\t\t\terr)\n\n\t\tcase err != nil:\n\t\t\tcontinue\n\t\t}\n\n\t\taddr, err := deserializeAddr(&b)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to deserialize address: %v\", err)\n\t\t}\n\n\t\tif addr.String() != test.expAddr.String() {\n\t\t\tt.Fatalf(\"expected address %v after serialization, \"+\n\t\t\t\t\"got %v\", addr, test.expAddr)\n\t\t}\n\t}\n}\n",
+      "length": 803,
+      "tokens": 110,
+      "embedding": []
+    }
+  ]
+}

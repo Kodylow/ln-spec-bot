@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/watchtower_active.go",
-  "package": "watchtowerrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build watchtowerrpc",
+      "content": "//go:build watchtowerrpc\n// +build watchtowerrpc\n\npackage main\n\nimport (\n\t\"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc\"\n\t\"github.com/urfave/cli\"\n)\n",
+      "length": 122,
+      "tokens": 10,
+      "embedding": []
+    },
     {
       "slug": "func watchtowerCommands() []cli.Command {",
       "content": "func watchtowerCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"tower\",\n\t\t\tUsage:    \"Interact with the watchtower.\",\n\t\t\tCategory: \"Watchtower\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\ttowerInfoCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",

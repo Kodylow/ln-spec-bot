@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_bucket.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"strconv\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n)\n\n// readWriteBucket stores the bucket id and the buckets transaction.",
+      "length": 159,
+      "tokens": 20,
+      "embedding": []
+    },
     {
       "slug": "type readWriteBucket struct {",
       "content": "type readWriteBucket struct {\n\t// id is used to identify the bucket and is created by\n\t// hashing the parent id with the bucket key. For each key/value,\n\t// sub-bucket or the bucket sequence the bucket id is used with the\n\t// appropriate prefix to prefix the key.\n\tid []byte\n\n\t// key is the bucket key.\n\tkey []byte\n\n\t// tx holds the parent transaction.\n\ttx *readWriteTx\n}\n\n// newReadWriteBucket creates a new rw bucket with the passed transaction\n// and bucket id.",

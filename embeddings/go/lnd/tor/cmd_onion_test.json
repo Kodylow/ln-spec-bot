@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/tor/cmd_onion_test.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "func TestOnionFile(t *testing.T) {",
+      "content": "func TestOnionFile(t *testing.T) {\n\tt.Parallel()\n\n\ttempDir := t.TempDir()\n\tprivateKeyPath := filepath.Join(tempDir, \"secret\")\n\tmockEncrypter := MockEncrypter{}\n\n\t// Create a new file-based onion store. A private key should not exist\n\t// yet.\n\tonionFile := NewOnionFile(\n\t\tprivateKeyPath, 0600, false, mockEncrypter,\n\t)\n\t_, err := onionFile.PrivateKey()\n\trequire.ErrorIs(t, err, ErrNoPrivateKey)\n\n\t// Store the private key and ensure what's stored matches.\n\terr = onionFile.StorePrivateKey(privateKey)\n\trequire.NoError(t, err)\n\n\tstorePrivateKey, err := onionFile.PrivateKey()\n\trequire.NoError(t, err)\n\trequire.Equal(t, storePrivateKey, privateKey)\n\n\t// Finally, delete the private key. We should no longer be able to\n\t// retrieve it.\n\terr = onionFile.DeletePrivateKey()\n\trequire.NoError(t, err)\n\n\t_, err = onionFile.PrivateKey()\n\trequire.ErrorIs(t, err, ErrNoPrivateKey)\n\n\t// Create a new file-based onion store that encrypts the key this time\n\t// to ensure that an encrypted key is properly handled.\n\tencryptedOnionFile := NewOnionFile(\n\t\tprivateKeyPath, 0600, true, mockEncrypter,\n\t)\n\n\terr = encryptedOnionFile.StorePrivateKey(privateKey)\n\trequire.NoError(t, err)\n\n\tstoredPrivateKey, err := encryptedOnionFile.PrivateKey()\n\trequire.NoError(t, err, \"unable to retrieve encrypted private key\")\n\t// Check that PrivateKey returns anotherKey, to make sure the mock\n\t// decrypter is actually called.\n\trequire.Equal(t, storedPrivateKey, anotherKey)\n\n\terr = encryptedOnionFile.DeletePrivateKey()\n\trequire.NoError(t, err)\n}\n\n// TestPrepareKeyParam checks that the key param is created as expected.",
+      "length": 1505,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrepareKeyParam(t *testing.T) {",
+      "content": "func TestPrepareKeyParam(t *testing.T) {\n\ttestKey := []byte(\"hide_me_plz\")\n\tdummyErr := errors.New(\"dummy\")\n\n\t// Create a dummy controller.\n\tcontroller := NewController(\"\", \"\", \"\")\n\n\t// Test that a V3 keyParam is used.\n\tcfg := AddOnionConfig{Type: V3}\n\tkeyParam, err := controller.prepareKeyparam(cfg)\n\n\trequire.Equal(t, \"NEW:ED25519-V3\", keyParam)\n\trequire.NoError(t, err)\n\n\t// Create a mock store which returns the test private key.\n\tstore := &mockStore{}\n\tstore.On(\"PrivateKey\").Return(testKey, nil)\n\n\t// Check that the test private is returned.\n\tcfg = AddOnionConfig{Type: V3, Store: store}\n\tkeyParam, err = controller.prepareKeyparam(cfg)\n\n\trequire.Equal(t, string(testKey), keyParam)\n\trequire.NoError(t, err)\n\tstore.AssertExpectations(t)\n\n\t// Create a mock store which returns ErrNoPrivateKey.\n\tstore = &mockStore{}\n\tstore.On(\"PrivateKey\").Return(nil, ErrNoPrivateKey)\n\n\t// Check that the V3 keyParam is returned.\n\tcfg = AddOnionConfig{Type: V3, Store: store}\n\tkeyParam, err = controller.prepareKeyparam(cfg)\n\n\trequire.Equal(t, \"NEW:ED25519-V3\", keyParam)\n\trequire.NoError(t, err)\n\tstore.AssertExpectations(t)\n\n\t// Create a mock store which returns an dummy error.\n\tstore = &mockStore{}\n\tstore.On(\"PrivateKey\").Return(nil, dummyErr)\n\n\t// Check that an error is returned.\n\tcfg = AddOnionConfig{Type: V3, Store: store}\n\tkeyParam, err = controller.prepareKeyparam(cfg)\n\n\trequire.Empty(t, keyParam)\n\trequire.ErrorIs(t, dummyErr, err)\n\tstore.AssertExpectations(t)\n}\n\n// TestPrepareAddOnion checks that the cmd used to add onion service is created\n// as expected.",
+      "length": 1471,
+      "tokens": 169,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrepareAddOnion(t *testing.T) {",
+      "content": "func TestPrepareAddOnion(t *testing.T) {\n\tt.Parallel()\n\n\t// Create a mock store.\n\tstore := &mockStore{}\n\ttestKey := []byte(\"hide_me_plz\")\n\n\ttestCases := []struct {\n\t\tname            string\n\t\ttargetIPAddress string\n\t\tcfg             AddOnionConfig\n\t\texpectedCmd     string\n\t\texpectedErr     error\n\t}{\n\t\t{\n\t\t\tname:            \"empty target IP and ports\",\n\t\t\ttargetIPAddress: \"\",\n\t\t\tcfg:             AddOnionConfig{VirtualPort: 9735},\n\t\t\texpectedCmd:     \"ADD_ONION NEW:RSA1024 Port=9735,9735 \",\n\t\t\texpectedErr:     nil,\n\t\t},\n\t\t{\n\t\t\tname:            \"specified target IP and empty ports\",\n\t\t\ttargetIPAddress: \"127.0.0.1\",\n\t\t\tcfg:             AddOnionConfig{VirtualPort: 9735},\n\t\t\texpectedCmd: \"ADD_ONION NEW:RSA1024 \" +\n\t\t\t\t\"Port=9735,127.0.0.1:9735 \",\n\t\t\texpectedErr: nil,\n\t\t},\n\t\t{\n\t\t\tname:            \"specified target IP and ports\",\n\t\t\ttargetIPAddress: \"127.0.0.1\",\n\t\t\tcfg: AddOnionConfig{\n\t\t\t\tVirtualPort: 9735,\n\t\t\t\tTargetPorts: []int{18000, 18001},\n\t\t\t},\n\t\t\texpectedCmd: \"ADD_ONION NEW:RSA1024 \" +\n\t\t\t\t\"Port=9735,127.0.0.1:18000 \" +\n\t\t\t\t\"Port=9735,127.0.0.1:18001 \",\n\t\t\texpectedErr: nil,\n\t\t},\n\t\t{\n\t\t\tname:            \"specified private key from store\",\n\t\t\ttargetIPAddress: \"\",\n\t\t\tcfg: AddOnionConfig{\n\t\t\t\tVirtualPort: 9735,\n\t\t\t\tStore:       store,\n\t\t\t},\n\t\t\texpectedCmd: \"ADD_ONION hide_me_plz \" +\n\t\t\t\t\"Port=9735,9735 \",\n\t\t\texpectedErr: nil,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\n\t\tif tc.cfg.Store != nil {\n\t\t\tstore.On(\"PrivateKey\").Return(\n\t\t\t\ttestKey, tc.expectedErr,\n\t\t\t)\n\t\t}\n\n\t\tcontroller := NewController(\"\", tc.targetIPAddress, \"\")\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tcmd, _, err := controller.prepareAddOnion(tc.cfg)\n\t\t\trequire.Equal(t, tc.expectedErr, err)\n\t\t\trequire.Equal(t, tc.expectedCmd, cmd)\n\n\t\t\t// Check that the mocker is satisfied.\n\t\t\tstore.AssertExpectations(t)\n\t\t})\n\t}\n}\n\n// mockStore implements a mock of the interface OnionStore.",
+      "length": 1756,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "type mockStore struct {",
+      "content": "type mockStore struct {\n\tmock.Mock\n}\n\n// A compile-time constraint to ensure mockStore satisfies the OnionStore\n// interface.\nvar _ OnionStore = (*mockStore)(nil)\n",
+      "length": 133,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockStore) StorePrivateKey(key []byte) error {",
+      "content": "func (m *mockStore) StorePrivateKey(key []byte) error {\n\targs := m.Called(key)\n\treturn args.Error(0)\n}\n",
+      "length": 44,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockStore) PrivateKey() ([]byte, error) {",
+      "content": "func (m *mockStore) PrivateKey() ([]byte, error) {\n\targs := m.Called()\n\treturn []byte(\"hide_me_plz\"), args.Error(1)\n}\n",
+      "length": 64,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockStore) DeletePrivateKey() error {",
+      "content": "func (m *mockStore) DeletePrivateKey() error {\n\targs := m.Called()\n\treturn args.Error(0)\n}\n",
+      "length": 41,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "type MockEncrypter struct{}",
+      "content": "type MockEncrypter struct{}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MockEncrypter) EncryptPayloadToWriter(_ []byte, _ io.Writer) error {",
+      "content": "func (m MockEncrypter) EncryptPayloadToWriter(_ []byte, _ io.Writer) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MockEncrypter) DecryptPayloadFromReader(_ io.Reader) ([]byte, error) {",
+      "content": "func (m MockEncrypter) DecryptPayloadFromReader(_ io.Reader) ([]byte, error) {\n\treturn anotherKey, nil\n}\n",
+      "length": 24,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

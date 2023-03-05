@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/amp/child.go",
+  "package": "amp",
+  "sections": [
+    {
+      "slug": "type Share [32]byte",
+      "content": "type Share [32]byte\n\n// Xor stores the byte-wise xor of shares x and y in z.",
+      "length": 55,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (z *Share) Xor(x, y *Share) {",
+      "content": "func (z *Share) Xor(x, y *Share) {\n\tfor i := range z {\n\t\tz[i] = x[i] ^ y[i]\n\t}\n}\n\n// ChildDesc contains the information necessary to derive a child hash/preimage\n// pair that is attached to a particular HTLC. This information will be known by\n// both the sender and receiver in the process of fulfilling an AMP payment.",
+      "length": 277,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type ChildDesc struct {",
+      "content": "type ChildDesc struct {\n\t// Share is one of n shares of the root seed. Once all n shares are\n\t// known to the receiver, the Share will also provide entropy to the\n\t// derivation of child hash and preimage.\n\tShare Share\n\n\t// Index is 32-bit value that can be used to derive up to 2^32 child\n\t// hashes and preimages from a single Share. This allows the payment\n\t// hashes sent over the network to be refreshed without needing to\n\t// modify the Share.\n\tIndex uint32\n}\n\n// Child is a payment hash and preimage pair derived from the root seed. In\n// addition to the derived values, a Child carries all information required in\n// the derivation apart from the root seed (unless n=1).",
+      "length": 640,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "type Child struct {",
+      "content": "type Child struct {\n\t// ChildDesc contains the data required to derive the child hash and\n\t// preimage below.\n\tChildDesc\n\n\t// Preimage is the child payment preimage that can be used to settle the\n\t// HTLC carrying Hash.\n\tPreimage lntypes.Preimage\n\n\t// Hash is the child payment hash that to be carried by the HTLC.\n\tHash lntypes.Hash\n}\n\n// String returns a human-readable description of a Child.",
+      "length": 363,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Child) String() string {",
+      "content": "func (c *Child) String() string {\n\treturn fmt.Sprintf(\"share=%x, index=%d -> preimage=%v, hash=%v\",\n\t\tc.Share, c.Index, c.Preimage, c.Hash)\n}\n\n// DeriveChild computes the child preimage and child hash for a given (root,\n// share, index) tuple. The derivation is defined as:\n//\n//\tchild_preimage = SHA256(root || share || be32(index)),\n//\tchild_hash     = SHA256(child_preimage).",
+      "length": 336,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func DeriveChild(root Share, desc ChildDesc) *Child {",
+      "content": "func DeriveChild(root Share, desc ChildDesc) *Child {\n\tvar (\n\t\tindexBytes [4]byte\n\t\tpreimage   lntypes.Preimage\n\t\thash       lntypes.Hash\n\t)\n\n\t// Serialize the child index in big-endian order.\n\tbinary.BigEndian.PutUint32(indexBytes[:], desc.Index)\n\n\t// Compute child_preimage as SHA256(root || share || child_index).\n\th := sha256.New()\n\t_, _ = h.Write(root[:])\n\t_, _ = h.Write(desc.Share[:])\n\t_, _ = h.Write(indexBytes[:])\n\tcopy(preimage[:], h.Sum(nil))\n\n\t// Compute child_hash as SHA256(child_preimage).\n\th = sha256.New()\n\t_, _ = h.Write(preimage[:])\n\tcopy(hash[:], h.Sum(nil))\n\n\treturn &Child{\n\t\tChildDesc: desc,\n\t\tPreimage:  preimage,\n\t\tHash:      hash,\n\t}\n}\n",
+      "length": 581,
+      "tokens": 69,
+      "embedding": []
+    }
+  ]
+}

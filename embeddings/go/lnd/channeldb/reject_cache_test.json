@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/reject_cache_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func TestRejectCache(t *testing.T) {",
+      "content": "func TestRejectCache(t *testing.T) {\n\tconst cacheSize = 100\n\n\t// Create a new reject cache with the configured max size.\n\tc := newRejectCache(cacheSize)\n\n\t// As a sanity check, assert that querying the empty cache does not\n\t// return an entry.\n\t_, ok := c.get(0)\n\tif ok {\n\t\tt.Fatalf(\"reject cache should be empty\")\n\t}\n\n\t// Now, fill up the cache entirely.\n\tfor i := uint64(0); i < cacheSize; i++ {\n\t\tc.insert(i, entryForInt(i))\n\t}\n\n\t// Assert that the cache has all of the entries just inserted, since no\n\t// eviction should occur until we try to surpass the max size.\n\tassertHasEntries(t, c, 0, cacheSize)\n\n\t// Now, insert a new element that causes the cache to evict an element.\n\tc.insert(cacheSize, entryForInt(cacheSize))\n\n\t// Assert that the cache has this last entry, as the cache should evict\n\t// some prior element and not the newly inserted one.\n\tassertHasEntries(t, c, cacheSize, cacheSize)\n\n\t// Iterate over all inserted elements and construct a set of the evicted\n\t// elements.\n\tevicted := make(map[uint64]struct{})\n\tfor i := uint64(0); i < cacheSize+1; i++ {\n\t\t_, ok := c.get(i)\n\t\tif !ok {\n\t\t\tevicted[i] = struct{}{}\n\t\t}\n\t}\n\n\t// Assert that exactly one element has been evicted.\n\tnumEvicted := len(evicted)\n\tif numEvicted != 1 {\n\t\tt.Fatalf(\"expected one evicted entry, got: %d\", numEvicted)\n\t}\n\n\t// Remove the highest item which initially caused the eviction and\n\t// reinsert the element that was evicted prior.\n\tc.remove(cacheSize)\n\tfor i := range evicted {\n\t\tc.insert(i, entryForInt(i))\n\t}\n\n\t// Since the removal created an extra slot, the last insertion should\n\t// not have caused an eviction and the entries for all channels in the\n\t// original set that filled the cache should be present.\n\tassertHasEntries(t, c, 0, cacheSize)\n\n\t// Finally, reinsert the existing set back into the cache and test that\n\t// the cache still has all the entries. If the randomized eviction were\n\t// happening on inserts for existing cache items, we expect this to fail\n\t// with high probability.\n\tfor i := uint64(0); i < cacheSize; i++ {\n\t\tc.insert(i, entryForInt(i))\n\t}\n\tassertHasEntries(t, c, 0, cacheSize)\n\n}\n\n// assertHasEntries queries the reject cache for all channels in the range [start,\n// end), asserting that they exist and their value matches the entry produced by\n// entryForInt.",
+      "length": 2183,
+      "tokens": 363,
+      "embedding": []
+    },
+    {
+      "slug": "func assertHasEntries(t *testing.T, c *rejectCache, start, end uint64) {",
+      "content": "func assertHasEntries(t *testing.T, c *rejectCache, start, end uint64) {\n\tt.Helper()\n\n\tfor i := start; i < end; i++ {\n\t\tentry, ok := c.get(i)\n\t\tif !ok {\n\t\t\tt.Fatalf(\"reject cache should contain chan %d\", i)\n\t\t}\n\n\t\texpEntry := entryForInt(i)\n\t\tif !reflect.DeepEqual(entry, expEntry) {\n\t\t\tt.Fatalf(\"entry mismatch, want: %v, got: %v\",\n\t\t\t\texpEntry, entry)\n\t\t}\n\t}\n}\n\n// entryForInt generates a unique rejectCacheEntry given an integer.",
+      "length": 343,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func entryForInt(i uint64) rejectCacheEntry {",
+      "content": "func entryForInt(i uint64) rejectCacheEntry {\n\texists := i%2 == 0\n\tisZombie := i%3 == 0\n\treturn rejectCacheEntry{\n\t\tupd1Time: int64(2 * i),\n\t\tupd2Time: int64(2*i + 1),\n\t\tflags:    packRejectFlags(exists, isZombie),\n\t}\n}\n",
+      "length": 166,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

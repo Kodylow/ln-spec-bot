@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/routing/heap.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type nodeWithDist struct {",
+      "content": "type nodeWithDist struct {\n\t// dist is the distance to this node from the source node in our\n\t// current context.\n\tdist int64\n\n\t// node is the vertex itself. This can be used to explore all the\n\t// outgoing edges (channels) emanating from a node.\n\tnode route.Vertex\n\n\t// amountToReceive is the amount that should be received by this node.\n\t// Either as final payment to the final node or as an intermediate\n\t// amount that includes also the fees for subsequent hops.\n\tamountToReceive lnwire.MilliSatoshi\n\n\t// incomingCltv is the expected absolute expiry height for the incoming\n\t// htlc of this node. This value should already include the final cltv\n\t// delta.\n\tincomingCltv int32\n\n\t// probability is the probability that from this node onward the route\n\t// is successful.\n\tprobability float64\n\n\t// weight is the cost of the route from this node to the destination.\n\t// Includes the routing fees and a virtual cost factor to account for\n\t// time locks.\n\tweight int64\n\n\t// nextHop is the edge this route comes from.\n\tnextHop *channeldb.CachedEdgePolicy\n\n\t// routingInfoSize is the total size requirement for the payloads field\n\t// in the onion packet from this hop towards the final destination.\n\troutingInfoSize uint64\n}\n\n// distanceHeap is a min-distance heap that's used within our path finding\n// algorithm to keep track of the \"closest\" node to our source node.",
+      "length": 1302,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "type distanceHeap struct {",
+      "content": "type distanceHeap struct {\n\tnodes []*nodeWithDist\n\n\t// pubkeyIndices maps public keys of nodes to their respective index in\n\t// the heap. This is used as a way to avoid db lookups by using heap.Fix\n\t// instead of having duplicate entries on the heap.\n\tpubkeyIndices map[route.Vertex]int\n}\n\n// newDistanceHeap initializes a new distance heap. This is required because\n// we must initialize the pubkeyIndices map for path-finding optimizations.",
+      "length": 406,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func newDistanceHeap(numNodes int) distanceHeap {",
+      "content": "func newDistanceHeap(numNodes int) distanceHeap {\n\tdistHeap := distanceHeap{\n\t\tpubkeyIndices: make(map[route.Vertex]int, numNodes),\n\t\tnodes:         make([]*nodeWithDist, 0, numNodes),\n\t}\n\n\treturn distHeap\n}\n\n// Len returns the number of nodes in the priority queue.\n//\n// NOTE: This is part of the heap.Interface implementation.",
+      "length": 269,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) Len() int { return len(d.nodes) }",
+      "content": "func (d *distanceHeap) Len() int { return len(d.nodes) }\n\n// Less returns whether the item in the priority queue with index i should sort\n// before the item with index j.\n//\n// NOTE: This is part of the heap.Interface implementation.",
+      "length": 172,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) Less(i, j int) bool {",
+      "content": "func (d *distanceHeap) Less(i, j int) bool {\n\t// If distances are equal, tie break on probability.\n\tif d.nodes[i].dist == d.nodes[j].dist {\n\t\treturn d.nodes[i].probability > d.nodes[j].probability\n\t}\n\n\treturn d.nodes[i].dist < d.nodes[j].dist\n}\n\n// Swap swaps the nodes at the passed indices in the priority queue.\n//\n// NOTE: This is part of the heap.Interface implementation.",
+      "length": 322,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) Swap(i, j int) {",
+      "content": "func (d *distanceHeap) Swap(i, j int) {\n\td.nodes[i], d.nodes[j] = d.nodes[j], d.nodes[i]\n\td.pubkeyIndices[d.nodes[i].node] = i\n\td.pubkeyIndices[d.nodes[j].node] = j\n}\n\n// Push pushes the passed item onto the priority queue.\n//\n// NOTE: This is part of the heap.Interface implementation.",
+      "length": 239,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) Push(x interface{}) {",
+      "content": "func (d *distanceHeap) Push(x interface{}) {\n\tn := x.(*nodeWithDist)\n\td.nodes = append(d.nodes, n)\n\td.pubkeyIndices[n.node] = len(d.nodes) - 1\n}\n\n// Pop removes the highest priority item (according to Less) from the priority\n// queue and returns it.\n//\n// NOTE: This is part of the heap.Interface implementation.",
+      "length": 259,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) Pop() interface{} {",
+      "content": "func (d *distanceHeap) Pop() interface{} {\n\tn := len(d.nodes)\n\tx := d.nodes[n-1]\n\td.nodes[n-1] = nil\n\td.nodes = d.nodes[0 : n-1]\n\tdelete(d.pubkeyIndices, x.node)\n\treturn x\n}\n\n// PushOrFix attempts to adjust the position of a given node in the heap.\n// If the vertex already exists in the heap, then we must call heap.Fix to\n// modify its position and reorder the heap. If the vertex does not already\n// exist in the heap, then it is pushed onto the heap. Otherwise, we will end\n// up performing more db lookups on the same node in the pathfinding algorithm.",
+      "length": 502,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *distanceHeap) PushOrFix(dist *nodeWithDist) {",
+      "content": "func (d *distanceHeap) PushOrFix(dist *nodeWithDist) {\n\tindex, ok := d.pubkeyIndices[dist.node]\n\tif !ok {\n\t\theap.Push(d, dist)\n\t\treturn\n\t}\n\n\t// Change the value at the specified index.\n\td.nodes[index] = dist\n\n\t// Call heap.Fix to reorder the heap.\n\theap.Fix(d, index)\n}\n",
+      "length": 203,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

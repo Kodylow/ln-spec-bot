@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/driver.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (",
+      "content": "func createNewSubServer(configRegistry lnrpc.SubServerConfigDispatcher) (\n\t*Server, lnrpc.MacaroonPerms, error) {\n\n\t// We'll attempt to look up the config that we expect, according to our\n\t// subServerName name. If we can't find this, then we'll exit with an\n\t// error, as we're unable to properly initialize ourselves without this\n\t// config.\n\trouteServerConf, ok := configRegistry.FetchConfig(subServerName)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"unable to find config for \"+\n\t\t\t\"subserver type %s\", subServerName)\n\t}\n\n\t// Now that we've found an object mapping to our service name, we'll\n\t// ensure that it's the type we need.\n\tconfig, ok := routeServerConf.(*Config)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"wrong type of config for \"+\n\t\t\t\"subserver %s, expected %T got %T\", subServerName,\n\t\t\t&Config{}, routeServerConf)\n\t}\n\n\t// Before we try to make the new router service instance, we'll perform\n\t// some sanity checks on the arguments to ensure that they're usable.\n\tswitch {\n\tcase config.Router == nil:\n\t\treturn nil, nil, fmt.Errorf(\"Router must be set to create \" +\n\t\t\t\"Routerpc\")\n\t}\n\n\treturn New(config)\n}\n",
+      "length": 1013,
+      "tokens": 159,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\tsubServer := &lnrpc.SubServerDriver{\n\t\tSubServerName: subServerName,\n\t\tNewGrpcHandler: func() lnrpc.GrpcHandler {\n\t\t\treturn &ServerShell{}\n\t\t},\n\t}\n\n\t// If the build tag is active, then we'll register ourselves as a\n\t// sub-RPC server within the global lnrpc package namespace.\n\tif err := lnrpc.RegisterSubServer(subServer); err != nil {\n\t\tpanic(fmt.Sprintf(\"failed to register sub server driver '%s': %v\",\n\t\t\tsubServerName, err))\n\t}\n}\n",
+      "length": 422,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

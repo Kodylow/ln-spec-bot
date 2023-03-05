@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/reports_test.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "func TestPersistReport(t *testing.T) {",
+      "content": "func TestPersistReport(t *testing.T) {\n\ttests := []struct {\n\t\tname      string\n\t\tspendTxID *chainhash.Hash\n\t}{\n\t\t{\n\t\t\tname:      \"Non-nil spend txid\",\n\t\t\tspendTxID: &testChanPoint1.Hash,\n\t\t},\n\t\t{\n\t\t\tname:      \"Nil spend txid\",\n\t\t\tspendTxID: nil,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tdb, err := MakeTestDB(t)\n\t\t\trequire.NoError(t, err)\n\n\t\t\tchannelOutpoint := testChanPoint1\n\n\t\t\ttestOutpoint := testChanPoint1\n\t\t\ttestOutpoint.Index++\n\n\t\t\treport := &ResolverReport{\n\t\t\t\tOutPoint:        testOutpoint,\n\t\t\t\tAmount:          2,\n\t\t\t\tResolverType:    1,\n\t\t\t\tResolverOutcome: 2,\n\t\t\t\tSpendTxID:       test.spendTxID,\n\t\t\t}\n\n\t\t\t// Write report to disk, and ensure it is identical when\n\t\t\t// it is read.\n\t\t\terr = db.PutResolverReport(\n\t\t\t\tnil, testChainHash, &channelOutpoint, report,\n\t\t\t)\n\t\t\trequire.NoError(t, err)\n\n\t\t\treports, err := db.FetchChannelReports(\n\t\t\t\ttestChainHash, &channelOutpoint,\n\t\t\t)\n\t\t\trequire.NoError(t, err)\n\t\t\trequire.Equal(t, report, reports[0])\n\t\t})\n\t}\n}\n\n// TestFetchChannelReadBucket tests retrieval of the reports bucket for a\n// channel, testing that the appropriate error is returned based on the state\n// of the existing bucket.",
+      "length": 1117,
+      "tokens": 135,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFetchChannelReadBucket(t *testing.T) {",
+      "content": "func TestFetchChannelReadBucket(t *testing.T) {\n\tdb, err := MakeTestDB(t)\n\trequire.NoError(t, err)\n\n\tchannelOutpoint := testChanPoint1\n\n\ttestOutpoint := testChanPoint1\n\ttestOutpoint.Index++\n\n\t// If we attempt to get reports when we do not have any present, we\n\t// expect to fail because our chain hash bucket is not present.\n\t_, err = db.FetchChannelReports(\n\t\ttestChainHash, &channelOutpoint,\n\t)\n\trequire.Equal(t, ErrNoChainHashBucket, err)\n\n\t// Finally we write a report to disk and check that we can fetch it.\n\treport := &ResolverReport{\n\t\tOutPoint:        testOutpoint,\n\t\tAmount:          2,\n\t\tResolverOutcome: 1,\n\t\tResolverType:    2,\n\t\tSpendTxID:       nil,\n\t}\n\n\terr = db.PutResolverReport(\n\t\tnil, testChainHash, &channelOutpoint, report,\n\t)\n\trequire.NoError(t, err)\n\n\t// Now that the channel bucket exists, we expect the channel to be\n\t// successfully fetched, with no reports.\n\treports, err := db.FetchChannelReports(testChainHash, &testChanPoint1)\n\trequire.NoError(t, err)\n\trequire.Equal(t, report, reports[0])\n}\n\n// TestFetchChannelWriteBucket tests the creation of missing buckets when\n// retrieving the reports bucket.",
+      "length": 1045,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFetchChannelWriteBucket(t *testing.T) {",
+      "content": "func TestFetchChannelWriteBucket(t *testing.T) {\n\tcreateReportsBucket := func(tx kvdb.RwTx) (kvdb.RwBucket, error) {\n\t\treturn tx.CreateTopLevelBucket(closedChannelBucket)\n\t}\n\n\tcreateChainHashBucket := func(reports kvdb.RwBucket) (kvdb.RwBucket,\n\t\terror) {\n\n\t\treturn reports.CreateBucketIfNotExists(testChainHash[:])\n\t}\n\n\tcreateChannelBucket := func(chainHash kvdb.RwBucket) (kvdb.RwBucket,\n\t\terror) {\n\n\t\tvar chanPointBuf bytes.Buffer\n\t\terr := writeOutpoint(&chanPointBuf, &testChanPoint1)\n\t\trequire.NoError(t, err)\n\n\t\treturn chainHash.CreateBucketIfNotExists(chanPointBuf.Bytes())\n\t}\n\n\ttests := []struct {\n\t\tname  string\n\t\tsetup func(tx kvdb.RwTx) error\n\t}{\n\t\t{\n\t\t\tname: \"no existing buckets\",\n\t\t\tsetup: func(tx kvdb.RwTx) error {\n\t\t\t\treturn nil\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"reports bucket exists\",\n\t\t\tsetup: func(tx kvdb.RwTx) error {\n\t\t\t\t_, err := createReportsBucket(tx)\n\t\t\t\treturn err\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"chainhash bucket exists\",\n\t\t\tsetup: func(tx kvdb.RwTx) error {\n\t\t\t\treports, err := createReportsBucket(tx)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\t_, err = createChainHashBucket(reports)\n\t\t\t\treturn err\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"channel bucket exists\",\n\t\t\tsetup: func(tx kvdb.RwTx) error {\n\t\t\t\treports, err := createReportsBucket(tx)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tchainHash, err := createChainHashBucket(reports)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\t_, err = createChannelBucket(chainHash)\n\t\t\t\treturn err\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tdb, err := MakeTestDB(t)\n\t\t\trequire.NoError(t, err)\n\n\t\t\t// Update our db to the starting state we expect.\n\t\t\terr = kvdb.Update(db, test.setup, func() {})\n\t\t\trequire.NoError(t, err)\n\n\t\t\t// Try to get our report bucket.\n\t\t\terr = kvdb.Update(db, func(tx kvdb.RwTx) error {\n\t\t\t\t_, err := fetchReportWriteBucket(\n\t\t\t\t\ttx, testChainHash, &testChanPoint1,\n\t\t\t\t)\n\t\t\t\treturn err\n\t\t\t}, func() {})\n\t\t\trequire.NoError(t, err)\n\t\t})\n\t}\n}\n",
+      "length": 1836,
+      "tokens": 225,
+      "embedding": []
+    }
+  ]
+}

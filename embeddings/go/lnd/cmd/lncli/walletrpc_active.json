@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/walletrpc_active.go",
-  "package": "walletrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build walletrpc",
+      "content": "//go:build walletrpc\n// +build walletrpc\n\npackage main\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"encoding/base64\"\n\t\"encoding/hex\"\n\t\"encoding/json\"\n\t\"errors\"\n\t\"fmt\"\n\t\"sort\"\n\n\t\"github.com/btcsuite/btcd/chaincfg/chainhash\"\n\t\"github.com/btcsuite/btcd/wire\"\n\t\"github.com/lightningnetwork/lnd/lnrpc\"\n\t\"github.com/lightningnetwork/lnd/lnrpc/walletrpc\"\n\t\"github.com/urfave/cli\"\n)\n\nvar (\n\t// psbtCommand is a wallet subcommand that is responsible for PSBT\n\t// operations.\n\tpsbtCommand = cli.Command{\n\t\tName: \"psbt\",\n\t\tUsage: \"Interact with partially signed bitcoin transactions \" +\n\t\t\t\"(PSBTs).\",\n\t\tSubcommands: []cli.Command{\n\t\t\tfundPsbtCommand,\n\t\t\tfinalizePsbtCommand,\n\t\t},\n\t}\n\n\t// accountsCommand is a wallet subcommand that is responsible for\n\t// account management operations.\n\taccountsCommand = cli.Command{\n\t\tName:  \"accounts\",\n\t\tUsage: \"Interact with wallet accounts.\",\n\t\tSubcommands: []cli.Command{\n\t\t\tlistAccountsCommand,\n\t\t\timportAccountCommand,\n\t\t\timportPubKeyCommand,\n\t\t},\n\t}\n\n\t// addressesCommand is a wallet subcommand that is responsible for\n\t// address management operations.\n\taddressesCommand = cli.Command{\n\t\tName:  \"addresses\",\n\t\tUsage: \"Interact with wallet addresses.\",\n\t\tSubcommands: []cli.Command{\n\t\t\tlistAddressesCommand,\n\t\t\tsignMessageWithAddrCommand,\n\t\t\tverifyMessageWithAddrCommand,\n\t\t},\n\t}\n)\n\n// walletCommands will return the set of commands to enable for walletrpc\n// builds.",
+      "length": 1306,
+      "tokens": 134,
+      "embedding": []
+    },
     {
       "slug": "func walletCommands() []cli.Command {",
       "content": "func walletCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:        \"wallet\",\n\t\t\tCategory:    \"Wallet\",\n\t\t\tUsage:       \"Interact with the wallet.\",\n\t\t\tDescription: \"\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tpendingSweepsCommand,\n\t\t\t\tbumpFeeCommand,\n\t\t\t\tbumpCloseFeeCommand,\n\t\t\t\tlistSweepsCommand,\n\t\t\t\tlabelTxCommand,\n\t\t\t\tpublishTxCommand,\n\t\t\t\treleaseOutputCommand,\n\t\t\t\tleaseOutputCommand,\n\t\t\t\tlistLeasesCommand,\n\t\t\t\tpsbtCommand,\n\t\t\t\taccountsCommand,\n\t\t\t\trequiredReserveCommand,\n\t\t\t\taddressesCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",

@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/router_backend_test.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "func TestQueryRoutes(t *testing.T) {",
+      "content": "func TestQueryRoutes(t *testing.T) {\n\tt.Run(\"no mission control\", func(t *testing.T) {\n\t\ttestQueryRoutes(t, false, false, true)\n\t})\n\tt.Run(\"no mission control and msat\", func(t *testing.T) {\n\t\ttestQueryRoutes(t, false, true, true)\n\t})\n\tt.Run(\"with mission control\", func(t *testing.T) {\n\t\ttestQueryRoutes(t, true, false, true)\n\t})\n\tt.Run(\"no mission control bad cltv limit\", func(t *testing.T) {\n\t\ttestQueryRoutes(t, false, false, false)\n\t})\n}\n",
+      "length": 394,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func testQueryRoutes(t *testing.T, useMissionControl bool, useMsat bool,",
+      "content": "func testQueryRoutes(t *testing.T, useMissionControl bool, useMsat bool,\n\tsetTimelock bool) {\n\n\tignoreNodeBytes, err := hex.DecodeString(ignoreNodeKey)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tvar ignoreNodeVertex route.Vertex\n\tcopy(ignoreNodeVertex[:], ignoreNodeBytes)\n\n\tdestNodeBytes, err := hex.DecodeString(destKey)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tvar (\n\t\tlastHop      = route.Vertex{64}\n\t\toutgoingChan = uint64(383322)\n\t)\n\n\thintNode, err := route.NewVertexFromStr(hintNodeKey)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\trpcRouteHints := []*lnrpc.RouteHint{\n\t\t{\n\t\t\tHopHints: []*lnrpc.HopHint{\n\t\t\t\t{\n\t\t\t\t\tChanId: 38484,\n\t\t\t\t\tNodeId: hintNodeKey,\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\n\trequest := &lnrpc.QueryRoutesRequest{\n\t\tPubKey:         destKey,\n\t\tFinalCltvDelta: 100,\n\t\tIgnoredNodes:   [][]byte{ignoreNodeBytes},\n\t\tIgnoredEdges: []*lnrpc.EdgeLocator{{\n\t\t\tChannelId:        555,\n\t\t\tDirectionReverse: true,\n\t\t}},\n\t\tIgnoredPairs: []*lnrpc.NodePair{{\n\t\t\tFrom: node1[:],\n\t\t\tTo:   node2[:],\n\t\t}},\n\t\tUseMissionControl: useMissionControl,\n\t\tLastHopPubkey:     lastHop[:],\n\t\tOutgoingChanId:    outgoingChan,\n\t\tDestFeatures:      []lnrpc.FeatureBit{lnrpc.FeatureBit_MPP_OPT},\n\t\tRouteHints:        rpcRouteHints,\n\t}\n\n\tamtSat := int64(100000)\n\tif useMsat {\n\t\trequest.AmtMsat = amtSat * 1000\n\t\trequest.FeeLimit = &lnrpc.FeeLimit{\n\t\t\tLimit: &lnrpc.FeeLimit_FixedMsat{\n\t\t\t\tFixedMsat: 250000,\n\t\t\t},\n\t\t}\n\t} else {\n\t\trequest.Amt = amtSat\n\t\trequest.FeeLimit = &lnrpc.FeeLimit{\n\t\t\tLimit: &lnrpc.FeeLimit_Fixed{\n\t\t\t\tFixed: 250,\n\t\t\t},\n\t\t}\n\t}\n\n\tfindRoute := func(source, target route.Vertex,\n\t\tamt lnwire.MilliSatoshi, _ float64,\n\t\trestrictions *routing.RestrictParams, _ record.CustomSet,\n\t\trouteHints map[route.Vertex][]*channeldb.CachedEdgePolicy,\n\t\tfinalExpiry uint16) (*route.Route, float64, error) {\n\n\t\tif int64(amt) != amtSat*1000 {\n\t\t\tt.Fatal(\"unexpected amount\")\n\t\t}\n\n\t\tif source != sourceKey {\n\t\t\tt.Fatal(\"unexpected source key\")\n\t\t}\n\n\t\tif !bytes.Equal(target[:], destNodeBytes) {\n\t\t\tt.Fatal(\"unexpected target key\")\n\t\t}\n\n\t\tif restrictions.FeeLimit != 250*1000 {\n\t\t\tt.Fatal(\"unexpected fee limit\")\n\t\t}\n\n\t\tif restrictions.ProbabilitySource(route.Vertex{2},\n\t\t\troute.Vertex{1}, 0, 0,\n\t\t) != 0 {\n\t\t\tt.Fatal(\"expecting 0% probability for ignored edge\")\n\t\t}\n\n\t\tif restrictions.ProbabilitySource(ignoreNodeVertex,\n\t\t\troute.Vertex{6}, 0, 0,\n\t\t) != 0 {\n\t\t\tt.Fatal(\"expecting 0% probability for ignored node\")\n\t\t}\n\n\t\tif restrictions.ProbabilitySource(node1, node2, 0, 0) != 0 {\n\t\t\tt.Fatal(\"expecting 0% probability for ignored pair\")\n\t\t}\n\n\t\tif *restrictions.LastHop != lastHop {\n\t\t\tt.Fatal(\"unexpected last hop\")\n\t\t}\n\n\t\tif restrictions.OutgoingChannelIDs[0] != outgoingChan {\n\t\t\tt.Fatal(\"unexpected outgoing channel id\")\n\t\t}\n\n\t\tif !restrictions.DestFeatures.HasFeature(lnwire.MPPOptional) {\n\t\t\tt.Fatal(\"unexpected dest features\")\n\t\t}\n\n\t\tif _, ok := routeHints[hintNode]; !ok {\n\t\t\tt.Fatal(\"expected route hint\")\n\t\t}\n\n\t\texpectedProb := 1.0\n\t\tif useMissionControl {\n\t\t\texpectedProb = testMissionControlProb\n\t\t}\n\t\tif restrictions.ProbabilitySource(route.Vertex{4},\n\t\t\troute.Vertex{5}, 0, 0,\n\t\t) != expectedProb {\n\t\t\tt.Fatal(\"expecting 100% probability\")\n\t\t}\n\n\t\thops := []*route.Hop{{}}\n\t\troute, err := route.NewRouteFromHops(amt, 144, source, hops)\n\n\t\treturn route, expectedProb, err\n\t}\n\n\tbackend := &RouterBackend{\n\t\tFindRoute: findRoute,\n\t\tSelfNode:  route.Vertex{1, 2, 3},\n\t\tFetchChannelCapacity: func(chanID uint64) (\n\t\t\tbtcutil.Amount, error) {\n\n\t\t\treturn 1, nil\n\t\t},\n\t\tFetchAmountPairCapacity: func(nodeFrom, nodeTo route.Vertex,\n\t\t\tamount lnwire.MilliSatoshi) (btcutil.Amount, error) {\n\n\t\t\treturn 1, nil\n\t\t},\n\t\tMissionControl: &mockMissionControl{},\n\t\tFetchChannelEndpoints: func(chanID uint64) (route.Vertex,\n\t\t\troute.Vertex, error) {\n\n\t\t\tif chanID != 555 {\n\t\t\t\tt.Fatalf(\"expected endpoints to be fetched for \"+\n\t\t\t\t\t\"channel 555, but got %v instead\",\n\t\t\t\t\tchanID)\n\t\t\t}\n\t\t\treturn route.Vertex{1}, route.Vertex{2}, nil\n\t\t},\n\t}\n\n\t// If this is set, we'll populate MaxTotalTimelock. If this is not set,\n\t// the test will fail as CltvLimit will be 0.\n\tif setTimelock {\n\t\tbackend.MaxTotalTimelock = 1000\n\t}\n\n\tresp, err := backend.QueryRoutes(context.Background(), request)\n\n\t// If no MaxTotalTimelock was set for the QueryRoutes request, make\n\t// sure an error was returned.\n\tif !setTimelock {\n\t\trequire.NotEmpty(t, err)\n\t\treturn\n\t}\n\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tif len(resp.Routes) != 1 {\n\t\tt.Fatal(\"expected a single route response\")\n\t}\n}\n",
+      "length": 4150,
+      "tokens": 458,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMissionControl struct {",
+      "content": "type mockMissionControl struct {\n\tMissionControl\n}\n",
+      "length": 16,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) GetProbability(fromNode, toNode route.Vertex,",
+      "content": "func (m *mockMissionControl) GetProbability(fromNode, toNode route.Vertex,\n\tamt lnwire.MilliSatoshi, capacity btcutil.Amount) float64 {\n\n\treturn testMissionControlProb\n}\n",
+      "length": 91,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) ResetHistory() error {",
+      "content": "func (m *mockMissionControl) ResetHistory() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) GetHistorySnapshot() *routing.MissionControlSnapshot {",
+      "content": "func (m *mockMissionControl) GetHistorySnapshot() *routing.MissionControlSnapshot {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMissionControl) GetPairHistorySnapshot(fromNode,",
+      "content": "func (m *mockMissionControl) GetPairHistorySnapshot(fromNode,\n\ttoNode route.Vertex) routing.TimedPairResult {\n\n\treturn routing.TimedPairResult{}\n}\n",
+      "length": 81,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "type recordParseOutcome byte",
+      "content": "type recordParseOutcome byte\n\nconst (\n\tvalid recordParseOutcome = iota\n\tinvalid\n\tnorecord\n)\n",
+      "length": 57,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type unmarshalMPPTest struct {",
+      "content": "type unmarshalMPPTest struct {\n\tname    string\n\tmpp     *lnrpc.MPPRecord\n\toutcome recordParseOutcome\n}\n\n// TestUnmarshalMPP checks both positive and negative cases of UnmarshalMPP to\n// assert that an MPP record is only returned when both fields are properly\n// specified. It also asserts that zero-values for both inputs is also valid,\n// but returns a nil record.",
+      "length": 326,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUnmarshalMPP(t *testing.T) {",
+      "content": "func TestUnmarshalMPP(t *testing.T) {\n\ttests := []unmarshalMPPTest{\n\t\t{\n\t\t\tname:    \"nil record\",\n\t\t\tmpp:     nil,\n\t\t\toutcome: norecord,\n\t\t},\n\t\t{\n\t\t\tname: \"invalid total or addr\",\n\t\t\tmpp: &lnrpc.MPPRecord{\n\t\t\t\tPaymentAddr:  nil,\n\t\t\t\tTotalAmtMsat: 0,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid total only\",\n\t\t\tmpp: &lnrpc.MPPRecord{\n\t\t\t\tPaymentAddr:  nil,\n\t\t\t\tTotalAmtMsat: 8,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid addr only\",\n\t\t\tmpp: &lnrpc.MPPRecord{\n\t\t\t\tPaymentAddr:  bytes.Repeat([]byte{0x02}, 32),\n\t\t\t\tTotalAmtMsat: 0,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid total and invalid addr\",\n\t\t\tmpp: &lnrpc.MPPRecord{\n\t\t\t\tPaymentAddr:  []byte{0x02},\n\t\t\t\tTotalAmtMsat: 8,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid total and valid addr\",\n\t\t\tmpp: &lnrpc.MPPRecord{\n\t\t\t\tPaymentAddr:  bytes.Repeat([]byte{0x02}, 32),\n\t\t\t\tTotalAmtMsat: 8,\n\t\t\t},\n\t\t\toutcome: valid,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestUnmarshalMPP(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 939,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func testUnmarshalMPP(t *testing.T, test unmarshalMPPTest) {",
+      "content": "func testUnmarshalMPP(t *testing.T, test unmarshalMPPTest) {\n\tmpp, err := UnmarshalMPP(test.mpp)\n\tswitch test.outcome {\n\t// Valid arguments should result in no error, a non-nil MPP record, and\n\t// the fields should be set correctly.\n\tcase valid:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to parse mpp record: %v\", err)\n\t\t}\n\t\tif mpp == nil {\n\t\t\tt.Fatalf(\"mpp payload should be non-nil\")\n\t\t}\n\t\tif int64(mpp.TotalMsat()) != test.mpp.TotalAmtMsat {\n\t\t\tt.Fatalf(\"incorrect total msat\")\n\t\t}\n\t\taddr := mpp.PaymentAddr()\n\t\tif !bytes.Equal(addr[:], test.mpp.PaymentAddr) {\n\t\t\tt.Fatalf(\"incorrect payment addr\")\n\t\t}\n\n\t// Invalid arguments should produce a failure and nil MPP record.\n\tcase invalid:\n\t\tif err == nil {\n\t\t\tt.Fatalf(\"expected failure for invalid mpp\")\n\t\t}\n\t\tif mpp != nil {\n\t\t\tt.Fatalf(\"mpp payload should be nil for failure\")\n\t\t}\n\n\t// Arguments that produce no MPP field should return no error and no MPP\n\t// record.\n\tcase norecord:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"failure for args resulting for no-mpp\")\n\t\t}\n\t\tif mpp != nil {\n\t\t\tt.Fatalf(\"mpp payload should be nil for no-mpp\")\n\t\t}\n\n\tdefault:\n\t\tt.Fatalf(\"test case has non-standard outcome\")\n\t}\n}\n",
+      "length": 1044,
+      "tokens": 161,
+      "embedding": []
+    },
+    {
+      "slug": "type unmarshalAMPTest struct {",
+      "content": "type unmarshalAMPTest struct {\n\tname    string\n\tamp     *lnrpc.AMPRecord\n\toutcome recordParseOutcome\n}\n\n// TestUnmarshalAMP asserts the behavior of decoding an RPC AMPRecord.",
+      "length": 138,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUnmarshalAMP(t *testing.T) {",
+      "content": "func TestUnmarshalAMP(t *testing.T) {\n\trootShare := bytes.Repeat([]byte{0x01}, 32)\n\tsetID := bytes.Repeat([]byte{0x02}, 32)\n\n\t// All child indexes are valid.\n\tchildIndex := uint32(3)\n\n\ttests := []unmarshalAMPTest{\n\t\t{\n\t\t\tname:    \"nil record\",\n\t\t\tamp:     nil,\n\t\t\toutcome: norecord,\n\t\t},\n\t\t{\n\t\t\tname: \"invalid root share invalid set id\",\n\t\t\tamp: &lnrpc.AMPRecord{\n\t\t\t\tRootShare:  []byte{0x01},\n\t\t\t\tSetId:      []byte{0x02},\n\t\t\t\tChildIndex: childIndex,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid root share invalid set id\",\n\t\t\tamp: &lnrpc.AMPRecord{\n\t\t\t\tRootShare:  rootShare,\n\t\t\t\tSetId:      []byte{0x02},\n\t\t\t\tChildIndex: childIndex,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"invalid root share valid set id\",\n\t\t\tamp: &lnrpc.AMPRecord{\n\t\t\t\tRootShare:  []byte{0x01},\n\t\t\t\tSetId:      setID,\n\t\t\t\tChildIndex: childIndex,\n\t\t\t},\n\t\t\toutcome: invalid,\n\t\t},\n\t\t{\n\t\t\tname: \"valid root share valid set id\",\n\t\t\tamp: &lnrpc.AMPRecord{\n\t\t\t\tRootShare:  rootShare,\n\t\t\t\tSetId:      setID,\n\t\t\t\tChildIndex: childIndex,\n\t\t\t},\n\t\t\toutcome: valid,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestUnmarshalAMP(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 1075,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func testUnmarshalAMP(t *testing.T, test unmarshalAMPTest) {",
+      "content": "func testUnmarshalAMP(t *testing.T, test unmarshalAMPTest) {\n\tamp, err := UnmarshalAMP(test.amp)\n\tswitch test.outcome {\n\tcase valid:\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, amp)\n\n\t\trootShare := amp.RootShare()\n\t\tsetID := amp.SetID()\n\t\trequire.Equal(t, test.amp.RootShare, rootShare[:])\n\t\trequire.Equal(t, test.amp.SetId, setID[:])\n\t\trequire.Equal(t, test.amp.ChildIndex, amp.ChildIndex())\n\n\tcase invalid:\n\t\trequire.Error(t, err)\n\t\trequire.Nil(t, amp)\n\n\tcase norecord:\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, amp)\n\n\tdefault:\n\t\tt.Fatalf(\"test case has non-standard outcome\")\n\t}\n}\n",
+      "length": 502,
+      "tokens": 48,
+      "embedding": []
+    }
+  ]
+}

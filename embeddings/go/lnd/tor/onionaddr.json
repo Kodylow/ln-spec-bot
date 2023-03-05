@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/tor/onionaddr.go",
+  "package": "tor",
+  "sections": [
+    {
+      "slug": "type OnionAddr struct {",
+      "content": "type OnionAddr struct {\n\t// OnionService is the host of the onion address.\n\tOnionService string\n\n\t// Port is the port of the onion address.\n\tPort int\n\n\t// PrivateKey is the onion address' private key.\n\tPrivateKey string\n}\n\n// A compile-time check to ensure that OnionAddr implements the net.Addr\n// interface.\nvar _ net.Addr = (*OnionAddr)(nil)\n\n// String returns the string representation of an onion address.",
+      "length": 372,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OnionAddr) String() string {",
+      "content": "func (o *OnionAddr) String() string {\n\treturn net.JoinHostPort(o.OnionService, strconv.Itoa(o.Port))\n}\n\n// Network returns the network that this implementation of net.Addr will use.\n// In this case, because Tor only allows TCP connections, the network is \"tcp\".",
+      "length": 219,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OnionAddr) Network() string {",
+      "content": "func (o *OnionAddr) Network() string {\n\treturn \"tcp\"\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

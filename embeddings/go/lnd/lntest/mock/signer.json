@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/mock/signer.go",
+  "package": "mock",
+  "sections": [
+    {
+      "slug": "type DummySignature struct{}",
+      "content": "type DummySignature struct{}\n\n// Serialize returns an empty byte slice.",
+      "length": 41,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySignature) Serialize() []byte {",
+      "content": "func (d *DummySignature) Serialize() []byte {\n\treturn []byte{}\n}\n\n// Verify always returns true.",
+      "length": 47,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySignature) Verify(_ []byte, _ *btcec.PublicKey) bool {",
+      "content": "func (d *DummySignature) Verify(_ []byte, _ *btcec.PublicKey) bool {\n\treturn true\n}\n\n// DummySigner is an implementation of the Signer interface that returns\n// dummy values when called.",
+      "length": 113,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "type DummySigner struct{}",
+      "content": "type DummySigner struct{}\n\n// SignOutputRaw returns a dummy signature.",
+      "length": 43,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) SignOutputRaw(tx *wire.MsgTx,",
+      "content": "func (d *DummySigner) SignOutputRaw(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (input.Signature, error) {\n\n\treturn &DummySignature{}, nil\n}\n\n// ComputeInputScript returns nil for both values.",
+      "length": 140,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) ComputeInputScript(tx *wire.MsgTx,",
+      "content": "func (d *DummySigner) ComputeInputScript(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (*input.Script, error) {\n\n\treturn &input.Script{}, nil\n}\n\n// MuSig2CreateSession creates a new MuSig2 signing session using the local\n// key identified by the key locator. The complete list of all public keys of\n// all signing parties must be provided, including the public key of the local\n// signing key. If nonces of other parties are already known, they can be\n// submitted as well to reduce the number of method calls necessary later on.",
+      "length": 466,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) MuSig2CreateSession(input.MuSig2Version,",
+      "content": "func (d *DummySigner) MuSig2CreateSession(input.MuSig2Version,\n\tkeychain.KeyLocator, []*btcec.PublicKey, *input.MuSig2Tweaks,\n\t[][musig2.PubNonceSize]byte) (*input.MuSig2SessionInfo, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2RegisterNonces registers one or more public nonces of other signing\n// participants for a session identified by its ID. This method returns true\n// once we have all nonces for all other signing participants.",
+      "length": 358,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) MuSig2RegisterNonces(input.MuSig2SessionID,",
+      "content": "func (d *DummySigner) MuSig2RegisterNonces(input.MuSig2SessionID,\n\t[][musig2.PubNonceSize]byte) (bool, error) {\n\n\treturn false, nil\n}\n\n// MuSig2Sign creates a partial signature using the local signing key\n// that was specified when the session was created. This can only be\n// called when all public nonces of all participants are known and have\n// been registered with the session. If this node isn't responsible for\n// combining all the partial signatures, then the cleanup parameter\n// should be set, indicating that the session can be removed from memory\n// once the signature was produced.",
+      "length": 517,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) MuSig2Sign(input.MuSig2SessionID,",
+      "content": "func (d *DummySigner) MuSig2Sign(input.MuSig2SessionID,\n\t[sha256.Size]byte, bool) (*musig2.PartialSignature, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2CombineSig combines the given partial signature(s) with the\n// local one, if it already exists. Once a partial signature of all\n// participants is registered, the final signature will be combined and\n// returned.",
+      "length": 296,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) MuSig2CombineSig(input.MuSig2SessionID,",
+      "content": "func (d *DummySigner) MuSig2CombineSig(input.MuSig2SessionID,\n\t[]*musig2.PartialSignature) (*schnorr.Signature, bool, error) {\n\n\treturn nil, false, nil\n}\n\n// MuSig2Cleanup removes a session from memory to free up resources.",
+      "length": 156,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *DummySigner) MuSig2Cleanup(input.MuSig2SessionID) error {",
+      "content": "func (d *DummySigner) MuSig2Cleanup(input.MuSig2SessionID) error {\n\treturn nil\n}\n\n// SingleSigner is an implementation of the Signer interface that signs\n// everything with a single private key.",
+      "length": 123,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type SingleSigner struct {",
+      "content": "type SingleSigner struct {\n\tPrivkey *btcec.PrivateKey\n\tKeyLoc  keychain.KeyLocator\n}\n\n// SignOutputRaw generates a signature for the passed transaction using the\n// stored private key.",
+      "length": 152,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) SignOutputRaw(tx *wire.MsgTx,",
+      "content": "func (s *SingleSigner) SignOutputRaw(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (input.Signature, error) {\n\n\tamt := signDesc.Output.Value\n\twitnessScript := signDesc.WitnessScript\n\tprivKey := s.Privkey\n\n\tif !privKey.PubKey().IsEqual(signDesc.KeyDesc.PubKey) {\n\t\treturn nil, fmt.Errorf(\"incorrect key passed\")\n\t}\n\n\tswitch {\n\tcase signDesc.SingleTweak != nil:\n\t\tprivKey = input.TweakPrivKey(privKey,\n\t\t\tsignDesc.SingleTweak)\n\tcase signDesc.DoubleTweak != nil:\n\t\tprivKey = input.DeriveRevocationPrivKey(privKey,\n\t\t\tsignDesc.DoubleTweak)\n\t}\n\n\tsig, err := txscript.RawTxInWitnessSignature(tx, signDesc.SigHashes,\n\t\tsignDesc.InputIndex, amt, witnessScript, signDesc.HashType,\n\t\tprivKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn ecdsa.ParseDERSignature(sig[:len(sig)-1])\n}\n\n// ComputeInputScript computes an input script with the stored private key\n// given a transaction and a SignDescriptor.",
+      "length": 814,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) ComputeInputScript(tx *wire.MsgTx,",
+      "content": "func (s *SingleSigner) ComputeInputScript(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (*input.Script, error) {\n\n\tprivKey := s.Privkey\n\n\tswitch {\n\tcase signDesc.SingleTweak != nil:\n\t\tprivKey = input.TweakPrivKey(privKey,\n\t\t\tsignDesc.SingleTweak)\n\tcase signDesc.DoubleTweak != nil:\n\t\tprivKey = input.DeriveRevocationPrivKey(privKey,\n\t\t\tsignDesc.DoubleTweak)\n\t}\n\n\twitnessScript, err := txscript.WitnessSignature(tx, signDesc.SigHashes,\n\t\tsignDesc.InputIndex, signDesc.Output.Value, signDesc.Output.PkScript,\n\t\tsignDesc.HashType, privKey, true)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &input.Script{\n\t\tWitness: witnessScript,\n\t}, nil\n}\n\n// SignMessage takes a public key and a message and only signs the message\n// with the stored private key if the public key matches the private key.",
+      "length": 709,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) SignMessage(keyLoc keychain.KeyLocator,",
+      "content": "func (s *SingleSigner) SignMessage(keyLoc keychain.KeyLocator,\n\tmsg []byte, doubleHash bool) (*ecdsa.Signature, error) {\n\n\tmockKeyLoc := s.KeyLoc\n\tif s.KeyLoc.IsEmpty() {\n\t\tmockKeyLoc = idKeyLoc\n\t}\n\n\tif keyLoc != mockKeyLoc {\n\t\treturn nil, fmt.Errorf(\"unknown public key\")\n\t}\n\n\tvar digest []byte\n\tif doubleHash {\n\t\tdigest = chainhash.DoubleHashB(msg)\n\t} else {\n\t\tdigest = chainhash.HashB(msg)\n\t}\n\treturn ecdsa.Sign(s.Privkey, digest), nil\n}\n\n// MuSig2CreateSession creates a new MuSig2 signing session using the local\n// key identified by the key locator. The complete list of all public keys of\n// all signing parties must be provided, including the public key of the local\n// signing key. If nonces of other parties are already known, they can be\n// submitted as well to reduce the number of method calls necessary later on.",
+      "length": 739,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) MuSig2CreateSession(input.MuSig2Version,",
+      "content": "func (s *SingleSigner) MuSig2CreateSession(input.MuSig2Version,\n\tkeychain.KeyLocator, []*btcec.PublicKey, *input.MuSig2Tweaks,\n\t[][musig2.PubNonceSize]byte) (*input.MuSig2SessionInfo, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2RegisterNonces registers one or more public nonces of other signing\n// participants for a session identified by its ID. This method returns true\n// once we have all nonces for all other signing participants.",
+      "length": 358,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) MuSig2RegisterNonces(input.MuSig2SessionID,",
+      "content": "func (s *SingleSigner) MuSig2RegisterNonces(input.MuSig2SessionID,\n\t[][musig2.PubNonceSize]byte) (bool, error) {\n\n\treturn false, nil\n}\n\n// MuSig2Sign creates a partial signature using the local signing key\n// that was specified when the session was created. This can only be\n// called when all public nonces of all participants are known and have\n// been registered with the session. If this node isn't responsible for\n// combining all the partial signatures, then the cleanup parameter\n// should be set, indicating that the session can be removed from memory\n// once the signature was produced.",
+      "length": 517,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) MuSig2Sign(input.MuSig2SessionID,",
+      "content": "func (s *SingleSigner) MuSig2Sign(input.MuSig2SessionID,\n\t[sha256.Size]byte, bool) (*musig2.PartialSignature, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2CombineSig combines the given partial signature(s) with the\n// local one, if it already exists. Once a partial signature of all\n// participants is registered, the final signature will be combined and\n// returned.",
+      "length": 296,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) MuSig2CombineSig(input.MuSig2SessionID,",
+      "content": "func (s *SingleSigner) MuSig2CombineSig(input.MuSig2SessionID,\n\t[]*musig2.PartialSignature) (*schnorr.Signature, bool, error) {\n\n\treturn nil, false, nil\n}\n\n// MuSig2Cleanup removes a session from memory to free up resources.",
+      "length": 156,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SingleSigner) MuSig2Cleanup(input.MuSig2SessionID) error {",
+      "content": "func (s *SingleSigner) MuSig2Cleanup(input.MuSig2SessionID) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/autopilot/prefattach_test.go",
+  "package": "autopilot",
+  "sections": [
+    {
+      "slug": "type genGraphFunc func(t *testing.T) (testGraph, error)",
+      "content": "type genGraphFunc func(t *testing.T) (testGraph, error)\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type testGraph interface {",
+      "content": "type testGraph interface {\n\tChannelGraph\n\n\taddRandChannel(*btcec.PublicKey, *btcec.PublicKey,\n\t\tbtcutil.Amount) (*ChannelEdge, *ChannelEdge, error)\n\n\taddRandNode() (*btcec.PublicKey, error)\n}\n",
+      "length": 158,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func newDiskChanGraph(t *testing.T) (testGraph, error) {",
+      "content": "func newDiskChanGraph(t *testing.T) (testGraph, error) {\n\t// Next, create channeldb for the first time.\n\tcdb, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, cdb.Close())\n\t})\n\n\treturn &databaseChannelGraph{\n\t\tdb: cdb.ChannelGraph(),\n\t}, nil\n}\n\nvar _ testGraph = (*databaseChannelGraph)(nil)\n",
+      "length": 285,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func newMemChanGraph(_ *testing.T) (testGraph, error) {",
+      "content": "func newMemChanGraph(_ *testing.T) (testGraph, error) {\n\treturn newMemChannelGraph(), nil\n}\n\nvar _ testGraph = (*memChannelGraph)(nil)\n\nvar chanGraphs = []struct {\n\tname    string\n\tgenFunc genGraphFunc\n}{\n\t{\n\t\tname:    \"disk_graph\",\n\t\tgenFunc: newDiskChanGraph,\n\t},\n\t{\n\t\tname:    \"mem_graph\",\n\t\tgenFunc: newMemChanGraph,\n\t},\n}\n\n// TestPrefAttachmentSelectEmptyGraph ensures that when passed an\n// empty graph, the NodeSores function always returns a score of 0.",
+      "length": 385,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrefAttachmentSelectEmptyGraph(t *testing.T) {",
+      "content": "func TestPrefAttachmentSelectEmptyGraph(t *testing.T) {\n\tprefAttach := NewPrefAttachment()\n\n\t// Create a random public key, which we will query to get a score for.\n\tpub, err := randKey()\n\trequire.NoError(t, err, \"unable to generate key\")\n\n\tnodes := map[NodeID]struct{}{\n\t\tNewNodeID(pub): {},\n\t}\n\n\tfor _, chanGraph := range chanGraphs {\n\t\tchanGraph := chanGraph\n\t\tgraph, err := chanGraph.genFunc(t)\n\t\trequire.NoError(t, err, \"unable to create graph\")\n\n\t\tsuccess := t.Run(chanGraph.name, func(t1 *testing.T) {\n\t\t\t// With the necessary state initialized, we'll now\n\t\t\t// attempt to get the score for this one node.\n\t\t\tconst walletFunds = btcutil.SatoshiPerBitcoin\n\t\t\tscores, err := prefAttach.NodeScores(\n\t\t\t\tgraph, nil, walletFunds, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// Since the graph is empty, we expect the score to be\n\t\t\t// 0, giving an empty return map.\n\t\t\trequire.Empty(t1, scores)\n\t\t})\n\t\tif !success {\n\t\t\tbreak\n\t\t}\n\t}\n}\n\n// TestPrefAttachmentSelectTwoVertexes ensures that when passed a\n// graph with only two eligible vertexes, then both are given the same score,\n// and the funds are appropriately allocated across each peer.",
+      "length": 1050,
+      "tokens": 153,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrefAttachmentSelectTwoVertexes(t *testing.T) {",
+      "content": "func TestPrefAttachmentSelectTwoVertexes(t *testing.T) {\n\tt.Parallel()\n\n\tprand.Seed(time.Now().Unix())\n\n\tconst (\n\t\tmaxChanSize = btcutil.Amount(btcutil.SatoshiPerBitcoin)\n\t)\n\n\tfor _, chanGraph := range chanGraphs {\n\t\tchanGraph := chanGraph\n\t\tgraph, err := chanGraph.genFunc(t)\n\t\trequire.NoError(t, err, \"unable to create graph\")\n\n\t\tsuccess := t.Run(chanGraph.name, func(t1 *testing.T) {\n\t\t\tprefAttach := NewPrefAttachment()\n\n\t\t\t// For this set, we'll load the memory graph with two\n\t\t\t// nodes, and a random channel connecting them.\n\t\t\tconst chanCapacity = btcutil.SatoshiPerBitcoin\n\t\t\tedge1, edge2, err := graph.addRandChannel(\n\t\t\t\tnil, nil, chanCapacity,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// We also add a third, non-connected node to the graph.\n\t\t\t_, err = graph.addRandNode()\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// Get the score for all nodes found in the graph at\n\t\t\t// this point.\n\t\t\tnodes := make(map[NodeID]struct{})\n\t\t\terr = graph.ForEachNode(func(n Node) error {\n\t\t\t\tnodes[n.PubKey()] = struct{}{}\n\t\t\t\treturn nil\n\t\t\t})\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.Len(t1, nodes, 3)\n\n\t\t\t// With the necessary state initialized, we'll now\n\t\t\t// attempt to get our candidates channel score given\n\t\t\t// the current state of the graph.\n\t\t\tcandidates, err := prefAttach.NodeScores(\n\t\t\t\tgraph, nil, maxChanSize, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// We expect two candidates, since one of the nodes\n\t\t\t// doesn't have any channels.\n\t\t\trequire.Len(t1, candidates, 2)\n\n\t\t\t// The candidates should be amongst the two edges\n\t\t\t// created above.\n\t\t\tfor nodeID, candidate := range candidates {\n\t\t\t\tedge1Pub := edge1.Peer.PubKey()\n\t\t\t\tedge2Pub := edge2.Peer.PubKey()\n\n\t\t\t\tswitch {\n\t\t\t\tcase bytes.Equal(nodeID[:], edge1Pub[:]):\n\t\t\t\tcase bytes.Equal(nodeID[:], edge2Pub[:]):\n\t\t\t\tdefault:\n\t\t\t\t\tt1.Fatalf(\"attached to unknown node: %x\",\n\t\t\t\t\t\tnodeID[:])\n\t\t\t\t}\n\n\t\t\t\t// Since each of the nodes has 1 channel, out\n\t\t\t\t// of only one channel in the graph, we expect\n\t\t\t\t// their score to be 1.0.\n\t\t\t\trequire.EqualValues(t1, 1, candidate.Score)\n\t\t\t}\n\t\t})\n\t\tif !success {\n\t\t\tbreak\n\t\t}\n\t}\n}\n\n// TestPrefAttachmentSelectGreedyAllocation tests that if upon\n// returning node scores, the NodeScores method will attempt to greedily\n// allocate all funds to each vertex (up to the max channel size).",
+      "length": 2146,
+      "tokens": 285,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrefAttachmentSelectGreedyAllocation(t *testing.T) {",
+      "content": "func TestPrefAttachmentSelectGreedyAllocation(t *testing.T) {\n\tt.Parallel()\n\n\tprand.Seed(time.Now().Unix())\n\n\tconst (\n\t\tmaxChanSize = btcutil.Amount(btcutil.SatoshiPerBitcoin)\n\t)\n\n\tfor _, chanGraph := range chanGraphs {\n\t\tchanGraph := chanGraph\n\t\tgraph, err := chanGraph.genFunc(t)\n\t\trequire.NoError(t, err, \"unable to create graph\")\n\n\t\tsuccess := t.Run(chanGraph.name, func(t1 *testing.T) {\n\t\t\tprefAttach := NewPrefAttachment()\n\n\t\t\tconst chanCapacity = btcutil.SatoshiPerBitcoin\n\n\t\t\t// Next, we'll add 3 nodes to the graph, creating an\n\t\t\t// \"open triangle topology\".\n\t\t\tedge1, _, err := graph.addRandChannel(\n\t\t\t\tnil, nil, chanCapacity,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\tpeerPubBytes := edge1.Peer.PubKey()\n\t\t\tpeerPub, err := btcec.ParsePubKey(peerPubBytes[:])\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t_, _, err = graph.addRandChannel(\n\t\t\t\tpeerPub, nil, chanCapacity,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// At this point, there should be three nodes in the\n\t\t\t// graph, with node having two edges.\n\t\t\tnumNodes := 0\n\t\t\ttwoChans := false\n\t\t\tnodes := make(map[NodeID]struct{})\n\t\t\terr = graph.ForEachNode(func(n Node) error {\n\t\t\t\tnumNodes++\n\t\t\t\tnodes[n.PubKey()] = struct{}{}\n\t\t\t\tnumChans := 0\n\t\t\t\terr := n.ForEachChannel(func(c ChannelEdge) error {\n\t\t\t\t\tnumChans++\n\t\t\t\t\treturn nil\n\t\t\t\t})\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\ttwoChans = twoChans || (numChans == 2)\n\n\t\t\t\treturn nil\n\t\t\t})\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.EqualValues(t1, 3, numNodes)\n\t\t\trequire.True(t1, twoChans, \"have two chans\")\n\n\t\t\t// We'll now begin our test, modeling the available\n\t\t\t// wallet balance to be 5.5 BTC. We're shooting for a\n\t\t\t// 50/50 allocation, and have 3 BTC in channels. As a\n\t\t\t// result, the heuristic should try to greedily\n\t\t\t// allocate funds to channels.\n\t\t\tscores, err := prefAttach.NodeScores(\n\t\t\t\tgraph, nil, maxChanSize, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.Equal(t1, len(nodes), len(scores))\n\n\t\t\t// The candidates should have a non-zero score, and\n\t\t\t// have the max chan size funds recommended channel\n\t\t\t// size.\n\t\t\tfor _, candidate := range scores {\n\t\t\t\trequire.NotZero(t1, candidate.Score)\n\t\t\t}\n\n\t\t\t// Imagine a few channels are being opened, and there's\n\t\t\t// only 0.5 BTC left. That should leave us with channel\n\t\t\t// candidates of that size.\n\t\t\tconst remBalance = btcutil.SatoshiPerBitcoin * 0.5\n\t\t\tscores, err = prefAttach.NodeScores(\n\t\t\t\tgraph, nil, remBalance, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.Equal(t1, len(nodes), len(scores))\n\n\t\t\t// Check that the recommended channel sizes are now the\n\t\t\t// remaining channel balance.\n\t\t\tfor _, candidate := range scores {\n\t\t\t\trequire.NotZero(t1, candidate.Score)\n\t\t\t}\n\t\t})\n\t\tif !success {\n\t\t\tbreak\n\t\t}\n\t}\n}\n\n// TestPrefAttachmentSelectSkipNodes ensures that if a node was\n// already selected as a channel counterparty, then that node will get a score\n// of zero during scoring.",
+      "length": 2705,
+      "tokens": 358,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrefAttachmentSelectSkipNodes(t *testing.T) {",
+      "content": "func TestPrefAttachmentSelectSkipNodes(t *testing.T) {\n\tt.Parallel()\n\n\tprand.Seed(time.Now().Unix())\n\n\tconst (\n\t\tmaxChanSize = btcutil.Amount(btcutil.SatoshiPerBitcoin)\n\t)\n\n\tfor _, chanGraph := range chanGraphs {\n\t\tchanGraph := chanGraph\n\t\tgraph, err := chanGraph.genFunc(t)\n\t\trequire.NoError(t, err, \"unable to create graph\")\n\n\t\tsuccess := t.Run(chanGraph.name, func(t1 *testing.T) {\n\t\t\tprefAttach := NewPrefAttachment()\n\n\t\t\t// Next, we'll create a simple topology of two nodes,\n\t\t\t// with a single channel connecting them.\n\t\t\tconst chanCapacity = btcutil.SatoshiPerBitcoin\n\t\t\t_, _, err = graph.addRandChannel(nil, nil, chanCapacity)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\tnodes := make(map[NodeID]struct{})\n\t\t\terr = graph.ForEachNode(func(n Node) error {\n\t\t\t\tnodes[n.PubKey()] = struct{}{}\n\t\t\t\treturn nil\n\t\t\t})\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.Len(t1, nodes, 2)\n\n\t\t\t// With our graph created, we'll now get the scores for\n\t\t\t// all nodes in the graph.\n\t\t\tscores, err := prefAttach.NodeScores(\n\t\t\t\tgraph, nil, maxChanSize, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\trequire.Equal(t1, len(nodes), len(scores))\n\n\t\t\t// THey should all have a score, and a maxChanSize\n\t\t\t// channel size recommendation.\n\t\t\tfor _, candidate := range scores {\n\t\t\t\trequire.NotZero(t1, candidate.Score)\n\t\t\t}\n\n\t\t\t// We'll simulate a channel update by adding the nodes\n\t\t\t// to our set of channels.\n\t\t\tvar chans []LocalChannel\n\t\t\tfor _, candidate := range scores {\n\t\t\t\tchans = append(chans,\n\t\t\t\t\tLocalChannel{\n\t\t\t\t\t\tNode: candidate.NodeID,\n\t\t\t\t\t},\n\t\t\t\t)\n\t\t\t}\n\n\t\t\t// If we attempt to make a call to the NodeScores\n\t\t\t// function, without providing any new information,\n\t\t\t// then all nodes should have a score of zero, since we\n\t\t\t// already got channels to them.\n\t\t\tscores, err = prefAttach.NodeScores(\n\t\t\t\tgraph, chans, maxChanSize, nodes,\n\t\t\t)\n\t\t\trequire.NoError(t1, err)\n\n\t\t\t// Since all should be given a score of 0, the map\n\t\t\t// should be empty.\n\t\t\trequire.Empty(t1, scores)\n\t\t})\n\t\tif !success {\n\t\t\tbreak\n\t\t}\n\t}\n}\n",
+      "length": 1865,
+      "tokens": 250,
+      "embedding": []
+    }
+  ]
+}

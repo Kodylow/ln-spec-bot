@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/amp/derivation_test.go",
+  "package": "amp_test",
+  "sections": [
+    {
+      "slug": "type sharerTest struct {",
+      "content": "type sharerTest struct {\n\tname      string\n\tnumShares int\n\tmerge     bool\n}\n\nvar sharerTests = []sharerTest{\n\t{\n\t\tname:      \"root only\",\n\t\tnumShares: 1,\n\t},\n\t{\n\t\tname:      \"two shares\",\n\t\tnumShares: 2,\n\t},\n\t{\n\t\tname:      \"many shares\",\n\t\tnumShares: 10,\n\t},\n\t{\n\t\tname:      \"merge 4 shares\",\n\t\tnumShares: 4,\n\t\tmerge:     true,\n\t},\n\t{\n\t\tname:      \"merge many shares\",\n\t\tnumShares: 20,\n\t\tmerge:     true,\n\t},\n}\n\n// TestSharer executes the end-to-end derivation between sender and receiver,\n// asserting that shares are properly computed and, when reconstructed by the\n// receiver, produce identical child hashes and preimages as the sender.",
+      "length": 584,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSharer(t *testing.T) {",
+      "content": "func TestSharer(t *testing.T) {\n\tfor _, test := range sharerTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\ttestSharer(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 132,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func testSharer(t *testing.T, test sharerTest) {",
+      "content": "func testSharer(t *testing.T, test sharerTest) {\n\t// Construct a new sharer with a random seed.\n\tvar (\n\t\tsharer amp.Sharer\n\t\terr    error\n\t)\n\tsharer, err = amp.NewSeedSharer()\n\trequire.NoError(t, err)\n\n\t// Assert that we can instantiate an equivalent root sharer using the\n\t// root share.\n\troot := sharer.Root()\n\tsharerFromRoot := amp.SeedSharerFromRoot(&root)\n\trequire.Equal(t, sharer, sharerFromRoot)\n\n\t// Generate numShares-1 randomized shares.\n\tchildren := make([]*amp.Child, 0, test.numShares)\n\tfor i := 0; i < test.numShares-1; i++ {\n\t\tvar left amp.Sharer\n\t\tleft, sharer, err = sharer.Split()\n\t\trequire.NoError(t, err)\n\n\t\tchild := left.Child(0)\n\n\t\tassertChildShare(t, child, 0)\n\t\tchildren = append(children, child)\n\t}\n\n\t// Compute the final share and finalize the sharing.\n\tchild := sharer.Child(0)\n\tsharer = sharer.Zero()\n\n\tassertChildShare(t, child, 0)\n\tchildren = append(children, child)\n\n\t// If we are testing merging, merge half of the created children back\n\t// into the sharer.\n\tif test.merge {\n\t\tfor i := len(children) / 2; i < len(children); i++ {\n\t\t\tsharer = sharer.Merge(children[i])\n\t\t}\n\t\tchildren = children[:len(children)/2]\n\n\t\t// We must create a new last child from what we just merged\n\t\t// back.\n\t\tchild := sharer.Child(0)\n\n\t\tassertChildShare(t, child, 0)\n\t\tchildren = append(children, child)\n\t}\n\n\tassertReconstruction(t, children...)\n}\n\n// assertChildShare checks that the child has the expected child index, and that\n// the child's preimage is valid for the its hash.",
+      "length": 1388,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func assertChildShare(t *testing.T, child *amp.Child, expIndex int) {",
+      "content": "func assertChildShare(t *testing.T, child *amp.Child, expIndex int) {\n\tt.Helper()\n\n\trequire.Equal(t, uint32(expIndex), child.Index)\n\trequire.True(t, child.Preimage.Matches(child.Hash))\n}\n\n// assertReconstruction takes a list of children and simulates the receiver\n// recombining the shares, and then deriving the child preimage and hash for\n// each HTLC. This asserts that the receiver can always rederive the full set of\n// children knowing only the shares and child indexes for each.",
+      "length": 406,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func assertReconstruction(t *testing.T, children ...*amp.Child) {",
+      "content": "func assertReconstruction(t *testing.T, children ...*amp.Child) {\n\tt.Helper()\n\n\t// Reconstruct a child descriptor for each of the provided children.\n\t// In practice, the receiver will only know the share and the child\n\t// index it learns for each HTLC.\n\tdescs := make([]amp.ChildDesc, 0, len(children))\n\tfor _, child := range children {\n\t\tdescs = append(descs, amp.ChildDesc{\n\t\t\tShare: child.Share,\n\t\t\tIndex: child.Index,\n\t\t})\n\t}\n\n\t// Now, recombine the shares and rederive a child for each of the\n\t// descriptors above. The resulting set of children should exactly match\n\t// the set provided.\n\tchildren2 := amp.ReconstructChildren(descs...)\n\trequire.Equal(t, children, children2)\n}\n",
+      "length": 598,
+      "tokens": 89,
+      "embedding": []
+    }
+  ]
+}

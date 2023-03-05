@@ -1,0 +1,468 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/autopilotrpc/autopilot.pb.go",
+  "package": "autopilotrpc",
+  "sections": [
+    {
+      "slug": "type StatusRequest struct {",
+      "content": "type StatusRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) Reset() {",
+      "content": "func (x *StatusRequest) Reset() {\n\t*x = StatusRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[0]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 188,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) String() string {",
+      "content": "func (x *StatusRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusRequest) ProtoMessage() {}",
+      "content": "func (*StatusRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *StatusRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[0]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.",
+      "length": 315,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*StatusRequest) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{0}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type StatusResponse struct {",
+      "content": "type StatusResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Indicates whether the autopilot is active or not.\n\tActive bool `protobuf:\"varint,1,opt,name=active,proto3\" json:\"active,omitempty\"`\n}\n",
+      "length": 244,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) Reset() {",
+      "content": "func (x *StatusResponse) Reset() {\n\t*x = StatusResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[1]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 189,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) String() string {",
+      "content": "func (x *StatusResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusResponse) ProtoMessage() {}",
+      "content": "func (*StatusResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *StatusResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[1]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.",
+      "length": 316,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*StatusResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*StatusResponse) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{1}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *StatusResponse) GetActive() bool {",
+      "content": "func (x *StatusResponse) GetActive() bool {\n\tif x != nil {\n\t\treturn x.Active\n\t}\n\treturn false\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type ModifyStatusRequest struct {",
+      "content": "type ModifyStatusRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// Whether the autopilot agent should be enabled or not.\n\tEnable bool `protobuf:\"varint,1,opt,name=enable,proto3\" json:\"enable,omitempty\"`\n}\n",
+      "length": 248,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusRequest) Reset() {",
+      "content": "func (x *ModifyStatusRequest) Reset() {\n\t*x = ModifyStatusRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[2]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 194,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusRequest) String() string {",
+      "content": "func (x *ModifyStatusRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ModifyStatusRequest) ProtoMessage() {}",
+      "content": "func (*ModifyStatusRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ModifyStatusRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[2]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ModifyStatusRequest.ProtoReflect.Descriptor instead.",
+      "length": 321,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ModifyStatusRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*ModifyStatusRequest) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{2}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusRequest) GetEnable() bool {",
+      "content": "func (x *ModifyStatusRequest) GetEnable() bool {\n\tif x != nil {\n\t\treturn x.Enable\n\t}\n\treturn false\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type ModifyStatusResponse struct {",
+      "content": "type ModifyStatusResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusResponse) Reset() {",
+      "content": "func (x *ModifyStatusResponse) Reset() {\n\t*x = ModifyStatusResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[3]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 195,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusResponse) String() string {",
+      "content": "func (x *ModifyStatusResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ModifyStatusResponse) ProtoMessage() {}",
+      "content": "func (*ModifyStatusResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *ModifyStatusResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *ModifyStatusResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[3]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use ModifyStatusResponse.ProtoReflect.Descriptor instead.",
+      "length": 322,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ModifyStatusResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*ModifyStatusResponse) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{3}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type QueryScoresRequest struct {",
+      "content": "type QueryScoresRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\tPubkeys []string `protobuf:\"bytes,1,rep,name=pubkeys,proto3\" json:\"pubkeys,omitempty\"`\n\t// If set, we will ignore the local channel state when calculating scores.\n\tIgnoreLocalState bool `protobuf:\"varint,2,opt,name=ignore_local_state,json=ignoreLocalState,proto3\" json:\"ignore_local_state,omitempty\"`\n}\n",
+      "length": 409,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresRequest) Reset() {",
+      "content": "func (x *QueryScoresRequest) Reset() {\n\t*x = QueryScoresRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[4]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 193,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresRequest) String() string {",
+      "content": "func (x *QueryScoresRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresRequest) ProtoMessage() {}",
+      "content": "func (*QueryScoresRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *QueryScoresRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[4]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use QueryScoresRequest.ProtoReflect.Descriptor instead.",
+      "length": 320,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*QueryScoresRequest) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{4}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresRequest) GetPubkeys() []string {",
+      "content": "func (x *QueryScoresRequest) GetPubkeys() []string {\n\tif x != nil {\n\t\treturn x.Pubkeys\n\t}\n\treturn nil\n}\n",
+      "length": 46,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresRequest) GetIgnoreLocalState() bool {",
+      "content": "func (x *QueryScoresRequest) GetIgnoreLocalState() bool {\n\tif x != nil {\n\t\treturn x.IgnoreLocalState\n\t}\n\treturn false\n}\n",
+      "length": 57,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type QueryScoresResponse struct {",
+      "content": "type QueryScoresResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\tResults []*QueryScoresResponse_HeuristicResult `protobuf:\"bytes,1,rep,name=results,proto3\" json:\"results,omitempty\"`\n}\n",
+      "length": 227,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse) Reset() {",
+      "content": "func (x *QueryScoresResponse) Reset() {\n\t*x = QueryScoresResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[5]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 194,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse) String() string {",
+      "content": "func (x *QueryScoresResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresResponse) ProtoMessage() {}",
+      "content": "func (*QueryScoresResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *QueryScoresResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[5]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use QueryScoresResponse.ProtoReflect.Descriptor instead.",
+      "length": 321,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*QueryScoresResponse) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{5}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse) GetResults() []*QueryScoresResponse_HeuristicResult {",
+      "content": "func (x *QueryScoresResponse) GetResults() []*QueryScoresResponse_HeuristicResult {\n\tif x != nil {\n\t\treturn x.Results\n\t}\n\treturn nil\n}\n",
+      "length": 46,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type SetScoresRequest struct {",
+      "content": "type SetScoresRequest struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\t// The name of the heuristic to provide scores to.\n\tHeuristic string `protobuf:\"bytes,1,opt,name=heuristic,proto3\" json:\"heuristic,omitempty\"`\n\t// A map from hex-encoded public keys to scores. Scores must be in the range\n\t// [0.0, 1.0].\n\tScores map[string]float64 `protobuf:\"bytes,2,rep,name=scores,proto3\" json:\"scores,omitempty\" protobuf_key:\"bytes,1,opt,name=key,proto3\" protobuf_val:\"fixed64,2,opt,name=value,proto3\"`\n}\n",
+      "length": 528,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresRequest) Reset() {",
+      "content": "func (x *SetScoresRequest) Reset() {\n\t*x = SetScoresRequest{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[6]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 191,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresRequest) String() string {",
+      "content": "func (x *SetScoresRequest) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SetScoresRequest) ProtoMessage() {}",
+      "content": "func (*SetScoresRequest) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresRequest) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *SetScoresRequest) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[6]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use SetScoresRequest.ProtoReflect.Descriptor instead.",
+      "length": 318,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SetScoresRequest) Descriptor() ([]byte, []int) {",
+      "content": "func (*SetScoresRequest) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{6}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresRequest) GetHeuristic() string {",
+      "content": "func (x *SetScoresRequest) GetHeuristic() string {\n\tif x != nil {\n\t\treturn x.Heuristic\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresRequest) GetScores() map[string]float64 {",
+      "content": "func (x *SetScoresRequest) GetScores() map[string]float64 {\n\tif x != nil {\n\t\treturn x.Scores\n\t}\n\treturn nil\n}\n",
+      "length": 45,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type SetScoresResponse struct {",
+      "content": "type SetScoresResponse struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n}\n",
+      "length": 110,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresResponse) Reset() {",
+      "content": "func (x *SetScoresResponse) Reset() {\n\t*x = SetScoresResponse{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[7]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 192,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresResponse) String() string {",
+      "content": "func (x *SetScoresResponse) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SetScoresResponse) ProtoMessage() {}",
+      "content": "func (*SetScoresResponse) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *SetScoresResponse) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *SetScoresResponse) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[7]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use SetScoresResponse.ProtoReflect.Descriptor instead.",
+      "length": 319,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SetScoresResponse) Descriptor() ([]byte, []int) {",
+      "content": "func (*SetScoresResponse) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{7}\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type QueryScoresResponse_HeuristicResult struct {",
+      "content": "type QueryScoresResponse_HeuristicResult struct {\n\tstate         protoimpl.MessageState\n\tsizeCache     protoimpl.SizeCache\n\tunknownFields protoimpl.UnknownFields\n\n\tHeuristic string             `protobuf:\"bytes,1,opt,name=heuristic,proto3\" json:\"heuristic,omitempty\"`\n\tScores    map[string]float64 `protobuf:\"bytes,2,rep,name=scores,proto3\" json:\"scores,omitempty\" protobuf_key:\"bytes,1,opt,name=key,proto3\" protobuf_val:\"fixed64,2,opt,name=value,proto3\"`\n}\n",
+      "length": 400,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse_HeuristicResult) Reset() {",
+      "content": "func (x *QueryScoresResponse_HeuristicResult) Reset() {\n\t*x = QueryScoresResponse_HeuristicResult{}\n\tif protoimpl.UnsafeEnabled {\n\t\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[8]\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tms.StoreMessageInfo(mi)\n\t}\n}\n",
+      "length": 210,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse_HeuristicResult) String() string {",
+      "content": "func (x *QueryScoresResponse_HeuristicResult) String() string {\n\treturn protoimpl.X.MessageStringOf(x)\n}\n",
+      "length": 39,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresResponse_HeuristicResult) ProtoMessage() {}",
+      "content": "func (*QueryScoresResponse_HeuristicResult) ProtoMessage() {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse_HeuristicResult) ProtoReflect() protoreflect.Message {",
+      "content": "func (x *QueryScoresResponse_HeuristicResult) ProtoReflect() protoreflect.Message {\n\tmi := &file_autopilotrpc_autopilot_proto_msgTypes[8]\n\tif protoimpl.UnsafeEnabled && x != nil {\n\t\tms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))\n\t\tif ms.LoadMessageInfo() == nil {\n\t\t\tms.StoreMessageInfo(mi)\n\t\t}\n\t\treturn ms\n\t}\n\treturn mi.MessageOf(x)\n}\n\n// Deprecated: Use QueryScoresResponse_HeuristicResult.ProtoReflect.Descriptor instead.",
+      "length": 337,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (*QueryScoresResponse_HeuristicResult) Descriptor() ([]byte, []int) {",
+      "content": "func (*QueryScoresResponse_HeuristicResult) Descriptor() ([]byte, []int) {\n\treturn file_autopilotrpc_autopilot_proto_rawDescGZIP(), []int{5, 0}\n}\n",
+      "length": 69,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse_HeuristicResult) GetHeuristic() string {",
+      "content": "func (x *QueryScoresResponse_HeuristicResult) GetHeuristic() string {\n\tif x != nil {\n\t\treturn x.Heuristic\n\t}\n\treturn \"\"\n}\n",
+      "length": 47,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *QueryScoresResponse_HeuristicResult) GetScores() map[string]float64 {",
+      "content": "func (x *QueryScoresResponse_HeuristicResult) GetScores() map[string]float64 {\n\tif x != nil {\n\t\treturn x.Scores\n\t}\n\treturn nil\n}\n\nvar File_autopilotrpc_autopilot_proto protoreflect.FileDescriptor\n\nvar file_autopilotrpc_autopilot_proto_rawDesc = []byte{\n\t0x0a, 0x1c, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2f, 0x61,\n\t0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0c,\n\t0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x22, 0x0f, 0x0a, 0x0d,\n\t0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x28, 0x0a,\n\t0x0e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,\n\t0x16, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,\n\t0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x22, 0x2d, 0x0a, 0x13, 0x4d, 0x6f, 0x64, 0x69, 0x66,\n\t0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16,\n\t0x0a, 0x06, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06,\n\t0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x22, 0x16, 0x0a, 0x14, 0x4d, 0x6f, 0x64, 0x69, 0x66, 0x79,\n\t0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x5c,\n\t0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x52, 0x65, 0x71,\n\t0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x73, 0x18,\n\t0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x73, 0x12, 0x2c,\n\t0x0a, 0x12, 0x69, 0x67, 0x6e, 0x6f, 0x72, 0x65, 0x5f, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x5f, 0x73,\n\t0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x10, 0x69, 0x67, 0x6e, 0x6f,\n\t0x72, 0x65, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x53, 0x74, 0x61, 0x74, 0x65, 0x22, 0xa6, 0x02, 0x0a,\n\t0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,\n\t0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4b, 0x0a, 0x07, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x73, 0x18,\n\t0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f,\n\t0x74, 0x72, 0x70, 0x63, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73,\n\t0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x48, 0x65, 0x75, 0x72, 0x69, 0x73, 0x74,\n\t0x69, 0x63, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x07, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,\n\t0x73, 0x1a, 0xc1, 0x01, 0x0a, 0x0f, 0x48, 0x65, 0x75, 0x72, 0x69, 0x73, 0x74, 0x69, 0x63, 0x52,\n\t0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x68, 0x65, 0x75, 0x72, 0x69, 0x73, 0x74,\n\t0x69, 0x63, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x68, 0x65, 0x75, 0x72, 0x69, 0x73,\n\t0x74, 0x69, 0x63, 0x12, 0x55, 0x0a, 0x06, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x02, 0x20,\n\t0x03, 0x28, 0x0b, 0x32, 0x3d, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72,\n\t0x70, 0x63, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x52, 0x65,\n\t0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x48, 0x65, 0x75, 0x72, 0x69, 0x73, 0x74, 0x69, 0x63,\n\t0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x2e, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x45, 0x6e, 0x74,\n\t0x72, 0x79, 0x52, 0x06, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x1a, 0x39, 0x0a, 0x0b, 0x53, 0x63,\n\t0x6f, 0x72, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79,\n\t0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76,\n\t0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75,\n\t0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0xaf, 0x01, 0x0a, 0x10, 0x53, 0x65, 0x74, 0x53, 0x63, 0x6f,\n\t0x72, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x68, 0x65,\n\t0x75, 0x72, 0x69, 0x73, 0x74, 0x69, 0x63, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x68,\n\t0x65, 0x75, 0x72, 0x69, 0x73, 0x74, 0x69, 0x63, 0x12, 0x42, 0x0a, 0x06, 0x73, 0x63, 0x6f, 0x72,\n\t0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70,\n\t0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x65, 0x74, 0x53, 0x63, 0x6f, 0x72, 0x65,\n\t0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x45,\n\t0x6e, 0x74, 0x72, 0x79, 0x52, 0x06, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x1a, 0x39, 0x0a, 0x0b,\n\t0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b,\n\t0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a,\n\t0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x05, 0x76, 0x61,\n\t0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x13, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x53, 0x63,\n\t0x6f, 0x72, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xc9, 0x02, 0x0a,\n\t0x09, 0x41, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x12, 0x43, 0x0a, 0x06, 0x53, 0x74,\n\t0x61, 0x74, 0x75, 0x73, 0x12, 0x1b, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74,\n\t0x72, 0x70, 0x63, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,\n\t0x74, 0x1a, 0x1c, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63,\n\t0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,\n\t0x55, 0x0a, 0x0c, 0x4d, 0x6f, 0x64, 0x69, 0x66, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,\n\t0x21, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x4d,\n\t0x6f, 0x64, 0x69, 0x66, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,\n\t0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70,\n\t0x63, 0x2e, 0x4d, 0x6f, 0x64, 0x69, 0x66, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65,\n\t0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x52, 0x0a, 0x0b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53,\n\t0x63, 0x6f, 0x72, 0x65, 0x73, 0x12, 0x20, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f,\n\t0x74, 0x72, 0x70, 0x63, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73,\n\t0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69,\n\t0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x63, 0x6f, 0x72,\n\t0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x09, 0x53, 0x65,\n\t0x74, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69,\n\t0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x65, 0x74, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73,\n\t0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69,\n\t0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x65, 0x74, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x73,\n\t0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x34, 0x5a, 0x32, 0x67, 0x69, 0x74, 0x68,\n\t0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67,\n\t0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x6c, 0x6e, 0x64, 0x2f, 0x6c, 0x6e, 0x72, 0x70,\n\t0x63, 0x2f, 0x61, 0x75, 0x74, 0x6f, 0x70, 0x69, 0x6c, 0x6f, 0x74, 0x72, 0x70, 0x63, 0x62, 0x06,\n\t0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,\n}\n\nvar (\n\tfile_autopilotrpc_autopilot_proto_rawDescOnce sync.Once\n\tfile_autopilotrpc_autopilot_proto_rawDescData = file_autopilotrpc_autopilot_proto_rawDesc\n)\n",
+      "length": 7266,
+      "tokens": 1185,
+      "embedding": []
+    },
+    {
+      "slug": "func file_autopilotrpc_autopilot_proto_rawDescGZIP() []byte {",
+      "content": "func file_autopilotrpc_autopilot_proto_rawDescGZIP() []byte {\n\tfile_autopilotrpc_autopilot_proto_rawDescOnce.Do(func() {\n\t\tfile_autopilotrpc_autopilot_proto_rawDescData = protoimpl.X.CompressGZIP(file_autopilotrpc_autopilot_proto_rawDescData)\n\t})\n\treturn file_autopilotrpc_autopilot_proto_rawDescData\n}\n\nvar file_autopilotrpc_autopilot_proto_msgTypes = make([]protoimpl.MessageInfo, 11)\nvar file_autopilotrpc_autopilot_proto_goTypes = []interface{}{\n\t(*StatusRequest)(nil),                       // 0: autopilotrpc.StatusRequest\n\t(*StatusResponse)(nil),                      // 1: autopilotrpc.StatusResponse\n\t(*ModifyStatusRequest)(nil),                 // 2: autopilotrpc.ModifyStatusRequest\n\t(*ModifyStatusResponse)(nil),                // 3: autopilotrpc.ModifyStatusResponse\n\t(*QueryScoresRequest)(nil),                  // 4: autopilotrpc.QueryScoresRequest\n\t(*QueryScoresResponse)(nil),                 // 5: autopilotrpc.QueryScoresResponse\n\t(*SetScoresRequest)(nil),                    // 6: autopilotrpc.SetScoresRequest\n\t(*SetScoresResponse)(nil),                   // 7: autopilotrpc.SetScoresResponse\n\t(*QueryScoresResponse_HeuristicResult)(nil), // 8: autopilotrpc.QueryScoresResponse.HeuristicResult\n\tnil, // 9: autopilotrpc.QueryScoresResponse.HeuristicResult.ScoresEntry\n\tnil, // 10: autopilotrpc.SetScoresRequest.ScoresEntry\n}\nvar file_autopilotrpc_autopilot_proto_depIdxs = []int32{\n\t8,  // 0: autopilotrpc.QueryScoresResponse.results:type_name -> autopilotrpc.QueryScoresResponse.HeuristicResult\n\t10, // 1: autopilotrpc.SetScoresRequest.scores:type_name -> autopilotrpc.SetScoresRequest.ScoresEntry\n\t9,  // 2: autopilotrpc.QueryScoresResponse.HeuristicResult.scores:type_name -> autopilotrpc.QueryScoresResponse.HeuristicResult.ScoresEntry\n\t0,  // 3: autopilotrpc.Autopilot.Status:input_type -> autopilotrpc.StatusRequest\n\t2,  // 4: autopilotrpc.Autopilot.ModifyStatus:input_type -> autopilotrpc.ModifyStatusRequest\n\t4,  // 5: autopilotrpc.Autopilot.QueryScores:input_type -> autopilotrpc.QueryScoresRequest\n\t6,  // 6: autopilotrpc.Autopilot.SetScores:input_type -> autopilotrpc.SetScoresRequest\n\t1,  // 7: autopilotrpc.Autopilot.Status:output_type -> autopilotrpc.StatusResponse\n\t3,  // 8: autopilotrpc.Autopilot.ModifyStatus:output_type -> autopilotrpc.ModifyStatusResponse\n\t5,  // 9: autopilotrpc.Autopilot.QueryScores:output_type -> autopilotrpc.QueryScoresResponse\n\t7,  // 10: autopilotrpc.Autopilot.SetScores:output_type -> autopilotrpc.SetScoresResponse\n\t7,  // [7:11] is the sub-list for method output_type\n\t3,  // [3:7] is the sub-list for method input_type\n\t3,  // [3:3] is the sub-list for extension type_name\n\t3,  // [3:3] is the sub-list for extension extendee\n\t0,  // [0:3] is the sub-list for field type_name\n}\n",
+      "length": 2646,
+      "tokens": 179,
+      "embedding": []
+    },
+    {
+      "slug": "func init() { file_autopilotrpc_autopilot_proto_init() }",
+      "content": "func init() { file_autopilotrpc_autopilot_proto_init() }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func file_autopilotrpc_autopilot_proto_init() {",
+      "content": "func file_autopilotrpc_autopilot_proto_init() {\n\tif File_autopilotrpc_autopilot_proto != nil {\n\t\treturn\n\t}\n\tif !protoimpl.UnsafeEnabled {\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*StatusRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*StatusResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ModifyStatusRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*ModifyStatusResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*QueryScoresRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*QueryScoresResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*SetScoresRequest); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*SetScoresResponse); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t\tfile_autopilotrpc_autopilot_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {\n\t\t\tswitch v := v.(*QueryScoresResponse_HeuristicResult); i {\n\t\t\tcase 0:\n\t\t\t\treturn &v.state\n\t\t\tcase 1:\n\t\t\t\treturn &v.sizeCache\n\t\t\tcase 2:\n\t\t\t\treturn &v.unknownFields\n\t\t\tdefault:\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\t}\n\ttype x struct{}\n\tout := protoimpl.TypeBuilder{\n\t\tFile: protoimpl.DescBuilder{\n\t\t\tGoPackagePath: reflect.TypeOf(x{}).PkgPath(),\n\t\t\tRawDescriptor: file_autopilotrpc_autopilot_proto_rawDesc,\n\t\t\tNumEnums:      0,\n\t\t\tNumMessages:   11,\n\t\t\tNumExtensions: 0,\n\t\t\tNumServices:   1,\n\t\t},\n\t\tGoTypes:           file_autopilotrpc_autopilot_proto_goTypes,\n\t\tDependencyIndexes: file_autopilotrpc_autopilot_proto_depIdxs,\n\t\tMessageInfos:      file_autopilotrpc_autopilot_proto_msgTypes,\n\t}.Build()\n\tFile_autopilotrpc_autopilot_proto = out.File\n\tfile_autopilotrpc_autopilot_proto_rawDesc = nil\n\tfile_autopilotrpc_autopilot_proto_goTypes = nil\n\tfile_autopilotrpc_autopilot_proto_depIdxs = nil\n}\n",
+      "length": 3213,
+      "tokens": 331,
+      "embedding": []
+    }
+  ]
+}

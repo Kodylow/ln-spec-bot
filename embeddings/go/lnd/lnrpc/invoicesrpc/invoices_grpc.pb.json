@@ -1,0 +1,209 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/invoicesrpc/invoices_grpc.pb.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "type InvoicesClient interface {",
+      "content": "type InvoicesClient interface {\n\t// SubscribeSingleInvoice returns a uni-directional stream (server -> client)\n\t// to notify the client of state transitions of the specified invoice.\n\t// Initially the current invoice state is always sent out.\n\tSubscribeSingleInvoice(ctx context.Context, in *SubscribeSingleInvoiceRequest, opts ...grpc.CallOption) (Invoices_SubscribeSingleInvoiceClient, error)\n\t// CancelInvoice cancels a currently open invoice. If the invoice is already\n\t// canceled, this call will succeed. If the invoice is already settled, it will\n\t// fail.\n\tCancelInvoice(ctx context.Context, in *CancelInvoiceMsg, opts ...grpc.CallOption) (*CancelInvoiceResp, error)\n\t// AddHoldInvoice creates a hold invoice. It ties the invoice to the hash\n\t// supplied in the request.\n\tAddHoldInvoice(ctx context.Context, in *AddHoldInvoiceRequest, opts ...grpc.CallOption) (*AddHoldInvoiceResp, error)\n\t// SettleInvoice settles an accepted invoice. If the invoice is already\n\t// settled, this call will succeed.\n\tSettleInvoice(ctx context.Context, in *SettleInvoiceMsg, opts ...grpc.CallOption) (*SettleInvoiceResp, error)\n\t// LookupInvoiceV2 attempts to look up at invoice. An invoice can be refrenced\n\t// using either its payment hash, payment address, or set ID.\n\tLookupInvoiceV2(ctx context.Context, in *LookupInvoiceMsg, opts ...grpc.CallOption) (*lnrpc.Invoice, error)\n}\n",
+      "length": 1322,
+      "tokens": 159,
+      "embedding": []
+    },
+    {
+      "slug": "type invoicesClient struct {",
+      "content": "type invoicesClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInvoicesClient(cc grpc.ClientConnInterface) InvoicesClient {",
+      "content": "func NewInvoicesClient(cc grpc.ClientConnInterface) InvoicesClient {\n\treturn &invoicesClient{cc}\n}\n",
+      "length": 28,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *invoicesClient) SubscribeSingleInvoice(ctx context.Context, in *SubscribeSingleInvoiceRequest, opts ...grpc.CallOption) (Invoices_SubscribeSingleInvoiceClient, error) {",
+      "content": "func (c *invoicesClient) SubscribeSingleInvoice(ctx context.Context, in *SubscribeSingleInvoiceRequest, opts ...grpc.CallOption) (Invoices_SubscribeSingleInvoiceClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Invoices_ServiceDesc.Streams[0], \"/invoicesrpc.Invoices/SubscribeSingleInvoice\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &invoicesSubscribeSingleInvoiceClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 367,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Invoices_SubscribeSingleInvoiceClient interface {",
+      "content": "type Invoices_SubscribeSingleInvoiceClient interface {\n\tRecv() (*lnrpc.Invoice, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type invoicesSubscribeSingleInvoiceClient struct {",
+      "content": "type invoicesSubscribeSingleInvoiceClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *invoicesSubscribeSingleInvoiceClient) Recv() (*lnrpc.Invoice, error) {",
+      "content": "func (x *invoicesSubscribeSingleInvoiceClient) Recv() (*lnrpc.Invoice, error) {\n\tm := new(lnrpc.Invoice)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *invoicesClient) CancelInvoice(ctx context.Context, in *CancelInvoiceMsg, opts ...grpc.CallOption) (*CancelInvoiceResp, error) {",
+      "content": "func (c *invoicesClient) CancelInvoice(ctx context.Context, in *CancelInvoiceMsg, opts ...grpc.CallOption) (*CancelInvoiceResp, error) {\n\tout := new(CancelInvoiceResp)\n\terr := c.cc.Invoke(ctx, \"/invoicesrpc.Invoices/CancelInvoice\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 163,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *invoicesClient) AddHoldInvoice(ctx context.Context, in *AddHoldInvoiceRequest, opts ...grpc.CallOption) (*AddHoldInvoiceResp, error) {",
+      "content": "func (c *invoicesClient) AddHoldInvoice(ctx context.Context, in *AddHoldInvoiceRequest, opts ...grpc.CallOption) (*AddHoldInvoiceResp, error) {\n\tout := new(AddHoldInvoiceResp)\n\terr := c.cc.Invoke(ctx, \"/invoicesrpc.Invoices/AddHoldInvoice\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 165,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *invoicesClient) SettleInvoice(ctx context.Context, in *SettleInvoiceMsg, opts ...grpc.CallOption) (*SettleInvoiceResp, error) {",
+      "content": "func (c *invoicesClient) SettleInvoice(ctx context.Context, in *SettleInvoiceMsg, opts ...grpc.CallOption) (*SettleInvoiceResp, error) {\n\tout := new(SettleInvoiceResp)\n\terr := c.cc.Invoke(ctx, \"/invoicesrpc.Invoices/SettleInvoice\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 163,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *invoicesClient) LookupInvoiceV2(ctx context.Context, in *LookupInvoiceMsg, opts ...grpc.CallOption) (*lnrpc.Invoice, error) {",
+      "content": "func (c *invoicesClient) LookupInvoiceV2(ctx context.Context, in *LookupInvoiceMsg, opts ...grpc.CallOption) (*lnrpc.Invoice, error) {\n\tout := new(lnrpc.Invoice)\n\terr := c.cc.Invoke(ctx, \"/invoicesrpc.Invoices/LookupInvoiceV2\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// InvoicesServer is the server API for Invoices service.\n// All implementations must embed UnimplementedInvoicesServer\n// for forward compatibility",
+      "length": 307,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoicesServer interface {",
+      "content": "type InvoicesServer interface {\n\t// SubscribeSingleInvoice returns a uni-directional stream (server -> client)\n\t// to notify the client of state transitions of the specified invoice.\n\t// Initially the current invoice state is always sent out.\n\tSubscribeSingleInvoice(*SubscribeSingleInvoiceRequest, Invoices_SubscribeSingleInvoiceServer) error\n\t// CancelInvoice cancels a currently open invoice. If the invoice is already\n\t// canceled, this call will succeed. If the invoice is already settled, it will\n\t// fail.\n\tCancelInvoice(context.Context, *CancelInvoiceMsg) (*CancelInvoiceResp, error)\n\t// AddHoldInvoice creates a hold invoice. It ties the invoice to the hash\n\t// supplied in the request.\n\tAddHoldInvoice(context.Context, *AddHoldInvoiceRequest) (*AddHoldInvoiceResp, error)\n\t// SettleInvoice settles an accepted invoice. If the invoice is already\n\t// settled, this call will succeed.\n\tSettleInvoice(context.Context, *SettleInvoiceMsg) (*SettleInvoiceResp, error)\n\t// LookupInvoiceV2 attempts to look up at invoice. An invoice can be refrenced\n\t// using either its payment hash, payment address, or set ID.\n\tLookupInvoiceV2(context.Context, *LookupInvoiceMsg) (*lnrpc.Invoice, error)\n\tmustEmbedUnimplementedInvoicesServer()\n}\n\n// UnimplementedInvoicesServer must be embedded to have forward compatible implementations.",
+      "length": 1273,
+      "tokens": 149,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedInvoicesServer struct {",
+      "content": "type UnimplementedInvoicesServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) SubscribeSingleInvoice(*SubscribeSingleInvoiceRequest, Invoices_SubscribeSingleInvoiceServer) error {",
+      "content": "func (UnimplementedInvoicesServer) SubscribeSingleInvoice(*SubscribeSingleInvoiceRequest, Invoices_SubscribeSingleInvoiceServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method SubscribeSingleInvoice not implemented\")\n}",
+      "length": 92,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) CancelInvoice(context.Context, *CancelInvoiceMsg) (*CancelInvoiceResp, error) {",
+      "content": "func (UnimplementedInvoicesServer) CancelInvoice(context.Context, *CancelInvoiceMsg) (*CancelInvoiceResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method CancelInvoice not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) AddHoldInvoice(context.Context, *AddHoldInvoiceRequest) (*AddHoldInvoiceResp, error) {",
+      "content": "func (UnimplementedInvoicesServer) AddHoldInvoice(context.Context, *AddHoldInvoiceRequest) (*AddHoldInvoiceResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method AddHoldInvoice not implemented\")\n}",
+      "length": 89,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) SettleInvoice(context.Context, *SettleInvoiceMsg) (*SettleInvoiceResp, error) {",
+      "content": "func (UnimplementedInvoicesServer) SettleInvoice(context.Context, *SettleInvoiceMsg) (*SettleInvoiceResp, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SettleInvoice not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) LookupInvoiceV2(context.Context, *LookupInvoiceMsg) (*lnrpc.Invoice, error) {",
+      "content": "func (UnimplementedInvoicesServer) LookupInvoiceV2(context.Context, *LookupInvoiceMsg) (*lnrpc.Invoice, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method LookupInvoiceV2 not implemented\")\n}",
+      "length": 90,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedInvoicesServer) mustEmbedUnimplementedInvoicesServer() {}",
+      "content": "func (UnimplementedInvoicesServer) mustEmbedUnimplementedInvoicesServer() {}\n\n// UnsafeInvoicesServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to InvoicesServer will\n// result in compilation errors.",
+      "length": 209,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeInvoicesServer interface {",
+      "content": "type UnsafeInvoicesServer interface {\n\tmustEmbedUnimplementedInvoicesServer()\n}\n",
+      "length": 40,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterInvoicesServer(s grpc.ServiceRegistrar, srv InvoicesServer) {",
+      "content": "func RegisterInvoicesServer(s grpc.ServiceRegistrar, srv InvoicesServer) {\n\ts.RegisterService(&Invoices_ServiceDesc, srv)\n}\n",
+      "length": 47,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Invoices_SubscribeSingleInvoice_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Invoices_SubscribeSingleInvoice_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SubscribeSingleInvoiceRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(InvoicesServer).SubscribeSingleInvoice(m, &invoicesSubscribeSingleInvoiceServer{stream})\n}\n",
+      "length": 198,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Invoices_SubscribeSingleInvoiceServer interface {",
+      "content": "type Invoices_SubscribeSingleInvoiceServer interface {\n\tSend(*lnrpc.Invoice) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type invoicesSubscribeSingleInvoiceServer struct {",
+      "content": "type invoicesSubscribeSingleInvoiceServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *invoicesSubscribeSingleInvoiceServer) Send(m *lnrpc.Invoice) error {",
+      "content": "func (x *invoicesSubscribeSingleInvoiceServer) Send(m *lnrpc.Invoice) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Invoices_CancelInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Invoices_CancelInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(CancelInvoiceMsg)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(InvoicesServer).CancelInvoice(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/invoicesrpc.Invoices/CancelInvoice\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(InvoicesServer).CancelInvoice(ctx, req.(*CancelInvoiceMsg))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 456,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Invoices_AddHoldInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Invoices_AddHoldInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(AddHoldInvoiceRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(InvoicesServer).AddHoldInvoice(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/invoicesrpc.Invoices/AddHoldInvoice\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(InvoicesServer).AddHoldInvoice(ctx, req.(*AddHoldInvoiceRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 469,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Invoices_SettleInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Invoices_SettleInvoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SettleInvoiceMsg)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(InvoicesServer).SettleInvoice(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/invoicesrpc.Invoices/SettleInvoice\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(InvoicesServer).SettleInvoice(ctx, req.(*SettleInvoiceMsg))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 456,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Invoices_LookupInvoiceV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Invoices_LookupInvoiceV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(LookupInvoiceMsg)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(InvoicesServer).LookupInvoiceV2(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/invoicesrpc.Invoices/LookupInvoiceV2\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(InvoicesServer).LookupInvoiceV2(ctx, req.(*LookupInvoiceMsg))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// Invoices_ServiceDesc is the grpc.ServiceDesc for Invoices service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar Invoices_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"invoicesrpc.Invoices\",\n\tHandlerType: (*InvoicesServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"CancelInvoice\",\n\t\t\tHandler:    _Invoices_CancelInvoice_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"AddHoldInvoice\",\n\t\t\tHandler:    _Invoices_AddHoldInvoice_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SettleInvoice\",\n\t\t\tHandler:    _Invoices_SettleInvoice_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"LookupInvoiceV2\",\n\t\t\tHandler:    _Invoices_LookupInvoiceV2_Handler,\n\t\t},\n\t},\n\tStreams: []grpc.StreamDesc{\n\t\t{\n\t\t\tStreamName:    \"SubscribeSingleInvoice\",\n\t\t\tHandler:       _Invoices_SubscribeSingleInvoice_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t},\n\tMetadata: \"invoicesrpc/invoices.proto\",\n}\n",
+      "length": 1351,
+      "tokens": 129,
+      "embedding": []
+    }
+  ]
+}

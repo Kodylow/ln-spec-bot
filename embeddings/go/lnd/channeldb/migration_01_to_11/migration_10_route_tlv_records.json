@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration_01_to_11/migration_10_route_tlv_records.go",
+  "package": "migration_01_to_11",
+  "sections": [
+    {
+      "slug": "func MigrateRouteSerialization(tx kvdb.RwTx) error {",
+      "content": "func MigrateRouteSerialization(tx kvdb.RwTx) error {\n\t// First, we'll do all the payment attempts.\n\trootPaymentBucket := tx.ReadWriteBucket(paymentsRootBucket)\n\tif rootPaymentBucket == nil {\n\t\treturn nil\n\t}\n\n\t// As we can't mutate a bucket while we're iterating over it with\n\t// ForEach, we'll need to collect all the known payment hashes in\n\t// memory first.\n\tvar payHashes [][]byte\n\terr := rootPaymentBucket.ForEach(func(k, v []byte) error {\n\t\tif v != nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tpayHashes = append(payHashes, k)\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now that we have all the payment hashes, we can carry out the\n\t// migration itself.\n\tfor _, payHash := range payHashes {\n\t\tpayHashBucket := rootPaymentBucket.NestedReadWriteBucket(payHash)\n\n\t\t// First, we'll migrate the main (non duplicate) payment to\n\t\t// this hash.\n\t\terr := migrateAttemptEncoding(tx, payHashBucket)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Now that we've migrated the main payment, we'll also check\n\t\t// for any duplicate payments to the same payment hash.\n\t\tdupBucket := payHashBucket.NestedReadWriteBucket(paymentDuplicateBucket)\n\n\t\t// If there's no dup bucket, then we can move on to the next\n\t\t// payment.\n\t\tif dupBucket == nil {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Otherwise, we'll now iterate through all the duplicate pay\n\t\t// hashes and migrate those.\n\t\tvar dupSeqNos [][]byte\n\t\terr = dupBucket.ForEach(func(k, v []byte) error {\n\t\t\tdupSeqNos = append(dupSeqNos, k)\n\t\t\treturn nil\n\t\t})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Now in this second pass, we'll re-serialize their duplicate\n\t\t// payment attempts under the new encoding.\n\t\tfor _, seqNo := range dupSeqNos {\n\t\t\tdupPayHashBucket := dupBucket.NestedReadWriteBucket(seqNo)\n\t\t\terr := migrateAttemptEncoding(tx, dupPayHashBucket)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\tlog.Infof(\"Migration of route/hop serialization complete!\")\n\n\tlog.Infof(\"Migrating to new mission control store by clearing \" +\n\t\t\"existing data\")\n\n\tresultsKey := []byte(\"missioncontrol-results\")\n\terr = tx.DeleteTopLevelBucket(resultsKey)\n\tif err != nil && err != kvdb.ErrBucketNotFound {\n\t\treturn err\n\t}\n\n\tlog.Infof(\"Migration to new mission control completed!\")\n\n\treturn nil\n}\n\n// migrateAttemptEncoding migrates payment attempts using the legacy format to\n// the new format.",
+      "length": 2158,
+      "tokens": 318,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateAttemptEncoding(tx kvdb.RwTx, payHashBucket kvdb.RwBucket) error {",
+      "content": "func migrateAttemptEncoding(tx kvdb.RwTx, payHashBucket kvdb.RwBucket) error {\n\tpayAttemptBytes := payHashBucket.Get(paymentAttemptInfoKey)\n\tif payAttemptBytes == nil {\n\t\treturn nil\n\t}\n\n\t// For our migration, we'll first read out the existing payment attempt\n\t// using the legacy serialization of the attempt.\n\tpayAttemptReader := bytes.NewReader(payAttemptBytes)\n\tpayAttempt, err := deserializePaymentAttemptInfoLegacy(\n\t\tpayAttemptReader,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now that we have the old attempts, we'll explicitly mark this as\n\t// needing a legacy payload, since after this migration, the modern\n\t// payload will be the default if signalled.\n\tfor _, hop := range payAttempt.Route.Hops {\n\t\thop.LegacyPayload = true\n\t}\n\n\t// Finally, we'll write out the payment attempt using the new encoding.\n\tvar b bytes.Buffer\n\terr = serializePaymentAttemptInfo(&b, payAttempt)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn payHashBucket.Put(paymentAttemptInfoKey, b.Bytes())\n}\n",
+      "length": 868,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializePaymentAttemptInfoLegacy(r io.Reader) (*PaymentAttemptInfo, error) {",
+      "content": "func deserializePaymentAttemptInfoLegacy(r io.Reader) (*PaymentAttemptInfo, error) {\n\ta := &PaymentAttemptInfo{}\n\terr := ReadElements(r, &a.PaymentID, &a.SessionKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\ta.Route, err = deserializeRouteLegacy(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn a, nil\n}\n",
+      "length": 205,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func serializePaymentAttemptInfoLegacy(w io.Writer, a *PaymentAttemptInfo) error {",
+      "content": "func serializePaymentAttemptInfoLegacy(w io.Writer, a *PaymentAttemptInfo) error {\n\tif err := WriteElements(w, a.PaymentID, a.SessionKey); err != nil {\n\t\treturn err\n\t}\n\n\tif err := serializeRouteLegacy(w, a.Route); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 165,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeHopLegacy(r io.Reader) (*Hop, error) {",
+      "content": "func deserializeHopLegacy(r io.Reader) (*Hop, error) {\n\th := &Hop{}\n\n\tvar pub []byte\n\tif err := ReadElements(r, &pub); err != nil {\n\t\treturn nil, err\n\t}\n\tcopy(h.PubKeyBytes[:], pub)\n\n\tif err := ReadElements(r,\n\t\t&h.ChannelID, &h.OutgoingTimeLock, &h.AmtToForward,\n\t); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn h, nil\n}\n",
+      "length": 249,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeHopLegacy(w io.Writer, h *Hop) error {",
+      "content": "func serializeHopLegacy(w io.Writer, h *Hop) error {\n\tif err := WriteElements(w,\n\t\th.PubKeyBytes[:], h.ChannelID, h.OutgoingTimeLock,\n\t\th.AmtToForward,\n\t); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 138,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeRouteLegacy(r io.Reader) (Route, error) {",
+      "content": "func deserializeRouteLegacy(r io.Reader) (Route, error) {\n\trt := Route{}\n\tif err := ReadElements(r,\n\t\t&rt.TotalTimeLock, &rt.TotalAmount,\n\t); err != nil {\n\t\treturn rt, err\n\t}\n\n\tvar pub []byte\n\tif err := ReadElements(r, &pub); err != nil {\n\t\treturn rt, err\n\t}\n\tcopy(rt.SourcePubKey[:], pub)\n\n\tvar numHops uint32\n\tif err := ReadElements(r, &numHops); err != nil {\n\t\treturn rt, err\n\t}\n\n\tvar hops []*Hop\n\tfor i := uint32(0); i < numHops; i++ {\n\t\thop, err := deserializeHopLegacy(r)\n\t\tif err != nil {\n\t\t\treturn rt, err\n\t\t}\n\t\thops = append(hops, hop)\n\t}\n\trt.Hops = hops\n\n\treturn rt, nil\n}\n",
+      "length": 495,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeRouteLegacy(w io.Writer, r Route) error {",
+      "content": "func serializeRouteLegacy(w io.Writer, r Route) error {\n\tif err := WriteElements(w,\n\t\tr.TotalTimeLock, r.TotalAmount, r.SourcePubKey[:],\n\t); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteElements(w, uint32(len(r.Hops))); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, h := range r.Hops {\n\t\tif err := serializeHopLegacy(w, h); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 292,
+      "tokens": 50,
+      "embedding": []
+    }
+  ]
+}

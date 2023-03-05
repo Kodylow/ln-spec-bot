@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/routing/graph.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type routingGraph interface {",
+      "content": "type routingGraph interface {\n\t// forEachNodeChannel calls the callback for every channel of the given\n\t// node.\n\tforEachNodeChannel(nodePub route.Vertex,\n\t\tcb func(channel *channeldb.DirectedChannel) error) error\n\n\t// sourceNode returns the source node of the graph.\n\tsourceNode() route.Vertex\n\n\t// fetchNodeFeatures returns the features of the given node.\n\tfetchNodeFeatures(nodePub route.Vertex) (*lnwire.FeatureVector, error)\n\n\t// FetchAmountPairCapacity determines the maximal capacity between two\n\t// pairs of nodes.\n\tFetchAmountPairCapacity(nodeFrom, nodeTo route.Vertex,\n\t\tamount lnwire.MilliSatoshi) (btcutil.Amount, error)\n}\n\n// CachedGraph is a routingGraph implementation that retrieves from the\n// database.",
+      "length": 672,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "type CachedGraph struct {",
+      "content": "type CachedGraph struct {\n\tgraph  *channeldb.ChannelGraph\n\ttx     kvdb.RTx\n\tsource route.Vertex\n}\n\n// A compile time assertion to make sure CachedGraph implements the routingGraph\n// interface.\nvar _ routingGraph = (*CachedGraph)(nil)\n\n// NewCachedGraph instantiates a new db-connected routing graph. It implicitly\n// instantiates a new read transaction.",
+      "length": 318,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCachedGraph(sourceNode *channeldb.LightningNode,",
+      "content": "func NewCachedGraph(sourceNode *channeldb.LightningNode,\n\tgraph *channeldb.ChannelGraph) (*CachedGraph, error) {\n\n\ttx, err := graph.NewPathFindTx()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &CachedGraph{\n\t\tgraph:  graph,\n\t\ttx:     tx,\n\t\tsource: sourceNode.PubKeyBytes,\n\t}, nil\n}\n\n// Close attempts to close the underlying db transaction. This is a no-op in\n// case the underlying graph uses an in-memory cache.",
+      "length": 343,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *CachedGraph) Close() error {",
+      "content": "func (g *CachedGraph) Close() error {\n\tif g.tx == nil {\n\t\treturn nil\n\t}\n\n\treturn g.tx.Rollback()\n}\n\n// forEachNodeChannel calls the callback for every channel of the given node.\n//\n// NOTE: Part of the routingGraph interface.",
+      "length": 178,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *CachedGraph) forEachNodeChannel(nodePub route.Vertex,",
+      "content": "func (g *CachedGraph) forEachNodeChannel(nodePub route.Vertex,\n\tcb func(channel *channeldb.DirectedChannel) error) error {\n\n\treturn g.graph.ForEachNodeChannel(g.tx, nodePub, cb)\n}\n\n// sourceNode returns the source node of the graph.\n//\n// NOTE: Part of the routingGraph interface.",
+      "length": 210,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *CachedGraph) sourceNode() route.Vertex {",
+      "content": "func (g *CachedGraph) sourceNode() route.Vertex {\n\treturn g.source\n}\n\n// fetchNodeFeatures returns the features of the given node. If the node is\n// unknown, assume no additional features are supported.\n//\n// NOTE: Part of the routingGraph interface.",
+      "length": 194,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *CachedGraph) fetchNodeFeatures(nodePub route.Vertex) (",
+      "content": "func (g *CachedGraph) fetchNodeFeatures(nodePub route.Vertex) (\n\t*lnwire.FeatureVector, error) {\n\n\treturn g.graph.FetchNodeFeatures(nodePub)\n}\n\n// FetchAmountPairCapacity determines the maximal public capacity between two\n// nodes depending on the amount we try to send.\n//\n// NOTE: Part of the routingGraph interface.",
+      "length": 246,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *CachedGraph) FetchAmountPairCapacity(nodeFrom, nodeTo route.Vertex,",
+      "content": "func (g *CachedGraph) FetchAmountPairCapacity(nodeFrom, nodeTo route.Vertex,\n\tamount lnwire.MilliSatoshi) (btcutil.Amount, error) {\n\n\t// Create unified edges for all incoming connections.\n\tu := newNodeEdgeUnifier(g.sourceNode(), nodeTo, nil)\n\n\terr := u.addGraphPolicies(g)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\tedgeUnifier, ok := u.edgeUnifiers[nodeFrom]\n\tif !ok {\n\t\treturn 0, fmt.Errorf(\"no edge info for node pair %v -> %v\",\n\t\t\tnodeFrom, nodeTo)\n\t}\n\n\tedge := edgeUnifier.getEdgeNetwork(amount)\n\tif edge == nil {\n\t\treturn 0, fmt.Errorf(\"no edge for node pair %v -> %v \"+\n\t\t\t\"(amount %v)\", nodeFrom, nodeTo, amount)\n\t}\n\n\treturn edge.capacity, nil\n}\n",
+      "length": 548,
+      "tokens": 80,
+      "embedding": []
+    }
+  ]
+}

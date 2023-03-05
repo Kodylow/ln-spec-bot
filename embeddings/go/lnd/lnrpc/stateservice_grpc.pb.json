@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/stateservice_grpc.pb.go",
+  "package": "lnrpc",
+  "sections": [
+    {
+      "slug": "type StateClient interface {",
+      "content": "type StateClient interface {\n\t// SubscribeState subscribes to the state of the wallet. The current wallet\n\t// state will always be delivered immediately.\n\tSubscribeState(ctx context.Context, in *SubscribeStateRequest, opts ...grpc.CallOption) (State_SubscribeStateClient, error)\n\t// GetState returns the current wallet state without streaming further\n\t// changes.\n\tGetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error)\n}\n",
+      "length": 434,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "type stateClient struct {",
+      "content": "type stateClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewStateClient(cc grpc.ClientConnInterface) StateClient {",
+      "content": "func NewStateClient(cc grpc.ClientConnInterface) StateClient {\n\treturn &stateClient{cc}\n}\n",
+      "length": 25,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *stateClient) SubscribeState(ctx context.Context, in *SubscribeStateRequest, opts ...grpc.CallOption) (State_SubscribeStateClient, error) {",
+      "content": "func (c *stateClient) SubscribeState(ctx context.Context, in *SubscribeStateRequest, opts ...grpc.CallOption) (State_SubscribeStateClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &State_ServiceDesc.Streams[0], \"/lnrpc.State/SubscribeState\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &stateSubscribeStateClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 336,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type State_SubscribeStateClient interface {",
+      "content": "type State_SubscribeStateClient interface {\n\tRecv() (*SubscribeStateResponse, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 59,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type stateSubscribeStateClient struct {",
+      "content": "type stateSubscribeStateClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *stateSubscribeStateClient) Recv() (*SubscribeStateResponse, error) {",
+      "content": "func (x *stateSubscribeStateClient) Recv() (*SubscribeStateResponse, error) {\n\tm := new(SubscribeStateResponse)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 117,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *stateClient) GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error) {",
+      "content": "func (c *stateClient) GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error) {\n\tout := new(GetStateResponse)\n\terr := c.cc.Invoke(ctx, \"/lnrpc.State/GetState\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// StateServer is the server API for State service.\n// All implementations must embed UnimplementedStateServer\n// for forward compatibility",
+      "length": 285,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type StateServer interface {",
+      "content": "type StateServer interface {\n\t// SubscribeState subscribes to the state of the wallet. The current wallet\n\t// state will always be delivered immediately.\n\tSubscribeState(*SubscribeStateRequest, State_SubscribeStateServer) error\n\t// GetState returns the current wallet state without streaming further\n\t// changes.\n\tGetState(context.Context, *GetStateRequest) (*GetStateResponse, error)\n\tmustEmbedUnimplementedStateServer()\n}\n\n// UnimplementedStateServer must be embedded to have forward compatible implementations.",
+      "length": 475,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedStateServer struct {",
+      "content": "type UnimplementedStateServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedStateServer) SubscribeState(*SubscribeStateRequest, State_SubscribeStateServer) error {",
+      "content": "func (UnimplementedStateServer) SubscribeState(*SubscribeStateRequest, State_SubscribeStateServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method SubscribeState not implemented\")\n}",
+      "length": 84,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedStateServer) GetState(context.Context, *GetStateRequest) (*GetStateResponse, error) {",
+      "content": "func (UnimplementedStateServer) GetState(context.Context, *GetStateRequest) (*GetStateResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method GetState not implemented\")\n}",
+      "length": 83,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedStateServer) mustEmbedUnimplementedStateServer() {}",
+      "content": "func (UnimplementedStateServer) mustEmbedUnimplementedStateServer() {}\n\n// UnsafeStateServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to StateServer will\n// result in compilation errors.",
+      "length": 203,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeStateServer interface {",
+      "content": "type UnsafeStateServer interface {\n\tmustEmbedUnimplementedStateServer()\n}\n",
+      "length": 37,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterStateServer(s grpc.ServiceRegistrar, srv StateServer) {",
+      "content": "func RegisterStateServer(s grpc.ServiceRegistrar, srv StateServer) {\n\ts.RegisterService(&State_ServiceDesc, srv)\n}\n",
+      "length": 44,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _State_SubscribeState_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _State_SubscribeState_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SubscribeStateRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(StateServer).SubscribeState(m, &stateSubscribeStateServer{stream})\n}\n",
+      "length": 168,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type State_SubscribeStateServer interface {",
+      "content": "type State_SubscribeStateServer interface {\n\tSend(*SubscribeStateResponse) error\n\tgrpc.ServerStream\n}\n",
+      "length": 55,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type stateSubscribeStateServer struct {",
+      "content": "type stateSubscribeStateServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *stateSubscribeStateServer) Send(m *SubscribeStateResponse) error {",
+      "content": "func (x *stateSubscribeStateServer) Send(m *SubscribeStateResponse) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _State_GetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _State_GetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(GetStateRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(StateServer).GetState(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/lnrpc.State/GetState\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(StateServer).GetState(ctx, req.(*GetStateRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// State_ServiceDesc is the grpc.ServiceDesc for State service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar State_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"lnrpc.State\",\n\tHandlerType: (*StateServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"GetState\",\n\t\t\tHandler:    _State_GetState_Handler,\n\t\t},\n\t},\n\tStreams: []grpc.StreamDesc{\n\t\t{\n\t\t\tStreamName:    \"SubscribeState\",\n\t\t\tHandler:       _State_SubscribeState_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t},\n\tMetadata: \"stateservice.proto\",\n}\n",
+      "length": 991,
+      "tokens": 111,
+      "embedding": []
+    }
+  ]
+}

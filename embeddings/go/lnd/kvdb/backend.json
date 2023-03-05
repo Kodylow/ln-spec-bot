@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/backend.go",
-  "package": "!js",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build !js",
+      "content": "//go:build !js\n// +build !js\n\npackage kvdb\n\nimport (\n\t\"context\"\n\t\"crypto/sha256\"\n\t\"encoding/binary\"\n\t\"encoding/hex\"\n\t\"fmt\"\n\t\"io/ioutil\"\n\t\"os\"\n\t\"path/filepath\"\n\t\"time\"\n\n\t_ \"github.com/btcsuite/btcwallet/walletdb/bdb\" // Import to register backend.\n)\n\nconst (\n\t// DefaultTempDBFileName is the default name of the temporary bolt DB\n\t// file that we'll use to atomically compact the primary DB file on\n\t// startup.\n\tDefaultTempDBFileName = \"temp-dont-use.db\"\n\n\t// LastCompactionFileNameSuffix is the suffix we append to the file name\n\t// of a database file to record the timestamp when the last compaction\n\t// occurred.\n\tLastCompactionFileNameSuffix = \".last-compacted\"\n)\n\nvar (\n\tbyteOrder = binary.BigEndian\n)\n\n// fileExists returns true if the file exists, and false otherwise.",
+      "length": 726,
+      "tokens": 102,
+      "embedding": []
+    },
     {
       "slug": "func fileExists(path string) bool {",
       "content": "func fileExists(path string) bool {\n\tif _, err := os.Stat(path); err != nil {\n\t\tif os.IsNotExist(err) {\n\t\t\treturn false\n\t\t}\n\t}\n\n\treturn true\n}\n\n// BoltBackendConfig is a struct that holds settings specific to the bolt\n// database backend.",

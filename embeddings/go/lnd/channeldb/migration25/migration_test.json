@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration25/migration_test.go",
+  "package": "migration25",
+  "sections": [
+    {
+      "slug": "func TestMigrateInitialBalances(t *testing.T) {",
+      "content": "func TestMigrateInitialBalances(t *testing.T) {\n\ttestCases := []struct {\n\t\tname                string\n\t\tbeforeMigrationFunc func(kvdb.RwTx) error\n\t\tafterMigrationFunc  func(kvdb.RwTx) error\n\t\tshouldFail          bool\n\t}{\n\t\t{\n\t\t\t// Test that we patch the initial balances using the\n\t\t\t// revocation log.\n\t\t\tname: \"patch balance from revoke log\",\n\t\t\tbeforeMigrationFunc: genBeforeMigration(\n\t\t\t\topenChannel1, &remoteCommit0,\n\t\t\t),\n\t\t\tafterMigrationFunc: genAfterMigration(\n\t\t\t\tourAmtRevoke, theirAmtRevoke, openChannel1,\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\t// Test that we patch the initial balances using the\n\t\t\t// channel's local commitment since at height 0,\n\t\t\t// balances found in LocalCommitment reflect the\n\t\t\t// initial balances.\n\t\t\tname: \"patch balance from local commit\",\n\t\t\tbeforeMigrationFunc: genBeforeMigration(\n\t\t\t\topenChannel0, nil,\n\t\t\t),\n\t\t\tafterMigrationFunc: genAfterMigration(\n\t\t\t\tourAmt, theirAmt, openChannel0,\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\t// Test that we patch the initial balances using the\n\t\t\t// channel's local commitment even when there is a\n\t\t\t// revocation log available.\n\t\t\tname: \"patch balance from local commit only\",\n\t\t\tbeforeMigrationFunc: genBeforeMigration(\n\t\t\t\topenChannel0, &remoteCommit0,\n\t\t\t),\n\t\t\tafterMigrationFunc: genAfterMigration(\n\t\t\t\tourAmt, theirAmt, openChannel0,\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\t// Test that when there is no revocation log the\n\t\t\t// migration would fail.\n\t\t\tname: \"patch balance error on no revoke log\",\n\t\t\tbeforeMigrationFunc: genBeforeMigration(\n\t\t\t\t// Use nil to specify no revocation log will be\n\t\t\t\t// created.\n\t\t\t\topenChannel1, nil,\n\t\t\t),\n\t\t\tafterMigrationFunc: genAfterMigration(\n\t\t\t\t// Use nil to specify skipping the\n\t\t\t\t// afterMigrationFunc.\n\t\t\t\t0, 0, nil,\n\t\t\t),\n\t\t\tshouldFail: true,\n\t\t},\n\t\t{\n\t\t\t// Test that when the saved revocation log is not what\n\t\t\t// we want the migration would fail.\n\t\t\tname: \"patch balance error on wrong revoke log\",\n\t\t\tbeforeMigrationFunc: genBeforeMigration(\n\t\t\t\t// Use the revocation log with the wrong\n\t\t\t\t// height.\n\t\t\t\topenChannel1, &remoteCommit1,\n\t\t\t),\n\t\t\tafterMigrationFunc: genAfterMigration(\n\t\t\t\t// Use nil to specify skipping the\n\t\t\t\t// afterMigrationFunc.\n\t\t\t\t0, 0, nil,\n\t\t\t),\n\t\t\tshouldFail: true,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt,\n\t\t\t\ttc.beforeMigrationFunc,\n\t\t\t\ttc.afterMigrationFunc,\n\t\t\t\tMigrateInitialBalances,\n\t\t\t\ttc.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 2273,
+      "tokens": 280,
+      "embedding": []
+    },
+    {
+      "slug": "func genBeforeMigration(c *OpenChannel,",
+      "content": "func genBeforeMigration(c *OpenChannel,\n\tcommit *mig.ChannelCommitment) func(kvdb.RwTx) error {\n\n\treturn func(tx kvdb.RwTx) error {\n\t\tif c.InitialLocalBalance != 0 {\n\t\t\treturn fmt.Errorf(\"non zero initial local amount\")\n\t\t}\n\n\t\tif c.InitialRemoteBalance != 0 {\n\t\t\treturn fmt.Errorf(\"non zero initial local amount\")\n\t\t}\n\n\t\t// Create the channel bucket.\n\t\tchanBucket, err := CreateChanBucket(tx, c)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Save the channel info using legacy format.\n\t\tif err := putChanInfo(chanBucket, c, true); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Save the channel commitments.\n\t\tif err := PutChanCommitments(chanBucket, c); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If we have a remote commitment, save it as our revocation\n\t\t// log.\n\t\tif commit != nil {\n\t\t\terr := putChannelLogEntryLegacy(chanBucket, commit)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\treturn nil\n\t}\n}\n",
+      "length": 805,
+      "tokens": 126,
+      "embedding": []
+    },
+    {
+      "slug": "func genAfterMigration(ourAmt, theirAmt lnwire.MilliSatoshi,",
+      "content": "func genAfterMigration(ourAmt, theirAmt lnwire.MilliSatoshi,\n\tc *OpenChannel) func(kvdb.RwTx) error {\n\n\treturn func(tx kvdb.RwTx) error {\n\t\t// If the passed OpenChannel is nil, we will skip the\n\t\t// afterMigrationFunc as it indicates an error is expected\n\t\t// during the migration.\n\t\tif c == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tchanBucket, err := FetchChanBucket(tx, c)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tnewChan := &OpenChannel{}\n\n\t\t// Fetch the channel info using the new format.\n\t\terr = fetchChanInfo(chanBucket, newChan, false)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Check our initial amount is correct.\n\t\tif newChan.InitialLocalBalance != ourAmt {\n\t\t\treturn fmt.Errorf(\"wrong local balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialLocalBalance, ourAmt)\n\t\t}\n\n\t\t// Check their initial amount is correct.\n\t\tif newChan.InitialRemoteBalance != theirAmt {\n\t\t\treturn fmt.Errorf(\"wrong remote balance, got %d, \"+\n\t\t\t\t\"want %d\", newChan.InitialRemoteBalance,\n\t\t\t\ttheirAmt)\n\t\t}\n\n\t\t// We also check the relevant channel info fields stay the\n\t\t// same.\n\t\tif !newChan.IdentityPub.IsEqual(c.IdentityPub) {\n\t\t\treturn fmt.Errorf(\"wrong IdentityPub\")\n\t\t}\n\t\tif newChan.FundingOutpoint != c.FundingOutpoint {\n\t\t\treturn fmt.Errorf(\"wrong FundingOutpoint\")\n\t\t}\n\n\t\treturn nil\n\t}\n}\n\n// putChannelLogEntryLegacy saves an old format revocation log to the bucket.",
+      "length": 1231,
+      "tokens": 172,
+      "embedding": []
+    },
+    {
+      "slug": "func putChannelLogEntryLegacy(chanBucket kvdb.RwBucket,",
+      "content": "func putChannelLogEntryLegacy(chanBucket kvdb.RwBucket,\n\tcommit *mig.ChannelCommitment) error {\n\n\tlogBucket, err := chanBucket.CreateBucketIfNotExists(\n\t\trevocationLogBucketLegacy,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar b bytes.Buffer\n\tif err := mig.SerializeChanCommit(&b, commit); err != nil {\n\t\treturn err\n\t}\n\n\tlogEntrykey := mig24.MakeLogKey(commit.CommitHeight)\n\treturn logBucket.Put(logEntrykey[:], b.Bytes())\n}\n",
+      "length": 348,
+      "tokens": 40,
+      "embedding": []
+    }
+  ]
+}

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/autopilotrpc_active.go",
-  "package": "autopilotrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build autopilotrpc",
+      "content": "//go:build autopilotrpc\n// +build autopilotrpc\n\npackage main\n\nimport (\n\t\"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc\"\n\t\"github.com/urfave/cli\"\n)\n",
+      "length": 120,
+      "tokens": 10,
+      "embedding": []
+    },
     {
       "slug": "func getAutopilotClient(ctx *cli.Context) (autopilotrpc.AutopilotClient, func()) {",
       "content": "func getAutopilotClient(ctx *cli.Context) (autopilotrpc.AutopilotClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn autopilotrpc.NewAutopilotClient(conn), cleanUp\n}\n\nvar getStatusCommand = cli.Command{\n\tName:        \"status\",\n\tUsage:       \"Get the active status of autopilot.\",\n\tDescription: \"\",\n\tAction:      actionDecorator(getStatus),\n}\n",

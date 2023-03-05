@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/options.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type OptionalMiragtionConfig struct {",
+      "content": "type OptionalMiragtionConfig struct {\n\t// PruneRevocationLog specifies that the revocation log migration needs\n\t// to be applied.\n\tPruneRevocationLog bool\n}\n\n// Options holds parameters for tuning and customizing a channeldb.DB.",
+      "length": 185,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type Options struct {",
+      "content": "type Options struct {\n\tkvdb.BoltBackendConfig\n\tOptionalMiragtionConfig\n\n\t// RejectCacheSize is the maximum number of rejectCacheEntries to hold\n\t// in the rejection cache.\n\tRejectCacheSize int\n\n\t// ChannelCacheSize is the maximum number of ChannelEdges to hold in the\n\t// channel cache.\n\tChannelCacheSize int\n\n\t// BatchCommitInterval is the maximum duration the batch schedulers will\n\t// wait before attempting to commit a pending set of updates.\n\tBatchCommitInterval time.Duration\n\n\t// PreAllocCacheNumNodes is the number of nodes we expect to be in the\n\t// graph cache, so we can pre-allocate the map accordingly.\n\tPreAllocCacheNumNodes int\n\n\t// UseGraphCache denotes whether the in-memory graph cache should be\n\t// used or a fallback version that uses the underlying database for\n\t// path finding.\n\tUseGraphCache bool\n\n\t// NoMigration specifies that underlying backend was opened in read-only\n\t// mode and migrations shouldn't be performed. This can be useful for\n\t// applications that use the channeldb package as a library.\n\tNoMigration bool\n\n\t// NoRevLogAmtData when set to true, indicates that amount data should\n\t// not be stored in the revocation log.\n\tNoRevLogAmtData bool\n\n\t// clock is the time source used by the database.\n\tclock clock.Clock\n\n\t// dryRun will fail to commit a successful migration when opening the\n\t// database if set to true.\n\tdryRun bool\n\n\t// keepFailedPaymentAttempts determines whether failed htlc attempts\n\t// are kept on disk or removed to save space.\n\tkeepFailedPaymentAttempts bool\n\n\t// storeFinalHtlcResolutions determines whether to persistently store\n\t// the final resolution of incoming htlcs.\n\tstoreFinalHtlcResolutions bool\n}\n\n// DefaultOptions returns an Options populated with default values.",
+      "length": 1665,
+      "tokens": 243,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultOptions() Options {",
+      "content": "func DefaultOptions() Options {\n\treturn Options{\n\t\tBoltBackendConfig: kvdb.BoltBackendConfig{\n\t\t\tNoFreelistSync:    true,\n\t\t\tAutoCompact:       false,\n\t\t\tAutoCompactMinAge: kvdb.DefaultBoltAutoCompactMinAge,\n\t\t\tDBTimeout:         kvdb.DefaultDBTimeout,\n\t\t},\n\t\tOptionalMiragtionConfig: OptionalMiragtionConfig{},\n\t\tRejectCacheSize:         DefaultRejectCacheSize,\n\t\tChannelCacheSize:        DefaultChannelCacheSize,\n\t\tPreAllocCacheNumNodes:   DefaultPreAllocCacheNumNodes,\n\t\tUseGraphCache:           true,\n\t\tNoMigration:             false,\n\t\tclock:                   clock.NewDefaultClock(),\n\t}\n}\n\n// OptionModifier is a function signature for modifying the default Options.",
+      "length": 624,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "type OptionModifier func(*Options)",
+      "content": "type OptionModifier func(*Options)\n\n// OptionSetRejectCacheSize sets the RejectCacheSize to n.",
+      "length": 58,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetRejectCacheSize(n int) OptionModifier {",
+      "content": "func OptionSetRejectCacheSize(n int) OptionModifier {\n\treturn func(o *Options) {\n\t\to.RejectCacheSize = n\n\t}\n}\n\n// OptionSetChannelCacheSize sets the ChannelCacheSize to n.",
+      "length": 112,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetChannelCacheSize(n int) OptionModifier {",
+      "content": "func OptionSetChannelCacheSize(n int) OptionModifier {\n\treturn func(o *Options) {\n\t\to.ChannelCacheSize = n\n\t}\n}\n\n// OptionSetPreAllocCacheNumNodes sets the PreAllocCacheNumNodes to n.",
+      "length": 123,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetPreAllocCacheNumNodes(n int) OptionModifier {",
+      "content": "func OptionSetPreAllocCacheNumNodes(n int) OptionModifier {\n\treturn func(o *Options) {\n\t\to.PreAllocCacheNumNodes = n\n\t}\n}\n\n// OptionSetUseGraphCache sets the UseGraphCache option to the given value.",
+      "length": 133,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetUseGraphCache(use bool) OptionModifier {",
+      "content": "func OptionSetUseGraphCache(use bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.UseGraphCache = use\n\t}\n}\n\n// OptionNoRevLogAmtData sets the NoRevLogAmtData option to the given value. If\n// it is set to true then amount data will not be stored in the revocation log.",
+      "length": 210,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionNoRevLogAmtData(noAmtData bool) OptionModifier {",
+      "content": "func OptionNoRevLogAmtData(noAmtData bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.NoRevLogAmtData = noAmtData\n\t}\n}\n\n// OptionSetSyncFreelist allows the database to sync its freelist.",
+      "length": 126,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetSyncFreelist(b bool) OptionModifier {",
+      "content": "func OptionSetSyncFreelist(b bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.NoFreelistSync = !b\n\t}\n}\n\n// OptionAutoCompact turns on automatic database compaction on startup.",
+      "length": 123,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionAutoCompact() OptionModifier {",
+      "content": "func OptionAutoCompact() OptionModifier {\n\treturn func(o *Options) {\n\t\to.AutoCompact = true\n\t}\n}\n\n// OptionAutoCompactMinAge sets the minimum age for automatic database\n// compaction.",
+      "length": 135,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionAutoCompactMinAge(minAge time.Duration) OptionModifier {",
+      "content": "func OptionAutoCompactMinAge(minAge time.Duration) OptionModifier {\n\treturn func(o *Options) {\n\t\to.AutoCompactMinAge = minAge\n\t}\n}\n\n// OptionSetBatchCommitInterval sets the batch commit interval for the internval\n// batch schedulers.",
+      "length": 159,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionSetBatchCommitInterval(interval time.Duration) OptionModifier {",
+      "content": "func OptionSetBatchCommitInterval(interval time.Duration) OptionModifier {\n\treturn func(o *Options) {\n\t\to.BatchCommitInterval = interval\n\t}\n}\n\n// OptionNoMigration allows the database to be opened in read only mode by\n// disabling migrations.",
+      "length": 161,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionNoMigration(b bool) OptionModifier {",
+      "content": "func OptionNoMigration(b bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.NoMigration = b\n\t}\n}\n\n// OptionClock sets a non-default clock dependency.",
+      "length": 99,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionClock(clock clock.Clock) OptionModifier {",
+      "content": "func OptionClock(clock clock.Clock) OptionModifier {\n\treturn func(o *Options) {\n\t\to.clock = clock\n\t}\n}\n\n// OptionDryRunMigration controls whether or not to intentionally fail to commit a\n// successful migration that occurs when opening the database.",
+      "length": 190,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionDryRunMigration(dryRun bool) OptionModifier {",
+      "content": "func OptionDryRunMigration(dryRun bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.dryRun = dryRun\n\t}\n}\n\n// OptionKeepFailedPaymentAttempts controls whether failed payment attempts are\n// kept on disk after a payment settles.",
+      "length": 167,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionKeepFailedPaymentAttempts(keepFailedPaymentAttempts bool) OptionModifier {",
+      "content": "func OptionKeepFailedPaymentAttempts(keepFailedPaymentAttempts bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.keepFailedPaymentAttempts = keepFailedPaymentAttempts\n\t}\n}\n\n// OptionStoreFinalHtlcResolutions controls whether to persistently store the\n// final resolution of incoming htlcs.",
+      "length": 201,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionStoreFinalHtlcResolutions(",
+      "content": "func OptionStoreFinalHtlcResolutions(\n\tstoreFinalHtlcResolutions bool) OptionModifier {\n\n\treturn func(o *Options) {\n\t\to.storeFinalHtlcResolutions = storeFinalHtlcResolutions\n\t}\n}\n\n// OptionPruneRevocationLog specifies whether the migration for pruning\n// revocation logs needs to be applied or not.",
+      "length": 252,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func OptionPruneRevocationLog(prune bool) OptionModifier {",
+      "content": "func OptionPruneRevocationLog(prune bool) OptionModifier {\n\treturn func(o *Options) {\n\t\to.OptionalMiragtionConfig.PruneRevocationLog = prune\n\t}\n}\n",
+      "length": 83,
+      "tokens": 9,
+      "embedding": []
+    }
+  ]
+}

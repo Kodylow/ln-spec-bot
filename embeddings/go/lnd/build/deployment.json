@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/build/deployment.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "type DeploymentType byte",
+      "content": "type DeploymentType byte\n\nconst (\n\t// Development is a deployment that includes extra testing hooks and\n\t// logging configurations.\n\tDevelopment DeploymentType = iota\n\n\t// Production is a deployment that strips out testing logic and uses\n\t// Default logging.\n\tProduction\n)\n\n// String returns a human readable name for a build type.",
+      "length": 295,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (b DeploymentType) String() string {",
+      "content": "func (b DeploymentType) String() string {\n\tswitch b {\n\tcase Development:\n\t\treturn \"development\"\n\tcase Production:\n\t\treturn \"production\"\n\tdefault:\n\t\treturn \"unknown\"\n\t}\n}\n\n// IsProdBuild returns true if this is a production build.",
+      "length": 177,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func IsProdBuild() bool {",
+      "content": "func IsProdBuild() bool {\n\treturn Deployment == Production\n}\n\n// IsDevBuild returns true if this is a development build.",
+      "length": 91,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func IsDevBuild() bool {",
+      "content": "func IsDevBuild() bool {\n\treturn Deployment == Development\n}\n",
+      "length": 34,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

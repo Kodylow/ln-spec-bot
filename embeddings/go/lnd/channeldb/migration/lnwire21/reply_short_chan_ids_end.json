@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/reply_short_chan_ids_end.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ReplyShortChanIDsEnd struct {",
+      "content": "type ReplyShortChanIDsEnd struct {\n\t// ChainHash denotes the target chain that we're respond to a short\n\t// chan ID query for.\n\tChainHash chainhash.Hash\n\n\t// Complete will be set to 0 if we don't know of the chain that the\n\t// remote peer sent their query for. Otherwise, we'll set this to 1 in\n\t// order to indicate that we've sent all known responses for the prior\n\t// set of short chan ID's in the corresponding QueryShortChanIDs\n\t// message.\n\tComplete uint8\n}\n\n// NewReplyShortChanIDsEnd creates a new empty ReplyShortChanIDsEnd message.",
+      "length": 494,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func NewReplyShortChanIDsEnd() *ReplyShortChanIDsEnd {",
+      "content": "func NewReplyShortChanIDsEnd() *ReplyShortChanIDsEnd {\n\treturn &ReplyShortChanIDsEnd{}\n}\n\n// A compile time check to ensure ReplyShortChanIDsEnd implements the\n// lnwire.Message interface.\nvar _ Message = (*ReplyShortChanIDsEnd)(nil)\n\n// Decode deserializes a serialized ReplyShortChanIDsEnd message stored in the\n// passed io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 362,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ReplyShortChanIDsEnd) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *ReplyShortChanIDsEnd) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\tc.ChainHash[:],\n\t\t&c.Complete,\n\t)\n}\n\n// Encode serializes the target ReplyShortChanIDsEnd into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 229,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ReplyShortChanIDsEnd) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (c *ReplyShortChanIDsEnd) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tc.ChainHash[:],\n\t\tc.Complete,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 191,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ReplyShortChanIDsEnd) MsgType() MessageType {",
+      "content": "func (c *ReplyShortChanIDsEnd) MsgType() MessageType {\n\treturn MsgReplyShortChanIDsEnd\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a\n// ReplyShortChanIDsEnd complete message observing the specified protocol\n// version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 232,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ReplyShortChanIDsEnd) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (c *ReplyShortChanIDsEnd) MaxPayloadLength(uint32) uint32 {\n\t// 32 (chain hash) + 1 (complete)\n\treturn 33\n}\n",
+      "length": 45,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

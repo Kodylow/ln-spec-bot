@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/commit_sort.go",
+  "package": "lnwallet",
+  "sections": [
+    {
+      "slug": "func InPlaceCommitSort(tx *wire.MsgTx, cltvs []uint32) {",
+      "content": "func InPlaceCommitSort(tx *wire.MsgTx, cltvs []uint32) {\n\tif len(tx.TxOut) != len(cltvs) {\n\t\tpanic(\"output and cltv list size mismatch\")\n\t}\n\n\tsort.Sort(sortableInputSlice(tx.TxIn))\n\tsort.Sort(sortableCommitOutputSlice{tx.TxOut, cltvs})\n}\n\n// sortableInputSlice is a slice of transaction inputs that supports sorting via\n// BIP69.",
+      "length": 263,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "type sortableInputSlice []*wire.TxIn",
+      "content": "type sortableInputSlice []*wire.TxIn\n\n// Len returns the length of the sortableInputSlice.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 100,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableInputSlice) Len() int { return len(s) }",
+      "content": "func (s sortableInputSlice) Len() int { return len(s) }\n\n// Swap exchanges the position of inputs i and j.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 97,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableInputSlice) Swap(i, j int) {",
+      "content": "func (s sortableInputSlice) Swap(i, j int) {\n\ts[i], s[j] = s[j], s[i]\n}\n\n// Less is the BIP69 input comparison function. The sort is first applied on\n// input hash (reversed / rpc-style), then index. This logic is copied from\n// btcutil/txsort.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 242,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableInputSlice) Less(i, j int) bool {",
+      "content": "func (s sortableInputSlice) Less(i, j int) bool {\n\t// Input hashes are the same, so compare the index.\n\tihash := s[i].PreviousOutPoint.Hash\n\tjhash := s[j].PreviousOutPoint.Hash\n\tif ihash == jhash {\n\t\treturn s[i].PreviousOutPoint.Index < s[j].PreviousOutPoint.Index\n\t}\n\n\t// At this point, the hashes are not equal, so reverse them to\n\t// big-endian and return the result of the comparison.\n\tconst hashSize = chainhash.HashSize\n\tfor b := 0; b < hashSize/2; b++ {\n\t\tihash[b], ihash[hashSize-1-b] = ihash[hashSize-1-b], ihash[b]\n\t\tjhash[b], jhash[hashSize-1-b] = jhash[hashSize-1-b], jhash[b]\n\t}\n\treturn bytes.Compare(ihash[:], jhash[:]) == -1\n}\n\n// sortableCommitOutputSlice is a slice of transaction outputs on a commitment\n// transaction and the corresponding CLTV values of any HTLCs. Commitment\n// outputs should have a CLTV of 0 and the same index in cltvs.",
+      "length": 790,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "type sortableCommitOutputSlice struct {",
+      "content": "type sortableCommitOutputSlice struct {\n\ttxouts []*wire.TxOut\n\tcltvs  []uint32\n}\n\n// Len returns the length of the sortableCommitOutputSlice.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 145,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableCommitOutputSlice) Len() int {",
+      "content": "func (s sortableCommitOutputSlice) Len() int {\n\treturn len(s.txouts)\n}\n\n// Swap exchanges the position of outputs i and j, as well as their\n// corresponding CLTV values.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 166,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableCommitOutputSlice) Swap(i, j int) {",
+      "content": "func (s sortableCommitOutputSlice) Swap(i, j int) {\n\ts.txouts[i], s.txouts[j] = s.txouts[j], s.txouts[i]\n\ts.cltvs[i], s.cltvs[j] = s.cltvs[j], s.cltvs[i]\n}\n\n// Less is a modified BIP69 output comparison, that sorts based on value, then\n// pkscript, then CLTV value.\n//\n// NOTE: Part of the sort.Interface interface.",
+      "length": 256,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableCommitOutputSlice) Less(i, j int) bool {",
+      "content": "func (s sortableCommitOutputSlice) Less(i, j int) bool {\n\touti, outj := s.txouts[i], s.txouts[j]\n\n\tif outi.Value != outj.Value {\n\t\treturn outi.Value < outj.Value\n\t}\n\n\tpkScriptCmp := bytes.Compare(outi.PkScript, outj.PkScript)\n\tif pkScriptCmp != 0 {\n\t\treturn pkScriptCmp < 0\n\t}\n\n\treturn s.cltvs[i] < s.cltvs[j]\n}\n",
+      "length": 242,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/rpc/signer.go",
+  "package": "rpc",
+  "sections": [
+    {
+      "slug": "func (h *HarnessRPC) DeriveSharedKey(",
+      "content": "func (h *HarnessRPC) DeriveSharedKey(\n\treq *signrpc.SharedKeyRequest) *signrpc.SharedKeyResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.DeriveSharedKey(ctxt, req)\n\th.NoError(err, \"DeriveSharedKey\")\n\n\treturn resp\n}\n\n// DeriveSharedKeyErr makes a RPC call to the node's SignerClient and asserts\n// there is an error.",
+      "length": 331,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) DeriveSharedKeyErr(req *signrpc.SharedKeyRequest) error {",
+      "content": "func (h *HarnessRPC) DeriveSharedKeyErr(req *signrpc.SharedKeyRequest) error {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Signer.DeriveSharedKey(ctxt, req)\n\trequire.Error(h, err, \"expected error from calling DeriveSharedKey\")\n\n\treturn err\n}\n\n// SignOutputRaw makes a RPC call to the node's SignerClient and asserts.",
+      "length": 277,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignOutputRaw(req *signrpc.SignReq) *signrpc.SignResp {",
+      "content": "func (h *HarnessRPC) SignOutputRaw(req *signrpc.SignReq) *signrpc.SignResp {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.SignOutputRaw(ctxt, req)\n\th.NoError(err, \"SignOutputRaw\")\n\n\treturn resp\n}\n\n// SignOutputRawErr makes a RPC call to the node's SignerClient and asserts an\n// error is returned.",
+      "length": 268,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignOutputRawErr(req *signrpc.SignReq) error {",
+      "content": "func (h *HarnessRPC) SignOutputRawErr(req *signrpc.SignReq) error {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Signer.SignOutputRaw(ctxt, req)\n\trequire.Error(h, err, \"expect to fail to sign raw output\")\n\n\treturn err\n}\n\n// MuSig2CreateSession makes a RPC call to the node's SignerClient and asserts.",
+      "length": 271,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2CreateSession(",
+      "content": "func (h *HarnessRPC) MuSig2CreateSession(\n\treq *signrpc.MuSig2SessionRequest) *signrpc.MuSig2SessionResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2CreateSession(ctxt, req)\n\th.NoError(err, \"MuSig2CreateSession\")\n\n\treturn resp\n}\n\n// MuSig2CreateSessionErr makes an RPC call to the node's SignerClient and\n// asserts an error is returned.",
+      "length": 355,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2CreateSessionErr(",
+      "content": "func (h *HarnessRPC) MuSig2CreateSessionErr(\n\treq *signrpc.MuSig2SessionRequest) error {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Signer.MuSig2CreateSession(ctxt, req)\n\trequire.Error(h, err, \"expected error from calling MuSig2CreateSession\")\n\n\treturn err\n}\n\n// MuSig2CombineKeys makes a RPC call to the node's SignerClient and asserts.\n//\n//nolint:lll",
+      "length": 346,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2CombineKeys(",
+      "content": "func (h *HarnessRPC) MuSig2CombineKeys(\n\treq *signrpc.MuSig2CombineKeysRequest) *signrpc.MuSig2CombineKeysResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2CombineKeys(ctxt, req)\n\th.NoError(err, \"MuSig2CombineKeys\")\n\n\treturn resp\n}\n\n// MuSig2CombineKeysErr makes an RPC call to the node's SignerClient and\n// asserts an error is returned.",
+      "length": 357,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2CombineKeysErr(",
+      "content": "func (h *HarnessRPC) MuSig2CombineKeysErr(\n\treq *signrpc.MuSig2CombineKeysRequest) error {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Signer.MuSig2CombineKeys(ctxt, req)\n\trequire.Error(h, err, \"expected error from calling MuSig2CombineKeys\")\n\n\treturn err\n}\n\n// MuSig2RegisterNonces makes a RPC call to the node's SignerClient and asserts.\n//\n//nolint:lll",
+      "length": 349,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2RegisterNonces(",
+      "content": "func (h *HarnessRPC) MuSig2RegisterNonces(\n\treq *signrpc.MuSig2RegisterNoncesRequest) *signrpc.MuSig2RegisterNoncesResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2RegisterNonces(ctxt, req)\n\th.NoError(err, \"MuSig2RegisterNonces\")\n\n\treturn resp\n}\n\n// MuSig2Sign makes a RPC call to the node's SignerClient and asserts.",
+      "length": 335,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2Sign(",
+      "content": "func (h *HarnessRPC) MuSig2Sign(\n\treq *signrpc.MuSig2SignRequest) *signrpc.MuSig2SignResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2Sign(ctxt, req)\n\th.NoError(err, \"MuSig2Sign\")\n\n\treturn resp\n}\n\n// MuSig2SignErr makes a RPC call to the node's SignerClient and asserts an\n// error is returned.",
+      "length": 321,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2SignErr(req *signrpc.MuSig2SignRequest) error {",
+      "content": "func (h *HarnessRPC) MuSig2SignErr(req *signrpc.MuSig2SignRequest) error {\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\t_, err := h.Signer.MuSig2Sign(ctxt, req)\n\trequire.Error(h, err, \"expect an error\")\n\n\treturn err\n}\n\n// MuSig2CombineSig makes a RPC call to the node's SignerClient and asserts.",
+      "length": 247,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2CombineSig(",
+      "content": "func (h *HarnessRPC) MuSig2CombineSig(\n\tr *signrpc.MuSig2CombineSigRequest) *signrpc.MuSig2CombineSigResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2CombineSig(ctxt, r)\n\th.NoError(err, \"MuSig2CombineSig\")\n\n\treturn resp\n}\n\n// MuSig2Cleanup makes a RPC call to the node's SignerClient and asserts.",
+      "length": 318,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) MuSig2Cleanup(",
+      "content": "func (h *HarnessRPC) MuSig2Cleanup(\n\treq *signrpc.MuSig2CleanupRequest) *signrpc.MuSig2CleanupResponse {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.MuSig2Cleanup(ctxt, req)\n\th.NoError(err, \"MuSig2Cleanup\")\n\n\treturn resp\n}\n\n// SignMessageSigner makes a RPC call to the node's SignerClient and asserts.\n//\n// NOTE: there's already `SignMessage` in `h.LN`.",
+      "length": 365,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) SignMessageSigner(",
+      "content": "func (h *HarnessRPC) SignMessageSigner(\n\treq *signrpc.SignMessageReq) *signrpc.SignMessageResp {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.SignMessage(ctxt, req)\n\th.NoError(err, \"SignMessage\")\n\n\treturn resp\n}\n\n// VerifyMessageSigner makes a RPC call to the node's SignerClient and asserts.\n//\n// NOTE: there's already `VerifyMessageSigner` in `h.LN`.",
+      "length": 359,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) VerifyMessageSigner(",
+      "content": "func (h *HarnessRPC) VerifyMessageSigner(\n\treq *signrpc.VerifyMessageReq) *signrpc.VerifyMessageResp {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.VerifyMessage(ctxt, req)\n\th.NoError(err, \"VerifyMessage\")\n\n\treturn resp\n}\n\n// ComputeInputScript makes a RPC call to the node's SignerClient and asserts.",
+      "length": 307,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HarnessRPC) ComputeInputScript(",
+      "content": "func (h *HarnessRPC) ComputeInputScript(\n\treq *signrpc.SignReq) *signrpc.InputScriptResp {\n\n\tctxt, cancel := context.WithTimeout(h.runCtx, DefaultTimeout)\n\tdefer cancel()\n\n\tresp, err := h.Signer.ComputeInputScript(ctxt, req)\n\th.NoError(err, \"ComputeInputScript\")\n\n\treturn resp\n}\n",
+      "length": 228,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/aezeed/cipherseed_test.go",
+  "package": "aezeed",
+  "sections": [
+    {
+      "slug": "type TestVector struct {",
+      "content": "type TestVector struct {\n\tversion          uint8\n\ttime             time.Time\n\tentropy          [EntropySize]byte\n\tsalt             [SaltSize]byte\n\tpassword         []byte\n\texpectedMnemonic [NumMnemonicWords]string\n\texpectedBirthday uint16\n}\n\nvar (\n\ttestEntropy = [EntropySize]byte{\n\t\t0x81, 0xb6, 0x37, 0xd8,\n\t\t0x63, 0x59, 0xe6, 0x96,\n\t\t0x0d, 0xe7, 0x95, 0xe4,\n\t\t0x1e, 0x0b, 0x4c, 0xfd,\n\t}\n\ttestSalt = [SaltSize]byte{\n\t\t0x73, 0x61, 0x6c, 0x74, 0x31, // equal to \"salt1\"\n\t}\n\tversion0TestVectors = []TestVector{{\n\t\tversion:  0,\n\t\ttime:     BitcoinGenesisDate,\n\t\tentropy:  testEntropy,\n\t\tsalt:     testSalt,\n\t\tpassword: []byte{},\n\t\texpectedMnemonic: [NumMnemonicWords]string{\n\t\t\t\"ability\", \"liquid\", \"travel\", \"stem\", \"barely\", \"drastic\",\n\t\t\t\"pact\", \"cupboard\", \"apple\", \"thrive\", \"morning\", \"oak\",\n\t\t\t\"feature\", \"tissue\", \"couch\", \"old\", \"math\", \"inform\",\n\t\t\t\"success\", \"suggest\", \"drink\", \"motion\", \"know\", \"royal\",\n\t\t},\n\t\texpectedBirthday: 0,\n\t}, {\n\t\tversion:  0,\n\t\ttime:     time.Unix(1521799345, 0), // 03/23/2018 @ 10:02am (UTC)\n\t\tentropy:  testEntropy,\n\t\tsalt:     testSalt,\n\t\tpassword: []byte(\"!very_safe_55345_password*\"),\n\t\texpectedMnemonic: [NumMnemonicWords]string{\n\t\t\t\"able\", \"tree\", \"stool\", \"crush\", \"transfer\", \"cloud\",\n\t\t\t\"cross\", \"three\", \"profit\", \"outside\", \"hen\", \"citizen\",\n\t\t\t\"plate\", \"ride\", \"require\", \"leg\", \"siren\", \"drum\",\n\t\t\t\"success\", \"suggest\", \"drink\", \"require\", \"fiscal\", \"upgrade\",\n\t\t},\n\t\texpectedBirthday: 3365,\n\t}}\n)\n",
+      "length": 1378,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func assertCipherSeedEqual(t *testing.T, cipherSeed *CipherSeed,",
+      "content": "func assertCipherSeedEqual(t *testing.T, cipherSeed *CipherSeed,\n\tcipherSeed2 *CipherSeed) {\n\n\trequire.Equal(\n\t\tt, cipherSeed.InternalVersion, cipherSeed2.InternalVersion,\n\t\t\"internal version\",\n\t)\n\trequire.Equal(t, cipherSeed.Birthday, cipherSeed2.Birthday, \"birthday\")\n\trequire.Equal(t, cipherSeed.Entropy, cipherSeed2.Entropy, \"entropy\")\n\trequire.Equal(t, cipherSeed.salt, cipherSeed2.salt, \"salt\")\n}\n\n// TestAezeedVersion0TestVectors tests some fixed test vector values against\n// the expected mnemonic words.",
+      "length": 435,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAezeedVersion0TestVectors(t *testing.T) {",
+      "content": "func TestAezeedVersion0TestVectors(t *testing.T) {\n\tt.Parallel()\n\n\t// To minimize the number of tests that need to be run, go through all\n\t// test vectors in the same test and also check the birthday calculation\n\t// while we're at it.\n\tfor _, v := range version0TestVectors {\n\t\t// First, we create new cipher seed with the given values\n\t\t// from the test vector.\n\t\tcipherSeed, err := New(v.version, &v.entropy, v.time)\n\t\trequire.NoError(t, err)\n\n\t\t// Then we need to set the salt to the pre-defined value,\n\t\t// otherwise we'll end up with randomness in our mnemonics.\n\t\tcipherSeed.salt = v.salt\n\n\t\t// Now that the seed has been created, we'll attempt to convert\n\t\t// it to a valid mnemonic.\n\t\tmnemonic, err := cipherSeed.ToMnemonic(v.password)\n\t\trequire.NoError(t, err)\n\n\t\t// Finally we compare the generated mnemonic and birthday to the\n\t\t// expected value.\n\t\trequire.Equal(t, v.expectedMnemonic[:], mnemonic[:])\n\t\trequire.Equal(t, v.expectedBirthday, cipherSeed.Birthday)\n\t}\n}\n\n// TestWithRandomnessSource tests that seed generation is fully deterministic\n// when a custom static randomness source is provided.",
+      "length": 1033,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWithRandomnessSource(t *testing.T) {",
+      "content": "func TestWithRandomnessSource(t *testing.T) {\n\tsourceData := append([]byte{}, testEntropy[:]...)\n\tsourceData = append(sourceData, testSalt[:]...)\n\tsrc := bytes.NewReader(sourceData)\n\n\t// First, we create new cipher seed with the given values from the test\n\t// vector but with no entropy.\n\tv := version0TestVectors[0]\n\tcipherSeed, err := New(\n\t\tv.version, nil, v.time, WithRandomnessSource(src),\n\t)\n\trequire.NoError(t, err)\n\n\t// The salt should be set to our test salt.\n\trequire.Equal(t, testSalt, cipherSeed.salt)\n\n\t// Now that the seed has been created, we'll attempt to convert it to a\n\t// valid mnemonic.\n\tmnemonic, err := cipherSeed.ToMnemonic(v.password)\n\trequire.NoError(t, err)\n\n\t// Finally, we compare the generated mnemonic and birthday to the\n\t// expected value.\n\trequire.Equal(t, v.expectedMnemonic[:], mnemonic[:])\n\trequire.Equal(t, v.expectedBirthday, cipherSeed.Birthday)\n}\n\n// TestEmptyPassphraseDerivation tests that the aezeed scheme is able to derive\n// a proper mnemonic, and decipher that mnemonic when the user uses an empty\n// passphrase.",
+      "length": 986,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEmptyPassphraseDerivation(t *testing.T) {",
+      "content": "func TestEmptyPassphraseDerivation(t *testing.T) {\n\tt.Parallel()\n\n\t// Our empty passphrase...\n\tpass := []byte{}\n\n\t// We'll now create a new cipher seed with an internal version of zero\n\t// to simulate a wallet that just adopted the scheme.\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that the seed has been created, we'll attempt to convert it to a\n\t// valid mnemonic.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// Next, we'll try to decrypt the mnemonic with the passphrase that we\n\t// used.\n\tcipherSeed2, err := mnemonic.ToCipherSeed(pass)\n\trequire.NoError(t, err)\n\n\t// Finally, we'll ensure that the uncovered cipher seed matches\n\t// precisely.\n\tassertCipherSeedEqual(t, cipherSeed, cipherSeed2)\n}\n\n// TestManualEntropyGeneration tests that if the user doesn't provide a source\n// of entropy, then we do so ourselves.",
+      "length": 816,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func TestManualEntropyGeneration(t *testing.T) {",
+      "content": "func TestManualEntropyGeneration(t *testing.T) {\n\tt.Parallel()\n\n\t// Our empty passphrase...\n\tpass := []byte{}\n\n\t// We'll now create a new cipher seed with an internal version of zero\n\t// to simulate a wallet that just adopted the scheme.\n\tcipherSeed, err := New(0, nil, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that the seed has been created, we'll attempt to convert it to a\n\t// valid mnemonic.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// Next, we'll try to decrypt the mnemonic with the passphrase that we\n\t// used.\n\tcipherSeed2, err := mnemonic.ToCipherSeed(pass)\n\trequire.NoError(t, err)\n\n\t// Finally, we'll ensure that the uncovered cipher seed matches\n\t// precisely.\n\tassertCipherSeedEqual(t, cipherSeed, cipherSeed2)\n}\n\n// TestInvalidPassphraseRejection tests if a caller attempts to use the\n// incorrect passphrase for an enciphered seed, then the proper error is\n// returned.",
+      "length": 845,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvalidPassphraseRejection(t *testing.T) {",
+      "content": "func TestInvalidPassphraseRejection(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll generate a new cipher seed with a test passphrase.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that we have our cipher seed, we'll encipher it and request a\n\t// mnemonic that we can use to recover later.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// If we try to decipher with the wrong passphrase, we should get the\n\t// proper error.\n\twrongPass := []byte(\"kek\")\n\t_, err = mnemonic.ToCipherSeed(wrongPass)\n\trequire.Equal(t, ErrInvalidPass, err)\n}\n\n// TestRawEncipherDecipher tests that callers are able to use the raw methods\n// to map between ciphertext and the raw plaintext deciphered seed.",
+      "length": 702,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func TestRawEncipherDecipher(t *testing.T) {",
+      "content": "func TestRawEncipherDecipher(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll generate a new cipher seed with a test passphrase.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// With the cipher seed obtained, we'll now use the raw encipher method\n\t// to obtain our final cipher text.\n\tcipherText, err := cipherSeed.Encipher(pass)\n\trequire.NoError(t, err)\n\n\tmnemonic, err := cipherTextToMnemonic(cipherText)\n\trequire.NoError(t, err)\n\n\t// Now that we have the ciphertext (mapped to the mnemonic), we'll\n\t// attempt to decipher it raw using the user's passphrase.\n\tplainSeedBytes, salt, err := mnemonic.Decipher(pass)\n\trequire.NoError(t, err)\n\trequire.Equal(t, cipherSeed.salt, salt)\n\n\t// If we deserialize the plaintext seed bytes, it should exactly match\n\t// the original cipher seed.\n\tnewSeed := CipherSeed{\n\t\tsalt: salt,\n\t}\n\terr = newSeed.decode(bytes.NewReader(plainSeedBytes[:]))\n\trequire.NoError(t, err)\n\n\tassertCipherSeedEqual(t, cipherSeed, &newSeed)\n}\n\n// TestInvalidExternalVersion tests that if we present a ciphertext with the\n// incorrect version to decipherCipherSeed, then it fails with the expected\n// error.",
+      "length": 1100,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvalidExternalVersion(t *testing.T) {",
+      "content": "func TestInvalidExternalVersion(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll generate a new cipher seed.\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// With the cipher seed obtained, we'll now use the raw encipher method\n\t// to obtain our final cipher text.\n\tpass := []byte(\"newpasswhodis\")\n\tcipherText, err := cipherSeed.Encipher(pass)\n\trequire.NoError(t, err)\n\n\t// Now that we have the cipher text, we'll modify the first byte to be\n\t// an invalid version.\n\tcipherText[0] = 44\n\n\t// With the version swapped, if we try to decipher it, (no matter the\n\t// passphrase), it should fail.\n\t_, _, err = decipherCipherSeed(cipherText, []byte(\"kek\"))\n\trequire.Equal(t, ErrIncorrectVersion, err)\n}\n\n// TestChangePassphrase tests that we're able to generate a cipher seed, then\n// change the password. If we attempt to decipher the new enciphered seed, then\n// we should get the exact same seed back.",
+      "length": 857,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChangePassphrase(t *testing.T) {",
+      "content": "func TestChangePassphrase(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll generate a new cipher seed with a test passphrase.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that we have our cipher seed, we'll encipher it and request a\n\t// mnemonic that we can use to recover later.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// Now that have the mnemonic, we'll attempt to re-encipher the\n\t// passphrase in order to get a brand-new mnemonic.\n\tnewPass := []byte(\"strongerpassyeh!\")\n\tnewMnemonic, err := mnemonic.ChangePass(pass, newPass)\n\trequire.NoError(t, err)\n\n\t// We'll now attempt to decipher the new mnemonic using the new\n\t// passphrase to arrive at (what should be) the original cipher seed.\n\tnewCipherSeed, err := newMnemonic.ToCipherSeed(newPass)\n\trequire.NoError(t, err)\n\n\t// Now that we have the cipher seed, we'll verify that the plaintext\n\t// seed matches *identically*.\n\tassertCipherSeedEqual(t, cipherSeed, newCipherSeed)\n}\n\n// TestChangePassphraseWrongPass tests that if we have a valid enciphered\n// cipher seed, but then try to change the password with the *wrong* password,\n// then we get an error.",
+      "length": 1138,
+      "tokens": 164,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChangePassphraseWrongPass(t *testing.T) {",
+      "content": "func TestChangePassphraseWrongPass(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll generate a new cipher seed with a test passphrase.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that we have our cipher seed, we'll encipher it and request a\n\t// mnemonic that we can use to recover later.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// Now that have the mnemonic, we'll attempt to re-encipher the\n\t// passphrase in order to get a brand-new mnemonic. However, we'll be\n\t// using the *wrong* passphrase. This should result in an\n\t// ErrInvalidPass error.\n\twrongPass := []byte(\"kek\")\n\tnewPass := []byte(\"strongerpassyeh!\")\n\t_, err = mnemonic.ChangePass(wrongPass, newPass)\n\trequire.Equal(t, ErrInvalidPass, err)\n}\n\n// TestMnemonicEncoding uses quickcheck like property based testing to ensure\n// that we're always able to fully recover the original byte stream encoded\n// into the mnemonic phrase.",
+      "length": 913,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMnemonicEncoding(t *testing.T) {",
+      "content": "func TestMnemonicEncoding(t *testing.T) {\n\tt.Parallel()\n\n\t// mainScenario is the main driver of our property based test. We'll\n\t// ensure that given a random byte string of length 33 bytes, if we\n\t// convert that to the mnemonic, then we should be able to reverse the\n\t// conversion.\n\tmainScenario := func(cipherSeedBytes [EncipheredCipherSeedSize]byte) bool {\n\t\tmnemonic, err := cipherTextToMnemonic(cipherSeedBytes)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to map cipher text: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tnewCipher := mnemonicToCipherText(&mnemonic)\n\n\t\tif newCipher != cipherSeedBytes {\n\t\t\tt.Fatalf(\"cipherseed doesn't match: expected %v, got %v\",\n\t\t\t\tcipherSeedBytes, newCipher)\n\t\t\treturn false\n\t\t}\n\n\t\treturn true\n\t}\n\n\tif err := quick.Check(mainScenario, nil); err != nil {\n\t\tt.Fatalf(\"fuzz check failed: %v\", err)\n\t}\n}\n\n// TestEncipherDecipher is a property-based test that ensures that given a\n// version, entropy, and birthday, then we're able to map that to a cipher seed\n// mnemonic, then back to the original plaintext cipher seed.",
+      "length": 969,
+      "tokens": 143,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEncipherDecipher(t *testing.T) {",
+      "content": "func TestEncipherDecipher(t *testing.T) {\n\tt.Parallel()\n\n\t// mainScenario is the main driver of our property based test. We'll\n\t// ensure that given a random seed tuple (internal version, entropy,\n\t// and birthday) we're able to convert that to a valid cipher seed.\n\t// Additionally, we should be able to decipher the final mnemonic, and\n\t// recover the original cipher seed.\n\tmainScenario := func(version uint8, entropy [EntropySize]byte,\n\t\tnowInt int64, pass [20]byte) bool {\n\n\t\tnow := time.Unix(nowInt, 0)\n\n\t\tcipherSeed, err := New(version, &entropy, now)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to map cipher text: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tmnemonic, err := cipherSeed.ToMnemonic(pass[:])\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to generate mnemonic: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tcipherSeed2, err := mnemonic.ToCipherSeed(pass[:])\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to decrypt cipher seed: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tif cipherSeed.InternalVersion != cipherSeed2.InternalVersion {\n\t\t\tt.Fatalf(\"mismatched versions: expected %v, got %v\",\n\t\t\t\tcipherSeed.InternalVersion, cipherSeed2.InternalVersion)\n\t\t\treturn false\n\t\t}\n\t\tif cipherSeed.Birthday != cipherSeed2.Birthday {\n\t\t\tt.Fatalf(\"mismatched birthday: expected %v, got %v\",\n\t\t\t\tcipherSeed.Birthday, cipherSeed2.Birthday)\n\t\t\treturn false\n\t\t}\n\t\tif cipherSeed.Entropy != cipherSeed2.Entropy {\n\t\t\tt.Fatalf(\"mismatched versions: expected %x, got %x\",\n\t\t\t\tcipherSeed.Entropy[:], cipherSeed2.Entropy[:])\n\t\t\treturn false\n\t\t}\n\n\t\treturn true\n\t}\n\n\tif err := quick.Check(mainScenario, nil); err != nil {\n\t\tt.Fatalf(\"fuzz check failed: %v\", err)\n\t}\n}\n\n// TestSeedEncodeDecode tests that we're able to reverse the encoding of an\n// arbitrary raw seed.",
+      "length": 1610,
+      "tokens": 212,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSeedEncodeDecode(t *testing.T) {",
+      "content": "func TestSeedEncodeDecode(t *testing.T) {\n\t// mainScenario is the primary driver of our property-based test. We'll\n\t// ensure that given a random cipher seed, we can encode it and decode\n\t// it precisely.\n\tmainScenario := func(version uint8, nowInt int64,\n\t\tentropy [EntropySize]byte) bool {\n\n\t\tnow := time.Unix(nowInt, 0)\n\t\tday := time.Hour * 24\n\t\tnumDaysSinceGenesis := now.Sub(BitcoinGenesisDate) / day\n\t\tseed := CipherSeed{\n\t\t\tInternalVersion: version,\n\t\t\tBirthday:        uint16(numDaysSinceGenesis),\n\t\t\tEntropy:         entropy,\n\t\t}\n\n\t\tvar b bytes.Buffer\n\t\tif err := seed.encode(&b); err != nil {\n\t\t\tt.Fatalf(\"unable to encode: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tvar newSeed CipherSeed\n\t\tif err := newSeed.decode(&b); err != nil {\n\t\t\tt.Fatalf(\"unable to decode: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tif seed.InternalVersion != newSeed.InternalVersion {\n\t\t\tt.Fatalf(\"mismatched versions: expected %v, got %v\",\n\t\t\t\tseed.InternalVersion, newSeed.InternalVersion)\n\t\t\treturn false\n\t\t}\n\t\tif seed.Birthday != newSeed.Birthday {\n\t\t\tt.Fatalf(\"mismatched birthday: expected %v, got %v\",\n\t\t\t\tseed.Birthday, newSeed.Birthday)\n\t\t\treturn false\n\t\t}\n\t\tif seed.Entropy != newSeed.Entropy {\n\t\t\tt.Fatalf(\"mismatched versions: expected %x, got %x\",\n\t\t\t\tseed.Entropy[:], newSeed.Entropy[:])\n\t\t\treturn false\n\t\t}\n\n\t\treturn true\n\t}\n\n\tif err := quick.Check(mainScenario, nil); err != nil {\n\t\tt.Fatalf(\"fuzz check failed: %v\", err)\n\t}\n}\n\n// TestDecipherUnknownMnemonicWord tests that if we obtain a mnemonic, then\n// modify one of the words to not be within the word list, then it's detected\n// when we attempt to map it back to the original cipher seed.",
+      "length": 1532,
+      "tokens": 206,
+      "embedding": []
+    },
+    {
+      "slug": "func TestDecipherUnknownMnemonicWord(t *testing.T) {",
+      "content": "func TestDecipherUnknownMnemonicWord(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll create a new cipher seed with \"test\" ass a password.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that we have our cipher seed, we'll encipher it and request a\n\t// mnemonic that we can use to recover later.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// Before we attempt to decrypt the cipher seed, we'll mutate one of\n\t// the word so it isn't actually in our final word list.\n\trandIndex := rand.Int31n(int32(len(mnemonic)))\n\tmnemonic[randIndex] = \"kek\"\n\n\t// If we attempt to map back to the original cipher seed now, then we\n\t// should get ErrUnknownMnemonicWord.\n\t_, err = mnemonic.ToCipherSeed(pass)\n\twordErr := &ErrUnknownMnemonicWord{}\n\trequire.ErrorAs(t, err, wordErr)\n\trequire.Equal(t, \"kek\", wordErr.Word)\n\trequire.Equal(t, uint8(randIndex), wordErr.Index)\n\n\t// If the mnemonic includes a word that is not in the englishList it\n\t// fails, even when it is a substring of a valid word Example: `heart`\n\t// is in the list, `hear` is not.\n\tmnemonic[randIndex] = \"hear\"\n\n\t// If we attempt to map back to the original cipher seed now, then we\n\t// should get ErrUnknownMnemonicWord.\n\t_, err = mnemonic.ToCipherSeed(pass)\n\trequire.ErrorAs(t, err, wordErr)\n}\n\n// TestDecipherIncorrectMnemonic tests that if we obtain a cipher seed, but then\n// swap out words, then checksum fails.",
+      "length": 1370,
+      "tokens": 205,
+      "embedding": []
+    },
+    {
+      "slug": "func TestDecipherIncorrectMnemonic(t *testing.T) {",
+      "content": "func TestDecipherIncorrectMnemonic(t *testing.T) {\n\t// First, we'll create a new cipher seed with \"test\" ass a password.\n\tpass := []byte(\"test\")\n\tcipherSeed, err := New(0, &testEntropy, time.Now())\n\trequire.NoError(t, err)\n\n\t// Now that we have our cipher seed, we'll encipher it and request a\n\t// mnemonic that we can use to recover later.\n\tmnemonic, err := cipherSeed.ToMnemonic(pass)\n\trequire.NoError(t, err)\n\n\t// We'll now swap out two words from the mnemonic, which should trigger\n\t// a checksum failure.\n\tswapIndex1 := 9\n\tswapIndex2 := 13\n\tmnemonic[swapIndex1], mnemonic[swapIndex2] = mnemonic[swapIndex2], mnemonic[swapIndex1]\n\n\t// If we attempt to decrypt now, we should get a checksum failure.\n\t// If we attempt to map back to the original cipher seed now, then we\n\t// should get ErrIncorrectMnemonic.\n\t_, err = mnemonic.ToCipherSeed(pass)\n\trequire.Equal(t, ErrIncorrectMnemonic, err)\n}\n\n// TODO(roasbeef): add test failure checksum fail is modified, new error\n",
+      "length": 895,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// For the purposes of our test, we'll crank down the scrypt params a\n\t// bit.\n\tscryptN = 16\n\tscryptR = 8\n\tscryptP = 1\n}\n",
+      "length": 116,
+      "tokens": 26,
+      "embedding": []
+    }
+  ]
+}

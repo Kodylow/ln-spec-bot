@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration16/migration_test.go",
+  "package": "migration16",
+  "sections": [
+    {
+      "slug": "func paymentHashIndex(hashStr string) string {",
+      "content": "func paymentHashIndex(hashStr string) string {\n\thash, err := hex.DecodeString(hashStr)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\tbytes, err := serializePaymentIndexEntry(hash)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\treturn string(bytes)\n}\n\n// MigrateSequenceIndex asserts that the database is properly migrated to\n// contain a payments index.",
+      "length": 269,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMigrateSequenceIndex(t *testing.T) {",
+      "content": "func TestMigrateSequenceIndex(t *testing.T) {\n\ttests := []struct {\n\t\tname       string\n\t\tshouldFail bool\n\t\tpre        map[string]interface{}\n\t\tpost       map[string]interface{}\n\t}{\n\t\t{\n\t\t\tname:       \"migration ok\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        pre,\n\t\t\tpost:       post,\n\t\t},\n\t\t{\n\t\t\tname:       \"duplicate sequence number\",\n\t\t\tshouldFail: true,\n\t\t\tpre:        preFails,\n\t\t\tpost:       post,\n\t\t},\n\t\t{\n\t\t\tname:       \"no payments\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        nil,\n\t\t\tpost:       nil,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t// Before the migration we have a payments bucket.\n\t\t\tbefore := func(tx kvdb.RwTx) error {\n\t\t\t\treturn migtest.RestoreDB(\n\t\t\t\t\ttx, paymentsRootBucket, test.pre,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\t// After the migration, we should have an untouched\n\t\t\t// payments bucket and a new index bucket.\n\t\t\tafter := func(tx kvdb.RwTx) error {\n\t\t\t\tif err := migtest.VerifyDB(\n\t\t\t\t\ttx, paymentsRootBucket, test.pre,\n\t\t\t\t); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\t// If we expect our migration to fail, we don't\n\t\t\t\t// expect an index bucket.\n\t\t\t\tif test.shouldFail {\n\t\t\t\t\treturn nil\n\t\t\t\t}\n\n\t\t\t\treturn migtest.VerifyDB(\n\t\t\t\t\ttx, paymentsIndexBucket, test.post,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt, before, after, MigrateSequenceIndex,\n\t\t\t\ttest.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1234,
+      "tokens": 160,
+      "embedding": []
+    }
+  ]
+}

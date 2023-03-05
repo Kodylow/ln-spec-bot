@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lncfg/protocol_legacy_off.go",
-  "package": "!dev",
+  "package": "lncfg",
   "sections": [
+    {
+      "slug": "//go:build !dev",
+      "content": "//go:build !dev\n// +build !dev\n\npackage lncfg\n\n// Legacy is a sub-config that houses all the legacy protocol options.  These\n// are mostly used for integration tests as most modern nodes should always run\n// with them on by default.",
+      "length": 210,
+      "tokens": 38,
+      "embedding": []
+    },
     {
       "slug": "type LegacyProtocol struct {",
       "content": "type LegacyProtocol struct {\n}\n\n// LegacyOnion returns true if the old legacy onion format should be used when\n// we're an intermediate or final hop. This controls if we set the\n// TLVOnionPayloadOptional bit or not.",

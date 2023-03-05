@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/build/loglevel_trace.go",
+  "package": "build",
+  "sections": [
+    {
+      "slug": "//go:build dev && trace",
+      "content": "//go:build dev && trace\n// +build dev,trace\n\npackage build\n\n// LogLevel specifies a trace log level.\nvar LogLevel = \"trace\"\n",
+      "length": 94,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

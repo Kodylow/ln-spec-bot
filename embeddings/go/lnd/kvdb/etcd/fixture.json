@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/fixture.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"context\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcwallet/walletdb\"\n\t\"github.com/stretchr/testify/require\"\n\tclientv3 \"go.etcd.io/etcd/client/v3\"\n\t\"go.etcd.io/etcd/client/v3/namespace\"\n)\n\nconst (\n\t// testEtcdTimeout is used for all RPC calls initiated by the test fixture.\n\ttestEtcdTimeout = 5 * time.Second\n)\n\n// EtcdTestFixture holds internal state of the etcd test fixture.",
+      "length": 404,
+      "tokens": 47,
+      "embedding": []
+    },
     {
       "slug": "type EtcdTestFixture struct {",
       "content": "type EtcdTestFixture struct {\n\tt      *testing.T\n\tcli    *clientv3.Client\n\tconfig *Config\n}\n\n// NewTestEtcdInstance creates an embedded etcd instance for testing, listening\n// on random open ports. Returns the connection config and a cleanup func that\n// will stop the etcd instance.",

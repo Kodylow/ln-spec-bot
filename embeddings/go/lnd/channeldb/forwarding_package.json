@@ -1,0 +1,314 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/forwarding_package.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type FwdState byte",
+      "content": "type FwdState byte\n\nconst (\n\t// FwdStateLockedIn is the starting state for all forwarding packages.\n\t// Packages in this state have not yet committed to the exact set of\n\t// Adds to forward to the switch.\n\tFwdStateLockedIn FwdState = iota\n\n\t// FwdStateProcessed marks the state in which all Adds have been\n\t// locally processed and the forwarding decision to the switch has been\n\t// persisted.\n\tFwdStateProcessed\n\n\t// FwdStateCompleted signals that all Adds have been acked, and that all\n\t// settles and fails have been delivered to their sources. Packages in\n\t// this state can be removed permanently.\n\tFwdStateCompleted\n)\n\nvar (\n\t// fwdPackagesKey is the root-level bucket that all forwarding packages\n\t// are written. This bucket is further subdivided based on the short\n\t// channel ID of each channel.\n\t//\n\t// Bucket hierarchy:\n\t//\n\t// fwdPackagesKey(root-bucket)\n\t//     \t|\n\t//     \t|-- <shortChannelID>\n\t//     \t|       |\n\t//     \t|       |-- <height>\n\t//     \t|       |       |-- ackFilterKey: <encoded bytes of PkgFilter>\n\t//     \t|       |       |-- settleFailFilterKey: <encoded bytes of PkgFilter>\n\t//     \t|       |       |-- fwdFilterKey: <encoded bytes of PkgFilter>\n\t//     \t|       |       |\n\t//     \t|       |       |-- addBucketKey\n\t//     \t|       |       |        |-- <index of LogUpdate>: <encoded bytes of LogUpdate>\n\t//     \t|       |       |        |-- <index of LogUpdate>: <encoded bytes of LogUpdate>\n\t//     \t|       |       |        ...\n\t//     \t|       |       |\n\t//     \t|       |       |-- failSettleBucketKey\n\t//     \t|       |                |-- <index of LogUpdate>: <encoded bytes of LogUpdate>\n\t//     \t|       |                |-- <index of LogUpdate>: <encoded bytes of LogUpdate>\n\t//     \t|       |                ...\n\t//     \t|       |\n\t//     \t|       |-- <height>\n\t//     \t|       |       |\n\t//     \t|       ...     ...\n\t//     \t|\n\t//     \t|\n\t//     \t|-- <shortChannelID>\n\t//     \t|       |\n\t//\t|       ...\n\t// \t...\n\t//\n\tfwdPackagesKey = []byte(\"fwd-packages\")\n\n\t// addBucketKey is the bucket to which all Add log updates are written.\n\taddBucketKey = []byte(\"add-updates\")\n\n\t// failSettleBucketKey is the bucket to which all Settle/Fail log\n\t// updates are written.\n\tfailSettleBucketKey = []byte(\"fail-settle-updates\")\n\n\t// fwdFilterKey is a key used to write the set of Adds that passed\n\t// validation and are to be forwarded to the switch.\n\t// NOTE: The presence of this key within a forwarding package indicates\n\t// that the package has reached FwdStateProcessed.\n\tfwdFilterKey = []byte(\"fwd-filter-key\")\n\n\t// ackFilterKey is a key used to access the PkgFilter indicating which\n\t// Adds have received a Settle/Fail. This response may come from a\n\t// number of sources, including: exitHop settle/fails, switch failures,\n\t// chain arbiter interjections, as well as settle/fails from the\n\t// next hop in the route.\n\tackFilterKey = []byte(\"ack-filter-key\")\n\n\t// settleFailFilterKey is a key used to access the PkgFilter indicating\n\t// which Settles/Fails in have been received and processed by the link\n\t// that originally received the Add.\n\tsettleFailFilterKey = []byte(\"settle-fail-filter-key\")\n)\n\n// PkgFilter is used to compactly represent a particular subset of the Adds in a\n// forwarding package. Each filter is represented as a simple, statically-sized\n// bitvector, where the elements are intended to be the indices of the Adds as\n// they are written in the FwdPkg.",
+      "length": 3312,
+      "tokens": 491,
+      "embedding": []
+    },
+    {
+      "slug": "type PkgFilter struct {",
+      "content": "type PkgFilter struct {\n\tcount  uint16\n\tfilter []byte\n}\n\n// NewPkgFilter initializes an empty PkgFilter supporting `count` elements.",
+      "length": 104,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPkgFilter(count uint16) *PkgFilter {",
+      "content": "func NewPkgFilter(count uint16) *PkgFilter {\n\t// We add 7 to ensure that the integer division yields properly rounded\n\t// values.\n\tfilterLen := (count + 7) / 8\n\n\treturn &PkgFilter{\n\t\tcount:  count,\n\t\tfilter: make([]byte, filterLen),\n\t}\n}\n\n// Count returns the number of elements represented by this PkgFilter.",
+      "length": 254,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Count() uint16 {",
+      "content": "func (f *PkgFilter) Count() uint16 {\n\treturn f.count\n}\n\n// Set marks the `i`-th element as included by this filter.\n// NOTE: It is assumed that i is always less than count.",
+      "length": 131,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Set(i uint16) {",
+      "content": "func (f *PkgFilter) Set(i uint16) {\n\tbyt := i / 8\n\tbit := i % 8\n\n\t// Set the i-th bit in the filter.\n\t// TODO(conner): ignore if > count to prevent panic?\n\tf.filter[byt] |= byte(1 << (7 - bit))\n}\n\n// Contains queries the filter for membership of index `i`.\n// NOTE: It is assumed that i is always less than count.",
+      "length": 268,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Contains(i uint16) bool {",
+      "content": "func (f *PkgFilter) Contains(i uint16) bool {\n\tbyt := i / 8\n\tbit := i % 8\n\n\t// Read the i-th bit in the filter.\n\t// TODO(conner): ignore if > count to prevent panic?\n\treturn f.filter[byt]&(1<<(7-bit)) != 0\n}\n\n// Equal checks two PkgFilters for equality.",
+      "length": 199,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Equal(f2 *PkgFilter) bool {",
+      "content": "func (f *PkgFilter) Equal(f2 *PkgFilter) bool {\n\tif f == f2 {\n\t\treturn true\n\t}\n\tif f.count != f2.count {\n\t\treturn false\n\t}\n\n\treturn bytes.Equal(f.filter, f2.filter)\n}\n\n// IsFull returns true if every element in the filter has been Set, and false\n// otherwise.",
+      "length": 200,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) IsFull() bool {",
+      "content": "func (f *PkgFilter) IsFull() bool {\n\t// Batch validate bytes that are fully used.\n\tfor i := uint16(0); i < f.count/8; i++ {\n\t\tif f.filter[i] != 0xFF {\n\t\t\treturn false\n\t\t}\n\t}\n\n\t// If the count is not a multiple of 8, check that the filter contains\n\t// all remaining bits.\n\trem := f.count % 8\n\tfor idx := f.count - rem; idx < f.count; idx++ {\n\t\tif !f.Contains(idx) {\n\t\t\treturn false\n\t\t}\n\t}\n\n\treturn true\n}\n\n// Size returns number of bytes produced when the PkgFilter is serialized.",
+      "length": 424,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Size() uint16 {",
+      "content": "func (f *PkgFilter) Size() uint16 {\n\t// 2 bytes for uint16 `count`, then round up number of bytes required to\n\t// represent `count` bits.\n\treturn 2 + (f.count+7)/8\n}\n\n// Encode writes the filter to the provided io.Writer.",
+      "length": 180,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Encode(w io.Writer) error {",
+      "content": "func (f *PkgFilter) Encode(w io.Writer) error {\n\tif err := binary.Write(w, binary.BigEndian, f.count); err != nil {\n\t\treturn err\n\t}\n\n\t_, err := w.Write(f.filter)\n\n\treturn err\n}\n\n// Decode reads the filter from the provided io.Reader.",
+      "length": 176,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *PkgFilter) Decode(r io.Reader) error {",
+      "content": "func (f *PkgFilter) Decode(r io.Reader) error {\n\tif err := binary.Read(r, binary.BigEndian, &f.count); err != nil {\n\t\treturn err\n\t}\n\n\tf.filter = make([]byte, f.Size()-2)\n\t_, err := io.ReadFull(r, f.filter)\n\n\treturn err\n}\n\n// FwdPkg records all adds, settles, and fails that were locked in as a result\n// of the remote peer sending us a revocation. Each package is identified by\n// the short chanid and remote commitment height corresponding to the revocation\n// that locked in the HTLCs. For everything except a locally initiated payment,\n// settles and fails in a forwarding package must have a corresponding Add in\n// another package, and can be removed individually once the source link has\n// received the fail/settle.\n//\n// Adds cannot be removed, as we need to present the same batch of Adds to\n// properly handle replay protection. Instead, we use a PkgFilter to mark that\n// we have finished processing a particular Add. A FwdPkg should only be deleted\n// after the AckFilter is full and all settles and fails have been persistently\n// removed.",
+      "length": 982,
+      "tokens": 170,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdPkg struct {",
+      "content": "type FwdPkg struct {\n\t// Source identifies the channel that wrote this forwarding package.\n\tSource lnwire.ShortChannelID\n\n\t// Height is the height of the remote commitment chain that locked in\n\t// this forwarding package.\n\tHeight uint64\n\n\t// State signals the persistent condition of the package and directs how\n\t// to reprocess the package in the event of failures.\n\tState FwdState\n\n\t// Adds contains all add messages which need to be processed and\n\t// forwarded to the switch. Adds does not change over the life of a\n\t// forwarding package.\n\tAdds []LogUpdate\n\n\t// FwdFilter is a filter containing the indices of all Adds that were\n\t// forwarded to the switch.\n\tFwdFilter *PkgFilter\n\n\t// AckFilter is a filter containing the indices of all Adds for which\n\t// the source has received a settle or fail and is reflected in the next\n\t// commitment txn. A package should not be removed until IsFull()\n\t// returns true.\n\tAckFilter *PkgFilter\n\n\t// SettleFails contains all settle and fail messages that should be\n\t// forwarded to the switch.\n\tSettleFails []LogUpdate\n\n\t// SettleFailFilter is a filter containing the indices of all Settle or\n\t// Fails originating in this package that have been received and locked\n\t// into the incoming link's commitment state.\n\tSettleFailFilter *PkgFilter\n}\n\n// NewFwdPkg initializes a new forwarding package in FwdStateLockedIn. This\n// should be used to create a package at the time we receive a revocation.",
+      "length": 1379,
+      "tokens": 227,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFwdPkg(source lnwire.ShortChannelID, height uint64,",
+      "content": "func NewFwdPkg(source lnwire.ShortChannelID, height uint64,\n\taddUpdates, settleFailUpdates []LogUpdate) *FwdPkg {\n\n\tnAddUpdates := uint16(len(addUpdates))\n\tnSettleFailUpdates := uint16(len(settleFailUpdates))\n\n\treturn &FwdPkg{\n\t\tSource:           source,\n\t\tHeight:           height,\n\t\tState:            FwdStateLockedIn,\n\t\tAdds:             addUpdates,\n\t\tFwdFilter:        NewPkgFilter(nAddUpdates),\n\t\tAckFilter:        NewPkgFilter(nAddUpdates),\n\t\tSettleFails:      settleFailUpdates,\n\t\tSettleFailFilter: NewPkgFilter(nSettleFailUpdates),\n\t}\n}\n\n// ID returns an unique identifier for this package, used to ensure that sphinx\n// replay processing of this batch is idempotent.",
+      "length": 597,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FwdPkg) ID() []byte {",
+      "content": "func (f *FwdPkg) ID() []byte {\n\tvar id = make([]byte, 16)\n\tbyteOrder.PutUint64(id[:8], f.Source.ToUint64())\n\tbyteOrder.PutUint64(id[8:], f.Height)\n\treturn id\n}\n\n// String returns a human-readable description of the forwarding package.",
+      "length": 197,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *FwdPkg) String() string {",
+      "content": "func (f *FwdPkg) String() string {\n\treturn fmt.Sprintf(\"%T(src=%v, height=%v, nadds=%v, nfailsettles=%v)\",\n\t\tf, f.Source, f.Height, len(f.Adds), len(f.SettleFails))\n}\n\n// AddRef is used to identify a particular Add in a FwdPkg. The short channel ID\n// is assumed to be that of the packager.",
+      "length": 250,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type AddRef struct {",
+      "content": "type AddRef struct {\n\t// Height is the remote commitment height that locked in the Add.\n\tHeight uint64\n\n\t// Index is the index of the Add within the fwd pkg's Adds.\n\t//\n\t// NOTE: This index is static over the lifetime of a forwarding package.\n\tIndex uint16\n}\n\n// Encode serializes the AddRef to the given io.Writer.",
+      "length": 285,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AddRef) Encode(w io.Writer) error {",
+      "content": "func (a *AddRef) Encode(w io.Writer) error {\n\tif err := binary.Write(w, binary.BigEndian, a.Height); err != nil {\n\t\treturn err\n\t}\n\n\treturn binary.Write(w, binary.BigEndian, a.Index)\n}\n\n// Decode deserializes the AddRef from the given io.Reader.",
+      "length": 192,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AddRef) Decode(r io.Reader) error {",
+      "content": "func (a *AddRef) Decode(r io.Reader) error {\n\tif err := binary.Read(r, binary.BigEndian, &a.Height); err != nil {\n\t\treturn err\n\t}\n\n\treturn binary.Read(r, binary.BigEndian, &a.Index)\n}\n\n// SettleFailRef is used to locate a Settle/Fail in another channel's FwdPkg. A\n// channel does not remove its own Settle/Fail htlcs, so the source is provided\n// to locate a db bucket belonging to another channel.",
+      "length": 345,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "type SettleFailRef struct {",
+      "content": "type SettleFailRef struct {\n\t// Source identifies the outgoing link that locked in the settle or\n\t// fail. This is then used by the *incoming* link to find the settle\n\t// fail in another link's forwarding packages.\n\tSource lnwire.ShortChannelID\n\n\t// Height is the remote commitment height that locked in this\n\t// Settle/Fail.\n\tHeight uint64\n\n\t// Index is the index of the Add with the fwd pkg's SettleFails.\n\t//\n\t// NOTE: This index is static over the lifetime of a forwarding package.\n\tIndex uint16\n}\n\n// SettleFailAcker is a generic interface providing the ability to acknowledge\n// settle/fail HTLCs stored in forwarding packages.",
+      "length": 589,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "type SettleFailAcker interface {",
+      "content": "type SettleFailAcker interface {\n\t// AckSettleFails atomically updates the settle-fail filters in *other*\n\t// channels' forwarding packages.\n\tAckSettleFails(tx kvdb.RwTx, settleFailRefs ...SettleFailRef) error\n}\n\n// GlobalFwdPkgReader is an interface used to retrieve the forwarding packages\n// of any active channel.",
+      "length": 278,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "type GlobalFwdPkgReader interface {",
+      "content": "type GlobalFwdPkgReader interface {\n\t// LoadChannelFwdPkgs loads all known forwarding packages for the given\n\t// channel.\n\tLoadChannelFwdPkgs(tx kvdb.RTx,\n\t\tsource lnwire.ShortChannelID) ([]*FwdPkg, error)\n}\n\n// FwdOperator defines the interfaces for managing forwarding packages that are\n// external to a particular channel. This interface is used by the switch to\n// read forwarding packages from arbitrary channels, and acknowledge settles and\n// fails for locally-sourced payments.",
+      "length": 440,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdOperator interface {",
+      "content": "type FwdOperator interface {\n\t// GlobalFwdPkgReader provides read access to all known forwarding\n\t// packages\n\tGlobalFwdPkgReader\n\n\t// SettleFailAcker grants the ability to acknowledge settles or fails\n\t// residing in arbitrary forwarding packages.\n\tSettleFailAcker\n}\n\n// SwitchPackager is a concrete implementation of the FwdOperator interface.\n// A SwitchPackager offers the ability to read any forwarding package, and ack\n// arbitrary settle and fail HTLCs.",
+      "length": 420,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "type SwitchPackager struct{}",
+      "content": "type SwitchPackager struct{}\n\n// NewSwitchPackager instantiates a new SwitchPackager.",
+      "length": 55,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSwitchPackager() *SwitchPackager {",
+      "content": "func NewSwitchPackager() *SwitchPackager {\n\treturn &SwitchPackager{}\n}\n\n// AckSettleFails atomically updates the settle-fail filters in *other*\n// channels' forwarding packages, to mark that the switch has received a settle\n// or fail residing in the forwarding package of a link.",
+      "length": 232,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SwitchPackager) AckSettleFails(tx kvdb.RwTx,",
+      "content": "func (*SwitchPackager) AckSettleFails(tx kvdb.RwTx,\n\tsettleFailRefs ...SettleFailRef) error {\n\n\treturn ackSettleFails(tx, settleFailRefs)\n}\n\n// LoadChannelFwdPkgs loads all forwarding packages for a particular channel.",
+      "length": 161,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (*SwitchPackager) LoadChannelFwdPkgs(tx kvdb.RTx,",
+      "content": "func (*SwitchPackager) LoadChannelFwdPkgs(tx kvdb.RTx,\n\tsource lnwire.ShortChannelID) ([]*FwdPkg, error) {\n\n\treturn loadChannelFwdPkgs(tx, source)\n}\n\n// FwdPackager supports all operations required to modify fwd packages, such as\n// creation, updates, reading, and removal. The interfaces are broken down in\n// this way to support future delegation of the subinterfaces.",
+      "length": 308,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdPackager interface {",
+      "content": "type FwdPackager interface {\n\t// AddFwdPkg serializes and writes a FwdPkg for this channel at the\n\t// remote commitment height included in the forwarding package.\n\tAddFwdPkg(tx kvdb.RwTx, fwdPkg *FwdPkg) error\n\n\t// SetFwdFilter looks up the forwarding package at the remote `height`\n\t// and sets the `fwdFilter`, marking the Adds for which:\n\t// 1) We are not the exit node\n\t// 2) Passed all validation\n\t// 3) Should be forwarded to the switch immediately after a failure\n\tSetFwdFilter(tx kvdb.RwTx, height uint64, fwdFilter *PkgFilter) error\n\n\t// AckAddHtlcs atomically updates the add filters in this channel's\n\t// forwarding packages to mark the resolution of an Add that was\n\t// received from the remote party.\n\tAckAddHtlcs(tx kvdb.RwTx, addRefs ...AddRef) error\n\n\t// SettleFailAcker allows a link to acknowledge settle/fail HTLCs\n\t// belonging to other channels.\n\tSettleFailAcker\n\n\t// LoadFwdPkgs loads all known forwarding packages owned by this\n\t// channel.\n\tLoadFwdPkgs(tx kvdb.RTx) ([]*FwdPkg, error)\n\n\t// RemovePkg deletes a forwarding package owned by this channel at\n\t// the provided remote `height`.\n\tRemovePkg(tx kvdb.RwTx, height uint64) error\n\n\t// Wipe deletes all the forwarding packages owned by this channel.\n\tWipe(tx kvdb.RwTx) error\n}\n\n// ChannelPackager is used by a channel to manage the lifecycle of its forwarding\n// packages. The packager is tied to a particular source channel ID, allowing it\n// to create and edit its own packages. Each packager also has the ability to\n// remove fail/settle htlcs that correspond to an add contained in one of\n// source's packages.",
+      "length": 1527,
+      "tokens": 238,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelPackager struct {",
+      "content": "type ChannelPackager struct {\n\tsource lnwire.ShortChannelID\n}\n\n// NewChannelPackager creates a new packager for a single channel.",
+      "length": 96,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChannelPackager(source lnwire.ShortChannelID) *ChannelPackager {",
+      "content": "func NewChannelPackager(source lnwire.ShortChannelID) *ChannelPackager {\n\treturn &ChannelPackager{\n\t\tsource: source,\n\t}\n}\n\n// AddFwdPkg writes a newly locked in forwarding package to disk.",
+      "length": 110,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (*ChannelPackager) AddFwdPkg(tx kvdb.RwTx, fwdPkg *FwdPkg) error { // nolint: dupl",
+      "content": "func (*ChannelPackager) AddFwdPkg(tx kvdb.RwTx, fwdPkg *FwdPkg) error { // nolint: dupl\n\tfwdPkgBkt, err := tx.CreateTopLevelBucket(fwdPackagesKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tsource := makeLogKey(fwdPkg.Source.ToUint64())\n\tsourceBkt, err := fwdPkgBkt.CreateBucketIfNotExists(source[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\theightKey := makeLogKey(fwdPkg.Height)\n\theightBkt, err := sourceBkt.CreateBucketIfNotExists(heightKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write ADD updates we received at this commit height.\n\taddBkt, err := heightBkt.CreateBucketIfNotExists(addBucketKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write SETTLE/FAIL updates we received at this commit height.\n\tfailSettleBkt, err := heightBkt.CreateBucketIfNotExists(failSettleBucketKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor i := range fwdPkg.Adds {\n\t\terr = putLogUpdate(addBkt, uint16(i), &fwdPkg.Adds[i])\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Persist the initialized pkg filter, which will be used to determine\n\t// when we can remove this forwarding package from disk.\n\tvar ackFilterBuf bytes.Buffer\n\tif err := fwdPkg.AckFilter.Encode(&ackFilterBuf); err != nil {\n\t\treturn err\n\t}\n\n\tif err := heightBkt.Put(ackFilterKey, ackFilterBuf.Bytes()); err != nil {\n\t\treturn err\n\t}\n\n\tfor i := range fwdPkg.SettleFails {\n\t\terr = putLogUpdate(failSettleBkt, uint16(i), &fwdPkg.SettleFails[i])\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\tvar settleFailFilterBuf bytes.Buffer\n\terr = fwdPkg.SettleFailFilter.Encode(&settleFailFilterBuf)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn heightBkt.Put(settleFailFilterKey, settleFailFilterBuf.Bytes())\n}\n\n// putLogUpdate writes an htlc to the provided `bkt`, using `index` as the key.",
+      "length": 1544,
+      "tokens": 206,
+      "embedding": []
+    },
+    {
+      "slug": "func putLogUpdate(bkt kvdb.RwBucket, idx uint16, htlc *LogUpdate) error {",
+      "content": "func putLogUpdate(bkt kvdb.RwBucket, idx uint16, htlc *LogUpdate) error {\n\tvar b bytes.Buffer\n\tif err := serializeLogUpdate(&b, htlc); err != nil {\n\t\treturn err\n\t}\n\n\treturn bkt.Put(uint16Key(idx), b.Bytes())\n}\n\n// LoadFwdPkgs scans the forwarding log for any packages that haven't been\n// processed, and returns their deserialized log updates in a map indexed by the\n// remote commitment height at which the updates were locked in.",
+      "length": 347,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) LoadFwdPkgs(tx kvdb.RTx) ([]*FwdPkg, error) {",
+      "content": "func (p *ChannelPackager) LoadFwdPkgs(tx kvdb.RTx) ([]*FwdPkg, error) {\n\treturn loadChannelFwdPkgs(tx, p.source)\n}\n\n// loadChannelFwdPkgs loads all forwarding packages owned by `source`.",
+      "length": 111,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func loadChannelFwdPkgs(tx kvdb.RTx, source lnwire.ShortChannelID) ([]*FwdPkg, error) {",
+      "content": "func loadChannelFwdPkgs(tx kvdb.RTx, source lnwire.ShortChannelID) ([]*FwdPkg, error) {\n\tfwdPkgBkt := tx.ReadBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn nil, nil\n\t}\n\n\tsourceKey := makeLogKey(source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadBucket(sourceKey[:])\n\tif sourceBkt == nil {\n\t\treturn nil, nil\n\t}\n\n\tvar heights []uint64\n\tif err := sourceBkt.ForEach(func(k, _ []byte) error {\n\t\tif len(k) != 8 {\n\t\t\treturn ErrCorruptedFwdPkg\n\t\t}\n\n\t\theights = append(heights, byteOrder.Uint64(k))\n\n\t\treturn nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load the forwarding package for each retrieved height.\n\tfwdPkgs := make([]*FwdPkg, 0, len(heights))\n\tfor _, height := range heights {\n\t\tfwdPkg, err := loadFwdPkg(fwdPkgBkt, source, height)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tfwdPkgs = append(fwdPkgs, fwdPkg)\n\t}\n\n\treturn fwdPkgs, nil\n}\n\n// loadFwdPkg reads the packager's fwd pkg at a given height, and determines the\n// appropriate FwdState.",
+      "length": 831,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func loadFwdPkg(fwdPkgBkt kvdb.RBucket, source lnwire.ShortChannelID,",
+      "content": "func loadFwdPkg(fwdPkgBkt kvdb.RBucket, source lnwire.ShortChannelID,\n\theight uint64) (*FwdPkg, error) {\n\n\tsourceKey := makeLogKey(source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadBucket(sourceKey[:])\n\tif sourceBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\theightKey := makeLogKey(height)\n\theightBkt := sourceBkt.NestedReadBucket(heightKey[:])\n\tif heightBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\t// Load ADDs from disk.\n\taddBkt := heightBkt.NestedReadBucket(addBucketKey)\n\tif addBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\tadds, err := loadHtlcs(addBkt)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load ack filter from disk.\n\tackFilterBytes := heightBkt.Get(ackFilterKey)\n\tif ackFilterBytes == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\tackFilterReader := bytes.NewReader(ackFilterBytes)\n\n\tackFilter := &PkgFilter{}\n\tif err := ackFilter.Decode(ackFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load SETTLE/FAILs from disk.\n\tfailSettleBkt := heightBkt.NestedReadBucket(failSettleBucketKey)\n\tif failSettleBkt == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\n\tfailSettles, err := loadHtlcs(failSettleBkt)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Load settle fail filter from disk.\n\tsettleFailFilterBytes := heightBkt.Get(settleFailFilterKey)\n\tif settleFailFilterBytes == nil {\n\t\treturn nil, ErrCorruptedFwdPkg\n\t}\n\tsettleFailFilterReader := bytes.NewReader(settleFailFilterBytes)\n\n\tsettleFailFilter := &PkgFilter{}\n\tif err := settleFailFilter.Decode(settleFailFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Initialize the fwding package, which always starts in the\n\t// FwdStateLockedIn. We can determine what state the package was left in\n\t// by examining constraints on the information loaded from disk.\n\tfwdPkg := &FwdPkg{\n\t\tSource:           source,\n\t\tState:            FwdStateLockedIn,\n\t\tHeight:           height,\n\t\tAdds:             adds,\n\t\tAckFilter:        ackFilter,\n\t\tSettleFails:      failSettles,\n\t\tSettleFailFilter: settleFailFilter,\n\t}\n\n\t// Check to see if we have written the set exported filter adds to\n\t// disk. If we haven't, processing of this package was never started, or\n\t// failed during the last attempt.\n\tfwdFilterBytes := heightBkt.Get(fwdFilterKey)\n\tif fwdFilterBytes == nil {\n\t\tnAdds := uint16(len(adds))\n\t\tfwdPkg.FwdFilter = NewPkgFilter(nAdds)\n\t\treturn fwdPkg, nil\n\t}\n\n\tfwdFilterReader := bytes.NewReader(fwdFilterBytes)\n\tfwdPkg.FwdFilter = &PkgFilter{}\n\tif err := fwdPkg.FwdFilter.Decode(fwdFilterReader); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Otherwise, a complete round of processing was completed, and we\n\t// advance the package to FwdStateProcessed.\n\tfwdPkg.State = FwdStateProcessed\n\n\t// If every add, settle, and fail has been fully acknowledged, we can\n\t// safely set the package's state to FwdStateCompleted, signalling that\n\t// it can be garbage collected.\n\tif fwdPkg.AckFilter.IsFull() && fwdPkg.SettleFailFilter.IsFull() {\n\t\tfwdPkg.State = FwdStateCompleted\n\t}\n\n\treturn fwdPkg, nil\n}\n\n// loadHtlcs retrieves all serialized htlcs in a bucket, returning\n// them in order of the indexes they were written under.",
+      "length": 2910,
+      "tokens": 370,
+      "embedding": []
+    },
+    {
+      "slug": "func loadHtlcs(bkt kvdb.RBucket) ([]LogUpdate, error) {",
+      "content": "func loadHtlcs(bkt kvdb.RBucket) ([]LogUpdate, error) {\n\tvar htlcs []LogUpdate\n\tif err := bkt.ForEach(func(_, v []byte) error {\n\t\thtlc, err := deserializeLogUpdate(bytes.NewReader(v))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\thtlcs = append(htlcs, *htlc)\n\n\t\treturn nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn htlcs, nil\n}\n\n// SetFwdFilter writes the set of indexes corresponding to Adds at the\n// `height` that are to be forwarded to the switch. Calling this method causes\n// the forwarding package at `height` to be in FwdStateProcessed. We write this\n// forwarding decision so that we always arrive at the same behavior for HTLCs\n// leaving this channel. After a restart, we skip validation of these Adds,\n// since they are assumed to have already been validated, and make the switch or\n// outgoing link responsible for handling replays.",
+      "length": 765,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) SetFwdFilter(tx kvdb.RwTx, height uint64,",
+      "content": "func (p *ChannelPackager) SetFwdFilter(tx kvdb.RwTx, height uint64,\n\tfwdFilter *PkgFilter) error {\n\n\tfwdPkgBkt := tx.ReadWriteBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\tsource := makeLogKey(p.source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadWriteBucket(source[:])\n\tif sourceBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\theightKey := makeLogKey(height)\n\theightBkt := sourceBkt.NestedReadWriteBucket(heightKey[:])\n\tif heightBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\t// If the fwd filter has already been written, we return early to avoid\n\t// modifying the persistent state.\n\tforwardedAddsBytes := heightBkt.Get(fwdFilterKey)\n\tif forwardedAddsBytes != nil {\n\t\treturn nil\n\t}\n\n\t// Otherwise we serialize and write the provided fwd filter.\n\tvar b bytes.Buffer\n\tif err := fwdFilter.Encode(&b); err != nil {\n\t\treturn err\n\t}\n\n\treturn heightBkt.Put(fwdFilterKey, b.Bytes())\n}\n\n// AckAddHtlcs accepts a list of references to add htlcs, and updates the\n// AckAddFilter of those forwarding packages to indicate that a settle or fail\n// has been received in response to the add.",
+      "length": 1003,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) AckAddHtlcs(tx kvdb.RwTx, addRefs ...AddRef) error {",
+      "content": "func (p *ChannelPackager) AckAddHtlcs(tx kvdb.RwTx, addRefs ...AddRef) error {\n\tif len(addRefs) == 0 {\n\t\treturn nil\n\t}\n\n\tfwdPkgBkt := tx.ReadWriteBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\tsourceKey := makeLogKey(p.source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadWriteBucket(sourceKey[:])\n\tif sourceBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\t// Organize the forward references such that we just get a single slice\n\t// of indexes for each unique height.\n\theightDiffs := make(map[uint64][]uint16)\n\tfor _, addRef := range addRefs {\n\t\theightDiffs[addRef.Height] = append(\n\t\t\theightDiffs[addRef.Height],\n\t\t\taddRef.Index,\n\t\t)\n\t}\n\n\t// Load each height bucket once and remove all acked htlcs at that\n\t// height.\n\tfor height, indexes := range heightDiffs {\n\t\terr := ackAddHtlcsAtHeight(sourceBkt, height, indexes)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// ackAddHtlcsAtHeight updates the AddAckFilter of a single forwarding package\n// with a list of indexes, writing the resulting filter back in its place.",
+      "length": 940,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "func ackAddHtlcsAtHeight(sourceBkt kvdb.RwBucket, height uint64,",
+      "content": "func ackAddHtlcsAtHeight(sourceBkt kvdb.RwBucket, height uint64,\n\tindexes []uint16) error {\n\n\theightKey := makeLogKey(height)\n\theightBkt := sourceBkt.NestedReadWriteBucket(heightKey[:])\n\tif heightBkt == nil {\n\t\t// If the height bucket isn't found, this could be because the\n\t\t// forwarding package was already removed. We'll return nil to\n\t\t// signal that the operation is successful, as there is nothing\n\t\t// to ack.\n\t\treturn nil\n\t}\n\n\t// Load ack filter from disk.\n\tackFilterBytes := heightBkt.Get(ackFilterKey)\n\tif ackFilterBytes == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\tackFilter := &PkgFilter{}\n\tackFilterReader := bytes.NewReader(ackFilterBytes)\n\tif err := ackFilter.Decode(ackFilterReader); err != nil {\n\t\treturn err\n\t}\n\n\t// Update the ack filter for this height.\n\tfor _, index := range indexes {\n\t\tackFilter.Set(index)\n\t}\n\n\t// Write the resulting filter to disk.\n\tvar ackFilterBuf bytes.Buffer\n\tif err := ackFilter.Encode(&ackFilterBuf); err != nil {\n\t\treturn err\n\t}\n\n\treturn heightBkt.Put(ackFilterKey, ackFilterBuf.Bytes())\n}\n\n// AckSettleFails persistently acknowledges settles or fails from a remote forwarding\n// package. This should only be called after the source of the Add has locked in\n// the settle/fail, or it becomes otherwise safe to forgo retransmitting the\n// settle/fail after a restart.",
+      "length": 1206,
+      "tokens": 174,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) AckSettleFails(tx kvdb.RwTx, settleFailRefs ...SettleFailRef) error {",
+      "content": "func (p *ChannelPackager) AckSettleFails(tx kvdb.RwTx, settleFailRefs ...SettleFailRef) error {\n\treturn ackSettleFails(tx, settleFailRefs)\n}\n\n// ackSettleFails persistently acknowledges a batch of settle fail references.",
+      "length": 121,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func ackSettleFails(tx kvdb.RwTx, settleFailRefs []SettleFailRef) error {",
+      "content": "func ackSettleFails(tx kvdb.RwTx, settleFailRefs []SettleFailRef) error {\n\tif len(settleFailRefs) == 0 {\n\t\treturn nil\n\t}\n\n\tfwdPkgBkt := tx.ReadWriteBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\t// Organize the forward references such that we just get a single slice\n\t// of indexes for each unique destination-height pair.\n\tdestHeightDiffs := make(map[lnwire.ShortChannelID]map[uint64][]uint16)\n\tfor _, settleFailRef := range settleFailRefs {\n\t\tdestHeights, ok := destHeightDiffs[settleFailRef.Source]\n\t\tif !ok {\n\t\t\tdestHeights = make(map[uint64][]uint16)\n\t\t\tdestHeightDiffs[settleFailRef.Source] = destHeights\n\t\t}\n\n\t\tdestHeights[settleFailRef.Height] = append(\n\t\t\tdestHeights[settleFailRef.Height],\n\t\t\tsettleFailRef.Index,\n\t\t)\n\t}\n\n\t// With the references organized by destination and height, we now load\n\t// each remote bucket, and update the settle fail filter for any\n\t// settle/fail htlcs.\n\tfor dest, destHeights := range destHeightDiffs {\n\t\tdestKey := makeLogKey(dest.ToUint64())\n\t\tdestBkt := fwdPkgBkt.NestedReadWriteBucket(destKey[:])\n\t\tif destBkt == nil {\n\t\t\t// If the destination bucket is not found, this is\n\t\t\t// likely the result of the destination channel being\n\t\t\t// closed and having it's forwarding packages wiped. We\n\t\t\t// won't treat this as an error, because the response\n\t\t\t// will no longer be retransmitted internally.\n\t\t\tcontinue\n\t\t}\n\n\t\tfor height, indexes := range destHeights {\n\t\t\terr := ackSettleFailsAtHeight(destBkt, height, indexes)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// ackSettleFailsAtHeight given a destination bucket, acks the provided indexes\n// at particular a height by updating the settle fail filter.",
+      "length": 1571,
+      "tokens": 209,
+      "embedding": []
+    },
+    {
+      "slug": "func ackSettleFailsAtHeight(destBkt kvdb.RwBucket, height uint64,",
+      "content": "func ackSettleFailsAtHeight(destBkt kvdb.RwBucket, height uint64,\n\tindexes []uint16) error {\n\n\theightKey := makeLogKey(height)\n\theightBkt := destBkt.NestedReadWriteBucket(heightKey[:])\n\tif heightBkt == nil {\n\t\t// If the height bucket isn't found, this could be because the\n\t\t// forwarding package was already removed. We'll return nil to\n\t\t// signal that the operation is as there is nothing to ack.\n\t\treturn nil\n\t}\n\n\t// Load ack filter from disk.\n\tsettleFailFilterBytes := heightBkt.Get(settleFailFilterKey)\n\tif settleFailFilterBytes == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\tsettleFailFilter := &PkgFilter{}\n\tsettleFailFilterReader := bytes.NewReader(settleFailFilterBytes)\n\tif err := settleFailFilter.Decode(settleFailFilterReader); err != nil {\n\t\treturn err\n\t}\n\n\t// Update the ack filter for this height.\n\tfor _, index := range indexes {\n\t\tsettleFailFilter.Set(index)\n\t}\n\n\t// Write the resulting filter to disk.\n\tvar settleFailFilterBuf bytes.Buffer\n\tif err := settleFailFilter.Encode(&settleFailFilterBuf); err != nil {\n\t\treturn err\n\t}\n\n\treturn heightBkt.Put(settleFailFilterKey, settleFailFilterBuf.Bytes())\n}\n\n// RemovePkg deletes the forwarding package at the given height from the\n// packager's source bucket.",
+      "length": 1114,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) RemovePkg(tx kvdb.RwTx, height uint64) error {",
+      "content": "func (p *ChannelPackager) RemovePkg(tx kvdb.RwTx, height uint64) error {\n\tfwdPkgBkt := tx.ReadWriteBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn nil\n\t}\n\n\tsourceBytes := makeLogKey(p.source.ToUint64())\n\tsourceBkt := fwdPkgBkt.NestedReadWriteBucket(sourceBytes[:])\n\tif sourceBkt == nil {\n\t\treturn ErrCorruptedFwdPkg\n\t}\n\n\theightKey := makeLogKey(height)\n\n\treturn sourceBkt.DeleteNestedBucket(heightKey[:])\n}\n\n// Wipe deletes all the channel's forwarding packages, if any.",
+      "length": 388,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *ChannelPackager) Wipe(tx kvdb.RwTx) error {",
+      "content": "func (p *ChannelPackager) Wipe(tx kvdb.RwTx) error {\n\t// If the root bucket doesn't exist, there's no need to delete.\n\tfwdPkgBkt := tx.ReadWriteBucket(fwdPackagesKey)\n\tif fwdPkgBkt == nil {\n\t\treturn nil\n\t}\n\n\tsourceBytes := makeLogKey(p.source.ToUint64())\n\n\t// If the nested bucket doesn't exist, there's no need to delete.\n\tif fwdPkgBkt.NestedReadWriteBucket(sourceBytes[:]) == nil {\n\t\treturn nil\n\t}\n\n\treturn fwdPkgBkt.DeleteNestedBucket(sourceBytes[:])\n}\n\n// uint16Key writes the provided 16-bit unsigned integer to a 2-byte slice.",
+      "length": 463,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func uint16Key(i uint16) []byte {",
+      "content": "func uint16Key(i uint16) []byte {\n\tkey := make([]byte, 2)\n\tbyteOrder.PutUint16(key, i)\n\treturn key\n}\n\n// Compile-time constraint to ensure that ChannelPackager implements the public\n// FwdPackager interface.\nvar _ FwdPackager = (*ChannelPackager)(nil)\n\n// Compile-time constraint to ensure that SwitchPackager implements the public\n// FwdOperator interface.\nvar _ FwdOperator = (*SwitchPackager)(nil)\n",
+      "length": 355,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

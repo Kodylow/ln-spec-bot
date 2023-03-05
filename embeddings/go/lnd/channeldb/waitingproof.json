@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/waitingproof.go",
+  "package": "channeldb",
+  "sections": [
+    {
+      "slug": "type WaitingProofStore struct {",
+      "content": "type WaitingProofStore struct {\n\t// cache is used in order to reduce the number of redundant get\n\t// calls, when object isn't stored in it.\n\tcache map[WaitingProofKey]struct{}\n\tdb    kvdb.Backend\n\tmu    sync.RWMutex\n}\n\n// NewWaitingProofStore creates new instance of proofs storage.",
+      "length": 243,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWaitingProofStore(db kvdb.Backend) (*WaitingProofStore, error) {",
+      "content": "func NewWaitingProofStore(db kvdb.Backend) (*WaitingProofStore, error) {\n\ts := &WaitingProofStore{\n\t\tdb: db,\n\t}\n\n\tif err := s.ForAll(func(proof *WaitingProof) error {\n\t\ts.cache[proof.Key()] = struct{}{}\n\t\treturn nil\n\t}, func() {\n\t\ts.cache = make(map[WaitingProofKey]struct{})\n\t}); err != nil && err != ErrWaitingProofNotFound {\n\t\treturn nil, err\n\t}\n\n\treturn s, nil\n}\n\n// Add adds new waiting proof in the storage.",
+      "length": 324,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *WaitingProofStore) Add(proof *WaitingProof) error {",
+      "content": "func (s *WaitingProofStore) Add(proof *WaitingProof) error {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\terr := kvdb.Update(s.db, func(tx kvdb.RwTx) error {\n\t\tvar err error\n\t\tvar b bytes.Buffer\n\n\t\t// Get or create the bucket.\n\t\tbucket, err := tx.CreateTopLevelBucket(waitingProofsBucketKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Encode the objects and place it in the bucket.\n\t\tif err := proof.Encode(&b); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tkey := proof.Key()\n\n\t\treturn bucket.Put(key[:], b.Bytes())\n\t}, func() {})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Knowing that the write succeeded, we can now update the in-memory\n\t// cache with the proof's key.\n\ts.cache[proof.Key()] = struct{}{}\n\n\treturn nil\n}\n\n// Remove removes the proof from storage by its key.",
+      "length": 655,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *WaitingProofStore) Remove(key WaitingProofKey) error {",
+      "content": "func (s *WaitingProofStore) Remove(key WaitingProofKey) error {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\tif _, ok := s.cache[key]; !ok {\n\t\treturn ErrWaitingProofNotFound\n\t}\n\n\terr := kvdb.Update(s.db, func(tx kvdb.RwTx) error {\n\t\t// Get or create the top bucket.\n\t\tbucket := tx.ReadWriteBucket(waitingProofsBucketKey)\n\t\tif bucket == nil {\n\t\t\treturn ErrWaitingProofNotFound\n\t\t}\n\n\t\treturn bucket.Delete(key[:])\n\t}, func() {})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Since the proof was successfully deleted from the store, we can now\n\t// remove it from the in-memory cache.\n\tdelete(s.cache, key)\n\n\treturn nil\n}\n\n// ForAll iterates thought all waiting proofs and passing the waiting proof\n// in the given callback.",
+      "length": 611,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *WaitingProofStore) ForAll(cb func(*WaitingProof) error,",
+      "content": "func (s *WaitingProofStore) ForAll(cb func(*WaitingProof) error,\n\treset func()) error {\n\n\treturn kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tbucket := tx.ReadBucket(waitingProofsBucketKey)\n\t\tif bucket == nil {\n\t\t\treturn ErrWaitingProofNotFound\n\t\t}\n\n\t\t// Iterate over objects buckets.\n\t\treturn bucket.ForEach(func(k, v []byte) error {\n\t\t\t// Skip buckets fields.\n\t\t\tif v == nil {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\tr := bytes.NewReader(v)\n\t\t\tproof := &WaitingProof{}\n\t\t\tif err := proof.Decode(r); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\treturn cb(proof)\n\t\t})\n\t}, reset)\n}\n\n// Get returns the object which corresponds to the given index.",
+      "length": 529,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *WaitingProofStore) Get(key WaitingProofKey) (*WaitingProof, error) {",
+      "content": "func (s *WaitingProofStore) Get(key WaitingProofKey) (*WaitingProof, error) {\n\tvar proof *WaitingProof\n\n\ts.mu.RLock()\n\tdefer s.mu.RUnlock()\n\n\tif _, ok := s.cache[key]; !ok {\n\t\treturn nil, ErrWaitingProofNotFound\n\t}\n\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tbucket := tx.ReadBucket(waitingProofsBucketKey)\n\t\tif bucket == nil {\n\t\t\treturn ErrWaitingProofNotFound\n\t\t}\n\n\t\t// Iterate over objects buckets.\n\t\tv := bucket.Get(key[:])\n\t\tif v == nil {\n\t\t\treturn ErrWaitingProofNotFound\n\t\t}\n\n\t\tr := bytes.NewReader(v)\n\t\treturn proof.Decode(r)\n\t}, func() {\n\t\tproof = &WaitingProof{}\n\t})\n\n\treturn proof, err\n}\n\n// WaitingProofKey is the proof key which uniquely identifies the waiting\n// proof object. The goal of this key is distinguish the local and remote\n// proof for the same channel id.",
+      "length": 680,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "type WaitingProofKey [9]byte",
+      "content": "type WaitingProofKey [9]byte\n\n// WaitingProof is the storable object, which encapsulate the half proof and\n// the information about from which side this proof came. This structure is\n// needed to make channel proof exchange persistent, so that after client\n// restart we may receive remote/local half proof and process it.",
+      "length": 289,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "type WaitingProof struct {",
+      "content": "type WaitingProof struct {\n\t*lnwire.AnnounceSignatures\n\tisRemote bool\n}\n\n// NewWaitingProof constructs a new waiting prof instance.",
+      "length": 100,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWaitingProof(isRemote bool, proof *lnwire.AnnounceSignatures) *WaitingProof {",
+      "content": "func NewWaitingProof(isRemote bool, proof *lnwire.AnnounceSignatures) *WaitingProof {\n\treturn &WaitingProof{\n\t\tAnnounceSignatures: proof,\n\t\tisRemote:           isRemote,\n\t}\n}\n\n// OppositeKey returns the key which uniquely identifies opposite waiting proof.",
+      "length": 164,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *WaitingProof) OppositeKey() WaitingProofKey {",
+      "content": "func (p *WaitingProof) OppositeKey() WaitingProofKey {\n\tvar key [9]byte\n\tbinary.BigEndian.PutUint64(key[:8], p.ShortChannelID.ToUint64())\n\n\tif !p.isRemote {\n\t\tkey[8] = 1\n\t}\n\treturn key\n}\n\n// Key returns the key which uniquely identifies waiting proof.",
+      "length": 187,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *WaitingProof) Key() WaitingProofKey {",
+      "content": "func (p *WaitingProof) Key() WaitingProofKey {\n\tvar key [9]byte\n\tbinary.BigEndian.PutUint64(key[:8], p.ShortChannelID.ToUint64())\n\n\tif p.isRemote {\n\t\tkey[8] = 1\n\t}\n\treturn key\n}\n\n// Encode writes the internal representation of waiting proof in byte stream.",
+      "length": 200,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *WaitingProof) Encode(w io.Writer) error {",
+      "content": "func (p *WaitingProof) Encode(w io.Writer) error {\n\tif err := binary.Write(w, byteOrder, p.isRemote); err != nil {\n\t\treturn err\n\t}\n\n\t// TODO(yy): remove the type assertion when we finished refactoring db\n\t// into using write buffer.\n\tbuf, ok := w.(*bytes.Buffer)\n\tif !ok {\n\t\treturn fmt.Errorf(\"expect io.Writer to be *bytes.Buffer\")\n\t}\n\n\tif err := p.AnnounceSignatures.Encode(buf, 0); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// Decode reads the data from the byte stream and initializes the\n// waiting proof object with it.",
+      "length": 458,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *WaitingProof) Decode(r io.Reader) error {",
+      "content": "func (p *WaitingProof) Decode(r io.Reader) error {\n\tif err := binary.Read(r, byteOrder, &p.isRemote); err != nil {\n\t\treturn err\n\t}\n\n\tmsg := &lnwire.AnnounceSignatures{}\n\tif err := msg.Decode(r, 0); err != nil {\n\t\treturn err\n\t}\n\n\t(*p).AnnounceSignatures = msg\n\treturn nil\n}\n",
+      "length": 210,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

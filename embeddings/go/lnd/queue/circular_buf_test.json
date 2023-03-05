@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/queue/circular_buf_test.go",
+  "package": "queue",
+  "sections": [
+    {
+      "slug": "func TestNewCircularBuffer(t *testing.T) {",
+      "content": "func TestNewCircularBuffer(t *testing.T) {\n\ttests := []struct {\n\t\tname          string\n\t\tsize          int\n\t\texpectedError error\n\t}{\n\t\t{\n\t\t\tname:          \"zero size\",\n\t\t\tsize:          0,\n\t\t\texpectedError: errInvalidSize,\n\t\t},\n\t\t{\n\t\t\tname:          \"negative size\",\n\t\t\tsize:          -1,\n\t\t\texpectedError: errInvalidSize,\n\t\t},\n\t\t{\n\t\t\tname:          \"ok size\",\n\t\t\tsize:          1,\n\t\t\texpectedError: nil,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t_, err := NewCircularBuffer(test.size)\n\t\t\tif err != test.expectedError {\n\t\t\t\tt.Fatalf(\"expected: %v, got: %v\",\n\t\t\t\t\ttest.expectedError, err)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestCircularBuffer tests the adding and listing of items in a circular\n// buffer.",
+      "length": 665,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCircularBuffer(t *testing.T) {",
+      "content": "func TestCircularBuffer(t *testing.T) {\n\ttests := []struct {\n\t\tname          string\n\t\tsize          int\n\t\titemCount     int\n\t\texpectedItems []interface{}\n\t}{\n\t\t{\n\t\t\tname:          \"no elements\",\n\t\t\tsize:          5,\n\t\t\titemCount:     0,\n\t\t\texpectedItems: nil,\n\t\t},\n\t\t{\n\t\t\tname:      \"single element\",\n\t\t\tsize:      5,\n\t\t\titemCount: 1,\n\t\t\texpectedItems: []interface{}{\n\t\t\t\t0,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname:      \"no wrap, not full\",\n\t\t\tsize:      5,\n\t\t\titemCount: 4,\n\t\t\texpectedItems: []interface{}{\n\t\t\t\t0, 1, 2, 3,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname:      \"no wrap, exactly full\",\n\t\t\tsize:      5,\n\t\t\titemCount: 5,\n\t\t\texpectedItems: []interface{}{\n\t\t\t\t0, 1, 2, 3, 4,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\t// The underlying array should contain {5, 1, 2, 3, 4}.\n\t\t\tname:      \"wrap, one over\",\n\t\t\tsize:      5,\n\t\t\titemCount: 6,\n\t\t\texpectedItems: []interface{}{\n\t\t\t\t1, 2, 3, 4, 5,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\t// The underlying array should contain {5, 6, 2, 3, 4}.\n\t\t\tname:      \"wrap, two over\",\n\t\t\tsize:      5,\n\t\t\titemCount: 7,\n\t\t\texpectedItems: []interface{}{\n\t\t\t\t2, 3, 4, 5, 6,\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tbuffer, err := NewCircularBuffer(test.size)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t\t\t}\n\n\t\t\tfor i := 0; i < test.itemCount; i++ {\n\t\t\t\tbuffer.Add(i)\n\t\t\t}\n\n\t\t\t// List the items in the buffer and check that the list\n\t\t\t// is as expected.\n\t\t\tlist := buffer.List()\n\t\t\tif !reflect.DeepEqual(test.expectedItems, list) {\n\t\t\t\tt.Fatalf(\"expected %v, got: %v\",\n\t\t\t\t\ttest.expectedItems, list)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestLatest tests fetching of the last item added to a circular buffer.",
+      "length": 1523,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "func TestLatest(t *testing.T) {",
+      "content": "func TestLatest(t *testing.T) {\n\ttests := []struct {\n\t\tname string\n\t\tsize int\n\n\t\t// items is the number of items to add to the buffer.\n\t\titems int\n\n\t\t// expectedItem is the value we expect from Latest().\n\t\texpectedItem interface{}\n\t}{\n\t\t{\n\t\t\tname:         \"no items\",\n\t\t\tsize:         3,\n\t\t\titems:        0,\n\t\t\texpectedItem: nil,\n\t\t},\n\t\t{\n\t\t\tname:         \"one item\",\n\t\t\tsize:         3,\n\t\t\titems:        1,\n\t\t\texpectedItem: 0,\n\t\t},\n\t\t{\n\t\t\tname:         \"exactly full\",\n\t\t\tsize:         3,\n\t\t\titems:        3,\n\t\t\texpectedItem: 2,\n\t\t},\n\t\t{\n\t\t\tname:         \"overflow to index 0\",\n\t\t\tsize:         3,\n\t\t\titems:        4,\n\t\t\texpectedItem: 3,\n\t\t},\n\t\t{\n\t\t\tname:         \"overflow twice to index 0\",\n\t\t\tsize:         3,\n\t\t\titems:        7,\n\t\t\texpectedItem: 6,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t//t.Parallel()\n\n\t\t\tbuffer, err := NewCircularBuffer(test.size)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t\t\t}\n\n\t\t\tfor i := 0; i < test.items; i++ {\n\t\t\t\tbuffer.Add(i)\n\t\t\t}\n\n\t\t\tlatest := buffer.Latest()\n\n\t\t\tif !reflect.DeepEqual(latest, test.expectedItem) {\n\t\t\t\tt.Fatalf(\"expected: %v, got: %v\",\n\t\t\t\t\ttest.expectedItem, latest)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 1114,
+      "tokens": 152,
+      "embedding": []
+    }
+  ]
+}

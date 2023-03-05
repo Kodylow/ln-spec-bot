@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/labels/labels.go",
-  "package": "Package",
+  "package": "labels",
   "sections": [
     {
       "slug": "func ValidateAPI(label string) (string, error) {",

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/chainrpc_default.go",
-  "package": "!chainrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !chainrpc",
+      "content": "//go:build !chainrpc\n// +build !chainrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// chainCommands will return nil for non-chainrpc builds.",
+      "length": 118,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func chainCommands() []cli.Command {",
       "content": "func chainCommands() []cli.Command {\n\treturn nil\n}\n",

@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/sweep/store.go",
+  "package": "sweep",
+  "sections": [
+    {
+      "slug": "type SweeperStore interface {",
+      "content": "type SweeperStore interface {\n\t// IsOurTx determines whether a tx is published by us, based on its\n\t// hash.\n\tIsOurTx(hash chainhash.Hash) (bool, error)\n\n\t// NotifyPublishTx signals that we are about to publish a tx.\n\tNotifyPublishTx(*wire.MsgTx) error\n\n\t// GetLastPublishedTx returns the last tx that we called NotifyPublishTx\n\t// for.\n\tGetLastPublishedTx() (*wire.MsgTx, error)\n\n\t// ListSweeps lists all the sweeps we have successfully published.\n\tListSweeps() ([]chainhash.Hash, error)\n}\n",
+      "length": 447,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "type sweeperStore struct {",
+      "content": "type sweeperStore struct {\n\tdb kvdb.Backend\n}\n\n// NewSweeperStore returns a new store instance.",
+      "length": 65,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSweeperStore(db kvdb.Backend, chainHash *chainhash.Hash) (",
+      "content": "func NewSweeperStore(db kvdb.Backend, chainHash *chainhash.Hash) (\n\tSweeperStore, error) {\n\n\terr := kvdb.Update(db, func(tx kvdb.RwTx) error {\n\t\t_, err := tx.CreateTopLevelBucket(\n\t\t\tlastTxBucketKey,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif tx.ReadWriteBucket(txHashesBucketKey) != nil {\n\t\t\treturn nil\n\t\t}\n\n\t\ttxHashesBucket, err := tx.CreateTopLevelBucket(\n\t\t\ttxHashesBucketKey,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Use non-existence of tx hashes bucket as a signal to migrate\n\t\t// nursery finalized txes.\n\t\terr = migrateTxHashes(tx, txHashesBucket, chainHash)\n\n\t\treturn err\n\t}, func() {})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &sweeperStore{\n\t\tdb: db,\n\t}, nil\n}\n\n// migrateTxHashes migrates nursery finalized txes to the tx hashes bucket. This\n// is not implemented as a database migration, to keep the downgrade path open.",
+      "length": 743,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateTxHashes(tx kvdb.RwTx, txHashesBucket kvdb.RwBucket,",
+      "content": "func migrateTxHashes(tx kvdb.RwTx, txHashesBucket kvdb.RwBucket,\n\tchainHash *chainhash.Hash) error {\n\n\tlog.Infof(\"Migrating UTXO nursery finalized TXIDs\")\n\n\t// Compose chain bucket key.\n\tvar b bytes.Buffer\n\tif _, err := b.Write(utxnChainPrefix); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := b.Write(chainHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Get chain bucket if exists.\n\tchainBucket := tx.ReadWriteBucket(b.Bytes())\n\tif chainBucket == nil {\n\t\treturn nil\n\t}\n\n\t// Retrieve the existing height index.\n\thghtIndex := chainBucket.NestedReadWriteBucket(utxnHeightIndexKey)\n\tif hghtIndex == nil {\n\t\treturn nil\n\t}\n\n\t// Retrieve all heights.\n\terr := hghtIndex.ForEach(func(k, v []byte) error {\n\t\theightBucket := hghtIndex.NestedReadWriteBucket(k)\n\t\tif heightBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Get finalized tx for height.\n\t\ttxBytes := heightBucket.Get(utxnFinalizedKndrTxnKey)\n\t\tif txBytes == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Deserialize and skip tx if it cannot be deserialized.\n\t\ttx := &wire.MsgTx{}\n\t\terr := tx.Deserialize(bytes.NewReader(txBytes))\n\t\tif err != nil {\n\t\t\tlog.Warnf(\"Cannot deserialize utxn tx\")\n\t\t\treturn nil\n\t\t}\n\n\t\t// Calculate hash.\n\t\thash := tx.TxHash()\n\n\t\t// Insert utxn tx hash in hashes bucket.\n\t\tlog.Debugf(\"Inserting nursery tx %v in hash list \"+\n\t\t\t\"(height=%v)\", hash, byteOrder.Uint32(k))\n\n\t\treturn txHashesBucket.Put(hash[:], []byte{})\n\t})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// NotifyPublishTx signals that we are about to publish a tx.",
+      "length": 1349,
+      "tokens": 193,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sweeperStore) NotifyPublishTx(sweepTx *wire.MsgTx) error {",
+      "content": "func (s *sweeperStore) NotifyPublishTx(sweepTx *wire.MsgTx) error {\n\treturn kvdb.Update(s.db, func(tx kvdb.RwTx) error {\n\t\tlastTxBucket := tx.ReadWriteBucket(lastTxBucketKey)\n\t\tif lastTxBucket == nil {\n\t\t\treturn errors.New(\"last tx bucket does not exist\")\n\t\t}\n\n\t\ttxHashesBucket := tx.ReadWriteBucket(txHashesBucketKey)\n\t\tif txHashesBucket == nil {\n\t\t\treturn errNoTxHashesBucket\n\t\t}\n\n\t\tvar b bytes.Buffer\n\t\tif err := sweepTx.Serialize(&b); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif err := lastTxBucket.Put(lastTxKey, b.Bytes()); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\thash := sweepTx.TxHash()\n\n\t\treturn txHashesBucket.Put(hash[:], []byte{})\n\t}, func() {})\n}\n\n// GetLastPublishedTx returns the last tx that we called NotifyPublishTx\n// for.",
+      "length": 633,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sweeperStore) GetLastPublishedTx() (*wire.MsgTx, error) {",
+      "content": "func (s *sweeperStore) GetLastPublishedTx() (*wire.MsgTx, error) {\n\tvar sweepTx *wire.MsgTx\n\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tlastTxBucket := tx.ReadBucket(lastTxBucketKey)\n\t\tif lastTxBucket == nil {\n\t\t\treturn errors.New(\"last tx bucket does not exist\")\n\t\t}\n\n\t\tsweepTxRaw := lastTxBucket.Get(lastTxKey)\n\t\tif sweepTxRaw == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\tsweepTx = &wire.MsgTx{}\n\t\ttxReader := bytes.NewReader(sweepTxRaw)\n\t\tif err := sweepTx.Deserialize(txReader); err != nil {\n\t\t\treturn fmt.Errorf(\"tx deserialize: %v\", err)\n\t\t}\n\n\t\treturn nil\n\t}, func() {\n\t\tsweepTx = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn sweepTx, nil\n}\n\n// IsOurTx determines whether a tx is published by us, based on its\n// hash.",
+      "length": 630,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sweeperStore) IsOurTx(hash chainhash.Hash) (bool, error) {",
+      "content": "func (s *sweeperStore) IsOurTx(hash chainhash.Hash) (bool, error) {\n\tvar ours bool\n\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\ttxHashesBucket := tx.ReadBucket(txHashesBucketKey)\n\t\tif txHashesBucket == nil {\n\t\t\treturn errNoTxHashesBucket\n\t\t}\n\n\t\tours = txHashesBucket.Get(hash[:]) != nil\n\n\t\treturn nil\n\t}, func() {\n\t\tours = false\n\t})\n\tif err != nil {\n\t\treturn false, err\n\t}\n\n\treturn ours, nil\n}\n\n// ListSweeps lists all the sweep transactions we have in the sweeper store.",
+      "length": 390,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sweeperStore) ListSweeps() ([]chainhash.Hash, error) {",
+      "content": "func (s *sweeperStore) ListSweeps() ([]chainhash.Hash, error) {\n\tvar sweepTxns []chainhash.Hash\n\n\tif err := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\ttxHashesBucket := tx.ReadBucket(txHashesBucketKey)\n\t\tif txHashesBucket == nil {\n\t\t\treturn errNoTxHashesBucket\n\t\t}\n\n\t\treturn txHashesBucket.ForEach(func(resKey, _ []byte) error {\n\t\t\ttxid, err := chainhash.NewHash(resKey)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tsweepTxns = append(sweepTxns, *txid)\n\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\tsweepTxns = nil\n\t}); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn sweepTxns, nil\n}\n\n// Compile-time constraint to ensure sweeperStore implements SweeperStore.\nvar _ SweeperStore = (*sweeperStore)(nil)\n",
+      "length": 593,
+      "tokens": 79,
+      "embedding": []
+    }
+  ]
+}

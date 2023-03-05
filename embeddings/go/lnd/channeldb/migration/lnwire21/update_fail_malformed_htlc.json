@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/update_fail_malformed_htlc.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type UpdateFailMalformedHTLC struct {",
+      "content": "type UpdateFailMalformedHTLC struct {\n\t// ChanID is the particular active channel that this\n\t// UpdateFailMalformedHTLC is bound to.\n\tChanID ChannelID\n\n\t// ID references which HTLC on the remote node's commitment transaction\n\t// has timed out.\n\tID uint64\n\n\t// ShaOnionBlob hash of the onion blob on which can't be parsed by the\n\t// node in the payment path.\n\tShaOnionBlob [sha256.Size]byte\n\n\t// FailureCode the exact reason why onion blob haven't been parsed.\n\tFailureCode FailCode\n}\n\n// A compile time check to ensure UpdateFailMalformedHTLC implements the\n// lnwire.Message interface.\nvar _ Message = (*UpdateFailMalformedHTLC)(nil)\n\n// Decode deserializes a serialized UpdateFailMalformedHTLC message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 770,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *UpdateFailMalformedHTLC) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.ID,\n\t\tc.ShaOnionBlob[:],\n\t\t&c.FailureCode,\n\t)\n}\n\n// Encode serializes the target UpdateFailMalformedHTLC into the passed\n// io.Writer observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 258,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (c *UpdateFailMalformedHTLC) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tc.ChanID,\n\t\tc.ID,\n\t\tc.ShaOnionBlob[:],\n\t\tc.FailureCode,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 215,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) MsgType() MessageType {",
+      "content": "func (c *UpdateFailMalformedHTLC) MsgType() MessageType {\n\treturn MsgUpdateFailMalformedHTLC\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a\n// UpdateFailMalformedHTLC complete message observing the specified protocol\n// version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 238,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (c *UpdateFailMalformedHTLC) MaxPayloadLength(uint32) uint32 {\n\t// 32 +  8 + 32 + 2\n\treturn 74\n}\n\n// TargetChanID returns the channel id of the link for which this message is\n// intended.\n//\n// NOTE: Part of peer.LinkUpdater interface.",
+      "length": 165,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) TargetChanID() ChannelID {",
+      "content": "func (c *UpdateFailMalformedHTLC) TargetChanID() ChannelID {\n\treturn c.ChanID\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

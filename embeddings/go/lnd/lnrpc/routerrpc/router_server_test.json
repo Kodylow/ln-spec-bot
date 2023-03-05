@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/router_server_test.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "type streamMock struct {",
+      "content": "type streamMock struct {\n\tgrpc.ServerStream\n\tctx            context.Context\n\tsentFromServer chan *lnrpc.Payment\n}\n",
+      "length": 85,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func makeStreamMock(ctx context.Context) *streamMock {",
+      "content": "func makeStreamMock(ctx context.Context) *streamMock {\n\treturn &streamMock{\n\t\tctx:            ctx,\n\t\tsentFromServer: make(chan *lnrpc.Payment, 10),\n\t}\n}\n",
+      "length": 93,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *streamMock) Context() context.Context {",
+      "content": "func (m *streamMock) Context() context.Context {\n\treturn m.ctx\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *streamMock) Send(p *lnrpc.Payment) error {",
+      "content": "func (m *streamMock) Send(p *lnrpc.Payment) error {\n\tm.sentFromServer <- p\n\treturn nil\n}\n",
+      "length": 34,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "type controlTowerSubscriberMock struct {",
+      "content": "type controlTowerSubscriberMock struct {\n\tupdates <-chan interface{}\n}\n",
+      "length": 28,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (s controlTowerSubscriberMock) Updates() <-chan interface{} {",
+      "content": "func (s controlTowerSubscriberMock) Updates() <-chan interface{} {\n\treturn s.updates\n}\n",
+      "length": 18,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s controlTowerSubscriberMock) Close() {",
+      "content": "func (s controlTowerSubscriberMock) Close() {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "type controlTowerMock struct {",
+      "content": "type controlTowerMock struct {\n\tqueue *queue.ConcurrentQueue\n\trouting.ControlTower\n}\n",
+      "length": 51,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func makeControlTowerMock() *controlTowerMock {",
+      "content": "func makeControlTowerMock() *controlTowerMock {\n\ttowerMock := &controlTowerMock{\n\t\tqueue: queue.NewConcurrentQueue(20),\n\t}\n\ttowerMock.queue.Start()\n\n\treturn towerMock\n}\n",
+      "length": 114,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *controlTowerMock) SubscribeAllPayments() (",
+      "content": "func (t *controlTowerMock) SubscribeAllPayments() (\n\trouting.ControlTowerSubscriber, error) {\n\n\treturn &controlTowerSubscriberMock{\n\t\tupdates: t.queue.ChanOut(),\n\t}, nil\n}\n\n// TestTrackPaymentsReturnsOnCancelContext tests whether TrackPayments returns\n// when the stream context is cancelled.",
+      "length": 232,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTrackPaymentsReturnsOnCancelContext(t *testing.T) {",
+      "content": "func TestTrackPaymentsReturnsOnCancelContext(t *testing.T) {\n\t// Setup mocks and request.\n\trequest := &TrackPaymentsRequest{\n\t\tNoInflightUpdates: false,\n\t}\n\ttowerMock := makeControlTowerMock()\n\n\tstreamCtx, cancelStream := context.WithCancel(context.Background())\n\tstream := makeStreamMock(streamCtx)\n\n\tserver := &Server{\n\t\tcfg: &Config{\n\t\t\tRouterBackend: &RouterBackend{\n\t\t\t\tTower: towerMock,\n\t\t\t},\n\t\t},\n\t}\n\n\t// Cancel stream immediately\n\tcancelStream()\n\n\t// Make sure the call returns.\n\terr := server.TrackPayments(request, stream)\n\trequire.Equal(t, context.Canceled, err)\n}\n\n// TestTrackPaymentsInflightUpdate tests whether all updates from the control\n// tower are propagated to the client.",
+      "length": 606,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTrackPaymentsInflightUpdates(t *testing.T) {",
+      "content": "func TestTrackPaymentsInflightUpdates(t *testing.T) {\n\t// Setup mocks and request.\n\trequest := &TrackPaymentsRequest{\n\t\tNoInflightUpdates: false,\n\t}\n\ttowerMock := makeControlTowerMock()\n\n\tstreamCtx, cancelStream := context.WithCancel(context.Background())\n\tstream := makeStreamMock(streamCtx)\n\tdefer cancelStream()\n\n\tserver := &Server{\n\t\tcfg: &Config{\n\t\t\tRouterBackend: &RouterBackend{\n\t\t\t\tTower: towerMock,\n\t\t\t},\n\t\t},\n\t}\n\n\t// Listen to payment updates in a goroutine.\n\tgo func() {\n\t\terr := server.TrackPayments(request, stream)\n\t\trequire.Equal(t, context.Canceled, err)\n\t}()\n\n\t// Enqueue some payment updates on the mock.\n\ttowerMock.queue.ChanIn() <- &channeldb.MPPayment{\n\t\tInfo:   &channeldb.PaymentCreationInfo{},\n\t\tStatus: channeldb.StatusInFlight,\n\t}\n\ttowerMock.queue.ChanIn() <- &channeldb.MPPayment{\n\t\tInfo:   &channeldb.PaymentCreationInfo{},\n\t\tStatus: channeldb.StatusSucceeded,\n\t}\n\n\t// Wait until there's 2 updates or the deadline is exceeded.\n\tdeadline := time.Now().Add(1 * time.Second)\n\tfor {\n\t\tif len(stream.sentFromServer) == 2 {\n\t\t\tbreak\n\t\t}\n\n\t\tif time.Now().After(deadline) {\n\t\t\trequire.FailNow(t, \"deadline exceeded.\")\n\t\t}\n\t}\n\n\t// Both updates should be sent to the client.\n\trequire.Len(t, stream.sentFromServer, 2)\n\n\t// The updates should be in the right order.\n\tpayment := <-stream.sentFromServer\n\trequire.Equal(t, lnrpc.Payment_IN_FLIGHT, payment.Status)\n\tpayment = <-stream.sentFromServer\n\trequire.Equal(t, lnrpc.Payment_SUCCEEDED, payment.Status)\n}\n\n// TestTrackPaymentsInflightUpdate tests whether only final updates from the\n// control tower are propagated to the client when noInflightUpdates = true.",
+      "length": 1516,
+      "tokens": 166,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTrackPaymentsNoInflightUpdates(t *testing.T) {",
+      "content": "func TestTrackPaymentsNoInflightUpdates(t *testing.T) {\n\t// Setup mocks and request.\n\trequest := &TrackPaymentsRequest{\n\t\tNoInflightUpdates: true,\n\t}\n\ttowerMock := &controlTowerMock{\n\t\tqueue: queue.NewConcurrentQueue(20),\n\t}\n\ttowerMock.queue.Start()\n\n\tstreamCtx, cancelStream := context.WithCancel(context.Background())\n\tstream := makeStreamMock(streamCtx)\n\tdefer cancelStream()\n\n\tserver := &Server{\n\t\tcfg: &Config{\n\t\t\tRouterBackend: &RouterBackend{\n\t\t\t\tTower: towerMock,\n\t\t\t},\n\t\t},\n\t}\n\n\t// Listen to payment updates in a goroutine.\n\tgo func() {\n\t\terr := server.TrackPayments(request, stream)\n\t\trequire.Equal(t, context.Canceled, err)\n\t}()\n\n\t// Enqueue some payment updates on the mock.\n\ttowerMock.queue.ChanIn() <- &channeldb.MPPayment{\n\t\tInfo:   &channeldb.PaymentCreationInfo{},\n\t\tStatus: channeldb.StatusInFlight,\n\t}\n\ttowerMock.queue.ChanIn() <- &channeldb.MPPayment{\n\t\tInfo:   &channeldb.PaymentCreationInfo{},\n\t\tStatus: channeldb.StatusSucceeded,\n\t}\n\n\t// Wait until there's 1 update or the deadline is exceeded.\n\tdeadline := time.Now().Add(1 * time.Second)\n\tfor {\n\t\tif len(stream.sentFromServer) == 1 {\n\t\t\tbreak\n\t\t}\n\n\t\tif time.Now().After(deadline) {\n\t\t\trequire.FailNow(t, \"deadline exceeded.\")\n\t\t}\n\t}\n\n\t// Only 1 update should be sent to the client.\n\trequire.Len(t, stream.sentFromServer, 1)\n\n\t// Only the final states should be sent to the client.\n\tpayment := <-stream.sentFromServer\n\trequire.Equal(t, lnrpc.Payment_SUCCEEDED, payment.Status)\n}\n",
+      "length": 1341,
+      "tokens": 146,
+      "embedding": []
+    }
+  ]
+}

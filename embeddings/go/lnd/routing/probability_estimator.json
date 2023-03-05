@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/routing/probability_estimator.go",
+  "package": "routing",
+  "sections": [
+    {
+      "slug": "type Estimator interface {",
+      "content": "type Estimator interface {\n\t// PairProbability estimates the probability of successfully traversing\n\t// to toNode based on historical payment outcomes for the from node.\n\t// Those outcomes are passed in via the results parameter.\n\tPairProbability(now time.Time, results NodeResults,\n\t\ttoNode route.Vertex, amt lnwire.MilliSatoshi,\n\t\tcapacity btcutil.Amount) float64\n\n\t// LocalPairProbability estimates the probability of successfully\n\t// traversing our own local channels to toNode.\n\tLocalPairProbability(now time.Time, results NodeResults,\n\t\ttoNode route.Vertex) float64\n\n\t// Config returns the estimator's configuration.\n\tConfig() estimatorConfig\n\n\t// String returns the string representation of the estimator's\n\t// configuration.\n\tString() string\n}\n\n// estimatorConfig represents a configuration for a probability estimator.",
+      "length": 780,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "type estimatorConfig interface {",
+      "content": "type estimatorConfig interface {\n\t// validate checks that all configuration parameters are sane.\n\tvalidate() error\n}\n",
+      "length": 81,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

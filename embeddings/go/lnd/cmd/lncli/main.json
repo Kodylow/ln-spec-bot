@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/main.go",
-  "package": "Copyright",
+  "package": "main",
   "sections": [
     {
       "slug": "func fatal(err error) {",

@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/chanbackup/pubsub_test.go",
+  "package": "chanbackup",
+  "sections": [
+    {
+      "slug": "type mockSwapper struct {",
+      "content": "type mockSwapper struct {\n\tfail bool\n\n\tswaps chan PackedMulti\n\n\tswapState *Multi\n\n\tkeyChain keychain.KeyRing\n}\n",
+      "length": 77,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockSwapper(keychain keychain.KeyRing) *mockSwapper {",
+      "content": "func newMockSwapper(keychain keychain.KeyRing) *mockSwapper {\n\treturn &mockSwapper{\n\t\tswaps:     make(chan PackedMulti, 1),\n\t\tkeyChain:  keychain,\n\t\tswapState: &Multi{},\n\t}\n}\n",
+      "length": 107,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSwapper) UpdateAndSwap(newBackup PackedMulti) error {",
+      "content": "func (m *mockSwapper) UpdateAndSwap(newBackup PackedMulti) error {\n\tif m.fail {\n\t\treturn fmt.Errorf(\"fail\")\n\t}\n\n\tswapState, err := newBackup.Unpack(m.keyChain)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to decode on disk swaps: %v\", err)\n\t}\n\n\tm.swapState = swapState\n\n\tm.swaps <- newBackup\n\n\treturn nil\n}\n",
+      "length": 225,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSwapper) ExtractMulti(keychain keychain.KeyRing) (*Multi, error) {",
+      "content": "func (m *mockSwapper) ExtractMulti(keychain keychain.KeyRing) (*Multi, error) {\n\treturn m.swapState, nil\n}\n",
+      "length": 25,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChannelNotifier struct {",
+      "content": "type mockChannelNotifier struct {\n\tfail bool\n\n\tchanEvents chan ChannelEvent\n}\n",
+      "length": 40,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockChannelNotifier() *mockChannelNotifier {",
+      "content": "func newMockChannelNotifier() *mockChannelNotifier {\n\treturn &mockChannelNotifier{\n\t\tchanEvents: make(chan ChannelEvent),\n\t}\n}\n",
+      "length": 70,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChannelNotifier) SubscribeChans(chans map[wire.OutPoint]struct{}) (",
+      "content": "func (m *mockChannelNotifier) SubscribeChans(chans map[wire.OutPoint]struct{}) (\n\t*ChannelSubscription, error) {\n\n\tif m.fail {\n\t\treturn nil, fmt.Errorf(\"fail\")\n\t}\n\n\treturn &ChannelSubscription{\n\t\tChanUpdates: m.chanEvents,\n\t\tCancel: func() {\n\t\t},\n\t}, nil\n}\n\n// TestNewSubSwapperSubscribeFail tests that if we're unable to obtain a\n// channel subscription, then the entire sub-swapper will fail to start.",
+      "length": 308,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNewSubSwapperSubscribeFail(t *testing.T) {",
+      "content": "func TestNewSubSwapperSubscribeFail(t *testing.T) {\n\tt.Parallel()\n\n\tkeyRing := &lnencrypt.MockKeyRing{}\n\n\tvar swapper mockSwapper\n\tchanNotifier := mockChannelNotifier{\n\t\tfail: true,\n\t}\n\n\t_, err := NewSubSwapper(nil, &chanNotifier, keyRing, &swapper)\n\tif err == nil {\n\t\tt.Fatalf(\"expected fail due to lack of subscription\")\n\t}\n}\n",
+      "length": 262,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func assertExpectedBackupSwap(t *testing.T, swapper *mockSwapper,",
+      "content": "func assertExpectedBackupSwap(t *testing.T, swapper *mockSwapper,\n\tsubSwapper *SubSwapper, keyRing keychain.KeyRing,\n\texpectedChanSet map[wire.OutPoint]Single) {\n\n\tt.Helper()\n\n\tselect {\n\tcase newPackedMulti := <-swapper.swaps:\n\t\t// If we unpack the new multi, then we should find all the old\n\t\t// channels, and also the new channel included and any deleted\n\t\t// channel omitted.\n\t\tnewMulti, err := newPackedMulti.Unpack(keyRing)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to unpack multi: %v\", err)\n\t\t}\n\n\t\t// Ensure that once unpacked, the current backup has the\n\t\t// expected number of Singles.\n\t\tif len(newMulti.StaticBackups) != len(expectedChanSet) {\n\t\t\tt.Fatalf(\"new backup wasn't included: expected %v \"+\n\t\t\t\t\"backups have %v\", len(expectedChanSet),\n\t\t\t\tlen(newMulti.StaticBackups))\n\t\t}\n\n\t\t// We should also find all the old and new channels in this new\n\t\t// backup.\n\t\tfor _, backup := range newMulti.StaticBackups {\n\t\t\t_, ok := expectedChanSet[backup.FundingOutpoint]\n\t\t\tif !ok {\n\t\t\t\tt.Fatalf(\"didn't find backup in original set: %v\",\n\t\t\t\t\tbackup.FundingOutpoint)\n\t\t\t}\n\t\t}\n\n\t\t// The same applies for our in-memory state, but it's also\n\t\t// possible for there to be items in the on-disk state that we\n\t\t// don't know of explicit.\n\t\tnewChans := make(map[wire.OutPoint]Single)\n\t\tfor _, newChan := range newMulti.StaticBackups {\n\t\t\tnewChans[newChan.FundingOutpoint] = newChan\n\t\t}\n\t\tfor _, backup := range subSwapper.backupState {\n\t\t\t_, ok := newChans[backup.FundingOutpoint]\n\t\t\tif !ok {\n\t\t\t\tt.Fatalf(\"didn't find backup in original set: %v\",\n\t\t\t\t\tbackup.FundingOutpoint)\n\t\t\t}\n\t\t}\n\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatalf(\"update swapper didn't swap out multi\")\n\t}\n}\n\n// TestSubSwapperIdempotentStartStop tests that calling the Start/Stop methods\n// multiple time is permitted.",
+      "length": 1662,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSubSwapperIdempotentStartStop(t *testing.T) {",
+      "content": "func TestSubSwapperIdempotentStartStop(t *testing.T) {\n\tt.Parallel()\n\n\tkeyRing := &lnencrypt.MockKeyRing{}\n\n\tvar chanNotifier mockChannelNotifier\n\n\tswapper := newMockSwapper(keyRing)\n\tsubSwapper, err := NewSubSwapper(nil, &chanNotifier, keyRing, swapper)\n\trequire.NoError(t, err, \"unable to init subSwapper\")\n\n\tif err := subSwapper.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start swapper: %v\", err)\n\t}\n\n\t// The swapper should write the initial channel state as soon as it's\n\t// active.\n\tbackupSet := make(map[wire.OutPoint]Single)\n\tassertExpectedBackupSwap(t, swapper, subSwapper, keyRing, backupSet)\n\n\tsubSwapper.Start()\n\n\tsubSwapper.Stop()\n\tsubSwapper.Stop()\n}\n\n// TestSubSwapperUpdater tests that the SubSwapper will properly swap out\n// new/old channels within the channel set, and notify the swapper to update\n// the master multi file backup.",
+      "length": 767,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSubSwapperUpdater(t *testing.T) {",
+      "content": "func TestSubSwapperUpdater(t *testing.T) {\n\tt.Parallel()\n\n\tkeyRing := &lnencrypt.MockKeyRing{}\n\tchanNotifier := newMockChannelNotifier()\n\tswapper := newMockSwapper(keyRing)\n\n\t// First, we'll start out by creating a channels set for the initial\n\t// set of channels known to the sub-swapper.\n\tconst numStartingChans = 3\n\tinitialChanSet := make([]Single, 0, numStartingChans)\n\tbackupSet := make(map[wire.OutPoint]Single)\n\tfor i := 0; i < numStartingChans; i++ {\n\t\tchannel, err := genRandomOpenChannelShell()\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to make test chan: %v\", err)\n\t\t}\n\n\t\tsingle := NewSingle(channel, nil)\n\n\t\tbackupSet[channel.FundingOutpoint] = single\n\t\tinitialChanSet = append(initialChanSet, single)\n\t}\n\n\t// We'll also generate two additional channels which will already be\n\t// present on disk. However, these will at first only be known by the\n\t// on disk backup (the backup set).\n\tconst numDiskChans = 2\n\tfor i := 0; i < numDiskChans; i++ {\n\t\tchannel, err := genRandomOpenChannelShell()\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to make test chan: %v\", err)\n\t\t}\n\n\t\tsingle := NewSingle(channel, nil)\n\n\t\tbackupSet[channel.FundingOutpoint] = single\n\t\tswapper.swapState.StaticBackups = append(\n\t\t\tswapper.swapState.StaticBackups, single,\n\t\t)\n\t}\n\n\t// With our channel set created, we'll make a fresh sub swapper\n\t// instance to begin our test.\n\tsubSwapper, err := NewSubSwapper(\n\t\tinitialChanSet, chanNotifier, keyRing, swapper,\n\t)\n\trequire.NoError(t, err, \"unable to make swapper\")\n\tif err := subSwapper.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start sub swapper: %v\", err)\n\t}\n\tdefer subSwapper.Stop()\n\n\t// The swapper should write the initial channel state as soon as it's\n\t// active.\n\tassertExpectedBackupSwap(t, swapper, subSwapper, keyRing, backupSet)\n\n\t// Now that the sub-swapper is active, we'll notify to add a brand new\n\t// channel to the channel state.\n\tnewChannel, err := genRandomOpenChannelShell()\n\trequire.NoError(t, err, \"unable to create new chan\")\n\n\t// With the new channel created, we'll send a new update to the main\n\t// goroutine telling it about this new channel.\n\tselect {\n\tcase chanNotifier.chanEvents <- ChannelEvent{\n\t\tNewChans: []ChannelWithAddrs{\n\t\t\t{\n\t\t\t\tOpenChannel: newChannel,\n\t\t\t},\n\t\t},\n\t}:\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatalf(\"update swapper didn't read new channel: %v\", err)\n\t}\n\n\tbackupSet[newChannel.FundingOutpoint] = NewSingle(newChannel, nil)\n\n\t// At this point, the sub-swapper should now have packed a new multi,\n\t// and then sent it to the swapper so the back up can be updated.\n\tassertExpectedBackupSwap(t, swapper, subSwapper, keyRing, backupSet)\n\n\t// We'll now trigger an update to remove an existing channel.\n\tchanToDelete := initialChanSet[0].FundingOutpoint\n\tselect {\n\tcase chanNotifier.chanEvents <- ChannelEvent{\n\t\tClosedChans: []wire.OutPoint{chanToDelete},\n\t}:\n\n\tcase <-time.After(time.Second * 5):\n\t\tt.Fatalf(\"update swapper didn't read new channel: %v\", err)\n\t}\n\n\tdelete(backupSet, chanToDelete)\n\n\t// Verify that the new set of backups, now has one less after the\n\t// sub-swapper switches the new set with the old.\n\tassertExpectedBackupSwap(t, swapper, subSwapper, keyRing, backupSet)\n}\n",
+      "length": 3019,
+      "tokens": 412,
+      "embedding": []
+    }
+  ]
+}

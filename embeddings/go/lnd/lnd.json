@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/lnd.go",
-  "package": "Copyright",
+  "package": "lnd",
   "sections": [
     {
       "slug": "func AdminAuthOptions(cfg *Config, skipMacaroons bool) ([]grpc.DialOption,",

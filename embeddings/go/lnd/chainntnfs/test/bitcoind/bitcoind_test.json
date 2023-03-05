@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chainntnfs/test/bitcoind/bitcoind_test.go",
+  "package": "bitcoind_test",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage bitcoind_test\n\nimport (\n\t\"testing\"\n\n\tchainntnfstest \"github.com/lightningnetwork/lnd/chainntnfs/test\"\n)\n\n// TestInterfaces executes the generic notifier test suite against a bitcoind\n// powered chain notifier.",
+      "length": 221,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInterfaces(t *testing.T) {",
+      "content": "func TestInterfaces(t *testing.T) {\n\tt.Run(\"bitcoind\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\tchainntnfstest.TestInterfaces(st, \"bitcoind\")\n\t})\n\n\tt.Run(\"bitcoind rpc polling\", func(st *testing.T) {\n\t\tst.Parallel()\n\t\tchainntnfstest.TestInterfaces(st, \"bitcoind-rpc-polling\")\n\t})\n}\n",
+      "length": 235,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

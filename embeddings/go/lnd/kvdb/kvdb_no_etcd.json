@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/kvdb_no_etcd.go",
-  "package": "!kvdb_etcd",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build !kvdb_etcd",
+      "content": "//go:build !kvdb_etcd\n// +build !kvdb_etcd\n\npackage kvdb\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/lightningnetwork/lnd/kvdb/etcd\"\n)\n\n// EtcdBackend is conditionally set to false when the kvdb_etcd build tag is not\n// defined. This will allow testing of other database backends.\nconst EtcdBackend = false\n\nvar errEtcdNotAvailable = fmt.Errorf(\"etcd backend not available\")\n\n// StartEtcdTestBackend  is a stub returning nil, and errEtcdNotAvailable error.",
+      "length": 405,
+      "tokens": 55,
+      "embedding": []
+    },
     {
       "slug": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,",
       "content": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,\n\tlogFile string) (*etcd.Config, func(), error) {\n\n\treturn nil, func() {}, errEtcdNotAvailable\n}\n",

@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lncfg/protocol_legacy_on.go",
-  "package": "dev",
+  "package": "lncfg",
   "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage lncfg\n\n// Legacy is a sub-config that houses all the legacy protocol options.  These\n// are mostly used for integration tests as most modern nodes should always run\n// with them on by default.\n//\n//nolint:lll",
+      "length": 223,
+      "tokens": 40,
+      "embedding": []
+    },
     {
       "slug": "type LegacyProtocol struct {",
       "content": "type LegacyProtocol struct {\n\t// LegacyOnionFormat if set to true, then we won't signal\n\t// TLVOnionPayloadOptional. As a result, nodes that include us in the\n\t// route won't use the new modern onion framing.\n\tLegacyOnionFormat bool `long:\"onion\" description:\"force node to not advertise the new modern TLV onion format\"`\n\n\t// CommitmentTweak guards if we should use the old legacy commitment\n\t// protocol, or the newer variant that doesn't have a tweak for the\n\t// remote party's output in the commitment. If set to true, then we\n\t// won't signal StaticRemoteKeyOptional.\n\tCommitmentTweak bool `long:\"committweak\" description:\"force node to not advertise the new commitment format\"`\n}\n\n// LegacyOnion returns true if the old legacy onion format should be used when\n// we're an intermediate or final hop. This controls if we set the\n// TLVOnionPayloadOptional bit or not.",

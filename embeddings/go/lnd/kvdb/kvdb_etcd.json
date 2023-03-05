@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/kvdb_etcd.go",
-  "package": "kvdb_etcd",
+  "package": "kvdb",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage kvdb\n\nimport (\n\t\"github.com/lightningnetwork/lnd/kvdb/etcd\"\n)\n\n// EtcdBackend is conditionally set to etcd when the kvdb_etcd build tag is\n// defined, allowing testing our database code with etcd backend.\nconst EtcdBackend = true\n\n// GetEtcdTestBackend creates an embedded etcd backend for testing\n// storig the database at the passed path.",
+      "length": 356,
+      "tokens": 53,
+      "embedding": []
+    },
     {
       "slug": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,",
       "content": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,\n\tlogFile string) (*etcd.Config, func(), error) {\n\n\treturn etcd.NewEmbeddedEtcdInstance(\n\t\tpath, clientPort, peerPort, logFile,\n\t)\n}\n",

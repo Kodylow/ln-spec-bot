@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/cmd/lncli/invoicesrpc_default.go",
-  "package": "!invoicesrpc",
+  "package": "main",
   "sections": [
+    {
+      "slug": "//go:build !invoicesrpc",
+      "content": "//go:build !invoicesrpc\n// +build !invoicesrpc\n\npackage main\n\nimport \"github.com/urfave/cli\"\n\n// invoicesCommands will return nil for non-invoicesrpc builds.",
+      "length": 127,
+      "tokens": 15,
+      "embedding": []
+    },
     {
       "slug": "func invoicesCommands() []cli.Command {",
       "content": "func invoicesCommands() []cli.Command {\n\treturn nil\n}\n",

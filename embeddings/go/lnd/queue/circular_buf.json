@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/queue/circular_buf.go",
+  "package": "queue",
+  "sections": [
+    {
+      "slug": "type CircularBuffer struct {",
+      "content": "type CircularBuffer struct {\n\t// total is the total number of items that have been added to the\n\t// buffer.\n\ttotal int\n\n\t// items is the set of buffered items.\n\titems []interface{}\n}\n\n// NewCircularBuffer returns a new circular buffer with the size provided. It\n// will fail if a zero or negative size parameter is provided.",
+      "length": 286,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCircularBuffer(size int) (*CircularBuffer, error) {",
+      "content": "func NewCircularBuffer(size int) (*CircularBuffer, error) {\n\tif size <= 0 {\n\t\treturn nil, errInvalidSize\n\t}\n\n\treturn &CircularBuffer{\n\t\ttotal: 0,\n\n\t\t// Create a slice with length and capacity equal to the size of\n\t\t// the buffer so that we do not need to resize the underlying\n\t\t// array when we add items.\n\t\titems: make([]interface{}, size),\n\t}, nil\n}\n\n// index returns the index that should be written to next.",
+      "length": 338,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CircularBuffer) index() int {",
+      "content": "func (c *CircularBuffer) index() int {\n\treturn c.total % len(c.items)\n}\n\n// Add adds an item to the buffer, overwriting the oldest item if the buffer\n// is full.",
+      "length": 118,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CircularBuffer) Add(item interface{}) {",
+      "content": "func (c *CircularBuffer) Add(item interface{}) {\n\t// Set the item in the next free index in the items array.\n\tc.items[c.index()] = item\n\n\t// Increment the total number of items that we have stored.\n\tc.total++\n}\n\n// List returns a copy of the items in the buffer ordered from the oldest to\n// newest item.",
+      "length": 247,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CircularBuffer) List() []interface{} {",
+      "content": "func (c *CircularBuffer) List() []interface{} {\n\tsize := cap(c.items)\n\tindex := c.index()\n\n\tswitch {\n\t// If no items have been stored yet, we can just return a nil list.\n\tcase c.total == 0:\n\t\treturn nil\n\n\t// If we have added fewer items than the buffer size, we can simply\n\t// return the total number of items from the beginning of the list\n\t// to the index. This special case is added because the oldest item\n\t// is at the beginning of the underlying array, not at the index when\n\t// we have not filled the array yet.\n\tcase c.total < size:\n\t\tresp := make([]interface{}, c.total)\n\t\tcopy(resp, c.items[:c.index()])\n\t\treturn resp\n\t}\n\n\tresp := make([]interface{}, size)\n\n\t// Get the items in the underlying array from index to end, the first\n\t// item in this slice will be the oldest item in the list.\n\tfirstHalf := c.items[index:]\n\n\t// Copy the first set into our response slice from index 0, so that\n\t// the response returned is from oldest to newest.\n\tcopy(resp, firstHalf)\n\n\t// Get the items in the underlying array from beginning until the write\n\t// index, the last item in this slice will be the newest item in the\n\t// list.\n\tsecondHalf := c.items[:index]\n\n\t// Copy the second set of items into the response slice offset by the\n\t// length of the first set of items so that we return a response which\n\t// is ordered from oldest to newest entry.\n\tcopy(resp[len(firstHalf):], secondHalf)\n\n\treturn resp\n}\n\n// Total returns the total number of items that have been added to the buffer.",
+      "length": 1393,
+      "tokens": 253,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CircularBuffer) Total() int {",
+      "content": "func (c *CircularBuffer) Total() int {\n\treturn c.total\n}\n\n// Latest returns the item that was most recently added to the buffer.",
+      "length": 86,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CircularBuffer) Latest() interface{} {",
+      "content": "func (c *CircularBuffer) Latest() interface{} {\n\t// If no items have been added yet, return nil.\n\tif c.total == 0 {\n\t\treturn nil\n\t}\n\n\t// The latest item is one before our total, mod by length.\n\tlatest := (c.total - 1) % len(c.items)\n\n\t// Return the latest item added.\n\treturn c.items[latest]\n}\n",
+      "length": 235,
+      "tokens": 46,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/channeldb/migration/lnwire21/announcement_signatures.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type AnnounceSignatures struct {",
+      "content": "type AnnounceSignatures struct {\n\t// ChannelID is the unique description of the funding transaction.\n\t// Channel id is better for users and debugging and short channel id is\n\t// used for quick test on existence of the particular utxo inside the\n\t// block chain, because it contains information about block.\n\tChannelID ChannelID\n\n\t// ShortChannelID is the unique description of the funding\n\t// transaction. It is constructed with the most significant 3 bytes\n\t// as the block height, the next 3 bytes indicating the transaction\n\t// index within the block, and the least significant two bytes\n\t// indicating the output index which pays to the channel.\n\tShortChannelID ShortChannelID\n\n\t// NodeSignature is the signature which contains the signed announce\n\t// channel message, by this signature we proof that we possess of the\n\t// node pub key and creating the reference node_key -> bitcoin_key.\n\tNodeSignature Sig\n\n\t// BitcoinSignature is the signature which contains the signed node\n\t// public key, by this signature we proof that we possess of the\n\t// bitcoin key and and creating the reverse reference bitcoin_key ->\n\t// node_key.\n\tBitcoinSignature Sig\n\n\t// ExtraOpaqueData is the set of data that was appended to this\n\t// message, some of which we may not actually know how to iterate or\n\t// parse. By holding onto this data, we ensure that we're able to\n\t// properly validate the set of signatures that cover these new fields,\n\t// and ensure we're able to make upgrades to the network in a forwards\n\t// compatible manner.\n\tExtraOpaqueData []byte\n}\n\n// A compile time check to ensure AnnounceSignatures implements the\n// lnwire.Message interface.\nvar _ Message = (*AnnounceSignatures)(nil)\n\n// Decode deserializes a serialized AnnounceSignatures stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 1801,
+      "tokens": 292,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *AnnounceSignatures) Decode(r io.Reader, pver uint32) error {\n\terr := ReadElements(r,\n\t\t&a.ChannelID,\n\t\t&a.ShortChannelID,\n\t\t&a.NodeSignature,\n\t\t&a.BitcoinSignature,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now that we've read out all the fields that we explicitly know of,\n\t// we'll collect the remainder into the ExtraOpaqueData field. If there\n\t// aren't any bytes, then we'll snip off the slice to avoid carrying\n\t// around excess capacity.\n\ta.ExtraOpaqueData, err = ioutil.ReadAll(r)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif len(a.ExtraOpaqueData) == 0 {\n\t\ta.ExtraOpaqueData = nil\n\t}\n\n\treturn nil\n}\n\n// Encode serializes the target AnnounceSignatures into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 684,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (a *AnnounceSignatures) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\ta.ChannelID,\n\t\ta.ShortChannelID,\n\t\ta.NodeSignature,\n\t\ta.BitcoinSignature,\n\t\ta.ExtraOpaqueData,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 253,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) MsgType() MessageType {",
+      "content": "func (a *AnnounceSignatures) MsgType() MessageType {\n\treturn MsgAnnounceSignatures\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for this message\n// observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 201,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) MaxPayloadLength(pver uint32) uint32 {",
+      "content": "func (a *AnnounceSignatures) MaxPayloadLength(pver uint32) uint32 {\n\treturn 65533\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

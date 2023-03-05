@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lntest/bitcoind_common.go",
-  "package": "bitcoind",
+  "package": "lntest",
   "sections": [
+    {
+      "slug": "//go:build bitcoind",
+      "content": "//go:build bitcoind\n// +build bitcoind\n\npackage lntest\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"io/ioutil\"\n\t\"os\"\n\t\"os/exec\"\n\t\"path/filepath\"\n\t\"time\"\n\n\t\"github.com/btcsuite/btcd/chaincfg\"\n\t\"github.com/btcsuite/btcd/rpcclient\"\n\t\"github.com/lightningnetwork/lnd/lntest/node\"\n)\n\n// logDirPattern is the pattern of the name of the temporary log directory.\nconst logDirPattern = \"%s/.backendlogs\"\n\n// BitcoindBackendConfig is an implementation of the BackendConfig interface\n// backed by a Bitcoind node.",
+      "length": 444,
+      "tokens": 50,
+      "embedding": []
+    },
     {
       "slug": "type BitcoindBackendConfig struct {",
       "content": "type BitcoindBackendConfig struct {\n\trpcHost      string\n\trpcUser      string\n\trpcPass      string\n\tzmqBlockPath string\n\tzmqTxPath    string\n\tp2pPort      int\n\trpcClient    *rpcclient.Client\n\trpcPolling   bool\n\n\t// minerAddr is the p2p address of the miner to connect to.\n\tminerAddr string\n}\n\n// A compile time assertion to ensure BitcoindBackendConfig meets the\n// BackendConfig interface.\nvar _ node.BackendConfig = (*BitcoindBackendConfig)(nil)\n\n// GenArgs returns the arguments needed to be passed to LND at startup for\n// using this node as a chain backend.",

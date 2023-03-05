@@ -1,5 +1,13 @@
 {
   "filepath": "../implementations/go/lnd/tools/tools.go",
-  "package": "tools",
-  "sections": []
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "//go:build tools",
+      "content": "//go:build tools\n// +build tools\n\npackage lnd\n\n// The other imports represent our build tools. Instead of defining a commit we\n// want to use for those golang based tools, we use the go mod versioning system\n// to unify the way we manage dependencies. So we define our build tool\n// dependencies here and pin the version in go.mod.\nimport (\n\t_ \"github.com/btcsuite/btcd\"\n\t_ \"github.com/golangci/golangci-lint/cmd/golangci-lint\"\n\t_ \"github.com/ory/go-acc\"\n\t_ \"github.com/rinchsan/gosimports/cmd/gosimports\"\n)\n",
+      "length": 477,
+      "tokens": 69,
+      "embedding": []
+    }
+  ]
 }

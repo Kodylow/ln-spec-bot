@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/lnwallet/chanfunding/coin_select.go",
+  "package": "chanfunding",
+  "sections": [
+    {
+      "slug": "type ErrInsufficientFunds struct {",
+      "content": "type ErrInsufficientFunds struct {\n\tamountAvailable btcutil.Amount\n\tamountSelected  btcutil.Amount\n}\n\n// Error returns a human readable string describing the error.",
+      "length": 125,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ErrInsufficientFunds) Error() string {",
+      "content": "func (e *ErrInsufficientFunds) Error() string {\n\treturn fmt.Sprintf(\"not enough witness outputs to create funding \"+\n\t\t\"transaction, need %v only have %v  available\",\n\t\te.amountAvailable, e.amountSelected)\n}\n\n// errUnsupportedInput is a type matching the error interface, which is returned\n// when trying to calculate the fee of a transaction that references an\n// unsupported script in the outpoint of a transaction input.",
+      "length": 368,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "type errUnsupportedInput struct {",
+      "content": "type errUnsupportedInput struct {\n\tPkScript []byte\n}\n\n// Error returns a human readable string describing the error.",
+      "length": 79,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *errUnsupportedInput) Error() string {",
+      "content": "func (e *errUnsupportedInput) Error() string {\n\treturn fmt.Sprintf(\"unsupported address type: %x\", e.PkScript)\n}\n\n// Coin represents a spendable UTXO which is available for channel funding.\n// This UTXO need not reside in our internal wallet as an example, and instead\n// may be derived from an existing watch-only wallet. It wraps both the output\n// present within the UTXO set, and also the outpoint that generates this coin.",
+      "length": 374,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "type Coin struct {",
+      "content": "type Coin struct {\n\twire.TxOut\n\n\twire.OutPoint\n}\n\n// selectInputs selects a slice of inputs necessary to meet the specified\n// selection amount. If input selection is unable to succeed due to insufficient\n// funds, a non-nil error is returned. Additionally, the total amount of the\n// selected coins are returned in order for the caller to properly handle\n// change+fees.",
+      "length": 343,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func selectInputs(amt btcutil.Amount, coins []Coin) (btcutil.Amount, []Coin, error) {",
+      "content": "func selectInputs(amt btcutil.Amount, coins []Coin) (btcutil.Amount, []Coin, error) {\n\tsatSelected := btcutil.Amount(0)\n\tfor i, coin := range coins {\n\t\tsatSelected += btcutil.Amount(coin.Value)\n\t\tif satSelected >= amt {\n\t\t\treturn satSelected, coins[:i+1], nil\n\t\t}\n\t}\n\n\treturn 0, nil, &ErrInsufficientFunds{amt, satSelected}\n}\n\n// calculateFees returns for the specified utxos and fee rate two fee\n// estimates, one calculated using a change output and one without. The weight\n// added to the estimator from a change output is for a P2WKH output.",
+      "length": 446,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func calculateFees(utxos []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount,",
+      "content": "func calculateFees(utxos []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount,\n\tbtcutil.Amount, error) {\n\n\tvar weightEstimate input.TxWeightEstimator\n\tfor _, utxo := range utxos {\n\t\tswitch {\n\t\tcase txscript.IsPayToWitnessPubKeyHash(utxo.PkScript):\n\t\t\tweightEstimate.AddP2WKHInput()\n\n\t\tcase txscript.IsPayToScriptHash(utxo.PkScript):\n\t\t\tweightEstimate.AddNestedP2WKHInput()\n\n\t\tcase txscript.IsPayToTaproot(utxo.PkScript):\n\t\t\tweightEstimate.AddTaprootKeySpendInput(\n\t\t\t\ttxscript.SigHashDefault,\n\t\t\t)\n\n\t\tdefault:\n\t\t\treturn 0, 0, &errUnsupportedInput{utxo.PkScript}\n\t\t}\n\t}\n\n\t// Channel funding multisig output is P2WSH.\n\tweightEstimate.AddP2WSHOutput()\n\n\t// Estimate the fee required for a transaction without a change\n\t// output.\n\ttotalWeight := int64(weightEstimate.Weight())\n\trequiredFeeNoChange := feeRate.FeeForWeight(totalWeight)\n\n\t// Estimate the fee required for a transaction with a change output.\n\t// Assume that change output is a P2TR output.\n\tweightEstimate.AddP2TROutput()\n\n\t// Now that we have added the change output, redo the fee\n\t// estimate.\n\ttotalWeight = int64(weightEstimate.Weight())\n\trequiredFeeWithChange := feeRate.FeeForWeight(totalWeight)\n\n\treturn requiredFeeNoChange, requiredFeeWithChange, nil\n}\n\n// sanityCheckFee checks if the specified fee amounts to over 20% of the total\n// output amount and raises an error.",
+      "length": 1218,
+      "tokens": 128,
+      "embedding": []
+    },
+    {
+      "slug": "func sanityCheckFee(totalOut, fee btcutil.Amount) error {",
+      "content": "func sanityCheckFee(totalOut, fee btcutil.Amount) error {\n\t// Fail if more than 20% goes to fees.\n\t// TODO(halseth): smarter fee limit. Make configurable or dynamic wrt\n\t// total funding size?\n\tif fee > totalOut/5 {\n\t\treturn fmt.Errorf(\"fee %v on total output value %v\", fee,\n\t\t\ttotalOut)\n\t}\n\treturn nil\n}\n\n// CoinSelect attempts to select a sufficient amount of coins, including a\n// change output to fund amt satoshis, adhering to the specified fee rate. The\n// specified fee rate should be expressed in sat/kw for coin selection to\n// function properly.",
+      "length": 485,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func CoinSelect(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,",
+      "content": "func CoinSelect(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,\n\tcoins []Coin) ([]Coin, btcutil.Amount, error) {\n\n\tamtNeeded := amt\n\tfor {\n\t\t// First perform an initial round of coin selection to estimate\n\t\t// the required fee.\n\t\ttotalSat, selectedUtxos, err := selectInputs(amtNeeded, coins)\n\t\tif err != nil {\n\t\t\treturn nil, 0, err\n\t\t}\n\n\t\t// Obtain fee estimates both with and without using a change\n\t\t// output.\n\t\trequiredFeeNoChange, requiredFeeWithChange, err := calculateFees(\n\t\t\tselectedUtxos, feeRate,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, 0, err\n\t\t}\n\n\t\t// The difference between the selected amount and the amount\n\t\t// requested will be used to pay fees, and generate a change\n\t\t// output with the remaining.\n\t\toverShootAmt := totalSat - amt\n\n\t\tvar changeAmt btcutil.Amount\n\n\t\tswitch {\n\t\t// If the excess amount isn't enough to pay for fees based on\n\t\t// fee rate and estimated size without using a change output,\n\t\t// then increase the requested coin amount by the estimate\n\t\t// required fee without using change, performing another round\n\t\t// of coin selection.\n\t\tcase overShootAmt < requiredFeeNoChange:\n\t\t\tamtNeeded = amt + requiredFeeNoChange\n\t\t\tcontinue\n\n\t\t// If sufficient funds were selected to cover the fee required\n\t\t// to include a change output, the remainder will be our change\n\t\t// amount.\n\t\tcase overShootAmt > requiredFeeWithChange:\n\t\t\tchangeAmt = overShootAmt - requiredFeeWithChange\n\n\t\t// Otherwise we have selected enough to pay for a tx without a\n\t\t// change output.\n\t\tdefault:\n\t\t\tchangeAmt = 0\n\t\t}\n\n\t\tif changeAmt < dustLimit {\n\t\t\tchangeAmt = 0\n\t\t}\n\n\t\t// Sanity check the resulting output values to make sure we\n\t\t// don't burn a great part to fees.\n\t\ttotalOut := amt + changeAmt\n\t\terr = sanityCheckFee(totalOut, totalSat-totalOut)\n\t\tif err != nil {\n\t\t\treturn nil, 0, err\n\t\t}\n\n\t\treturn selectedUtxos, changeAmt, nil\n\t}\n}\n\n// CoinSelectSubtractFees attempts to select coins such that we'll spend up to\n// amt in total after fees, adhering to the specified fee rate. The selected\n// coins, the final output and change values are returned.",
+      "length": 1934,
+      "tokens": 311,
+      "embedding": []
+    },
+    {
+      "slug": "func CoinSelectSubtractFees(feeRate chainfee.SatPerKWeight, amt,",
+      "content": "func CoinSelectSubtractFees(feeRate chainfee.SatPerKWeight, amt,\n\tdustLimit btcutil.Amount, coins []Coin) ([]Coin, btcutil.Amount,\n\tbtcutil.Amount, error) {\n\n\t// First perform an initial round of coin selection to estimate\n\t// the required fee.\n\ttotalSat, selectedUtxos, err := selectInputs(amt, coins)\n\tif err != nil {\n\t\treturn nil, 0, 0, err\n\t}\n\n\t// Obtain fee estimates both with and without using a change\n\t// output.\n\trequiredFeeNoChange, requiredFeeWithChange, err := calculateFees(\n\t\tselectedUtxos, feeRate,\n\t)\n\tif err != nil {\n\t\treturn nil, 0, 0, err\n\t}\n\n\t// For a transaction without a change output, we'll let everything go\n\t// to our multi-sig output after subtracting fees.\n\toutputAmt := totalSat - requiredFeeNoChange\n\tchangeAmt := btcutil.Amount(0)\n\n\t// If the the output is too small after subtracting the fee, the coin\n\t// selection cannot be performed with an amount this small.\n\tif outputAmt < dustLimit {\n\t\treturn nil, 0, 0, fmt.Errorf(\"output amount(%v) after \"+\n\t\t\t\"subtracting fees(%v) below dust limit(%v)\", outputAmt,\n\t\t\trequiredFeeNoChange, dustLimit)\n\t}\n\n\t// For a transaction with a change output, everything we don't spend\n\t// will go to change.\n\tnewOutput := amt - requiredFeeWithChange\n\tnewChange := totalSat - amt\n\n\t// If adding a change output leads to both outputs being above\n\t// the dust limit, we'll add the change output. Otherwise we'll\n\t// go with the no change tx we originally found.\n\tif newChange >= dustLimit && newOutput >= dustLimit {\n\t\toutputAmt = newOutput\n\t\tchangeAmt = newChange\n\t}\n\n\t// Sanity check the resulting output values to make sure we\n\t// don't burn a great part to fees.\n\ttotalOut := outputAmt + changeAmt\n\terr = sanityCheckFee(totalOut, totalSat-totalOut)\n\tif err != nil {\n\t\treturn nil, 0, 0, err\n\t}\n\n\treturn selectedUtxos, outputAmt, changeAmt, nil\n}\n",
+      "length": 1692,
+      "tokens": 268,
+      "embedding": []
+    }
+  ]
+}

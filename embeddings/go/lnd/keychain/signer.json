@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/keychain/signer.go",
+  "package": "keychain",
+  "sections": [
+    {
+      "slug": "func NewPubKeyMessageSigner(pubKey *btcec.PublicKey, keyLoc KeyLocator,",
+      "content": "func NewPubKeyMessageSigner(pubKey *btcec.PublicKey, keyLoc KeyLocator,\n\tsigner MessageSignerRing) *PubKeyMessageSigner {\n\n\treturn &PubKeyMessageSigner{\n\t\tpubKey:       pubKey,\n\t\tkeyLoc:       keyLoc,\n\t\tdigestSigner: signer,\n\t}\n}\n",
+      "length": 150,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type PubKeyMessageSigner struct {",
+      "content": "type PubKeyMessageSigner struct {\n\tpubKey       *btcec.PublicKey\n\tkeyLoc       KeyLocator\n\tdigestSigner MessageSignerRing\n}\n",
+      "length": 86,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PubKeyMessageSigner) PubKey() *btcec.PublicKey {",
+      "content": "func (p *PubKeyMessageSigner) PubKey() *btcec.PublicKey {\n\treturn p.pubKey\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PubKeyMessageSigner) KeyLocator() KeyLocator {",
+      "content": "func (p *PubKeyMessageSigner) KeyLocator() KeyLocator {\n\treturn p.keyLoc\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PubKeyMessageSigner) SignMessage(message []byte,",
+      "content": "func (p *PubKeyMessageSigner) SignMessage(message []byte,\n\tdoubleHash bool) (*ecdsa.Signature, error) {\n\n\treturn p.digestSigner.SignMessage(p.keyLoc, message, doubleHash)\n}\n",
+      "length": 111,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PubKeyMessageSigner) SignMessageCompact(msg []byte,",
+      "content": "func (p *PubKeyMessageSigner) SignMessageCompact(msg []byte,\n\tdoubleHash bool) ([]byte, error) {\n\n\treturn p.digestSigner.SignMessageCompact(p.keyLoc, msg, doubleHash)\n}\n",
+      "length": 104,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPrivKeyMessageSigner(privKey *btcec.PrivateKey,",
+      "content": "func NewPrivKeyMessageSigner(privKey *btcec.PrivateKey,\n\tkeyLoc KeyLocator) *PrivKeyMessageSigner {\n\n\treturn &PrivKeyMessageSigner{\n\t\tprivKey: privKey,\n\t\tkeyLoc:  keyLoc,\n\t}\n}\n",
+      "length": 113,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type PrivKeyMessageSigner struct {",
+      "content": "type PrivKeyMessageSigner struct {\n\tkeyLoc  KeyLocator\n\tprivKey *btcec.PrivateKey\n}\n",
+      "length": 46,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PrivKeyMessageSigner) PubKey() *btcec.PublicKey {",
+      "content": "func (p *PrivKeyMessageSigner) PubKey() *btcec.PublicKey {\n\treturn p.privKey.PubKey()\n}\n",
+      "length": 27,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PrivKeyMessageSigner) KeyLocator() KeyLocator {",
+      "content": "func (p *PrivKeyMessageSigner) KeyLocator() KeyLocator {\n\treturn p.keyLoc\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PrivKeyMessageSigner) SignMessage(msg []byte,",
+      "content": "func (p *PrivKeyMessageSigner) SignMessage(msg []byte,\n\tdoubleHash bool) (*ecdsa.Signature, error) {\n\n\tvar digest []byte\n\tif doubleHash {\n\t\tdigest = chainhash.DoubleHashB(msg)\n\t} else {\n\t\tdigest = chainhash.HashB(msg)\n\t}\n\treturn ecdsa.Sign(p.privKey, digest), nil\n}\n",
+      "length": 201,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PrivKeyMessageSigner) SignMessageCompact(msg []byte,",
+      "content": "func (p *PrivKeyMessageSigner) SignMessageCompact(msg []byte,\n\tdoubleHash bool) ([]byte, error) {\n\n\tvar digest []byte\n\tif doubleHash {\n\t\tdigest = chainhash.DoubleHashB(msg)\n\t} else {\n\t\tdigest = chainhash.HashB(msg)\n\t}\n\treturn ecdsa.SignCompact(p.privKey, digest, true)\n}\n\nvar _ SingleKeyMessageSigner = (*PubKeyMessageSigner)(nil)\nvar _ SingleKeyMessageSigner = (*PrivKeyMessageSigner)(nil)\n",
+      "length": 316,
+      "tokens": 36,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/node/watcher.go",
+  "package": "node",
+  "sections": [
+    {
+      "slug": "type chanWatchType uint8",
+      "content": "type chanWatchType uint8\n\nconst (\n\t// watchOpenChannel specifies that this is a request to watch an open\n\t// channel event.\n\twatchOpenChannel chanWatchType = iota\n\n\t// watchCloseChannel specifies that this is a request to watch a close\n\t// channel event.\n\twatchCloseChannel\n\n\t// watchPolicyUpdate specifies that this is a request to watch a policy\n\t// update event.\n\twatchPolicyUpdate\n)\n\n// chanWatchRequest is a request to the lightningNetworkWatcher to be notified\n// once it's detected within the test Lightning Network, that a channel has\n// either been added or closed.",
+      "length": 532,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "type chanWatchRequest struct {",
+      "content": "type chanWatchRequest struct {\n\tchanPoint wire.OutPoint\n\n\tchanWatchType chanWatchType\n\n\teventChan chan struct{}\n\n\tadvertisingNode    string\n\tpolicy             *lnrpc.RoutingPolicy\n\tincludeUnannounced bool\n}\n\n// nodeWatcher is a topology watcher for a HarnessNode. It keeps track of all\n// the topology updates seen in a given node, including NodeUpdate,\n// ChannelEdgeUpdate, and ClosedChannelUpdate.",
+      "length": 357,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type nodeWatcher struct {",
+      "content": "type nodeWatcher struct {\n\t// rpc is the RPC clients used for the current node.\n\trpc *rpc.HarnessRPC\n\n\t// state is the node's current state.\n\tstate *State\n\n\t// chanWatchRequests receives a request for watching a particular event\n\t// for a given channel.\n\tchanWatchRequests chan *chanWatchRequest\n\n\t// For each outpoint, we'll track an integer which denotes the number\n\t// of edges seen for that channel within the network. When this number\n\t// reaches 2, then it means that both edge advertisements has\n\t// propagated through the network.\n\topenChanWatchers  *lnutils.SyncMap[wire.OutPoint, []chan struct{}]\n\tcloseChanWatchers *lnutils.SyncMap[wire.OutPoint, []chan struct{}]\n\n\twg sync.WaitGroup\n}\n",
+      "length": 652,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func newNodeWatcher(rpc *rpc.HarnessRPC, state *State) *nodeWatcher {",
+      "content": "func newNodeWatcher(rpc *rpc.HarnessRPC, state *State) *nodeWatcher {\n\treturn &nodeWatcher{\n\t\trpc:               rpc,\n\t\tstate:             state,\n\t\tchanWatchRequests: make(chan *chanWatchRequest, 100),\n\t\topenChanWatchers: &lnutils.SyncMap[\n\t\t\twire.OutPoint, []chan struct{},\n\t\t]{},\n\t\tcloseChanWatchers: &lnutils.SyncMap[\n\t\t\twire.OutPoint, []chan struct{},\n\t\t]{},\n\t}\n}\n\n// GetNumChannelUpdates reads the num of channel updates inside a lock and\n// returns the value.",
+      "length": 381,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) GetNumChannelUpdates(op wire.OutPoint) int {",
+      "content": "func (nw *nodeWatcher) GetNumChannelUpdates(op wire.OutPoint) int {\n\tresult, _ := nw.state.numChanUpdates.Load(op)\n\treturn result\n}\n\n// GetPolicyUpdates returns the node's policyUpdates state.",
+      "length": 120,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) GetPolicyUpdates(op wire.OutPoint) PolicyUpdate {",
+      "content": "func (nw *nodeWatcher) GetPolicyUpdates(op wire.OutPoint) PolicyUpdate {\n\tresult, _ := nw.state.policyUpdates.Load(op)\n\treturn result\n}\n\n// GetNodeUpdates reads the node updates inside a lock and returns the value.",
+      "length": 137,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) GetNodeUpdates(pubkey string) []*lnrpc.NodeUpdate {",
+      "content": "func (nw *nodeWatcher) GetNodeUpdates(pubkey string) []*lnrpc.NodeUpdate {\n\tresult, _ := nw.state.nodeUpdates.Load(pubkey)\n\treturn result\n}\n\n// WaitForNumChannelUpdates will block until a given number of updates has been\n// seen in the node's network topology.",
+      "length": 180,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) WaitForNumChannelUpdates(op wire.OutPoint,",
+      "content": "func (nw *nodeWatcher) WaitForNumChannelUpdates(op wire.OutPoint,\n\texpected int) error {\n\n\tcheckNumUpdates := func() error {\n\t\tnum := nw.GetNumChannelUpdates(op)\n\t\tif num >= expected {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn fmt.Errorf(\"timeout waiting for num channel updates, \"+\n\t\t\t\"want %d, got %d\", expected, num)\n\t}\n\n\treturn wait.NoError(checkNumUpdates, wait.DefaultTimeout)\n}\n\n// WaitForNumNodeUpdates will block until a given number of node updates has\n// been seen in the node's network topology.",
+      "length": 411,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) WaitForNumNodeUpdates(pubkey string,",
+      "content": "func (nw *nodeWatcher) WaitForNumNodeUpdates(pubkey string,\n\texpected int) ([]*lnrpc.NodeUpdate, error) {\n\n\tupdates := make([]*lnrpc.NodeUpdate, 0)\n\tcheckNumUpdates := func() error {\n\t\tupdates = nw.GetNodeUpdates(pubkey)\n\t\tnum := len(updates)\n\t\tif num >= expected {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn fmt.Errorf(\"timeout waiting for num node updates, \"+\n\t\t\t\"want %d, got %d\", expected, num)\n\t}\n\terr := wait.NoError(checkNumUpdates, wait.DefaultTimeout)\n\n\treturn updates, err\n}\n\n// WaitForChannelOpen will block until a channel with the target outpoint is\n// seen as being fully advertised within the network. A channel is considered\n// \"fully advertised\" once both of its directional edges has been advertised in\n// the node's network topology.",
+      "length": 656,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) WaitForChannelOpen(chanPoint *lnrpc.ChannelPoint) error {",
+      "content": "func (nw *nodeWatcher) WaitForChannelOpen(chanPoint *lnrpc.ChannelPoint) error {\n\top := nw.rpc.MakeOutpoint(chanPoint)\n\teventChan := make(chan struct{})\n\tnw.chanWatchRequests <- &chanWatchRequest{\n\t\tchanPoint:     op,\n\t\teventChan:     eventChan,\n\t\tchanWatchType: watchOpenChannel,\n\t}\n\n\ttimer := time.After(wait.DefaultTimeout)\n\tselect {\n\tcase <-eventChan:\n\t\treturn nil\n\n\tcase <-timer:\n\t\tupdates, err := syncMapToJSON(&nw.state.openChans.Map)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn fmt.Errorf(\"channel:%s not heard before timeout: \"+\n\t\t\t\"node has heard: %s\", op, updates)\n\t}\n}\n\n// WaitForChannelClose will block until a channel with the target outpoint is\n// seen as closed within the node's network topology. A channel is considered\n// closed once a transaction spending the funding outpoint is seen within a\n// confirmed block.",
+      "length": 727,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) WaitForChannelClose(",
+      "content": "func (nw *nodeWatcher) WaitForChannelClose(\n\tchanPoint *lnrpc.ChannelPoint) (*lnrpc.ClosedChannelUpdate, error) {\n\n\top := nw.rpc.MakeOutpoint(chanPoint)\n\teventChan := make(chan struct{})\n\tnw.chanWatchRequests <- &chanWatchRequest{\n\t\tchanPoint:     op,\n\t\teventChan:     eventChan,\n\t\tchanWatchType: watchCloseChannel,\n\t}\n\n\ttimer := time.After(wait.DefaultTimeout)\n\tselect {\n\tcase <-eventChan:\n\t\tclosedChan, ok := nw.state.closedChans.Load(op)\n\t\tif !ok {\n\t\t\treturn nil, fmt.Errorf(\"channel:%s expected to find \"+\n\t\t\t\t\"a closed channel in node's state:%s\", op,\n\t\t\t\tnw.state)\n\t\t}\n\t\treturn closedChan, nil\n\n\tcase <-timer:\n\t\treturn nil, fmt.Errorf(\"channel:%s not closed before timeout: \"+\n\t\t\t\"%s\", op, nw.state)\n\t}\n}\n\n// WaitForChannelPolicyUpdate will block until a channel policy with the target\n// outpoint and advertisingNode is seen within the network.",
+      "length": 779,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) WaitForChannelPolicyUpdate(",
+      "content": "func (nw *nodeWatcher) WaitForChannelPolicyUpdate(\n\tadvertisingNode *HarnessNode, policy *lnrpc.RoutingPolicy,\n\tchanPoint *lnrpc.ChannelPoint, includeUnannounced bool) error {\n\n\top := nw.rpc.MakeOutpoint(chanPoint)\n\n\tticker := time.NewTicker(wait.PollInterval)\n\ttimer := time.After(wait.DefaultTimeout)\n\tdefer ticker.Stop()\n\n\teventChan := make(chan struct{})\n\tfor {\n\t\tselect {\n\t\t// Send a watch request every second.\n\t\tcase <-ticker.C:\n\t\t\t// Did the event can close in the meantime? We want to\n\t\t\t// avoid a \"close of closed channel\" panic since we're\n\t\t\t// re-using the same event chan for multiple requests.\n\t\t\tselect {\n\t\t\tcase <-eventChan:\n\t\t\t\treturn nil\n\t\t\tdefault:\n\t\t\t}\n\n\t\t\tnw.chanWatchRequests <- &chanWatchRequest{\n\t\t\t\tchanPoint:          op,\n\t\t\t\teventChan:          eventChan,\n\t\t\t\tchanWatchType:      watchPolicyUpdate,\n\t\t\t\tpolicy:             policy,\n\t\t\t\tadvertisingNode:    advertisingNode.PubKeyStr,\n\t\t\t\tincludeUnannounced: includeUnannounced,\n\t\t\t}\n\n\t\tcase <-eventChan:\n\t\t\treturn nil\n\n\t\tcase <-timer:\n\t\t\texpected, err := json.MarshalIndent(policy, \"\", \"\\t\")\n\t\t\tif err != nil {\n\t\t\t\treturn fmt.Errorf(\"encode policy err: %v\", err)\n\t\t\t}\n\t\t\tpolicies, err := syncMapToJSON(\n\t\t\t\t&nw.state.policyUpdates.Map,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\treturn fmt.Errorf(\"policy not updated before timeout:\"+\n\t\t\t\t\"\\nchannel: %v \\nadvertisingNode: %s:%v\"+\n\t\t\t\t\"\\nwant policy:%s\\nhave updates:%s\", op,\n\t\t\t\tadvertisingNode.Name(),\n\t\t\t\tadvertisingNode.PubKeyStr, expected, policies)\n\t\t}\n\t}\n}\n\n// syncMapToJSON is a helper function that creates json bytes from the sync.Map\n// used in the node. Expect the sync.Map to have map[string]interface.",
+      "length": 1539,
+      "tokens": 176,
+      "embedding": []
+    },
+    {
+      "slug": "func syncMapToJSON(state *sync.Map) ([]byte, error) {",
+      "content": "func syncMapToJSON(state *sync.Map) ([]byte, error) {\n\tm := map[string]interface{}{}\n\tstate.Range(func(k, v interface{}) bool {\n\t\top := k.(wire.OutPoint)\n\t\tm[op.String()] = v\n\t\treturn true\n\t})\n\tpolicies, err := json.MarshalIndent(m, \"\", \"\\t\")\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"encode polices err: %v\", err)\n\t}\n\n\treturn policies, nil\n}\n\n// topologyWatcher is a goroutine which is able to dispatch notifications once\n// it has been observed that a target channel has been closed or opened within\n// the network. In order to dispatch these notifications, the\n// GraphTopologySubscription client exposed as part of the gRPC interface is\n// used.\n//\n// NOTE: must be run as a goroutine.",
+      "length": 616,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) topologyWatcher(ctxb context.Context,",
+      "content": "func (nw *nodeWatcher) topologyWatcher(ctxb context.Context,\n\tstarted chan error) {\n\n\tgraphUpdates := make(chan *lnrpc.GraphTopologyUpdate)\n\n\tclient, err := nw.newTopologyClient(ctxb)\n\tstarted <- err\n\n\t// Exit if there's an error.\n\tif err != nil {\n\t\treturn\n\t}\n\n\t// Start a goroutine to receive graph updates.\n\tnw.wg.Add(1)\n\tgo func() {\n\t\tdefer nw.wg.Done()\n\n\t\t// With the client being created, we now start receiving the\n\t\t// updates.\n\t\terr = nw.receiveTopologyClientStream(ctxb, client, graphUpdates)\n\t\tif err != nil {\n\t\t\tstarted <- fmt.Errorf(\"receiveTopologyClientStream \"+\n\t\t\t\t\"got err: %v\", err)\n\t\t}\n\t}()\n\n\tfor {\n\t\tselect {\n\t\t// A new graph update has just been received, so we'll examine\n\t\t// the current set of registered clients to see if we can\n\t\t// dispatch any requests.\n\t\tcase graphUpdate := <-graphUpdates:\n\t\t\tnw.handleChannelEdgeUpdates(graphUpdate.ChannelUpdates)\n\t\t\tnw.handleClosedChannelUpdate(graphUpdate.ClosedChans)\n\t\t\tnw.handleNodeUpdates(graphUpdate.NodeUpdates)\n\n\t\t// A new watch request, has just arrived. We'll either be able\n\t\t// to dispatch immediately, or need to add the client for\n\t\t// processing later.\n\t\tcase watchRequest := <-nw.chanWatchRequests:\n\t\t\tswitch watchRequest.chanWatchType {\n\t\t\tcase watchOpenChannel:\n\t\t\t\t// TODO(roasbeef): add update type also, checks\n\t\t\t\t// for multiple of 2\n\t\t\t\tnw.handleOpenChannelWatchRequest(watchRequest)\n\n\t\t\tcase watchCloseChannel:\n\t\t\t\tnw.handleCloseChannelWatchRequest(watchRequest)\n\n\t\t\tcase watchPolicyUpdate:\n\t\t\t\tnw.handlePolicyUpdateWatchRequest(watchRequest)\n\t\t\t}\n\n\t\tcase <-ctxb.Done():\n\t\t\treturn\n\t\t}\n\t}\n}\n",
+      "length": 1462,
+      "tokens": 175,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handleNodeUpdates(updates []*lnrpc.NodeUpdate) {",
+      "content": "func (nw *nodeWatcher) handleNodeUpdates(updates []*lnrpc.NodeUpdate) {\n\tfor _, nodeUpdate := range updates {\n\t\tnw.updateNodeStateNodeUpdates(nodeUpdate)\n\t}\n}\n\n// handleChannelEdgeUpdates takes a series of channel edge updates, extracts\n// the outpoints, and saves them to harness node's internal state.",
+      "length": 225,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handleChannelEdgeUpdates(",
+      "content": "func (nw *nodeWatcher) handleChannelEdgeUpdates(\n\tupdates []*lnrpc.ChannelEdgeUpdate) {\n\n\t// For each new channel, we'll increment the number of edges seen by\n\t// one.\n\tfor _, newChan := range updates {\n\t\top := nw.rpc.MakeOutpoint(newChan.ChanPoint)\n\n\t\t// Update the num of channel updates.\n\t\tnw.updateNodeStateNumChanUpdates(op)\n\n\t\t// Update the open channels.\n\t\tnw.updateNodeStateOpenChannel(op, newChan)\n\n\t\t// Check whether there's a routing policy update. If so, save\n\t\t// it to the node state.\n\t\tif newChan.RoutingPolicy != nil {\n\t\t\tnw.updateNodeStatePolicy(op, newChan)\n\t\t}\n\t}\n}\n\n// updateNodeStateNumChanUpdates updates the internal state of the node\n// regarding the num of channel update seen.",
+      "length": 631,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) updateNodeStateNumChanUpdates(op wire.OutPoint) {",
+      "content": "func (nw *nodeWatcher) updateNodeStateNumChanUpdates(op wire.OutPoint) {\n\toldNum, _ := nw.state.numChanUpdates.Load(op)\n\tnw.state.numChanUpdates.Store(op, oldNum+1)\n}\n\n// updateNodeStateNodeUpdates updates the internal state of the node regarding\n// the node updates seen.",
+      "length": 194,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) updateNodeStateNodeUpdates(update *lnrpc.NodeUpdate) {",
+      "content": "func (nw *nodeWatcher) updateNodeStateNodeUpdates(update *lnrpc.NodeUpdate) {\n\toldUpdates, _ := nw.state.nodeUpdates.Load(update.IdentityKey)\n\tnw.state.nodeUpdates.Store(\n\t\tupdate.IdentityKey, append(oldUpdates, update),\n\t)\n}\n\n// updateNodeStateOpenChannel updates the internal state of the node regarding\n// the open channels.",
+      "length": 242,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) updateNodeStateOpenChannel(op wire.OutPoint,",
+      "content": "func (nw *nodeWatcher) updateNodeStateOpenChannel(op wire.OutPoint,\n\tnewChan *lnrpc.ChannelEdgeUpdate) {\n\n\t// Load the old updates the node has heard so far.\n\tupdates, _ := nw.state.openChans.Load(op)\n\n\t// Create a new update based on this newChan.\n\tnewUpdate := &OpenChannelUpdate{\n\t\tAdvertisingNode: newChan.AdvertisingNode,\n\t\tConnectingNode:  newChan.ConnectingNode,\n\t\tTimestamp:       time.Now(),\n\t}\n\n\t// Update the node's state.\n\tupdates = append(updates, newUpdate)\n\tnw.state.openChans.Store(op, updates)\n\n\t// For this new channel, if the number of edges seen is less\n\t// than two, then the channel hasn't been fully announced yet.\n\tif len(updates) < 2 {\n\t\treturn\n\t}\n\n\t// Otherwise, we'll notify all the registered watchers and\n\t// remove the dispatched watchers.\n\twatcherResult, loaded := nw.openChanWatchers.LoadAndDelete(op)\n\tif !loaded {\n\t\treturn\n\t}\n\n\tfor _, eventChan := range watcherResult {\n\t\tclose(eventChan)\n\t}\n}\n\n// updateNodeStatePolicy updates the internal state of the node regarding the\n// policy updates.",
+      "length": 922,
+      "tokens": 126,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) updateNodeStatePolicy(op wire.OutPoint,",
+      "content": "func (nw *nodeWatcher) updateNodeStatePolicy(op wire.OutPoint,\n\tnewChan *lnrpc.ChannelEdgeUpdate) {\n\n\t// Init an empty policy map and overwrite it if the channel point can\n\t// be found in the node's policyUpdates.\n\tpolicies, ok := nw.state.policyUpdates.Load(op)\n\tif !ok {\n\t\tpolicies = make(PolicyUpdate)\n\t}\n\n\tnode := newChan.AdvertisingNode\n\n\t// Append the policy to the slice and update the node's state.\n\tnewPolicy := PolicyUpdateInfo{\n\t\tnewChan.RoutingPolicy, newChan.ConnectingNode, time.Now(),\n\t}\n\tpolicies[node] = append(policies[node], &newPolicy)\n\tnw.state.policyUpdates.Store(op, policies)\n}\n\n// handleOpenChannelWatchRequest processes a watch open channel request by\n// checking the number of the edges seen for a given channel point. If the\n// number is no less than 2 then the channel is considered open. Otherwise, we\n// will attempt to find it in its channel graph. If neither can be found, the\n// request is added to a watch request list than will be handled by\n// handleChannelEdgeUpdates.",
+      "length": 919,
+      "tokens": 135,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handleOpenChannelWatchRequest(req *chanWatchRequest) {",
+      "content": "func (nw *nodeWatcher) handleOpenChannelWatchRequest(req *chanWatchRequest) {\n\ttargetChan := req.chanPoint\n\n\t// If this is an open request, then it can be dispatched if the number\n\t// of edges seen for the channel is at least two.\n\tresult, _ := nw.state.openChans.Load(targetChan)\n\tif len(result) >= 2 {\n\t\tclose(req.eventChan)\n\t\treturn\n\t}\n\n\t// Otherwise, we'll add this to the list of open channel watchers for\n\t// this out point.\n\twatchers, _ := nw.openChanWatchers.Load(targetChan)\n\tnw.openChanWatchers.Store(\n\t\ttargetChan, append(watchers, req.eventChan),\n\t)\n}\n\n// handleClosedChannelUpdate takes a series of closed channel updates, extracts\n// the outpoints, saves them to harness node's internal state, and notifies all\n// registered clients.",
+      "length": 649,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handleClosedChannelUpdate(",
+      "content": "func (nw *nodeWatcher) handleClosedChannelUpdate(\n\tupdates []*lnrpc.ClosedChannelUpdate) {\n\n\t// For each channel closed, we'll mark that we've detected a channel\n\t// closure while lnd was pruning the channel graph.\n\tfor _, closedChan := range updates {\n\t\top := nw.rpc.MakeOutpoint(closedChan.ChanPoint)\n\n\t\tnw.state.closedChans.Store(op, closedChan)\n\n\t\t// As the channel has been closed, we'll notify all register\n\t\t// watchers.\n\t\twatchers, loaded := nw.closeChanWatchers.LoadAndDelete(op)\n\t\tif !loaded {\n\t\t\tcontinue\n\t\t}\n\n\t\tfor _, eventChan := range watchers {\n\t\t\tclose(eventChan)\n\t\t}\n\t}\n}\n\n// handleCloseChannelWatchRequest processes a watch close channel request by\n// checking whether the given channel point can be found in the node's internal\n// state. If not, the request is added to a watch request list than will be\n// handled by handleCloseChannelWatchRequest.",
+      "length": 793,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handleCloseChannelWatchRequest(req *chanWatchRequest) {",
+      "content": "func (nw *nodeWatcher) handleCloseChannelWatchRequest(req *chanWatchRequest) {\n\ttargetChan := req.chanPoint\n\n\t// If this is a close request, then it can be immediately dispatched if\n\t// we've already seen a channel closure for this channel.\n\tif _, ok := nw.state.closedChans.Load(targetChan); ok {\n\t\tclose(req.eventChan)\n\t\treturn\n\t}\n\n\t// Otherwise, we'll add this to the list of close channel watchers for\n\t// this out point.\n\toldWatchers, _ := nw.closeChanWatchers.Load(targetChan)\n\tnw.closeChanWatchers.Store(\n\t\ttargetChan, append(oldWatchers, req.eventChan),\n\t)\n}\n\n// handlePolicyUpdateWatchRequest checks that if the expected policy can be\n// found either in the node's interval state or describe graph response. If\n// found, it will signal the request by closing the event channel. Otherwise it\n// does nothing but returns nil.",
+      "length": 733,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) handlePolicyUpdateWatchRequest(req *chanWatchRequest) {",
+      "content": "func (nw *nodeWatcher) handlePolicyUpdateWatchRequest(req *chanWatchRequest) {\n\top := req.chanPoint\n\n\tvar policies []*PolicyUpdateInfo\n\n\t// Get a list of known policies for this chanPoint+advertisingNode\n\t// combination. Start searching in the node state first.\n\tpolicyMap, ok := nw.state.policyUpdates.Load(op)\n\tif ok {\n\t\tpolicies, ok = policyMap[req.advertisingNode]\n\t\tif !ok {\n\t\t\treturn\n\t\t}\n\t} else {\n\t\t// If it cannot be found in the node state, try searching it\n\t\t// from the node's DescribeGraph.\n\t\tpolicyMap := nw.getChannelPolicies(req.includeUnannounced)\n\t\tresult, ok := policyMap[op.String()][req.advertisingNode]\n\t\tif !ok {\n\t\t\treturn\n\t\t}\n\t\tfor _, policy := range result {\n\t\t\t// Use empty from node to mark it being loaded from\n\t\t\t// DescribeGraph.\n\t\t\tpolicies = append(\n\t\t\t\tpolicies, &PolicyUpdateInfo{\n\t\t\t\t\tpolicy, \"\", time.Now(),\n\t\t\t\t},\n\t\t\t)\n\t\t}\n\t}\n\n\t// Check if the latest policy is matched.\n\tpolicy := policies[len(policies)-1]\n\tif CheckChannelPolicy(policy.RoutingPolicy, req.policy) == nil {\n\t\tclose(req.eventChan)\n\t\treturn\n\t}\n}\n",
+      "length": 929,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "type topologyClient lnrpc.Lightning_SubscribeChannelGraphClient",
+      "content": "type topologyClient lnrpc.Lightning_SubscribeChannelGraphClient\n\n// newTopologyClient creates a topology client.",
+      "length": 47,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) newTopologyClient(",
+      "content": "func (nw *nodeWatcher) newTopologyClient(\n\tctx context.Context) (topologyClient, error) {\n\n\treq := &lnrpc.GraphTopologySubscription{}\n\tclient, err := nw.rpc.LN.SubscribeChannelGraph(ctx, req)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"%s: unable to create topology client: \"+\n\t\t\t\"%v (%s)\", nw.rpc.Name, err, time.Now().String())\n\t}\n\n\treturn client, nil\n}\n\n// receiveTopologyClientStream takes a topologyClient and receives graph\n// updates.\n//\n// NOTE: must be run as a goroutine.",
+      "length": 423,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) receiveTopologyClientStream(ctxb context.Context,",
+      "content": "func (nw *nodeWatcher) receiveTopologyClientStream(ctxb context.Context,\n\tclient topologyClient,\n\treceiver chan *lnrpc.GraphTopologyUpdate) error {\n\n\tfor {\n\t\tupdate, err := client.Recv()\n\n\t\tswitch {\n\t\tcase err == nil:\n\t\t\t// Good case. We will send the update to the receiver.\n\n\t\tcase strings.Contains(err.Error(), \"EOF\"):\n\t\t\t// End of subscription stream. Do nothing and quit.\n\t\t\treturn nil\n\n\t\tcase strings.Contains(err.Error(), context.Canceled.Error()):\n\t\t\t// End of subscription stream. Do nothing and quit.\n\t\t\treturn nil\n\n\t\tdefault:\n\t\t\t// An expected error is returned, return and leave it\n\t\t\t// to be handled by the caller.\n\t\t\treturn fmt.Errorf(\"graph subscription err: %w\", err)\n\t\t}\n\n\t\t// Send the update or quit.\n\t\tselect {\n\t\tcase receiver <- update:\n\t\tcase <-ctxb.Done():\n\t\t\treturn nil\n\t\t}\n\t}\n}\n\n// getChannelPolicies queries the channel graph and formats the policies into\n// the format defined in type policyUpdateMap.",
+      "length": 821,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func (nw *nodeWatcher) getChannelPolicies(include bool) policyUpdateMap {",
+      "content": "func (nw *nodeWatcher) getChannelPolicies(include bool) policyUpdateMap {\n\treq := &lnrpc.ChannelGraphRequest{IncludeUnannounced: include}\n\tgraph := nw.rpc.DescribeGraph(req)\n\n\tpolicyUpdates := policyUpdateMap{}\n\n\tfor _, e := range graph.Edges {\n\t\tpolicies := policyUpdates[e.ChanPoint]\n\n\t\t// If the map[op] is nil, we need to initialize the map first.\n\t\tif policies == nil {\n\t\t\tpolicies = make(map[string][]*lnrpc.RoutingPolicy)\n\t\t}\n\n\t\tif e.Node1Policy != nil {\n\t\t\tpolicies[e.Node1Pub] = append(\n\t\t\t\tpolicies[e.Node1Pub], e.Node1Policy,\n\t\t\t)\n\t\t}\n\n\t\tif e.Node2Policy != nil {\n\t\t\tpolicies[e.Node2Pub] = append(\n\t\t\t\tpolicies[e.Node2Pub], e.Node2Policy,\n\t\t\t)\n\t\t}\n\n\t\tpolicyUpdates[e.ChanPoint] = policies\n\t}\n\n\treturn policyUpdates\n}\n\n// CheckChannelPolicy checks that the policy matches the expected one.",
+      "length": 694,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func CheckChannelPolicy(policy, expectedPolicy *lnrpc.RoutingPolicy) error {",
+      "content": "func CheckChannelPolicy(policy, expectedPolicy *lnrpc.RoutingPolicy) error {\n\tif policy.FeeBaseMsat != expectedPolicy.FeeBaseMsat {\n\t\treturn fmt.Errorf(\"expected base fee %v, got %v\",\n\t\t\texpectedPolicy.FeeBaseMsat, policy.FeeBaseMsat)\n\t}\n\tif policy.FeeRateMilliMsat != expectedPolicy.FeeRateMilliMsat {\n\t\treturn fmt.Errorf(\"expected fee rate %v, got %v\",\n\t\t\texpectedPolicy.FeeRateMilliMsat,\n\t\t\tpolicy.FeeRateMilliMsat)\n\t}\n\tif policy.TimeLockDelta != expectedPolicy.TimeLockDelta {\n\t\treturn fmt.Errorf(\"expected time lock delta %v, got %v\",\n\t\t\texpectedPolicy.TimeLockDelta,\n\t\t\tpolicy.TimeLockDelta)\n\t}\n\tif policy.MinHtlc != expectedPolicy.MinHtlc {\n\t\treturn fmt.Errorf(\"expected min htlc %v, got %v\",\n\t\t\texpectedPolicy.MinHtlc, policy.MinHtlc)\n\t}\n\tif policy.MaxHtlcMsat != expectedPolicy.MaxHtlcMsat {\n\t\treturn fmt.Errorf(\"expected max htlc %v, got %v\",\n\t\t\texpectedPolicy.MaxHtlcMsat, policy.MaxHtlcMsat)\n\t}\n\tif policy.Disabled != expectedPolicy.Disabled {\n\t\treturn errors.New(\"edge should be disabled but isn't\")\n\t}\n\n\treturn nil\n}\n",
+      "length": 926,
+      "tokens": 92,
+      "embedding": []
+    }
+  ]
+}

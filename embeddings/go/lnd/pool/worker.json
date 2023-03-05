@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/pool/worker.go",
+  "package": "pool",
+  "sections": [
+    {
+      "slug": "type (",
+      "content": "type (\n\t// WorkerState is an interface used by the Worker to abstract the\n\t// lifecycle of internal state used by a worker goroutine.\n\tWorkerState interface {\n\t\t// Reset clears any internal state that may have been dirtied in\n\t\t// processing a prior task.\n\t\tReset()\n\n\t\t// Cleanup releases any shared state before a worker goroutine\n\t\t// exits.\n\t\tCleanup()\n\t}\n\n\t// WorkerConfig parametrizes the behavior of a Worker pool.\n\tWorkerConfig struct {\n\t\t// NewWorkerState allocates a new state for a worker goroutine.\n\t\t// This method is called each time a new worker goroutine is\n\t\t// spawned by the pool.\n\t\tNewWorkerState func() WorkerState\n\n\t\t// NumWorkers is the maximum number of workers the Worker pool\n\t\t// will permit to be allocated. Once the maximum number is\n\t\t// reached, any newly submitted tasks are forced to be processed\n\t\t// by existing worker goroutines.\n\t\tNumWorkers int\n\n\t\t// WorkerTimeout is the duration after which a worker goroutine\n\t\t// will exit after having received no newly submitted tasks.\n\t\tWorkerTimeout time.Duration\n\t}\n\n\t// Worker maintains a pool of goroutines that process submitted function\n\t// closures, and enable more efficient reuse of expensive state.\n\tWorker struct {\n\t\tstarted sync.Once\n\t\tstopped sync.Once\n\n\t\tcfg *WorkerConfig\n\n\t\t// requests is a channel where new tasks are submitted. Tasks\n\t\t// submitted through this channel may cause a new worker\n\t\t// goroutine to be allocated.\n\t\trequests chan *request\n\n\t\t// work is a channel where new tasks are submitted, but is only\n\t\t// read by active worker goroutines.\n\t\twork chan *request\n\n\t\t// workerSem is a channel-based semaphore that is used to limit\n\t\t// the total number of worker goroutines to the number\n\t\t// prescribed by the WorkerConfig.\n\t\tworkerSem chan struct{}\n\n\t\twg   sync.WaitGroup\n\t\tquit chan struct{}\n\t}\n\n\t// request is a tuple of task closure and error channel that is used to\n\t// both submit a task to the pool and respond with any errors\n\t// encountered during the task's execution.\n\trequest struct {\n\t\tfn      func(WorkerState) error\n\t\terrChan chan error\n\t}\n)\n\n// NewWorker initializes a new Worker pool using the provided WorkerConfig.",
+      "length": 2070,
+      "tokens": 334,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWorker(cfg *WorkerConfig) *Worker {",
+      "content": "func NewWorker(cfg *WorkerConfig) *Worker {\n\treturn &Worker{\n\t\tcfg:       cfg,\n\t\trequests:  make(chan *request),\n\t\tworkerSem: make(chan struct{}, cfg.NumWorkers),\n\t\twork:      make(chan *request),\n\t\tquit:      make(chan struct{}),\n\t}\n}\n\n// Start safely spins up the Worker pool.",
+      "length": 225,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Worker) Start() error {",
+      "content": "func (w *Worker) Start() error {\n\tw.started.Do(func() {\n\t\tw.wg.Add(1)\n\t\tgo w.requestHandler()\n\t})\n\treturn nil\n}\n\n// Stop safely shuts down the Worker pool.",
+      "length": 115,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Worker) Stop() error {",
+      "content": "func (w *Worker) Stop() error {\n\tw.stopped.Do(func() {\n\t\tclose(w.quit)\n\t\tw.wg.Wait()\n\t})\n\treturn nil\n}\n\n// Submit accepts a function closure to the worker pool. The returned error will\n// be either the result of the closure's execution or an ErrWorkerPoolExiting if\n// a shutdown is requested.",
+      "length": 252,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Worker) Submit(fn func(WorkerState) error) error {",
+      "content": "func (w *Worker) Submit(fn func(WorkerState) error) error {\n\treq := &request{\n\t\tfn:      fn,\n\t\terrChan: make(chan error, 1),\n\t}\n\n\tselect {\n\n\t// Send request to requestHandler, where either a new worker is spawned\n\t// or the task will be handed to an existing worker.\n\tcase w.requests <- req:\n\n\t// Fast path directly to existing worker.\n\tcase w.work <- req:\n\n\tcase <-w.quit:\n\t\treturn ErrWorkerPoolExiting\n\t}\n\n\tselect {\n\n\t// Wait for task to be processed.\n\tcase err := <-req.errChan:\n\t\treturn err\n\n\tcase <-w.quit:\n\t\treturn ErrWorkerPoolExiting\n\t}\n}\n\n// requestHandler processes incoming tasks by either allocating new worker\n// goroutines to process the incoming tasks, or by feeding a submitted task to\n// an already running worker goroutine.",
+      "length": 650,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Worker) requestHandler() {",
+      "content": "func (w *Worker) requestHandler() {\n\tdefer w.wg.Done()\n\n\tfor {\n\t\tselect {\n\t\tcase req := <-w.requests:\n\t\t\tselect {\n\n\t\t\t// If we have not reached our maximum number of workers,\n\t\t\t// spawn one to process the submitted request.\n\t\t\tcase w.workerSem <- struct{}{}:\n\t\t\t\tw.wg.Add(1)\n\t\t\t\tgo w.spawnWorker(req)\n\n\t\t\t// Otherwise, submit the task to any of the active\n\t\t\t// workers.\n\t\t\tcase w.work <- req:\n\n\t\t\tcase <-w.quit:\n\t\t\t\treturn\n\t\t\t}\n\n\t\tcase <-w.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// spawnWorker is used when the Worker pool wishes to create a new worker\n// goroutine. The worker's state is initialized by calling the config's\n// NewWorkerState method, and will continue to process incoming tasks until the\n// pool is shut down or no new tasks are received before the worker's timeout\n// elapses.\n//\n// NOTE: This method MUST be run as a goroutine.",
+      "length": 766,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Worker) spawnWorker(req *request) {",
+      "content": "func (w *Worker) spawnWorker(req *request) {\n\tdefer w.wg.Done()\n\tdefer func() { <-w.workerSem }()\n\n\tstate := w.cfg.NewWorkerState()\n\tdefer state.Cleanup()\n\n\treq.errChan <- req.fn(state)\n\n\t// We'll use a timer to implement the worker timeouts, as this reduces\n\t// the number of total allocations that would otherwise be necessary\n\t// with time.After.\n\tvar t *time.Timer\n\tfor {\n\t\t// Before processing another request, we'll reset the worker\n\t\t// state to that each request is processed against a clean\n\t\t// state.\n\t\tstate.Reset()\n\n\t\tselect {\n\n\t\t// Process any new requests that get submitted. We use a\n\t\t// non-blocking case first so that under high load we can spare\n\t\t// allocating a timeout.\n\t\tcase req := <-w.work:\n\t\t\treq.errChan <- req.fn(state)\n\t\t\tcontinue\n\n\t\tcase <-w.quit:\n\t\t\treturn\n\n\t\tdefault:\n\t\t}\n\n\t\t// There were no new requests that could be taken immediately\n\t\t// from the work channel. Initialize or reset the timeout, which\n\t\t// will fire if the worker doesn't receive a new task before\n\t\t// needing to exit.\n\t\tif t != nil {\n\t\t\tt.Reset(w.cfg.WorkerTimeout)\n\t\t} else {\n\t\t\tt = time.NewTimer(w.cfg.WorkerTimeout)\n\t\t}\n\n\t\tselect {\n\n\t\t// Process any new requests that get submitted.\n\t\tcase req := <-w.work:\n\t\t\treq.errChan <- req.fn(state)\n\n\t\t\t// Stop the timer, draining the timer's channel if a\n\t\t\t// notification was already delivered.\n\t\t\tif !t.Stop() {\n\t\t\t\t<-t.C\n\t\t\t}\n\n\t\t// The timeout has elapsed, meaning the worker did not receive\n\t\t// any new tasks. Exit to allow the worker to return and free\n\t\t// its resources.\n\t\tcase <-t.C:\n\t\t\treturn\n\n\t\tcase <-w.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n",
+      "length": 1478,
+      "tokens": 236,
+      "embedding": []
+    }
+  ]
+}

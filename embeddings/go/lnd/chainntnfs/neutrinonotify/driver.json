@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chainntnfs/neutrinonotify/driver.go",
+  "package": "neutrinonotify",
+  "sections": [
+    {
+      "slug": "func createNewNotifier(args ...interface{}) (chainntnfs.ChainNotifier, error) {",
+      "content": "func createNewNotifier(args ...interface{}) (chainntnfs.ChainNotifier, error) {\n\tif len(args) != 4 {\n\t\treturn nil, fmt.Errorf(\"incorrect number of arguments to \"+\n\t\t\t\".New(...), expected 4, instead passed %v\", len(args))\n\t}\n\n\tconfig, ok := args[0].(*neutrino.ChainService)\n\tif !ok {\n\t\treturn nil, errors.New(\"first argument to neutrinonotify.New \" +\n\t\t\t\"is incorrect, expected a *neutrino.ChainService\")\n\t}\n\n\tspendHintCache, ok := args[1].(chainntnfs.SpendHintCache)\n\tif !ok {\n\t\treturn nil, errors.New(\"second argument to neutrinonotify.New \" +\n\t\t\t\"is  incorrect, expected a chainntfs.SpendHintCache\")\n\t}\n\n\tconfirmHintCache, ok := args[2].(chainntnfs.ConfirmHintCache)\n\tif !ok {\n\t\treturn nil, errors.New(\"third argument to neutrinonotify.New \" +\n\t\t\t\"is  incorrect, expected a chainntfs.ConfirmHintCache\")\n\t}\n\n\tblockCache, ok := args[3].(*blockcache.BlockCache)\n\tif !ok {\n\t\treturn nil, errors.New(\"fourth argument to neutrinonotify.New \" +\n\t\t\t\"is incorrect, expected a *blockcache.BlockCache\")\n\t}\n\n\treturn New(config, spendHintCache, confirmHintCache, blockCache), nil\n}\n\n// init registers a driver for the NeutrinoNotify concrete implementation of\n// the chainntnfs.ChainNotifier interface.",
+      "length": 1077,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Register the driver.\n\tnotifier := &chainntnfs.NotifierDriver{\n\t\tNotifierType: notifierType,\n\t\tNew:          createNewNotifier,\n\t}\n\n\tif err := chainntnfs.RegisterNotifier(notifier); err != nil {\n\t\tpanic(fmt.Sprintf(\"failed to register notifier driver '%s': %v\",\n\t\t\tnotifierType, err))\n\t}\n}\n",
+      "length": 282,
+      "tokens": 31,
+      "embedding": []
+    }
+  ]
+}

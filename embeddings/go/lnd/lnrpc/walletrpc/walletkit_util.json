@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/walletrpc/walletkit_util.go",
+  "package": "walletrpc",
+  "sections": [
+    {
+      "slug": "func AccountsToWatchOnly(exported []*Account) ([]*lnrpc.WatchOnlyAccount,",
+      "content": "func AccountsToWatchOnly(exported []*Account) ([]*lnrpc.WatchOnlyAccount,\n\terror) {\n\n\tresult := make([]*lnrpc.WatchOnlyAccount, len(exported))\n\tfor idx, acct := range exported {\n\t\tparsedPath, err := parseDerivationPath(acct.DerivationPath)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"error parsing derivation path \"+\n\t\t\t\t\"of account %d: %v\", idx, err)\n\t\t}\n\t\tif len(parsedPath) < 3 {\n\t\t\treturn nil, fmt.Errorf(\"derivation path of account %d \"+\n\t\t\t\t\"has invalid derivation path, need at least \"+\n\t\t\t\t\"path of depth 3, instead has depth %d\", idx,\n\t\t\t\tlen(parsedPath))\n\t\t}\n\n\t\tresult[idx] = &lnrpc.WatchOnlyAccount{\n\t\t\tPurpose:  parsedPath[0],\n\t\t\tCoinType: parsedPath[1],\n\t\t\tAccount:  parsedPath[2],\n\t\t\tXpub:     acct.ExtendedPublicKey,\n\t\t}\n\t}\n\n\treturn result, nil\n}\n\n// parseDerivationPath parses a path in the form of m/x'/y'/z'/a/b into a slice\n// of [x, y, z, a, b], meaning that the apostrophe is ignored and 2^31 is _not_\n// added to the numbers.",
+      "length": 845,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func parseDerivationPath(path string) ([]uint32, error) {",
+      "content": "func parseDerivationPath(path string) ([]uint32, error) {\n\tpath = strings.TrimSpace(path)\n\tif len(path) == 0 {\n\t\treturn nil, fmt.Errorf(\"path cannot be empty\")\n\t}\n\tif !strings.HasPrefix(path, \"m/\") {\n\t\treturn nil, fmt.Errorf(\"path must start with m/\")\n\t}\n\n\t// Just the root key, no path was provided. This is valid but not useful\n\t// in most cases.\n\trest := strings.ReplaceAll(path, \"m/\", \"\")\n\tif rest == \"\" {\n\t\treturn []uint32{}, nil\n\t}\n\n\tparts := strings.Split(rest, \"/\")\n\tindices := make([]uint32, len(parts))\n\tfor i := 0; i < len(parts); i++ {\n\t\tpart := parts[i]\n\t\tif strings.Contains(parts[i], \"'\") {\n\t\t\tpart = strings.TrimRight(parts[i], \"'\")\n\t\t}\n\t\tparsed, err := strconv.ParseInt(part, 10, 32)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"could not parse part \\\"%s\\\": \"+\n\t\t\t\t\"%v\", part, err)\n\t\t}\n\t\tindices[i] = uint32(parsed)\n\t}\n\treturn indices, nil\n}\n\n// doubleHashMessage creates the double hash (sha256) of a message\n// prepended with a specified prefix.",
+      "length": 873,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func doubleHashMessage(prefix string, msg string) ([]byte, error) {",
+      "content": "func doubleHashMessage(prefix string, msg string) ([]byte, error) {\n\tvar buf bytes.Buffer\n\terr := wire.WriteVarString(&buf, 0, prefix)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\terr = wire.WriteVarString(&buf, 0, msg)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tdigest := chainhash.DoubleHashB(buf.Bytes())\n\n\treturn digest, nil\n}\n",
+      "length": 240,
+      "tokens": 38,
+      "embedding": []
+    }
+  ]
+}

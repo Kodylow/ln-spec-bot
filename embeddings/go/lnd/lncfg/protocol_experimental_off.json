@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/lncfg/protocol_experimental_off.go",
-  "package": "!dev",
+  "package": "lncfg",
   "sections": [
+    {
+      "slug": "//go:build !dev",
+      "content": "//go:build !dev\n// +build !dev\n\npackage lncfg\n\n// ExperimentalProtocol is a sub-config that houses any experimental protocol\n// features that also require a build-tag to activate.",
+      "length": 158,
+      "tokens": 24,
+      "embedding": []
+    },
     {
       "slug": "type ExperimentalProtocol struct {",
       "content": "type ExperimentalProtocol struct {\n}\n\n// CustomMessageOverrides returns the set of protocol messages that we override\n// to allow custom handling.",

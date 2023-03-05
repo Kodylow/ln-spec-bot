@@ -1,7 +1,14 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/embed.go",
-  "package": "kvdb_etcd",
+  "package": "etcd",
   "sections": [
+    {
+      "slug": "//go:build kvdb_etcd",
+      "content": "//go:build kvdb_etcd\n// +build kvdb_etcd\n\npackage etcd\n\nimport (\n\t\"fmt\"\n\t\"net\"\n\t\"net/url\"\n\t\"sync/atomic\"\n\t\"time\"\n\n\t\"go.etcd.io/etcd/server/v3/embed\"\n)\n\nconst (\n\t// readyTimeout is the time until the embedded etcd instance should start.\n\treadyTimeout = 10 * time.Second\n\n\t// defaultEtcdPort is the start of the range for listening ports of\n\t// embedded etcd servers. Ports are monotonically increasing starting\n\t// from this number and are determined by the results of getFreePort().\n\tdefaultEtcdPort = 2379\n\n\t// defaultNamespace is the namespace we'll use in our embedded etcd\n\t// instance. Since it is only used for testing, we'll use the namespace\n\t// name \"test/\" for this. Note that the namespace can be any string,\n\t// the trailing / is not required.\n\tdefaultNamespace = \"test/\"\n)\n\nvar (\n\t// lastPort is the last port determined to be free for use by a new\n\t// embedded etcd server. It should be used atomically.\n\tlastPort uint32 = defaultEtcdPort\n)\n\n// getFreePort returns the first port that is available for listening by a new\n// embedded etcd server. It panics if no port is found and the maximum available\n// TCP port is reached.",
+      "length": 1080,
+      "tokens": 182,
+      "embedding": []
+    },
     {
       "slug": "func getFreePort() int {",
       "content": "func getFreePort() int {\n\tport := atomic.AddUint32(&lastPort, 1)\n\tfor port < 65535 {\n\t\t// If there are no errors while attempting to listen on this\n\t\t// port, close the socket and return it as available.\n\t\taddr := fmt.Sprintf(\"127.0.0.1:%d\", port)\n\t\tl, err := net.Listen(\"tcp4\", addr)\n\t\tif err == nil {\n\t\t\terr := l.Close()\n\t\t\tif err == nil {\n\t\t\t\treturn int(port)\n\t\t\t}\n\t\t}\n\t\tport = atomic.AddUint32(&lastPort, 1)\n\t}\n\n\t// No ports available? Must be a mistake.\n\tpanic(\"no ports available for listening\")\n}\n\n// NewEmbeddedEtcdInstance creates an embedded etcd instance for testing,\n// listening on random open ports. Returns the backend config and a cleanup\n// func that will stop the etcd instance.",

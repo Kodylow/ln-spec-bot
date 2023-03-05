@@ -1,0 +1,748 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/routerrpc/router_grpc.pb.go",
+  "package": "routerrpc",
+  "sections": [
+    {
+      "slug": "type RouterClient interface {",
+      "content": "type RouterClient interface {\n\t// SendPaymentV2 attempts to route a payment described by the passed\n\t// PaymentRequest to the final destination. The call returns a stream of\n\t// payment updates.\n\tSendPaymentV2(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentV2Client, error)\n\t// TrackPaymentV2 returns an update stream for the payment identified by the\n\t// payment hash.\n\tTrackPaymentV2(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentV2Client, error)\n\t// TrackPayments returns an update stream for every payment that is not in a\n\t// terminal state. Note that if payments are in-flight while starting a new\n\t// subscription, the start of the payment stream could produce out-of-order\n\t// and/or duplicate events. In order to get updates for every in-flight\n\t// payment attempt make sure to subscribe to this method before initiating any\n\t// payments.\n\tTrackPayments(ctx context.Context, in *TrackPaymentsRequest, opts ...grpc.CallOption) (Router_TrackPaymentsClient, error)\n\t// EstimateRouteFee allows callers to obtain a lower bound w.r.t how much it\n\t// may cost to send an HTLC to the target end destination.\n\tEstimateRouteFee(ctx context.Context, in *RouteFeeRequest, opts ...grpc.CallOption) (*RouteFeeResponse, error)\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use SendToRouteV2. SendToRoute attempts to make a payment via\n\t// the specified route. This method differs from SendPayment in that it\n\t// allows users to specify a full route manually. This can be used for\n\t// things like rebalancing, and atomic swaps. It differs from the newer\n\t// SendToRouteV2 in that it doesn't return the full HTLC information.\n\tSendToRoute(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*SendToRouteResponse, error)\n\t// SendToRouteV2 attempts to make a payment via the specified route. This\n\t// method differs from SendPayment in that it allows users to specify a full\n\t// route manually. This can be used for things like rebalancing, and atomic\n\t// swaps.\n\tSendToRouteV2(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*lnrpc.HTLCAttempt, error)\n\t// ResetMissionControl clears all mission control state and starts with a clean\n\t// slate.\n\tResetMissionControl(ctx context.Context, in *ResetMissionControlRequest, opts ...grpc.CallOption) (*ResetMissionControlResponse, error)\n\t// QueryMissionControl exposes the internal mission control state to callers.\n\t// It is a development feature.\n\tQueryMissionControl(ctx context.Context, in *QueryMissionControlRequest, opts ...grpc.CallOption) (*QueryMissionControlResponse, error)\n\t// XImportMissionControl is an experimental API that imports the state provided\n\t// to the internal mission control's state, using all results which are more\n\t// recent than our existing values. These values will only be imported\n\t// in-memory, and will not be persisted across restarts.\n\tXImportMissionControl(ctx context.Context, in *XImportMissionControlRequest, opts ...grpc.CallOption) (*XImportMissionControlResponse, error)\n\t// GetMissionControlConfig returns mission control's current config.\n\tGetMissionControlConfig(ctx context.Context, in *GetMissionControlConfigRequest, opts ...grpc.CallOption) (*GetMissionControlConfigResponse, error)\n\t// SetMissionControlConfig will set mission control's config, if the config\n\t// provided is valid.\n\tSetMissionControlConfig(ctx context.Context, in *SetMissionControlConfigRequest, opts ...grpc.CallOption) (*SetMissionControlConfigResponse, error)\n\t// Deprecated. QueryProbability returns the current success probability\n\t// estimate for a given node pair and amount. The call returns a zero success\n\t// probability if no channel is available or if the amount violates min/max\n\t// HTLC constraints.\n\tQueryProbability(ctx context.Context, in *QueryProbabilityRequest, opts ...grpc.CallOption) (*QueryProbabilityResponse, error)\n\t// BuildRoute builds a fully specified route based on a list of hop public\n\t// keys. It retrieves the relevant channel policies from the graph in order to\n\t// calculate the correct fees and time locks.\n\tBuildRoute(ctx context.Context, in *BuildRouteRequest, opts ...grpc.CallOption) (*BuildRouteResponse, error)\n\t// SubscribeHtlcEvents creates a uni-directional stream from the server to\n\t// the client which delivers a stream of htlc events.\n\tSubscribeHtlcEvents(ctx context.Context, in *SubscribeHtlcEventsRequest, opts ...grpc.CallOption) (Router_SubscribeHtlcEventsClient, error)\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use SendPaymentV2. SendPayment attempts to route a payment\n\t// described by the passed PaymentRequest to the final destination. The call\n\t// returns a stream of payment status updates.\n\tSendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentClient, error)\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use TrackPaymentV2. TrackPayment returns an update stream for\n\t// the payment identified by the payment hash.\n\tTrackPayment(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentClient, error)\n\t// *\n\t// HtlcInterceptor dispatches a bi-directional streaming RPC in which\n\t// Forwarded HTLC requests are sent to the client and the client responds with\n\t// a boolean that tells LND if this htlc should be intercepted.\n\t// In case of interception, the htlc can be either settled, cancelled or\n\t// resumed later by using the ResolveHoldForward endpoint.\n\tHtlcInterceptor(ctx context.Context, opts ...grpc.CallOption) (Router_HtlcInterceptorClient, error)\n\t// UpdateChanStatus attempts to manually set the state of a channel\n\t// (enabled, disabled, or auto). A manual \"disable\" request will cause the\n\t// channel to stay disabled until a subsequent manual request of either\n\t// \"enable\" or \"auto\".\n\tUpdateChanStatus(ctx context.Context, in *UpdateChanStatusRequest, opts ...grpc.CallOption) (*UpdateChanStatusResponse, error)\n}\n",
+      "length": 5861,
+      "tokens": 729,
+      "embedding": []
+    },
+    {
+      "slug": "type routerClient struct {",
+      "content": "type routerClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRouterClient(cc grpc.ClientConnInterface) RouterClient {",
+      "content": "func NewRouterClient(cc grpc.ClientConnInterface) RouterClient {\n\treturn &routerClient{cc}\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SendPaymentV2(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentV2Client, error) {",
+      "content": "func (c *routerClient) SendPaymentV2(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentV2Client, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[0], \"/routerrpc.Router/SendPaymentV2\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerSendPaymentV2Client{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 341,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SendPaymentV2Client interface {",
+      "content": "type Router_SendPaymentV2Client interface {\n\tRecv() (*lnrpc.Payment, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSendPaymentV2Client struct {",
+      "content": "type routerSendPaymentV2Client struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSendPaymentV2Client) Recv() (*lnrpc.Payment, error) {",
+      "content": "func (x *routerSendPaymentV2Client) Recv() (*lnrpc.Payment, error) {\n\tm := new(lnrpc.Payment)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) TrackPaymentV2(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentV2Client, error) {",
+      "content": "func (c *routerClient) TrackPaymentV2(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentV2Client, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[1], \"/routerrpc.Router/TrackPaymentV2\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerTrackPaymentV2Client{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 343,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentV2Client interface {",
+      "content": "type Router_TrackPaymentV2Client interface {\n\tRecv() (*lnrpc.Payment, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentV2Client struct {",
+      "content": "type routerTrackPaymentV2Client struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentV2Client) Recv() (*lnrpc.Payment, error) {",
+      "content": "func (x *routerTrackPaymentV2Client) Recv() (*lnrpc.Payment, error) {\n\tm := new(lnrpc.Payment)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) TrackPayments(ctx context.Context, in *TrackPaymentsRequest, opts ...grpc.CallOption) (Router_TrackPaymentsClient, error) {",
+      "content": "func (c *routerClient) TrackPayments(ctx context.Context, in *TrackPaymentsRequest, opts ...grpc.CallOption) (Router_TrackPaymentsClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[2], \"/routerrpc.Router/TrackPayments\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerTrackPaymentsClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 341,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentsClient interface {",
+      "content": "type Router_TrackPaymentsClient interface {\n\tRecv() (*lnrpc.Payment, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentsClient struct {",
+      "content": "type routerTrackPaymentsClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentsClient) Recv() (*lnrpc.Payment, error) {",
+      "content": "func (x *routerTrackPaymentsClient) Recv() (*lnrpc.Payment, error) {\n\tm := new(lnrpc.Payment)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) EstimateRouteFee(ctx context.Context, in *RouteFeeRequest, opts ...grpc.CallOption) (*RouteFeeResponse, error) {",
+      "content": "func (c *routerClient) EstimateRouteFee(ctx context.Context, in *RouteFeeRequest, opts ...grpc.CallOption) (*RouteFeeResponse, error) {\n\tout := new(RouteFeeResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/EstimateRouteFee\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// Deprecated: Do not use.",
+      "length": 187,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SendToRoute(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*SendToRouteResponse, error) {",
+      "content": "func (c *routerClient) SendToRoute(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*SendToRouteResponse, error) {\n\tout := new(SendToRouteResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/SendToRoute\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 159,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SendToRouteV2(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*lnrpc.HTLCAttempt, error) {",
+      "content": "func (c *routerClient) SendToRouteV2(ctx context.Context, in *SendToRouteRequest, opts ...grpc.CallOption) (*lnrpc.HTLCAttempt, error) {\n\tout := new(lnrpc.HTLCAttempt)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/SendToRouteV2\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 159,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) ResetMissionControl(ctx context.Context, in *ResetMissionControlRequest, opts ...grpc.CallOption) (*ResetMissionControlResponse, error) {",
+      "content": "func (c *routerClient) ResetMissionControl(ctx context.Context, in *ResetMissionControlRequest, opts ...grpc.CallOption) (*ResetMissionControlResponse, error) {\n\tout := new(ResetMissionControlResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/ResetMissionControl\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 175,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) QueryMissionControl(ctx context.Context, in *QueryMissionControlRequest, opts ...grpc.CallOption) (*QueryMissionControlResponse, error) {",
+      "content": "func (c *routerClient) QueryMissionControl(ctx context.Context, in *QueryMissionControlRequest, opts ...grpc.CallOption) (*QueryMissionControlResponse, error) {\n\tout := new(QueryMissionControlResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/QueryMissionControl\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 175,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) XImportMissionControl(ctx context.Context, in *XImportMissionControlRequest, opts ...grpc.CallOption) (*XImportMissionControlResponse, error) {",
+      "content": "func (c *routerClient) XImportMissionControl(ctx context.Context, in *XImportMissionControlRequest, opts ...grpc.CallOption) (*XImportMissionControlResponse, error) {\n\tout := new(XImportMissionControlResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/XImportMissionControl\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 179,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) GetMissionControlConfig(ctx context.Context, in *GetMissionControlConfigRequest, opts ...grpc.CallOption) (*GetMissionControlConfigResponse, error) {",
+      "content": "func (c *routerClient) GetMissionControlConfig(ctx context.Context, in *GetMissionControlConfigRequest, opts ...grpc.CallOption) (*GetMissionControlConfigResponse, error) {\n\tout := new(GetMissionControlConfigResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/GetMissionControlConfig\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 183,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SetMissionControlConfig(ctx context.Context, in *SetMissionControlConfigRequest, opts ...grpc.CallOption) (*SetMissionControlConfigResponse, error) {",
+      "content": "func (c *routerClient) SetMissionControlConfig(ctx context.Context, in *SetMissionControlConfigRequest, opts ...grpc.CallOption) (*SetMissionControlConfigResponse, error) {\n\tout := new(SetMissionControlConfigResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/SetMissionControlConfig\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 183,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) QueryProbability(ctx context.Context, in *QueryProbabilityRequest, opts ...grpc.CallOption) (*QueryProbabilityResponse, error) {",
+      "content": "func (c *routerClient) QueryProbability(ctx context.Context, in *QueryProbabilityRequest, opts ...grpc.CallOption) (*QueryProbabilityResponse, error) {\n\tout := new(QueryProbabilityResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/QueryProbability\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 169,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) BuildRoute(ctx context.Context, in *BuildRouteRequest, opts ...grpc.CallOption) (*BuildRouteResponse, error) {",
+      "content": "func (c *routerClient) BuildRoute(ctx context.Context, in *BuildRouteRequest, opts ...grpc.CallOption) (*BuildRouteResponse, error) {\n\tout := new(BuildRouteResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/BuildRoute\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n",
+      "length": 157,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SubscribeHtlcEvents(ctx context.Context, in *SubscribeHtlcEventsRequest, opts ...grpc.CallOption) (Router_SubscribeHtlcEventsClient, error) {",
+      "content": "func (c *routerClient) SubscribeHtlcEvents(ctx context.Context, in *SubscribeHtlcEventsRequest, opts ...grpc.CallOption) (Router_SubscribeHtlcEventsClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[3], \"/routerrpc.Router/SubscribeHtlcEvents\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerSubscribeHtlcEventsClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 353,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SubscribeHtlcEventsClient interface {",
+      "content": "type Router_SubscribeHtlcEventsClient interface {\n\tRecv() (*HtlcEvent, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 46,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSubscribeHtlcEventsClient struct {",
+      "content": "type routerSubscribeHtlcEventsClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSubscribeHtlcEventsClient) Recv() (*HtlcEvent, error) {",
+      "content": "func (x *routerSubscribeHtlcEventsClient) Recv() (*HtlcEvent, error) {\n\tm := new(HtlcEvent)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n\n// Deprecated: Do not use.",
+      "length": 130,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) SendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentClient, error) {",
+      "content": "func (c *routerClient) SendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[4], \"/routerrpc.Router/SendPayment\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerSendPaymentClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 337,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SendPaymentClient interface {",
+      "content": "type Router_SendPaymentClient interface {\n\tRecv() (*PaymentStatus, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSendPaymentClient struct {",
+      "content": "type routerSendPaymentClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSendPaymentClient) Recv() (*PaymentStatus, error) {",
+      "content": "func (x *routerSendPaymentClient) Recv() (*PaymentStatus, error) {\n\tm := new(PaymentStatus)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n\n// Deprecated: Do not use.",
+      "length": 134,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) TrackPayment(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentClient, error) {",
+      "content": "func (c *routerClient) TrackPayment(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[5], \"/routerrpc.Router/TrackPayment\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerTrackPaymentClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 339,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentClient interface {",
+      "content": "type Router_TrackPaymentClient interface {\n\tRecv() (*PaymentStatus, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentClient struct {",
+      "content": "type routerTrackPaymentClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentClient) Recv() (*PaymentStatus, error) {",
+      "content": "func (x *routerTrackPaymentClient) Recv() (*PaymentStatus, error) {\n\tm := new(PaymentStatus)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) HtlcInterceptor(ctx context.Context, opts ...grpc.CallOption) (Router_HtlcInterceptorClient, error) {",
+      "content": "func (c *routerClient) HtlcInterceptor(ctx context.Context, opts ...grpc.CallOption) (Router_HtlcInterceptorClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[6], \"/routerrpc.Router/HtlcInterceptor\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &routerHtlcInterceptorClient{stream}\n\treturn x, nil\n}\n",
+      "length": 205,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_HtlcInterceptorClient interface {",
+      "content": "type Router_HtlcInterceptorClient interface {\n\tSend(*ForwardHtlcInterceptResponse) error\n\tRecv() (*ForwardHtlcInterceptRequest, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 106,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "type routerHtlcInterceptorClient struct {",
+      "content": "type routerHtlcInterceptorClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerHtlcInterceptorClient) Send(m *ForwardHtlcInterceptResponse) error {",
+      "content": "func (x *routerHtlcInterceptorClient) Send(m *ForwardHtlcInterceptResponse) error {\n\treturn x.ClientStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerHtlcInterceptorClient) Recv() (*ForwardHtlcInterceptRequest, error) {",
+      "content": "func (x *routerHtlcInterceptorClient) Recv() (*ForwardHtlcInterceptRequest, error) {\n\tm := new(ForwardHtlcInterceptRequest)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 122,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *routerClient) UpdateChanStatus(ctx context.Context, in *UpdateChanStatusRequest, opts ...grpc.CallOption) (*UpdateChanStatusResponse, error) {",
+      "content": "func (c *routerClient) UpdateChanStatus(ctx context.Context, in *UpdateChanStatusRequest, opts ...grpc.CallOption) (*UpdateChanStatusResponse, error) {\n\tout := new(UpdateChanStatusResponse)\n\terr := c.cc.Invoke(ctx, \"/routerrpc.Router/UpdateChanStatus\", in, out, opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n// RouterServer is the server API for Router service.\n// All implementations must embed UnimplementedRouterServer\n// for forward compatibility",
+      "length": 309,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type RouterServer interface {",
+      "content": "type RouterServer interface {\n\t// SendPaymentV2 attempts to route a payment described by the passed\n\t// PaymentRequest to the final destination. The call returns a stream of\n\t// payment updates.\n\tSendPaymentV2(*SendPaymentRequest, Router_SendPaymentV2Server) error\n\t// TrackPaymentV2 returns an update stream for the payment identified by the\n\t// payment hash.\n\tTrackPaymentV2(*TrackPaymentRequest, Router_TrackPaymentV2Server) error\n\t// TrackPayments returns an update stream for every payment that is not in a\n\t// terminal state. Note that if payments are in-flight while starting a new\n\t// subscription, the start of the payment stream could produce out-of-order\n\t// and/or duplicate events. In order to get updates for every in-flight\n\t// payment attempt make sure to subscribe to this method before initiating any\n\t// payments.\n\tTrackPayments(*TrackPaymentsRequest, Router_TrackPaymentsServer) error\n\t// EstimateRouteFee allows callers to obtain a lower bound w.r.t how much it\n\t// may cost to send an HTLC to the target end destination.\n\tEstimateRouteFee(context.Context, *RouteFeeRequest) (*RouteFeeResponse, error)\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use SendToRouteV2. SendToRoute attempts to make a payment via\n\t// the specified route. This method differs from SendPayment in that it\n\t// allows users to specify a full route manually. This can be used for\n\t// things like rebalancing, and atomic swaps. It differs from the newer\n\t// SendToRouteV2 in that it doesn't return the full HTLC information.\n\tSendToRoute(context.Context, *SendToRouteRequest) (*SendToRouteResponse, error)\n\t// SendToRouteV2 attempts to make a payment via the specified route. This\n\t// method differs from SendPayment in that it allows users to specify a full\n\t// route manually. This can be used for things like rebalancing, and atomic\n\t// swaps.\n\tSendToRouteV2(context.Context, *SendToRouteRequest) (*lnrpc.HTLCAttempt, error)\n\t// ResetMissionControl clears all mission control state and starts with a clean\n\t// slate.\n\tResetMissionControl(context.Context, *ResetMissionControlRequest) (*ResetMissionControlResponse, error)\n\t// QueryMissionControl exposes the internal mission control state to callers.\n\t// It is a development feature.\n\tQueryMissionControl(context.Context, *QueryMissionControlRequest) (*QueryMissionControlResponse, error)\n\t// XImportMissionControl is an experimental API that imports the state provided\n\t// to the internal mission control's state, using all results which are more\n\t// recent than our existing values. These values will only be imported\n\t// in-memory, and will not be persisted across restarts.\n\tXImportMissionControl(context.Context, *XImportMissionControlRequest) (*XImportMissionControlResponse, error)\n\t// GetMissionControlConfig returns mission control's current config.\n\tGetMissionControlConfig(context.Context, *GetMissionControlConfigRequest) (*GetMissionControlConfigResponse, error)\n\t// SetMissionControlConfig will set mission control's config, if the config\n\t// provided is valid.\n\tSetMissionControlConfig(context.Context, *SetMissionControlConfigRequest) (*SetMissionControlConfigResponse, error)\n\t// Deprecated. QueryProbability returns the current success probability\n\t// estimate for a given node pair and amount. The call returns a zero success\n\t// probability if no channel is available or if the amount violates min/max\n\t// HTLC constraints.\n\tQueryProbability(context.Context, *QueryProbabilityRequest) (*QueryProbabilityResponse, error)\n\t// BuildRoute builds a fully specified route based on a list of hop public\n\t// keys. It retrieves the relevant channel policies from the graph in order to\n\t// calculate the correct fees and time locks.\n\tBuildRoute(context.Context, *BuildRouteRequest) (*BuildRouteResponse, error)\n\t// SubscribeHtlcEvents creates a uni-directional stream from the server to\n\t// the client which delivers a stream of htlc events.\n\tSubscribeHtlcEvents(*SubscribeHtlcEventsRequest, Router_SubscribeHtlcEventsServer) error\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use SendPaymentV2. SendPayment attempts to route a payment\n\t// described by the passed PaymentRequest to the final destination. The call\n\t// returns a stream of payment status updates.\n\tSendPayment(*SendPaymentRequest, Router_SendPaymentServer) error\n\t// Deprecated: Do not use.\n\t//\n\t// Deprecated, use TrackPaymentV2. TrackPayment returns an update stream for\n\t// the payment identified by the payment hash.\n\tTrackPayment(*TrackPaymentRequest, Router_TrackPaymentServer) error\n\t// *\n\t// HtlcInterceptor dispatches a bi-directional streaming RPC in which\n\t// Forwarded HTLC requests are sent to the client and the client responds with\n\t// a boolean that tells LND if this htlc should be intercepted.\n\t// In case of interception, the htlc can be either settled, cancelled or\n\t// resumed later by using the ResolveHoldForward endpoint.\n\tHtlcInterceptor(Router_HtlcInterceptorServer) error\n\t// UpdateChanStatus attempts to manually set the state of a channel\n\t// (enabled, disabled, or auto). A manual \"disable\" request will cause the\n\t// channel to stay disabled until a subsequent manual request of either\n\t// \"enable\" or \"auto\".\n\tUpdateChanStatus(context.Context, *UpdateChanStatusRequest) (*UpdateChanStatusResponse, error)\n\tmustEmbedUnimplementedRouterServer()\n}\n\n// UnimplementedRouterServer must be embedded to have forward compatible implementations.",
+      "length": 5281,
+      "tokens": 662,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedRouterServer struct {",
+      "content": "type UnimplementedRouterServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SendPaymentV2(*SendPaymentRequest, Router_SendPaymentV2Server) error {",
+      "content": "func (UnimplementedRouterServer) SendPaymentV2(*SendPaymentRequest, Router_SendPaymentV2Server) error {\n\treturn status.Errorf(codes.Unimplemented, \"method SendPaymentV2 not implemented\")\n}",
+      "length": 83,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) TrackPaymentV2(*TrackPaymentRequest, Router_TrackPaymentV2Server) error {",
+      "content": "func (UnimplementedRouterServer) TrackPaymentV2(*TrackPaymentRequest, Router_TrackPaymentV2Server) error {\n\treturn status.Errorf(codes.Unimplemented, \"method TrackPaymentV2 not implemented\")\n}",
+      "length": 84,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) TrackPayments(*TrackPaymentsRequest, Router_TrackPaymentsServer) error {",
+      "content": "func (UnimplementedRouterServer) TrackPayments(*TrackPaymentsRequest, Router_TrackPaymentsServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method TrackPayments not implemented\")\n}",
+      "length": 83,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) EstimateRouteFee(context.Context, *RouteFeeRequest) (*RouteFeeResponse, error) {",
+      "content": "func (UnimplementedRouterServer) EstimateRouteFee(context.Context, *RouteFeeRequest) (*RouteFeeResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method EstimateRouteFee not implemented\")\n}",
+      "length": 91,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SendToRoute(context.Context, *SendToRouteRequest) (*SendToRouteResponse, error) {",
+      "content": "func (UnimplementedRouterServer) SendToRoute(context.Context, *SendToRouteRequest) (*SendToRouteResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SendToRoute not implemented\")\n}",
+      "length": 86,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SendToRouteV2(context.Context, *SendToRouteRequest) (*lnrpc.HTLCAttempt, error) {",
+      "content": "func (UnimplementedRouterServer) SendToRouteV2(context.Context, *SendToRouteRequest) (*lnrpc.HTLCAttempt, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SendToRouteV2 not implemented\")\n}",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) ResetMissionControl(context.Context, *ResetMissionControlRequest) (*ResetMissionControlResponse, error) {",
+      "content": "func (UnimplementedRouterServer) ResetMissionControl(context.Context, *ResetMissionControlRequest) (*ResetMissionControlResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method ResetMissionControl not implemented\")\n}",
+      "length": 94,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) QueryMissionControl(context.Context, *QueryMissionControlRequest) (*QueryMissionControlResponse, error) {",
+      "content": "func (UnimplementedRouterServer) QueryMissionControl(context.Context, *QueryMissionControlRequest) (*QueryMissionControlResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method QueryMissionControl not implemented\")\n}",
+      "length": 94,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) XImportMissionControl(context.Context, *XImportMissionControlRequest) (*XImportMissionControlResponse, error) {",
+      "content": "func (UnimplementedRouterServer) XImportMissionControl(context.Context, *XImportMissionControlRequest) (*XImportMissionControlResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method XImportMissionControl not implemented\")\n}",
+      "length": 96,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) GetMissionControlConfig(context.Context, *GetMissionControlConfigRequest) (*GetMissionControlConfigResponse, error) {",
+      "content": "func (UnimplementedRouterServer) GetMissionControlConfig(context.Context, *GetMissionControlConfigRequest) (*GetMissionControlConfigResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method GetMissionControlConfig not implemented\")\n}",
+      "length": 98,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SetMissionControlConfig(context.Context, *SetMissionControlConfigRequest) (*SetMissionControlConfigResponse, error) {",
+      "content": "func (UnimplementedRouterServer) SetMissionControlConfig(context.Context, *SetMissionControlConfigRequest) (*SetMissionControlConfigResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method SetMissionControlConfig not implemented\")\n}",
+      "length": 98,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) QueryProbability(context.Context, *QueryProbabilityRequest) (*QueryProbabilityResponse, error) {",
+      "content": "func (UnimplementedRouterServer) QueryProbability(context.Context, *QueryProbabilityRequest) (*QueryProbabilityResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method QueryProbability not implemented\")\n}",
+      "length": 91,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) BuildRoute(context.Context, *BuildRouteRequest) (*BuildRouteResponse, error) {",
+      "content": "func (UnimplementedRouterServer) BuildRoute(context.Context, *BuildRouteRequest) (*BuildRouteResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method BuildRoute not implemented\")\n}",
+      "length": 85,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SubscribeHtlcEvents(*SubscribeHtlcEventsRequest, Router_SubscribeHtlcEventsServer) error {",
+      "content": "func (UnimplementedRouterServer) SubscribeHtlcEvents(*SubscribeHtlcEventsRequest, Router_SubscribeHtlcEventsServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method SubscribeHtlcEvents not implemented\")\n}",
+      "length": 89,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) SendPayment(*SendPaymentRequest, Router_SendPaymentServer) error {",
+      "content": "func (UnimplementedRouterServer) SendPayment(*SendPaymentRequest, Router_SendPaymentServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method SendPayment not implemented\")\n}",
+      "length": 81,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) TrackPayment(*TrackPaymentRequest, Router_TrackPaymentServer) error {",
+      "content": "func (UnimplementedRouterServer) TrackPayment(*TrackPaymentRequest, Router_TrackPaymentServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method TrackPayment not implemented\")\n}",
+      "length": 82,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) HtlcInterceptor(Router_HtlcInterceptorServer) error {",
+      "content": "func (UnimplementedRouterServer) HtlcInterceptor(Router_HtlcInterceptorServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method HtlcInterceptor not implemented\")\n}",
+      "length": 85,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) UpdateChanStatus(context.Context, *UpdateChanStatusRequest) (*UpdateChanStatusResponse, error) {",
+      "content": "func (UnimplementedRouterServer) UpdateChanStatus(context.Context, *UpdateChanStatusRequest) (*UpdateChanStatusResponse, error) {\n\treturn nil, status.Errorf(codes.Unimplemented, \"method UpdateChanStatus not implemented\")\n}",
+      "length": 91,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedRouterServer) mustEmbedUnimplementedRouterServer() {}",
+      "content": "func (UnimplementedRouterServer) mustEmbedUnimplementedRouterServer() {}\n\n// UnsafeRouterServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to RouterServer will\n// result in compilation errors.",
+      "length": 205,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeRouterServer interface {",
+      "content": "type UnsafeRouterServer interface {\n\tmustEmbedUnimplementedRouterServer()\n}\n",
+      "length": 38,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterRouterServer(s grpc.ServiceRegistrar, srv RouterServer) {",
+      "content": "func RegisterRouterServer(s grpc.ServiceRegistrar, srv RouterServer) {\n\ts.RegisterService(&Router_ServiceDesc, srv)\n}\n",
+      "length": 45,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SendPaymentV2_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_SendPaymentV2_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SendPaymentRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).SendPaymentV2(m, &routerSendPaymentV2Server{stream})\n}\n",
+      "length": 165,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SendPaymentV2Server interface {",
+      "content": "type Router_SendPaymentV2Server interface {\n\tSend(*lnrpc.Payment) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSendPaymentV2Server struct {",
+      "content": "type routerSendPaymentV2Server struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSendPaymentV2Server) Send(m *lnrpc.Payment) error {",
+      "content": "func (x *routerSendPaymentV2Server) Send(m *lnrpc.Payment) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_TrackPaymentV2_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_TrackPaymentV2_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(TrackPaymentRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).TrackPaymentV2(m, &routerTrackPaymentV2Server{stream})\n}\n",
+      "length": 168,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentV2Server interface {",
+      "content": "type Router_TrackPaymentV2Server interface {\n\tSend(*lnrpc.Payment) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentV2Server struct {",
+      "content": "type routerTrackPaymentV2Server struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentV2Server) Send(m *lnrpc.Payment) error {",
+      "content": "func (x *routerTrackPaymentV2Server) Send(m *lnrpc.Payment) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_TrackPayments_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_TrackPayments_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(TrackPaymentsRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).TrackPayments(m, &routerTrackPaymentsServer{stream})\n}\n",
+      "length": 167,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentsServer interface {",
+      "content": "type Router_TrackPaymentsServer interface {\n\tSend(*lnrpc.Payment) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentsServer struct {",
+      "content": "type routerTrackPaymentsServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentsServer) Send(m *lnrpc.Payment) error {",
+      "content": "func (x *routerTrackPaymentsServer) Send(m *lnrpc.Payment) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_EstimateRouteFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_EstimateRouteFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(RouteFeeRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).EstimateRouteFee(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/EstimateRouteFee\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).EstimateRouteFee(ctx, req.(*RouteFeeRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 455,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SendToRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_SendToRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SendToRouteRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).SendToRoute(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/SendToRoute\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).SendToRoute(ctx, req.(*SendToRouteRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 446,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SendToRouteV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_SendToRouteV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SendToRouteRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).SendToRouteV2(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/SendToRouteV2\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).SendToRouteV2(ctx, req.(*SendToRouteRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 452,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_ResetMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_ResetMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(ResetMissionControlRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).ResetMissionControl(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/ResetMissionControl\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).ResetMissionControl(ctx, req.(*ResetMissionControlRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 486,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_QueryMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_QueryMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(QueryMissionControlRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).QueryMissionControl(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/QueryMissionControl\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).QueryMissionControl(ctx, req.(*QueryMissionControlRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 486,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_XImportMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_XImportMissionControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(XImportMissionControlRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).XImportMissionControl(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/XImportMissionControl\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).XImportMissionControl(ctx, req.(*XImportMissionControlRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 496,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_GetMissionControlConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_GetMissionControlConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(GetMissionControlConfigRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).GetMissionControlConfig(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/GetMissionControlConfig\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).GetMissionControlConfig(ctx, req.(*GetMissionControlConfigRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 506,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SetMissionControlConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_SetMissionControlConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(SetMissionControlConfigRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).SetMissionControlConfig(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/SetMissionControlConfig\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).SetMissionControlConfig(ctx, req.(*SetMissionControlConfigRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 506,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_QueryProbability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_QueryProbability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(QueryProbabilityRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).QueryProbability(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/QueryProbability\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).QueryProbability(ctx, req.(*QueryProbabilityRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 471,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_BuildRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_BuildRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(BuildRouteRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).BuildRoute(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/BuildRoute\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).BuildRoute(ctx, req.(*BuildRouteRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n",
+      "length": 441,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SubscribeHtlcEvents_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_SubscribeHtlcEvents_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SubscribeHtlcEventsRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).SubscribeHtlcEvents(m, &routerSubscribeHtlcEventsServer{stream})\n}\n",
+      "length": 185,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SubscribeHtlcEventsServer interface {",
+      "content": "type Router_SubscribeHtlcEventsServer interface {\n\tSend(*HtlcEvent) error\n\tgrpc.ServerStream\n}\n",
+      "length": 42,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSubscribeHtlcEventsServer struct {",
+      "content": "type routerSubscribeHtlcEventsServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSubscribeHtlcEventsServer) Send(m *HtlcEvent) error {",
+      "content": "func (x *routerSubscribeHtlcEventsServer) Send(m *HtlcEvent) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_SendPayment_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_SendPayment_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SendPaymentRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).SendPayment(m, &routerSendPaymentServer{stream})\n}\n",
+      "length": 161,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_SendPaymentServer interface {",
+      "content": "type Router_SendPaymentServer interface {\n\tSend(*PaymentStatus) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerSendPaymentServer struct {",
+      "content": "type routerSendPaymentServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerSendPaymentServer) Send(m *PaymentStatus) error {",
+      "content": "func (x *routerSendPaymentServer) Send(m *PaymentStatus) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_TrackPayment_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_TrackPayment_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(TrackPaymentRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(RouterServer).TrackPayment(m, &routerTrackPaymentServer{stream})\n}\n",
+      "length": 164,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_TrackPaymentServer interface {",
+      "content": "type Router_TrackPaymentServer interface {\n\tSend(*PaymentStatus) error\n\tgrpc.ServerStream\n}\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type routerTrackPaymentServer struct {",
+      "content": "type routerTrackPaymentServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerTrackPaymentServer) Send(m *PaymentStatus) error {",
+      "content": "func (x *routerTrackPaymentServer) Send(m *PaymentStatus) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_HtlcInterceptor_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _Router_HtlcInterceptor_Handler(srv interface{}, stream grpc.ServerStream) error {\n\treturn srv.(RouterServer).HtlcInterceptor(&routerHtlcInterceptorServer{stream})\n}\n",
+      "length": 81,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type Router_HtlcInterceptorServer interface {",
+      "content": "type Router_HtlcInterceptorServer interface {\n\tSend(*ForwardHtlcInterceptRequest) error\n\tRecv() (*ForwardHtlcInterceptResponse, error)\n\tgrpc.ServerStream\n}\n",
+      "length": 106,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "type routerHtlcInterceptorServer struct {",
+      "content": "type routerHtlcInterceptorServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerHtlcInterceptorServer) Send(m *ForwardHtlcInterceptRequest) error {",
+      "content": "func (x *routerHtlcInterceptorServer) Send(m *ForwardHtlcInterceptRequest) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *routerHtlcInterceptorServer) Recv() (*ForwardHtlcInterceptResponse, error) {",
+      "content": "func (x *routerHtlcInterceptorServer) Recv() (*ForwardHtlcInterceptResponse, error) {\n\tm := new(ForwardHtlcInterceptResponse)\n\tif err := x.ServerStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 123,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func _Router_UpdateChanStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {",
+      "content": "func _Router_UpdateChanStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {\n\tin := new(UpdateChanStatusRequest)\n\tif err := dec(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif interceptor == nil {\n\t\treturn srv.(RouterServer).UpdateChanStatus(ctx, in)\n\t}\n\tinfo := &grpc.UnaryServerInfo{\n\t\tServer:     srv,\n\t\tFullMethod: \"/routerrpc.Router/UpdateChanStatus\",\n\t}\n\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {\n\t\treturn srv.(RouterServer).UpdateChanStatus(ctx, req.(*UpdateChanStatusRequest))\n\t}\n\treturn interceptor(ctx, in, info, handler)\n}\n\n// Router_ServiceDesc is the grpc.ServiceDesc for Router service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar Router_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"routerrpc.Router\",\n\tHandlerType: (*RouterServer)(nil),\n\tMethods: []grpc.MethodDesc{\n\t\t{\n\t\t\tMethodName: \"EstimateRouteFee\",\n\t\t\tHandler:    _Router_EstimateRouteFee_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SendToRoute\",\n\t\t\tHandler:    _Router_SendToRoute_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SendToRouteV2\",\n\t\t\tHandler:    _Router_SendToRouteV2_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"ResetMissionControl\",\n\t\t\tHandler:    _Router_ResetMissionControl_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"QueryMissionControl\",\n\t\t\tHandler:    _Router_QueryMissionControl_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"XImportMissionControl\",\n\t\t\tHandler:    _Router_XImportMissionControl_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"GetMissionControlConfig\",\n\t\t\tHandler:    _Router_GetMissionControlConfig_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"SetMissionControlConfig\",\n\t\t\tHandler:    _Router_SetMissionControlConfig_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"QueryProbability\",\n\t\t\tHandler:    _Router_QueryProbability_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"BuildRoute\",\n\t\t\tHandler:    _Router_BuildRoute_Handler,\n\t\t},\n\t\t{\n\t\t\tMethodName: \"UpdateChanStatus\",\n\t\t\tHandler:    _Router_UpdateChanStatus_Handler,\n\t\t},\n\t},\n\tStreams: []grpc.StreamDesc{\n\t\t{\n\t\t\tStreamName:    \"SendPaymentV2\",\n\t\t\tHandler:       _Router_SendPaymentV2_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"TrackPaymentV2\",\n\t\t\tHandler:       _Router_TrackPaymentV2_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"TrackPayments\",\n\t\t\tHandler:       _Router_TrackPayments_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"SubscribeHtlcEvents\",\n\t\t\tHandler:       _Router_SubscribeHtlcEvents_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"SendPayment\",\n\t\t\tHandler:       _Router_SendPayment_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"TrackPayment\",\n\t\t\tHandler:       _Router_TrackPayment_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"HtlcInterceptor\",\n\t\t\tHandler:       _Router_HtlcInterceptor_Handler,\n\t\t\tServerStreams: true,\n\t\t\tClientStreams: true,\n\t\t},\n\t},\n\tMetadata: \"routerrpc/router.proto\",\n}\n",
+      "length": 2686,
+      "tokens": 221,
+      "embedding": []
+    }
+  ]
+}

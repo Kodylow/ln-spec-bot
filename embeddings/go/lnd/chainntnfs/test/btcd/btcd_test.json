@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chainntnfs/test/btcd/btcd_test.go",
+  "package": "btcd_test",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage btcd_test\n\nimport (\n\t\"testing\"\n\n\tchainntnfstest \"github.com/lightningnetwork/lnd/chainntnfs/test\"\n)\n\n// TestInterfaces executes the generic notifier test suite against a btcd\n// powered chain notifier.",
+      "length": 213,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInterfaces(t *testing.T) {",
+      "content": "func TestInterfaces(t *testing.T) {\n\tchainntnfstest.TestInterfaces(t, \"btcd\")\n}\n",
+      "length": 42,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

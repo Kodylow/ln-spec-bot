@@ -1,0 +1,251 @@
+{
+  "filepath": "../implementations/go/lnd/lnrpc/chainrpc/chainnotifier_grpc.pb.go",
+  "package": "chainrpc",
+  "sections": [
+    {
+      "slug": "type ChainNotifierClient interface {",
+      "content": "type ChainNotifierClient interface {\n\t// RegisterConfirmationsNtfn is a synchronous response-streaming RPC that\n\t// registers an intent for a client to be notified once a confirmation request\n\t// has reached its required number of confirmations on-chain.\n\t//\n\t// A confirmation request must have a valid output script. It is also possible\n\t// to give a transaction ID. If the transaction ID is not set, a notification\n\t// is sent once the output script confirms. If the transaction ID is also set,\n\t// a notification is sent once the output script confirms in the given\n\t// transaction.\n\tRegisterConfirmationsNtfn(ctx context.Context, in *ConfRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterConfirmationsNtfnClient, error)\n\t// RegisterSpendNtfn is a synchronous response-streaming RPC that registers an\n\t// intent for a client to be notification once a spend request has been spent\n\t// by a transaction that has confirmed on-chain.\n\t//\n\t// A client can specify whether the spend request should be for a particular\n\t// outpoint  or for an output script by specifying a zero outpoint.\n\tRegisterSpendNtfn(ctx context.Context, in *SpendRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterSpendNtfnClient, error)\n\t// RegisterBlockEpochNtfn is a synchronous response-streaming RPC that\n\t// registers an intent for a client to be notified of blocks in the chain. The\n\t// stream will return a hash and height tuple of a block for each new/stale\n\t// block in the chain. It is the client's responsibility to determine whether\n\t// the tuple returned is for a new or stale block in the chain.\n\t//\n\t// A client can also request a historical backlog of blocks from a particular\n\t// point. This allows clients to be idempotent by ensuring that they do not\n\t// missing processing a single block within the chain.\n\tRegisterBlockEpochNtfn(ctx context.Context, in *BlockEpoch, opts ...grpc.CallOption) (ChainNotifier_RegisterBlockEpochNtfnClient, error)\n}\n",
+      "length": 1886,
+      "tokens": 280,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierClient struct {",
+      "content": "type chainNotifierClient struct {\n\tcc grpc.ClientConnInterface\n}\n",
+      "length": 29,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChainNotifierClient(cc grpc.ClientConnInterface) ChainNotifierClient {",
+      "content": "func NewChainNotifierClient(cc grpc.ClientConnInterface) ChainNotifierClient {\n\treturn &chainNotifierClient{cc}\n}\n",
+      "length": 33,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chainNotifierClient) RegisterConfirmationsNtfn(ctx context.Context, in *ConfRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterConfirmationsNtfnClient, error) {",
+      "content": "func (c *chainNotifierClient) RegisterConfirmationsNtfn(ctx context.Context, in *ConfRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterConfirmationsNtfnClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &ChainNotifier_ServiceDesc.Streams[0], \"/chainrpc.ChainNotifier/RegisterConfirmationsNtfn\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &chainNotifierRegisterConfirmationsNtfnClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 385,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterConfirmationsNtfnClient interface {",
+      "content": "type ChainNotifier_RegisterConfirmationsNtfnClient interface {\n\tRecv() (*ConfEvent, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 46,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterConfirmationsNtfnClient struct {",
+      "content": "type chainNotifierRegisterConfirmationsNtfnClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterConfirmationsNtfnClient) Recv() (*ConfEvent, error) {",
+      "content": "func (x *chainNotifierRegisterConfirmationsNtfnClient) Recv() (*ConfEvent, error) {\n\tm := new(ConfEvent)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 104,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chainNotifierClient) RegisterSpendNtfn(ctx context.Context, in *SpendRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterSpendNtfnClient, error) {",
+      "content": "func (c *chainNotifierClient) RegisterSpendNtfn(ctx context.Context, in *SpendRequest, opts ...grpc.CallOption) (ChainNotifier_RegisterSpendNtfnClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &ChainNotifier_ServiceDesc.Streams[1], \"/chainrpc.ChainNotifier/RegisterSpendNtfn\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &chainNotifierRegisterSpendNtfnClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 369,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterSpendNtfnClient interface {",
+      "content": "type ChainNotifier_RegisterSpendNtfnClient interface {\n\tRecv() (*SpendEvent, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 47,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterSpendNtfnClient struct {",
+      "content": "type chainNotifierRegisterSpendNtfnClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterSpendNtfnClient) Recv() (*SpendEvent, error) {",
+      "content": "func (x *chainNotifierRegisterSpendNtfnClient) Recv() (*SpendEvent, error) {\n\tm := new(SpendEvent)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n",
+      "length": 105,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chainNotifierClient) RegisterBlockEpochNtfn(ctx context.Context, in *BlockEpoch, opts ...grpc.CallOption) (ChainNotifier_RegisterBlockEpochNtfnClient, error) {",
+      "content": "func (c *chainNotifierClient) RegisterBlockEpochNtfn(ctx context.Context, in *BlockEpoch, opts ...grpc.CallOption) (ChainNotifier_RegisterBlockEpochNtfnClient, error) {\n\tstream, err := c.cc.NewStream(ctx, &ChainNotifier_ServiceDesc.Streams[2], \"/chainrpc.ChainNotifier/RegisterBlockEpochNtfn\", opts...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tx := &chainNotifierRegisterBlockEpochNtfnClient{stream}\n\tif err := x.ClientStream.SendMsg(in); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := x.ClientStream.CloseSend(); err != nil {\n\t\treturn nil, err\n\t}\n\treturn x, nil\n}\n",
+      "length": 379,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterBlockEpochNtfnClient interface {",
+      "content": "type ChainNotifier_RegisterBlockEpochNtfnClient interface {\n\tRecv() (*BlockEpoch, error)\n\tgrpc.ClientStream\n}\n",
+      "length": 47,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterBlockEpochNtfnClient struct {",
+      "content": "type chainNotifierRegisterBlockEpochNtfnClient struct {\n\tgrpc.ClientStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterBlockEpochNtfnClient) Recv() (*BlockEpoch, error) {",
+      "content": "func (x *chainNotifierRegisterBlockEpochNtfnClient) Recv() (*BlockEpoch, error) {\n\tm := new(BlockEpoch)\n\tif err := x.ClientStream.RecvMsg(m); err != nil {\n\t\treturn nil, err\n\t}\n\treturn m, nil\n}\n\n// ChainNotifierServer is the server API for ChainNotifier service.\n// All implementations must embed UnimplementedChainNotifierServer\n// for forward compatibility",
+      "length": 266,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifierServer interface {",
+      "content": "type ChainNotifierServer interface {\n\t// RegisterConfirmationsNtfn is a synchronous response-streaming RPC that\n\t// registers an intent for a client to be notified once a confirmation request\n\t// has reached its required number of confirmations on-chain.\n\t//\n\t// A confirmation request must have a valid output script. It is also possible\n\t// to give a transaction ID. If the transaction ID is not set, a notification\n\t// is sent once the output script confirms. If the transaction ID is also set,\n\t// a notification is sent once the output script confirms in the given\n\t// transaction.\n\tRegisterConfirmationsNtfn(*ConfRequest, ChainNotifier_RegisterConfirmationsNtfnServer) error\n\t// RegisterSpendNtfn is a synchronous response-streaming RPC that registers an\n\t// intent for a client to be notification once a spend request has been spent\n\t// by a transaction that has confirmed on-chain.\n\t//\n\t// A client can specify whether the spend request should be for a particular\n\t// outpoint  or for an output script by specifying a zero outpoint.\n\tRegisterSpendNtfn(*SpendRequest, ChainNotifier_RegisterSpendNtfnServer) error\n\t// RegisterBlockEpochNtfn is a synchronous response-streaming RPC that\n\t// registers an intent for a client to be notified of blocks in the chain. The\n\t// stream will return a hash and height tuple of a block for each new/stale\n\t// block in the chain. It is the client's responsibility to determine whether\n\t// the tuple returned is for a new or stale block in the chain.\n\t//\n\t// A client can also request a historical backlog of blocks from a particular\n\t// point. This allows clients to be idempotent by ensuring that they do not\n\t// missing processing a single block within the chain.\n\tRegisterBlockEpochNtfn(*BlockEpoch, ChainNotifier_RegisterBlockEpochNtfnServer) error\n\tmustEmbedUnimplementedChainNotifierServer()\n}\n\n// UnimplementedChainNotifierServer must be embedded to have forward compatible implementations.",
+      "length": 1873,
+      "tokens": 276,
+      "embedding": []
+    },
+    {
+      "slug": "type UnimplementedChainNotifierServer struct {",
+      "content": "type UnimplementedChainNotifierServer struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedChainNotifierServer) RegisterConfirmationsNtfn(*ConfRequest, ChainNotifier_RegisterConfirmationsNtfnServer) error {",
+      "content": "func (UnimplementedChainNotifierServer) RegisterConfirmationsNtfn(*ConfRequest, ChainNotifier_RegisterConfirmationsNtfnServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method RegisterConfirmationsNtfn not implemented\")\n}",
+      "length": 95,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedChainNotifierServer) RegisterSpendNtfn(*SpendRequest, ChainNotifier_RegisterSpendNtfnServer) error {",
+      "content": "func (UnimplementedChainNotifierServer) RegisterSpendNtfn(*SpendRequest, ChainNotifier_RegisterSpendNtfnServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method RegisterSpendNtfn not implemented\")\n}",
+      "length": 87,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedChainNotifierServer) RegisterBlockEpochNtfn(*BlockEpoch, ChainNotifier_RegisterBlockEpochNtfnServer) error {",
+      "content": "func (UnimplementedChainNotifierServer) RegisterBlockEpochNtfn(*BlockEpoch, ChainNotifier_RegisterBlockEpochNtfnServer) error {\n\treturn status.Errorf(codes.Unimplemented, \"method RegisterBlockEpochNtfn not implemented\")\n}",
+      "length": 92,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (UnimplementedChainNotifierServer) mustEmbedUnimplementedChainNotifierServer() {}",
+      "content": "func (UnimplementedChainNotifierServer) mustEmbedUnimplementedChainNotifierServer() {}\n\n// UnsafeChainNotifierServer may be embedded to opt out of forward compatibility for this service.\n// Use of this interface is not recommended, as added methods to ChainNotifierServer will\n// result in compilation errors.",
+      "length": 219,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type UnsafeChainNotifierServer interface {",
+      "content": "type UnsafeChainNotifierServer interface {\n\tmustEmbedUnimplementedChainNotifierServer()\n}\n",
+      "length": 45,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func RegisterChainNotifierServer(s grpc.ServiceRegistrar, srv ChainNotifierServer) {",
+      "content": "func RegisterChainNotifierServer(s grpc.ServiceRegistrar, srv ChainNotifierServer) {\n\ts.RegisterService(&ChainNotifier_ServiceDesc, srv)\n}\n",
+      "length": 52,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _ChainNotifier_RegisterConfirmationsNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _ChainNotifier_RegisterConfirmationsNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(ConfRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(ChainNotifierServer).RegisterConfirmationsNtfn(m, &chainNotifierRegisterConfirmationsNtfnServer{stream})\n}\n",
+      "length": 196,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterConfirmationsNtfnServer interface {",
+      "content": "type ChainNotifier_RegisterConfirmationsNtfnServer interface {\n\tSend(*ConfEvent) error\n\tgrpc.ServerStream\n}\n",
+      "length": 42,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterConfirmationsNtfnServer struct {",
+      "content": "type chainNotifierRegisterConfirmationsNtfnServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterConfirmationsNtfnServer) Send(m *ConfEvent) error {",
+      "content": "func (x *chainNotifierRegisterConfirmationsNtfnServer) Send(m *ConfEvent) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _ChainNotifier_RegisterSpendNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _ChainNotifier_RegisterSpendNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(SpendRequest)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(ChainNotifierServer).RegisterSpendNtfn(m, &chainNotifierRegisterSpendNtfnServer{stream})\n}\n",
+      "length": 181,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterSpendNtfnServer interface {",
+      "content": "type ChainNotifier_RegisterSpendNtfnServer interface {\n\tSend(*SpendEvent) error\n\tgrpc.ServerStream\n}\n",
+      "length": 43,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterSpendNtfnServer struct {",
+      "content": "type chainNotifierRegisterSpendNtfnServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterSpendNtfnServer) Send(m *SpendEvent) error {",
+      "content": "func (x *chainNotifierRegisterSpendNtfnServer) Send(m *SpendEvent) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n",
+      "length": 34,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func _ChainNotifier_RegisterBlockEpochNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {",
+      "content": "func _ChainNotifier_RegisterBlockEpochNtfn_Handler(srv interface{}, stream grpc.ServerStream) error {\n\tm := new(BlockEpoch)\n\tif err := stream.RecvMsg(m); err != nil {\n\t\treturn err\n\t}\n\treturn srv.(ChainNotifierServer).RegisterBlockEpochNtfn(m, &chainNotifierRegisterBlockEpochNtfnServer{stream})\n}\n",
+      "length": 189,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type ChainNotifier_RegisterBlockEpochNtfnServer interface {",
+      "content": "type ChainNotifier_RegisterBlockEpochNtfnServer interface {\n\tSend(*BlockEpoch) error\n\tgrpc.ServerStream\n}\n",
+      "length": 43,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type chainNotifierRegisterBlockEpochNtfnServer struct {",
+      "content": "type chainNotifierRegisterBlockEpochNtfnServer struct {\n\tgrpc.ServerStream\n}\n",
+      "length": 19,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (x *chainNotifierRegisterBlockEpochNtfnServer) Send(m *BlockEpoch) error {",
+      "content": "func (x *chainNotifierRegisterBlockEpochNtfnServer) Send(m *BlockEpoch) error {\n\treturn x.ServerStream.SendMsg(m)\n}\n\n// ChainNotifier_ServiceDesc is the grpc.ServiceDesc for ChainNotifier service.\n// It's only intended for direct use with grpc.RegisterService,\n// and not to be introspected or modified (even as a copy)\nvar ChainNotifier_ServiceDesc = grpc.ServiceDesc{\n\tServiceName: \"chainrpc.ChainNotifier\",\n\tHandlerType: (*ChainNotifierServer)(nil),\n\tMethods:     []grpc.MethodDesc{},\n\tStreams: []grpc.StreamDesc{\n\t\t{\n\t\t\tStreamName:    \"RegisterConfirmationsNtfn\",\n\t\t\tHandler:       _ChainNotifier_RegisterConfirmationsNtfn_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"RegisterSpendNtfn\",\n\t\t\tHandler:       _ChainNotifier_RegisterSpendNtfn_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t\t{\n\t\t\tStreamName:    \"RegisterBlockEpochNtfn\",\n\t\t\tHandler:       _ChainNotifier_RegisterBlockEpochNtfn_Handler,\n\t\t\tServerStreams: true,\n\t\t},\n\t},\n\tMetadata: \"chainrpc/chainnotifier.proto\",\n}\n",
+      "length": 879,
+      "tokens": 72,
+      "embedding": []
+    }
+  ]
+}

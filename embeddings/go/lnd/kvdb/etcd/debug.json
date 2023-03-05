@@ -1,5 +1,13 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/etcd/debug.go",
-  "package": "dev",
-  "sections": []
+  "package": "etcd",
+  "sections": [
+    {
+      "slug": "//go:build dev",
+      "content": "//go:build dev\n// +build dev\n\npackage etcd\n\nconst (\n\t// Switch on extra debug code.\n\tetcdDebug = true\n)\n",
+      "length": 81,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
 }

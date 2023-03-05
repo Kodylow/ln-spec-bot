@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/routing/chainview/interface.go",
+  "package": "chainview",
+  "sections": [
+    {
+      "slug": "type FilteredChainView interface {",
+      "content": "type FilteredChainView interface {\n\t// FilteredBlocks returns the channel that filtered blocks are to be\n\t// sent over. Each time a block is connected to the end of a main\n\t// chain, and appropriate FilteredBlock which contains the transactions\n\t// which mutate our watched UTXO set is to be returned. In case of a\n\t// UpdateFilter call with an updateHeight lower than the current best\n\t// height, blocks with the updated filter will be resent, and must be\n\t// handled by the receiver as an update to an already known block, NOT\n\t// as a new block being connected to the chain.\n\tFilteredBlocks() <-chan *FilteredBlock\n\n\t// DisconnectedBlocks returns a receive only channel which will be sent\n\t// upon with the empty filtered blocks of blocks which are disconnected\n\t// from the main chain in the case of a re-org.\n\t// NOTE: In case of a reorg, connected blocks will not be available to\n\t// read from the FilteredBlocks() channel before all disconnected block\n\t// have been received.\n\tDisconnectedBlocks() <-chan *FilteredBlock\n\n\t// UpdateFilter updates the UTXO filter which is to be consulted when\n\t// creating FilteredBlocks to be sent to subscribed clients. This\n\t// method is cumulative meaning repeated calls to this method should\n\t// _expand_ the size of the UTXO sub-set currently being watched.  If\n\t// the set updateHeight is _lower_ than the best known height of the\n\t// implementation, then the state should be rewound to ensure all\n\t// relevant notifications are dispatched, meaning blocks with a height\n\t// lower than the best known height might be sent over the\n\t// FilteredBlocks() channel.\n\tUpdateFilter(ops []channeldb.EdgePoint, updateHeight uint32) error\n\n\t// FilterBlock takes a block hash, and returns a FilteredBlocks which\n\t// is the result of applying the current registered UTXO sub-set on the\n\t// block corresponding to that block hash.\n\t//\n\t// TODO(roasbeef): make a version that does by height also?\n\tFilterBlock(blockHash *chainhash.Hash) (*FilteredBlock, error)\n\n\t// Start starts all goroutine necessary for the operation of the\n\t// FilteredChainView implementation.\n\tStart() error\n\n\t// Stop stops all goroutines which we launched by the prior call to the\n\t// Start method.\n\tStop() error\n}\n\n// FilteredBlock is a block which includes the transactions that modify the\n// subscribed sub-set of the UTXO set registered to the current\n// FilteredChainView concrete implementation.",
+      "length": 2324,
+      "tokens": 374,
+      "embedding": []
+    },
+    {
+      "slug": "type FilteredBlock struct {",
+      "content": "type FilteredBlock struct {\n\t// Hash is the hash of the newly filtered block.\n\tHash chainhash.Hash\n\n\t// Height is the height of the newly filtered block.\n\tHeight uint32\n\n\t// Transactions is the set of transactions which modify (spend) the\n\t// subscribed UTXO subset.\n\tTransactions []*wire.MsgTx\n}\n",
+      "length": 259,
+      "tokens": 42,
+      "embedding": []
+    }
+  ]
+}

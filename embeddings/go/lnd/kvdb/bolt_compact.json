@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/kvdb/bolt_compact.go",
-  "package": "The",
+  "package": "kvdb",
   "sections": [
     {
       "slug": "type compacter struct {",

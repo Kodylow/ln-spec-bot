@@ -1,6 +1,6 @@
 {
   "filepath": "../implementations/go/lnd/internal/musig2v040/context.go",
-  "package": "Copyright",
+  "package": "musig2v040",
   "sections": [
     {
       "slug": "type Context struct {",
