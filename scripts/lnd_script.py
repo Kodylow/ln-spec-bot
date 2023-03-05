@@ -1,6 +1,35 @@
 import json
 import os
 
+import openai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+folder_path = "../bips"
+metadata_dir = "../embeddings/bips"
+
+# Create the metadata directory if it doesn't exist
+if not os.path.exists(metadata_dir):
+    os.makedirs(metadata_dir)
+
+
+def compute_tokens_and_embedding(text):
+    text = text.replace("\n", " ")
+    max_length = 8191
+    sections = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    embeddings = []
+    tokens = 0
+    for section in sections:
+        response = openai.Embedding.create(
+            input=[section], model='text-embedding-ada-002')
+        embedding = response['data'][0]['embedding']
+        embeddings.append(embedding)
+        tokens += len(section.split())
+    return tokens, embeddings
+
 
 def extract_sections(file_contents):
     sections = []
@@ -10,6 +39,8 @@ def extract_sections(file_contents):
         if line.startswith("func ") or line.startswith("type ") or (i == 0 and line.startswith("//go:build")):
             if current_section:
                 current_section["content"] = "\n".join(
+                    current_section["content"])
+                current_section["tokens"], current_section["embedding"] = compute_tokens_and_embedding(
                     current_section["content"])
                 sections.append(current_section)
             current_section = {
@@ -25,6 +56,8 @@ def extract_sections(file_contents):
             current_section["tokens"] += len(line.split())
     if current_section:
         current_section["content"] = "\n".join(current_section["content"])
+        current_section["tokens"], current_section["embedding"] = compute_tokens_and_embedding(
+            current_section["content"])
         sections.append(current_section)
     return sections
 
