@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/custom.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func SetCustomOverrides(overrideTypes []uint16) error {",
+      "content": "func SetCustomOverrides(overrideTypes []uint16) error {\n\tcustomTypeOverrideMtx.Lock()\n\tdefer customTypeOverrideMtx.Unlock()\n\n\tcustomTypeOverride = make(map[MessageType]struct{}, len(overrideTypes))\n\n\tfor _, t := range overrideTypes {\n\t\tmsgType := MessageType(t)\n\n\t\tif msgType >= CustomTypeStart {\n\t\t\treturn fmt.Errorf(\"can't override type: %v, already \"+\n\t\t\t\t\"in custom range\", t)\n\t\t}\n\n\t\tcustomTypeOverride[msgType] = struct{}{}\n\t}\n\n\treturn nil\n}\n\n// IsCustomOverride returns a bool indicating whether the message type is one\n// of the protocol messages that we override for custom use.",
+      "length": 510,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func IsCustomOverride(t MessageType) bool {",
+      "content": "func IsCustomOverride(t MessageType) bool {\n\tcustomTypeOverrideMtx.RLock()\n\tdefer customTypeOverrideMtx.RUnlock()\n\n\t_, ok := customTypeOverride[t]\n\n\treturn ok\n}\n\n// Custom represents an application-defined wire message.",
+      "length": 167,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type Custom struct {",
+      "content": "type Custom struct {\n\tType MessageType\n\tData []byte\n}\n\n// A compile time check to ensure FundingCreated implements the lnwire.Message\n// interface.\nvar _ Message = (*Custom)(nil)\n\n// NewCustom instantiates a new custom message.",
+      "length": 198,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCustom(msgType MessageType, data []byte) (*Custom, error) {",
+      "content": "func NewCustom(msgType MessageType, data []byte) (*Custom, error) {\n\tif msgType < CustomTypeStart && !IsCustomOverride(msgType) {\n\t\treturn nil, fmt.Errorf(\"msg type: %d not in custom range: %v \"+\n\t\t\t\"and not overridden\", msgType, CustomTypeStart)\n\t}\n\n\treturn &Custom{\n\t\tType: msgType,\n\t\tData: data,\n\t}, nil\n}\n\n// Encode serializes the target Custom message into the passed io.Writer\n// implementation.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 371,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Custom) Encode(b *bytes.Buffer, pver uint32) error {",
+      "content": "func (c *Custom) Encode(b *bytes.Buffer, pver uint32) error {\n\t_, err := b.Write(c.Data)\n\treturn err\n}\n\n// Decode deserializes the serialized Custom message stored in the passed\n// io.Reader into the target Custom message.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 205,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Custom) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *Custom) Decode(r io.Reader, pver uint32) error {\n\tvar b bytes.Buffer\n\tif _, err := io.Copy(&b, r); err != nil {\n\t\treturn err\n\t}\n\n\tc.Data = b.Bytes()\n\n\treturn nil\n}\n\n// MsgType returns the uint32 code which uniquely identifies this message as a\n// Custom message on the wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 264,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Custom) MsgType() MessageType {",
+      "content": "func (c *Custom) MsgType() MessageType {\n\treturn c.Type\n}\n",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

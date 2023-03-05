@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/protocol_legacy_off.go",
+  "package": "!dev",
+  "sections": [
+    {
+      "slug": "type LegacyProtocol struct {",
+      "content": "type LegacyProtocol struct {\n}\n\n// LegacyOnion returns true if the old legacy onion format should be used when\n// we're an intermediate or final hop. This controls if we set the\n// TLVOnionPayloadOptional bit or not.",
+      "length": 183,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LegacyProtocol) LegacyOnion() bool {",
+      "content": "func (l *LegacyProtocol) LegacyOnion() bool {\n\treturn false\n}\n\n// NoStaticRemoteKey returns true if the old commitment format with a tweaked\n// remote key should be used for new funded channels.",
+      "length": 144,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LegacyProtocol) NoStaticRemoteKey() bool {",
+      "content": "func (l *LegacyProtocol) NoStaticRemoteKey() bool {\n\treturn false\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

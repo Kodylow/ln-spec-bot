@@ -1,0 +1,216 @@
+{
+  "filepath": "../implementations/go/lnd/chainreg/no_chain_backend.go",
+  "package": "chainreg",
+  "sections": [
+    {
+      "slug": "type NoChainBackend struct {",
+      "content": "type NoChainBackend struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) EstimateFeePerKW(uint32) (chainfee.SatPerKWeight,",
+      "content": "func (n *NoChainBackend) EstimateFeePerKW(uint32) (chainfee.SatPerKWeight,\n\terror) {\n\n\treturn defaultFee, nil\n}\n",
+      "length": 33,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) RelayFeePerKW() chainfee.SatPerKWeight {",
+      "content": "func (n *NoChainBackend) RelayFeePerKW() chainfee.SatPerKWeight {\n\treturn defaultFee\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) RegisterConfirmationsNtfn(*chainhash.Hash, []byte,",
+      "content": "func (n *NoChainBackend) RegisterConfirmationsNtfn(*chainhash.Hash, []byte,\n\tuint32, uint32,\n\t...chainntnfs.NotifierOption) (*chainntnfs.ConfirmationEvent, error) {\n\n\treturn nil, errNotImplemented\n}\n",
+      "length": 118,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) RegisterSpendNtfn(*wire.OutPoint, []byte,",
+      "content": "func (n *NoChainBackend) RegisterSpendNtfn(*wire.OutPoint, []byte,\n\tuint32) (*chainntnfs.SpendEvent, error) {\n\n\treturn nil, errNotImplemented\n}\n",
+      "length": 73,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) RegisterBlockEpochNtfn(",
+      "content": "func (n *NoChainBackend) RegisterBlockEpochNtfn(\n\t*chainntnfs.BlockEpoch) (*chainntnfs.BlockEpochEvent, error) {\n\n\tepochChan := make(chan *chainntnfs.BlockEpoch)\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tEpochs: epochChan,\n\t\tCancel: func() {\n\t\t\tclose(epochChan)\n\t\t},\n\t}, nil\n}\n",
+      "length": 215,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) Started() bool {",
+      "content": "func (n *NoChainBackend) Started() bool {\n\treturn true\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) FilteredBlocks() <-chan *chainview.FilteredBlock {",
+      "content": "func (n *NoChainBackend) FilteredBlocks() <-chan *chainview.FilteredBlock {\n\treturn make(chan *chainview.FilteredBlock)\n}\n",
+      "length": 44,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) DisconnectedBlocks() <-chan *chainview.FilteredBlock {",
+      "content": "func (n *NoChainBackend) DisconnectedBlocks() <-chan *chainview.FilteredBlock {\n\treturn make(chan *chainview.FilteredBlock)\n}\n",
+      "length": 44,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) UpdateFilter([]channeldb.EdgePoint, uint32) error {",
+      "content": "func (n *NoChainBackend) UpdateFilter([]channeldb.EdgePoint, uint32) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) FilterBlock(*chainhash.Hash) (*chainview.FilteredBlock,",
+      "content": "func (n *NoChainBackend) FilterBlock(*chainhash.Hash) (*chainview.FilteredBlock,\n\terror) {\n\n\treturn nil, errNotImplemented\n}\n",
+      "length": 40,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) Start() error {",
+      "content": "func (n *NoChainBackend) Start() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainBackend) Stop() error {",
+      "content": "func (n *NoChainBackend) Stop() error {\n\treturn nil\n}\n\nvar _ chainview.FilteredChainView = (*NoChainBackend)(nil)\nvar _ chainntnfs.ChainNotifier = (*NoChainBackend)(nil)\nvar _ chainfee.Estimator = (*NoChainBackend)(nil)\n\n// NoChainSource is a mock implementation of chain.Interface.\n// The mock is designed to return static values where necessary to make any\n// caller believe the chain is fully synced to virtual block height 1 (hash\n// 0x0000..0001). That should avoid calls to other methods completely since they\n// are only used for advancing the chain forward.",
+      "length": 514,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "type NoChainSource struct {",
+      "content": "type NoChainSource struct {\n\tnotifChan chan interface{}\n\n\tBestBlockTime time.Time\n}\n",
+      "length": 52,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) Start() error {",
+      "content": "func (n *NoChainSource) Start() error {\n\tn.notifChan = make(chan interface{})\n\n\tgo func() {\n\t\tn.notifChan <- &chain.RescanFinished{\n\t\t\tHash:   noChainBackendBestHash,\n\t\t\tHeight: noChainBackendBestHeight,\n\t\t\tTime:   n.BestBlockTime,\n\t\t}\n\t}()\n\n\treturn nil\n}\n",
+      "length": 204,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) Stop() {",
+      "content": "func (n *NoChainSource) Stop() {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) WaitForShutdown() {",
+      "content": "func (n *NoChainSource) WaitForShutdown() {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) GetBestBlock() (*chainhash.Hash, int32, error) {",
+      "content": "func (n *NoChainSource) GetBestBlock() (*chainhash.Hash, int32, error) {\n\treturn noChainBackendBestHash, noChainBackendBestHeight, nil\n}\n",
+      "length": 62,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) GetBlock(*chainhash.Hash) (*wire.MsgBlock, error) {",
+      "content": "func (n *NoChainSource) GetBlock(*chainhash.Hash) (*wire.MsgBlock, error) {\n\treturn &wire.MsgBlock{\n\t\tHeader: wire.BlockHeader{\n\t\t\tTimestamp: n.BestBlockTime,\n\t\t},\n\t\tTransactions: []*wire.MsgTx{},\n\t}, nil\n}\n",
+      "length": 124,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) GetBlockHash(int64) (*chainhash.Hash, error) {",
+      "content": "func (n *NoChainSource) GetBlockHash(int64) (*chainhash.Hash, error) {\n\treturn noChainBackendBestHash, nil\n}\n",
+      "length": 36,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) GetBlockHeader(*chainhash.Hash) (*wire.BlockHeader,",
+      "content": "func (n *NoChainSource) GetBlockHeader(*chainhash.Hash) (*wire.BlockHeader,\n\terror) {\n\n\treturn &wire.BlockHeader{\n\t\tTimestamp: n.BestBlockTime,\n\t}, nil\n}\n",
+      "length": 72,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) IsCurrent() bool {",
+      "content": "func (n *NoChainSource) IsCurrent() bool {\n\treturn true\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) FilterBlocks(",
+      "content": "func (n *NoChainSource) FilterBlocks(\n\t*chain.FilterBlocksRequest) (*chain.FilterBlocksResponse, error) {\n\n\treturn nil, errNotImplemented\n}\n",
+      "length": 98,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) BlockStamp() (*waddrmgr.BlockStamp, error) {",
+      "content": "func (n *NoChainSource) BlockStamp() (*waddrmgr.BlockStamp, error) {\n\treturn nil, errNotImplemented\n}\n",
+      "length": 31,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash,",
+      "content": "func (n *NoChainSource) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash,\n\terror) {\n\n\treturn nil, errNotImplemented\n}\n",
+      "length": 40,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) Rescan(*chainhash.Hash, []btcutil.Address,",
+      "content": "func (n *NoChainSource) Rescan(*chainhash.Hash, []btcutil.Address,\n\tmap[wire.OutPoint]btcutil.Address) error {\n\n\treturn nil\n}\n",
+      "length": 55,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) NotifyReceived([]btcutil.Address) error {",
+      "content": "func (n *NoChainSource) NotifyReceived([]btcutil.Address) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) NotifyBlocks() error {",
+      "content": "func (n *NoChainSource) NotifyBlocks() error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) Notifications() <-chan interface{} {",
+      "content": "func (n *NoChainSource) Notifications() <-chan interface{} {\n\treturn n.notifChan\n}\n",
+      "length": 20,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NoChainSource) BackEnd() string {",
+      "content": "func (n *NoChainSource) BackEnd() string {\n\treturn noChainBackendName\n}\n\nvar _ chain.Interface = (*NoChainSource)(nil)\n",
+      "length": 72,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

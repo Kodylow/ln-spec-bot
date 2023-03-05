@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/walletdb_interface_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestWalletDBInterface(t *testing.T) {",
+      "content": "func TestWalletDBInterface(t *testing.T) {\n\tf := NewEtcdTestFixture(t)\n\tcfg := f.BackendConfig()\n\twalletdbtest.TestInterface(t, dbType, context.TODO(), &cfg)\n}\n",
+      "length": 113,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

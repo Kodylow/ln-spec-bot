@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/packet.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type htlcPacket struct {",
+      "content": "type htlcPacket struct {\n\t// incomingChanID is the ID of the channel that we have received an incoming\n\t// HTLC on.\n\tincomingChanID lnwire.ShortChannelID\n\n\t// outgoingChanID is the ID of the channel that we have offered or will\n\t// offer an outgoing HTLC on.\n\toutgoingChanID lnwire.ShortChannelID\n\n\t// incomingHTLCID is the ID of the HTLC that we have received from the peer\n\t// on the incoming channel.\n\tincomingHTLCID uint64\n\n\t// outgoingHTLCID is the ID of the HTLC that we offered to the peer on the\n\t// outgoing channel.\n\toutgoingHTLCID uint64\n\n\t// sourceRef is used by forwarded htlcPackets to locate incoming Add\n\t// entry in a fwdpkg owned by the incoming link. This value can be nil\n\t// if there is no such entry, e.g. switch initiated payments.\n\tsourceRef *channeldb.AddRef\n\n\t// destRef is used to locate a settle/fail entry in the outgoing link's\n\t// fwdpkg. If sourceRef is non-nil, this reference should be to a\n\t// settle/fail in response to the sourceRef.\n\tdestRef *channeldb.SettleFailRef\n\n\t// incomingAmount is the value in milli-satoshis that arrived on an\n\t// incoming link.\n\tincomingAmount lnwire.MilliSatoshi\n\n\t// amount is the value of the HTLC that is being created or modified.\n\tamount lnwire.MilliSatoshi\n\n\t// htlc lnwire message type of which depends on switch request type.\n\thtlc lnwire.Message\n\n\t// obfuscator contains the necessary state to allow the switch to wrap\n\t// any forwarded errors in an additional layer of encryption.\n\tobfuscator hop.ErrorEncrypter\n\n\t// localFailure is set to true if an HTLC fails for a local payment before\n\t// the first hop. In this case, the failure reason is simply encoded, not\n\t// encrypted with any shared secret.\n\tlocalFailure bool\n\n\t// linkFailure is non-nil for htlcs that fail at our node. This may\n\t// occur for our own payments which fail on the outgoing link,\n\t// or for forwards which fail in the switch or on the outgoing link.\n\tlinkFailure *LinkError\n\n\t// convertedError is set to true if this is an HTLC fail that was\n\t// created using an UpdateFailMalformedHTLC from the remote party. If\n\t// this is true, then when forwarding this failure packet, we'll need\n\t// to wrap it as if we were the first hop if it's a multi-hop HTLC. If\n\t// it's a direct HTLC, then we'll decode the error as no encryption has\n\t// taken place.\n\tconvertedError bool\n\n\t// hasSource is set to true if the incomingChanID and incomingHTLCID\n\t// fields of a forwarded fail packet are already set and do not need to\n\t// be looked up in the circuit map.\n\thasSource bool\n\n\t// isResolution is set to true if this packet was actually an incoming\n\t// resolution message from an outside sub-system. We'll treat these as\n\t// if they emanated directly from the switch. As a result, we'll\n\t// encrypt all errors related to this packet as if we were the first\n\t// hop.\n\tisResolution bool\n\n\t// circuit holds a reference to an Add's circuit which is persisted in\n\t// the switch during successful forwarding.\n\tcircuit *PaymentCircuit\n\n\t// incomingTimeout is the timeout that the incoming HTLC carried. This\n\t// is the timeout of the HTLC applied to the incoming link.\n\tincomingTimeout uint32\n\n\t// outgoingTimeout is the timeout of the proposed outgoing HTLC. This\n\t// will be extracted from the hop payload received by the incoming\n\t// link.\n\toutgoingTimeout uint32\n\n\t// customRecords are user-defined records in the custom type range that\n\t// were included in the payload.\n\tcustomRecords record.CustomSet\n\n\t// originalOutgoingChanID is used when sending back failure messages.\n\t// It is only used for forwarded Adds on option_scid_alias channels.\n\t// This is to avoid possible confusion if a payer uses the public SCID\n\t// but receives a channel_update with the alias SCID. Instead, the\n\t// payer should receive a channel_update with the public SCID.\n\toriginalOutgoingChanID lnwire.ShortChannelID\n}\n\n// inKey returns the circuit key used to identify the incoming htlc.",
+      "length": 3783,
+      "tokens": 629,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *htlcPacket) inKey() CircuitKey {",
+      "content": "func (p *htlcPacket) inKey() CircuitKey {\n\treturn CircuitKey{\n\t\tChanID: p.incomingChanID,\n\t\tHtlcID: p.incomingHTLCID,\n\t}\n}\n\n// outKey returns the circuit key used to identify the outgoing, forwarded htlc.",
+      "length": 156,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *htlcPacket) outKey() CircuitKey {",
+      "content": "func (p *htlcPacket) outKey() CircuitKey {\n\treturn CircuitKey{\n\t\tChanID: p.outgoingChanID,\n\t\tHtlcID: p.outgoingHTLCID,\n\t}\n}\n\n// keystone returns a tuple containing the incoming and outgoing circuit keys.",
+      "length": 154,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *htlcPacket) keystone() Keystone {",
+      "content": "func (p *htlcPacket) keystone() Keystone {\n\treturn Keystone{\n\t\tInKey:  p.inKey(),\n\t\tOutKey: p.outKey(),\n\t}\n}\n",
+      "length": 61,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

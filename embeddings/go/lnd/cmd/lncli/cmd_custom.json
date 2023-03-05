@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/cmd_custom.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func sendCustom(ctx *cli.Context) error {",
+      "content": "func sendCustom(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getClient(ctx)\n\tdefer cleanUp()\n\n\tpeer, err := hex.DecodeString(ctx.String(\"peer\"))\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tmsgType := ctx.Uint64(\"type\")\n\n\tdata, err := hex.DecodeString(ctx.String(\"data\"))\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t_, err = client.SendCustomMessage(\n\t\tctxc,\n\t\t&lnrpc.SendCustomMessageRequest{\n\t\t\tPeer: peer,\n\t\t\tType: uint32(msgType),\n\t\t\tData: data,\n\t\t},\n\t)\n\n\treturn err\n}\n\nvar subscribeCustomCommand = cli.Command{\n\tName:   \"subscribecustom\",\n\tAction: actionDecorator(subscribeCustom),\n}\n",
+      "length": 519,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func subscribeCustom(ctx *cli.Context) error {",
+      "content": "func subscribeCustom(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getClient(ctx)\n\tdefer cleanUp()\n\n\tstream, err := client.SubscribeCustomMessages(\n\t\tctxc,\n\t\t&lnrpc.SubscribeCustomMessagesRequest{},\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor {\n\t\tmsg, err := stream.Recv()\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfmt.Printf(\"Received from peer %x: type=%d, data=%x\\n\",\n\t\t\tmsg.Peer, msg.Type, msg.Data)\n\t}\n}\n",
+      "length": 357,
+      "tokens": 49,
+      "embedding": []
+    }
+  ]
+}

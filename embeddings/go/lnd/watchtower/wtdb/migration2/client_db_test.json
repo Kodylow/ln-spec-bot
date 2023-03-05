@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration2/client_db_test.go",
+  "package": "migration2",
+  "sections": [
+    {
+      "slug": "func TestMigrateClientChannelDetails(t *testing.T) {",
+      "content": "func TestMigrateClientChannelDetails(t *testing.T) {\n\tt.Parallel()\n\n\ttests := []struct {\n\t\tname       string\n\t\tshouldFail bool\n\t\tpre        map[string]interface{}\n\t\tpost       map[string]interface{}\n\t}{\n\t\t{\n\t\t\tname:       \"migration ok\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        pre,\n\t\t\tpost:       post,\n\t\t},\n\t\t{\n\t\t\tname:       \"fail due to corrupt db\",\n\t\t\tshouldFail: true,\n\t\t\tpre:        preFailCorruptDB,\n\t\t\tpost:       nil,\n\t\t},\n\t\t{\n\t\t\tname:       \"no channel summaries\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        nil,\n\t\t\tpost:       nil,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\t// Before the migration we have a channel summary\n\t\t\t// bucket.\n\t\t\tbefore := func(tx kvdb.RwTx) error {\n\t\t\t\treturn migtest.RestoreDB(\n\t\t\t\t\ttx, cChanSummaryBkt, test.pre,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\t// After the migration, we should have a new channel\n\t\t\t// details bucket and no longer have a channel summary\n\t\t\t// bucket.\n\t\t\tafter := func(tx kvdb.RwTx) error {\n\t\t\t\t// If we expect our migration to fail, we\n\t\t\t\t// expect our channel summary bucket to remain\n\t\t\t\t// intact.\n\t\t\t\tif test.shouldFail {\n\t\t\t\t\treturn migtest.VerifyDB(\n\t\t\t\t\t\ttx, cChanSummaryBkt, test.pre,\n\t\t\t\t\t)\n\t\t\t\t}\n\n\t\t\t\t// Otherwise, we expect the channel summary\n\t\t\t\t// bucket to be deleted.\n\t\t\t\terr := migtest.VerifyDB(\n\t\t\t\t\ttx, cChanSummaryBkt, test.pre,\n\t\t\t\t)\n\t\t\t\trequire.ErrorContains(t, err, \"not found\")\n\n\t\t\t\t// We also expect the new channel details bucket\n\t\t\t\t// to be present.\n\t\t\t\treturn migtest.VerifyDB(\n\t\t\t\t\ttx, cChanDetailsBkt, test.post,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt, before, after, MigrateClientChannelDetails,\n\t\t\t\ttest.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1551,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func channelIDString(id uint64) string {",
+      "content": "func channelIDString(id uint64) string {\n\tvar chanID ChannelID\n\tbinary.BigEndian.PutUint64(chanID[:], id)\n\treturn chanID.String()\n}\n",
+      "length": 87,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

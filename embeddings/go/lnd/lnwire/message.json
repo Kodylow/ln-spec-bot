@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/message.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "type MessageType uint16",
+      "content": "type MessageType uint16\n\n// The currently defined message types within this current version of the\n// Lightning protocol.\nconst (\n\tMsgWarning                 MessageType = 1\n\tMsgInit                                = 16\n\tMsgError                               = 17\n\tMsgPing                                = 18\n\tMsgPong                                = 19\n\tMsgOpenChannel                         = 32\n\tMsgAcceptChannel                       = 33\n\tMsgFundingCreated                      = 34\n\tMsgFundingSigned                       = 35\n\tMsgFundingLocked                       = 36\n\tMsgShutdown                            = 38\n\tMsgClosingSigned                       = 39\n\tMsgUpdateAddHTLC                       = 128\n\tMsgUpdateFulfillHTLC                   = 130\n\tMsgUpdateFailHTLC                      = 131\n\tMsgCommitSig                           = 132\n\tMsgRevokeAndAck                        = 133\n\tMsgUpdateFee                           = 134\n\tMsgUpdateFailMalformedHTLC             = 135\n\tMsgChannelReestablish                  = 136\n\tMsgChannelAnnouncement                 = 256\n\tMsgNodeAnnouncement                    = 257\n\tMsgChannelUpdate                       = 258\n\tMsgAnnounceSignatures                  = 259\n\tMsgQueryShortChanIDs                   = 261\n\tMsgReplyShortChanIDsEnd                = 262\n\tMsgQueryChannelRange                   = 263\n\tMsgReplyChannelRange                   = 264\n\tMsgGossipTimestampRange                = 265\n)\n\n// ErrorEncodeMessage is used when failed to encode the message payload.",
+      "length": 1467,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrorEncodeMessage(err error) error {",
+      "content": "func ErrorEncodeMessage(err error) error {\n\treturn fmt.Errorf(\"failed to encode message to buffer, got %w\", err)\n}\n\n// ErrorWriteMessageType is used when failed to write the message type.",
+      "length": 141,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrorWriteMessageType(err error) error {",
+      "content": "func ErrorWriteMessageType(err error) error {\n\treturn fmt.Errorf(\"failed to write message type, got %w\", err)\n}\n\n// ErrorPayloadTooLarge is used when the payload size exceeds the\n// MaxMsgBody.",
+      "length": 143,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func ErrorPayloadTooLarge(size int) error {",
+      "content": "func ErrorPayloadTooLarge(size int) error {\n\treturn fmt.Errorf(\n\t\t\"message payload is too large - encoded %d bytes, \"+\n\t\t\t\"but maximum message payload is %d bytes\",\n\t\tsize, MaxMsgBody,\n\t)\n}\n\n// String return the string representation of message type.",
+      "length": 199,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (t MessageType) String() string {",
+      "content": "func (t MessageType) String() string {\n\tswitch t {\n\tcase MsgWarning:\n\t\treturn \"Warning\"\n\tcase MsgInit:\n\t\treturn \"Init\"\n\tcase MsgOpenChannel:\n\t\treturn \"MsgOpenChannel\"\n\tcase MsgAcceptChannel:\n\t\treturn \"MsgAcceptChannel\"\n\tcase MsgFundingCreated:\n\t\treturn \"MsgFundingCreated\"\n\tcase MsgFundingSigned:\n\t\treturn \"MsgFundingSigned\"\n\tcase MsgFundingLocked:\n\t\treturn \"FundingLocked\"\n\tcase MsgShutdown:\n\t\treturn \"Shutdown\"\n\tcase MsgClosingSigned:\n\t\treturn \"ClosingSigned\"\n\tcase MsgUpdateAddHTLC:\n\t\treturn \"UpdateAddHTLC\"\n\tcase MsgUpdateFailHTLC:\n\t\treturn \"UpdateFailHTLC\"\n\tcase MsgUpdateFulfillHTLC:\n\t\treturn \"UpdateFulfillHTLC\"\n\tcase MsgCommitSig:\n\t\treturn \"CommitSig\"\n\tcase MsgRevokeAndAck:\n\t\treturn \"RevokeAndAck\"\n\tcase MsgUpdateFailMalformedHTLC:\n\t\treturn \"UpdateFailMalformedHTLC\"\n\tcase MsgChannelReestablish:\n\t\treturn \"ChannelReestablish\"\n\tcase MsgError:\n\t\treturn \"Error\"\n\tcase MsgChannelAnnouncement:\n\t\treturn \"ChannelAnnouncement\"\n\tcase MsgChannelUpdate:\n\t\treturn \"ChannelUpdate\"\n\tcase MsgNodeAnnouncement:\n\t\treturn \"NodeAnnouncement\"\n\tcase MsgPing:\n\t\treturn \"Ping\"\n\tcase MsgAnnounceSignatures:\n\t\treturn \"AnnounceSignatures\"\n\tcase MsgPong:\n\t\treturn \"Pong\"\n\tcase MsgUpdateFee:\n\t\treturn \"UpdateFee\"\n\tcase MsgQueryShortChanIDs:\n\t\treturn \"QueryShortChanIDs\"\n\tcase MsgReplyShortChanIDsEnd:\n\t\treturn \"ReplyShortChanIDsEnd\"\n\tcase MsgQueryChannelRange:\n\t\treturn \"QueryChannelRange\"\n\tcase MsgReplyChannelRange:\n\t\treturn \"ReplyChannelRange\"\n\tcase MsgGossipTimestampRange:\n\t\treturn \"GossipTimestampRange\"\n\tdefault:\n\t\treturn \"<unknown>\"\n\t}\n}\n\n// UnknownMessage is an implementation of the error interface that allows the\n// creation of an error in response to an unknown message.",
+      "length": 1561,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "type UnknownMessage struct {",
+      "content": "type UnknownMessage struct {\n\tmessageType MessageType\n}\n\n// Error returns a human readable string describing the error.\n//\n// This is part of the error interface.",
+      "length": 128,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UnknownMessage) Error() string {",
+      "content": "func (u *UnknownMessage) Error() string {\n\treturn fmt.Sprintf(\"unable to parse message of unknown type: %v\",\n\t\tu.messageType)\n}\n\n// Serializable is an interface which defines a lightning wire serializable\n// object.",
+      "length": 168,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type Serializable interface {",
+      "content": "type Serializable interface {\n\t// Decode reads the bytes stream and converts it to the object.\n\tDecode(io.Reader, uint32) error\n\n\t// Encode converts object to the bytes stream and write it into the\n\t// write buffer.\n\tEncode(*bytes.Buffer, uint32) error\n}\n\n// Message is an interface that defines a lightning wire protocol message. The\n// interface is general in order to allow implementing types full control over\n// the representation of its data.",
+      "length": 408,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "type Message interface {",
+      "content": "type Message interface {\n\tSerializable\n\tMsgType() MessageType\n}\n\n// makeEmptyMessage creates a new empty message of the proper concrete type\n// based on the passed message type.",
+      "length": 147,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func makeEmptyMessage(msgType MessageType) (Message, error) {",
+      "content": "func makeEmptyMessage(msgType MessageType) (Message, error) {\n\tvar msg Message\n\n\tswitch msgType {\n\tcase MsgWarning:\n\t\tmsg = &Warning{}\n\tcase MsgInit:\n\t\tmsg = &Init{}\n\tcase MsgOpenChannel:\n\t\tmsg = &OpenChannel{}\n\tcase MsgAcceptChannel:\n\t\tmsg = &AcceptChannel{}\n\tcase MsgFundingCreated:\n\t\tmsg = &FundingCreated{}\n\tcase MsgFundingSigned:\n\t\tmsg = &FundingSigned{}\n\tcase MsgFundingLocked:\n\t\tmsg = &FundingLocked{}\n\tcase MsgShutdown:\n\t\tmsg = &Shutdown{}\n\tcase MsgClosingSigned:\n\t\tmsg = &ClosingSigned{}\n\tcase MsgUpdateAddHTLC:\n\t\tmsg = &UpdateAddHTLC{}\n\tcase MsgUpdateFailHTLC:\n\t\tmsg = &UpdateFailHTLC{}\n\tcase MsgUpdateFulfillHTLC:\n\t\tmsg = &UpdateFulfillHTLC{}\n\tcase MsgCommitSig:\n\t\tmsg = &CommitSig{}\n\tcase MsgRevokeAndAck:\n\t\tmsg = &RevokeAndAck{}\n\tcase MsgUpdateFee:\n\t\tmsg = &UpdateFee{}\n\tcase MsgUpdateFailMalformedHTLC:\n\t\tmsg = &UpdateFailMalformedHTLC{}\n\tcase MsgChannelReestablish:\n\t\tmsg = &ChannelReestablish{}\n\tcase MsgError:\n\t\tmsg = &Error{}\n\tcase MsgChannelAnnouncement:\n\t\tmsg = &ChannelAnnouncement{}\n\tcase MsgChannelUpdate:\n\t\tmsg = &ChannelUpdate{}\n\tcase MsgNodeAnnouncement:\n\t\tmsg = &NodeAnnouncement{}\n\tcase MsgPing:\n\t\tmsg = &Ping{}\n\tcase MsgAnnounceSignatures:\n\t\tmsg = &AnnounceSignatures{}\n\tcase MsgPong:\n\t\tmsg = &Pong{}\n\tcase MsgQueryShortChanIDs:\n\t\tmsg = &QueryShortChanIDs{}\n\tcase MsgReplyShortChanIDsEnd:\n\t\tmsg = &ReplyShortChanIDsEnd{}\n\tcase MsgQueryChannelRange:\n\t\tmsg = &QueryChannelRange{}\n\tcase MsgReplyChannelRange:\n\t\tmsg = &ReplyChannelRange{}\n\tcase MsgGossipTimestampRange:\n\t\tmsg = &GossipTimestampRange{}\n\tdefault:\n\t\t// If the message is not within our custom range and has not\n\t\t// specifically been overridden, return an unknown message.\n\t\t//\n\t\t// Note that we do not allow custom message overrides to replace\n\t\t// known message types, only protocol messages that are not yet\n\t\t// known to lnd.\n\t\tif msgType < CustomTypeStart && !IsCustomOverride(msgType) {\n\t\t\treturn nil, &UnknownMessage{msgType}\n\t\t}\n\n\t\tmsg = &Custom{\n\t\t\tType: msgType,\n\t\t}\n\t}\n\n\treturn msg, nil\n}\n\n// WriteMessage writes a lightning Message to a buffer including the necessary\n// header information and returns the number of bytes written. If any error is\n// encountered, the buffer passed will be reset to its original state since we\n// don't want any broken bytes left. In other words, no bytes will be written\n// if there's an error. Either all or none of the message bytes will be written\n// to the buffer.\n//\n// NOTE: this method is not concurrent safe.",
+      "length": 2301,
+      "tokens": 307,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteMessage(buf *bytes.Buffer, msg Message, pver uint32) (int, error) {",
+      "content": "func WriteMessage(buf *bytes.Buffer, msg Message, pver uint32) (int, error) {\n\t// Record the size of the bytes already written in buffer.\n\toldByteSize := buf.Len()\n\n\t// cleanBrokenBytes is a helper closure that helps reset the buffer to\n\t// its original state. It truncates all the bytes written in current\n\t// scope.\n\tvar cleanBrokenBytes = func(b *bytes.Buffer) int {\n\t\tb.Truncate(oldByteSize)\n\t\treturn 0\n\t}\n\n\t// Write the message type.\n\tvar mType [2]byte\n\tbinary.BigEndian.PutUint16(mType[:], uint16(msg.MsgType()))\n\tmsgTypeBytes, err := buf.Write(mType[:])\n\tif err != nil {\n\t\treturn cleanBrokenBytes(buf), ErrorWriteMessageType(err)\n\t}\n\n\t// Use the write buffer to encode our message.\n\tif err := msg.Encode(buf, pver); err != nil {\n\t\treturn cleanBrokenBytes(buf), ErrorEncodeMessage(err)\n\t}\n\n\t// Enforce maximum overall message payload. The write buffer now has\n\t// the size of len(originalBytes) + len(payload) + len(type). We want\n\t// to enforce the payload here, so we subtract it by the length of the\n\t// type and old bytes.\n\tlenp := buf.Len() - oldByteSize - msgTypeBytes\n\tif lenp > MaxMsgBody {\n\t\treturn cleanBrokenBytes(buf), ErrorPayloadTooLarge(lenp)\n\t}\n\n\treturn buf.Len() - oldByteSize, nil\n}\n\n// ReadMessage reads, validates, and parses the next Lightning message from r\n// for the provided protocol version.",
+      "length": 1208,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadMessage(r io.Reader, pver uint32) (Message, error) {",
+      "content": "func ReadMessage(r io.Reader, pver uint32) (Message, error) {\n\t// First, we'll read out the first two bytes of the message so we can\n\t// create the proper empty message.\n\tvar mType [2]byte\n\tif _, err := io.ReadFull(r, mType[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tmsgType := MessageType(binary.BigEndian.Uint16(mType[:]))\n\n\t// Now that we know the target message type, we can create the proper\n\t// empty message type and decode the message into it.\n\tmsg, err := makeEmptyMessage(msgType)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tif err := msg.Decode(r, pver); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msg, nil\n}\n",
+      "length": 530,
+      "tokens": 95,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtmock/signer.go",
+  "package": "wtmock",
+  "sections": [
+    {
+      "slug": "type MockSigner struct {",
+      "content": "type MockSigner struct {\n\tmu sync.Mutex\n\n\tindex uint32\n\tkeys  map[keychain.KeyLocator]*btcec.PrivateKey\n}\n\n// NewMockSigner returns a fresh MockSigner.",
+      "length": 120,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMockSigner() *MockSigner {",
+      "content": "func NewMockSigner() *MockSigner {\n\treturn &MockSigner{\n\t\tkeys: make(map[keychain.KeyLocator]*btcec.PrivateKey),\n\t}\n}\n\n// SignOutputRaw signs an input on the passed transaction using the input index\n// in the sign descriptor. The returned signature is the raw DER-encoded\n// signature without the signhash flag.",
+      "length": 269,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) SignOutputRaw(tx *wire.MsgTx,",
+      "content": "func (s *MockSigner) SignOutputRaw(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (input.Signature, error) {\n\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\twitnessScript := signDesc.WitnessScript\n\tamt := signDesc.Output.Value\n\n\tprivKey, ok := s.keys[signDesc.KeyDesc.KeyLocator]\n\tif !ok {\n\t\tpanic(\"cannot sign w/ unknown key\")\n\t}\n\n\tsig, err := txscript.RawTxInWitnessSignature(\n\t\ttx, signDesc.SigHashes, signDesc.InputIndex, amt,\n\t\twitnessScript, signDesc.HashType, privKey,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn ecdsa.ParseDERSignature(sig[:len(sig)-1])\n}\n\n// ComputeInputScript is not implemented.",
+      "length": 528,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) ComputeInputScript(tx *wire.MsgTx,",
+      "content": "func (s *MockSigner) ComputeInputScript(tx *wire.MsgTx,\n\tsignDesc *input.SignDescriptor) (*input.Script, error) {\n\tpanic(\"not implemented\")\n}\n\n// MuSig2CreateSession creates a new MuSig2 signing session using the local\n// key identified by the key locator. The complete list of all public keys of\n// all signing parties must be provided, including the public key of the local\n// signing key. If nonces of other parties are already known, they can be\n// submitted as well to reduce the number of method calls necessary later on.",
+      "length": 463,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) MuSig2CreateSession(input.MuSig2Version,",
+      "content": "func (s *MockSigner) MuSig2CreateSession(input.MuSig2Version,\n\tkeychain.KeyLocator, []*btcec.PublicKey, *input.MuSig2Tweaks,\n\t[][musig2.PubNonceSize]byte) (*input.MuSig2SessionInfo, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2RegisterNonces registers one or more public nonces of other signing\n// participants for a session identified by its ID. This method returns true\n// once we have all nonces for all other signing participants.",
+      "length": 358,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) MuSig2RegisterNonces(input.MuSig2SessionID,",
+      "content": "func (s *MockSigner) MuSig2RegisterNonces(input.MuSig2SessionID,\n\t[][musig2.PubNonceSize]byte) (bool, error) {\n\n\treturn false, nil\n}\n\n// MuSig2Sign creates a partial signature using the local signing key\n// that was specified when the session was created. This can only be\n// called when all public nonces of all participants are known and have\n// been registered with the session. If this node isn't responsible for\n// combining all the partial signatures, then the cleanup parameter\n// should be set, indicating that the session can be removed from memory\n// once the signature was produced.",
+      "length": 517,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) MuSig2Sign(input.MuSig2SessionID,",
+      "content": "func (s *MockSigner) MuSig2Sign(input.MuSig2SessionID,\n\t[sha256.Size]byte, bool) (*musig2.PartialSignature, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2CombineSig combines the given partial signature(s) with the\n// local one, if it already exists. Once a partial signature of all\n// participants is registered, the final signature will be combined and\n// returned.",
+      "length": 296,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) MuSig2CombineSig(input.MuSig2SessionID,",
+      "content": "func (s *MockSigner) MuSig2CombineSig(input.MuSig2SessionID,\n\t[]*musig2.PartialSignature) (*schnorr.Signature, bool, error) {\n\n\treturn nil, false, nil\n}\n\n// MuSig2Cleanup removes a session from memory to free up resources.",
+      "length": 156,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) MuSig2Cleanup(input.MuSig2SessionID) error {",
+      "content": "func (s *MockSigner) MuSig2Cleanup(input.MuSig2SessionID) error {\n\treturn nil\n}\n\n// AddPrivKey records the passed privKey in the MockSigner's registry of keys it\n// can sign with in the future. A unique key locator is returned, allowing the\n// caller to sign with this key when presented via an input.SignDescriptor.",
+      "length": 245,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MockSigner) AddPrivKey(privKey *btcec.PrivateKey) keychain.KeyLocator {",
+      "content": "func (s *MockSigner) AddPrivKey(privKey *btcec.PrivateKey) keychain.KeyLocator {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\tkeyLoc := keychain.KeyLocator{\n\t\tIndex: s.index,\n\t}\n\ts.index++\n\n\ts.keys[keyLoc] = privKey\n\n\treturn keyLoc\n}\n\n// Compile-time constraint ensuring the MockSigner implements the input.Signer\n// interface.\nvar _ input.Signer = (*MockSigner)(nil)\n",
+      "length": 262,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

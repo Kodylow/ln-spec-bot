@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/lnutils/sync_map_bench_test.go",
+  "package": "lnutils_test",
+  "sections": [
+    {
+      "slug": "func BenchmarkReadMutexMap(b *testing.B) {",
+      "content": "func BenchmarkReadMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a general mutex.\n\tvar mu sync.Mutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock read.\n\t\t\tmu.Lock()\n\t\t\t_ = m[k]\n\t\t\tmu.Unlock()\n\t\t}\n\t})\n}\n",
+      "length": 329,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkReadRWMutexMap(b *testing.B) {",
+      "content": "func BenchmarkReadRWMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a read write mutex.\n\tvar mu sync.RWMutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock read.\n\t\t\tmu.RLock()\n\t\t\t_ = m[k]\n\t\t\tmu.RUnlock()\n\t\t}\n\t})\n}\n",
+      "length": 336,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkReadSyncMap(b *testing.B) {",
+      "content": "func BenchmarkReadSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &sync.Map{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Read the value.\n\t\t\tsyncMap.Load(k)\n\t\t}\n\t})\n}\n",
+      "length": 245,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkReadLndSyncMap(b *testing.B) {",
+      "content": "func BenchmarkReadLndSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &lnutils.SyncMap[int64, struct{}]{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Read the value.\n\t\t\tsyncMap.Load(k)\n\t\t}\n\t})\n}\n",
+      "length": 269,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkWriteMutexMap(b *testing.B) {",
+      "content": "func BenchmarkWriteMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a general mutex.\n\tvar mu sync.Mutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock write.\n\t\t\tmu.Lock()\n\t\t\tm[k] = struct{}{}\n\t\t\tmu.Unlock()\n\t\t}\n\t})\n}\n",
+      "length": 339,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkWriteRWMutexMap(b *testing.B) {",
+      "content": "func BenchmarkWriteRWMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a read write mutex.\n\tvar mu sync.RWMutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock write.\n\t\t\tmu.Lock()\n\t\t\tm[k] = struct{}{}\n\t\t\tmu.Unlock()\n\t\t}\n\t})\n}\n",
+      "length": 344,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkWriteSyncMap(b *testing.B) {",
+      "content": "func BenchmarkWriteSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &sync.Map{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Write the value.\n\t\t\tsyncMap.Store(k, struct{}{})\n\t\t}\n\t})\n}\n",
+      "length": 259,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkWriteLndSyncMap(b *testing.B) {",
+      "content": "func BenchmarkWriteLndSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &lnutils.SyncMap[int64, struct{}]{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Write the value.\n\t\t\tsyncMap.Store(k, struct{}{})\n\t\t}\n\t})\n}\n",
+      "length": 283,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDeleteMutexMap(b *testing.B) {",
+      "content": "func BenchmarkDeleteMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a general mutex.\n\tvar mu sync.Mutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock delete.\n\t\t\tmu.Lock()\n\t\t\tdelete(m, k)\n\t\t\tmu.Unlock()\n\t\t}\n\t})\n}\n",
+      "length": 335,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDeleteRWMutexMap(b *testing.B) {",
+      "content": "func BenchmarkDeleteRWMutexMap(b *testing.B) {\n\t// Create a map with a mutex.\n\tm := make(map[int64]struct{})\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\t// Create a read write mutex.\n\tvar mu sync.RWMutex\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Perform a lock delete.\n\t\t\tmu.Lock()\n\t\t\tdelete(m, k)\n\t\t\tmu.Unlock()\n\t\t}\n\t})\n}\n",
+      "length": 340,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDeleteSyncMap(b *testing.B) {",
+      "content": "func BenchmarkDeleteSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &sync.Map{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Delete the value.\n\t\t\tsyncMap.Delete(k)\n\t\t}\n\t})\n}\n",
+      "length": 249,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDeleteLndSyncMap(b *testing.B) {",
+      "content": "func BenchmarkDeleteLndSyncMap(b *testing.B) {\n\t// Create a sync.Map.\n\tsyncMap := &lnutils.SyncMap[int64, struct{}]{}\n\n\t// k is the unique key for each goroutine.\n\tk := int64(0)\n\n\tb.RunParallel(func(pb *testing.PB) {\n\t\tfor pb.Next() {\n\t\t\t// Increment k.\n\t\t\tatomic.AddInt64(&k, 1)\n\n\t\t\t// Delete the value.\n\t\t\tsyncMap.Delete(k)\n\t\t}\n\t})\n}\n",
+      "length": 273,
+      "tokens": 39,
+      "embedding": []
+    }
+  ]
+}

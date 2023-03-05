@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/store_test.go",
+  "package": "macaroons_test",
+  "sections": [
+    {
+      "slug": "func newTestStore(t *testing.T) (string, *macaroons.RootKeyStorage) {",
+      "content": "func newTestStore(t *testing.T) (string, *macaroons.RootKeyStorage) {\n\ttempDir := t.TempDir()\n\n\tstore := openTestStore(t, tempDir)\n\n\treturn tempDir, store\n}\n\n// openTestStore opens an existing bolt DB and then initializes a root key\n// storage for that DB.",
+      "length": 178,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func openTestStore(t *testing.T, tempDir string) *macaroons.RootKeyStorage {",
+      "content": "func openTestStore(t *testing.T, tempDir string) *macaroons.RootKeyStorage {\n\tdb, err := kvdb.Create(\n\t\tkvdb.BoltBackendName, path.Join(tempDir, \"weks.db\"), true,\n\t\tkvdb.DefaultDBTimeout,\n\t)\n\trequire.NoError(t, err)\n\n\tstore, err := macaroons.NewRootKeyStorage(db)\n\tif err != nil {\n\t\t_ = db.Close()\n\t\tt.Fatalf(\"Error creating root key store: %v\", err)\n\t}\n\n\tt.Cleanup(func() {\n\t\t_ = store.Close()\n\t\t_ = db.Close()\n\t})\n\n\treturn store\n}\n\n// TestStore tests the normal use cases of the store like creating, unlocking,\n// reading keys and closing it.",
+      "length": 446,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStore(t *testing.T) {",
+      "content": "func TestStore(t *testing.T) {\n\ttempDir, store := newTestStore(t)\n\n\t_, _, err := store.RootKey(context.TODO())\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\t_, err = store.Get(context.TODO(), nil)\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\tpw := []byte(\"weks\")\n\terr = store.CreateUnlock(&pw)\n\trequire.NoError(t, err)\n\n\t// Check ErrContextRootKeyID is returned when no root key ID found in\n\t// context.\n\t_, _, err = store.RootKey(context.TODO())\n\trequire.Equal(t, macaroons.ErrContextRootKeyID, err)\n\n\t// Check ErrMissingRootKeyID is returned when empty root key ID is used.\n\temptyKeyID := make([]byte, 0)\n\tbadCtx := macaroons.ContextWithRootKeyID(context.TODO(), emptyKeyID)\n\t_, _, err = store.RootKey(badCtx)\n\trequire.Equal(t, macaroons.ErrMissingRootKeyID, err)\n\n\t// Create a context with illegal root key ID value.\n\tencryptedKeyID := []byte(\"enckey\")\n\tbadCtx = macaroons.ContextWithRootKeyID(context.TODO(), encryptedKeyID)\n\t_, _, err = store.RootKey(badCtx)\n\trequire.Equal(t, macaroons.ErrKeyValueForbidden, err)\n\n\t// Create a context with root key ID value.\n\tkey, id, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\n\trootID := id\n\trequire.Equal(t, macaroons.DefaultRootKeyID, rootID)\n\n\tkey2, err := store.Get(defaultRootKeyIDContext, id)\n\trequire.NoError(t, err)\n\trequire.Equal(t, key, key2)\n\n\tbadpw := []byte(\"badweks\")\n\terr = store.CreateUnlock(&badpw)\n\trequire.Equal(t, macaroons.ErrAlreadyUnlocked, err)\n\n\t_ = store.Close()\n\t_ = store.Backend.Close()\n\n\t// Between here and the re-opening of the store, it's possible to get\n\t// a double-close, but that's not such a big deal since the tests will\n\t// fail anyway in that case.\n\tstore = openTestStore(t, tempDir)\n\n\terr = store.CreateUnlock(&badpw)\n\trequire.Equal(t, snacl.ErrInvalidPassword, err)\n\n\terr = store.CreateUnlock(nil)\n\trequire.Equal(t, macaroons.ErrPasswordRequired, err)\n\n\t_, _, err = store.RootKey(defaultRootKeyIDContext)\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\t_, err = store.Get(defaultRootKeyIDContext, nil)\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\terr = store.CreateUnlock(&pw)\n\trequire.NoError(t, err)\n\n\tkey, err = store.Get(defaultRootKeyIDContext, rootID)\n\trequire.NoError(t, err)\n\trequire.Equal(t, key, key2)\n\n\tkey, id, err = store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\trequire.Equal(t, key, key2)\n\trequire.Equal(t, rootID, id)\n}\n\n// TestStoreGenerateNewRootKey tests that a root key can be replaced with a new\n// one in the store without changing the password.",
+      "length": 2409,
+      "tokens": 266,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStoreGenerateNewRootKey(t *testing.T) {",
+      "content": "func TestStoreGenerateNewRootKey(t *testing.T) {\n\t_, store := newTestStore(t)\n\n\t// The store must be unlocked to replace the root key.\n\terr := store.GenerateNewRootKey()\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\t// Unlock the store and read the current key.\n\tpw := []byte(\"weks\")\n\terr = store.CreateUnlock(&pw)\n\trequire.NoError(t, err)\n\toldRootKey, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\n\t// Replace the root key with a new random key.\n\terr = store.GenerateNewRootKey()\n\trequire.NoError(t, err)\n\n\t// Finally, read the root key from the DB and compare it to the one\n\t// we got returned earlier. This makes sure that the encryption/\n\t// decryption of the key in the DB worked as expected too.\n\tnewRootKey, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\trequire.NotEqual(t, oldRootKey, newRootKey)\n}\n\n// TestStoreSetRootKey tests that a root key can be set to a specified value.",
+      "length": 874,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStoreSetRootKey(t *testing.T) {",
+      "content": "func TestStoreSetRootKey(t *testing.T) {\n\t_, store := newTestStore(t)\n\n\t// Create a new random key\n\trootKey := make([]byte, 32)\n\t_, err := rand.Read(rootKey)\n\trequire.NoError(t, err)\n\n\t// The store must be unlocked to set the root key.\n\terr = store.SetRootKey(rootKey)\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\t// Unlock the store and read the current key.\n\tpw := []byte(\"weks\")\n\terr = store.CreateUnlock(&pw)\n\trequire.NoError(t, err)\n\toldRootKey, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\n\t// Ensure the new key is different from the old key.\n\trequire.NotEqual(t, oldRootKey, rootKey)\n\n\t// Replace the root key with the new key.\n\terr = store.SetRootKey(rootKey)\n\trequire.NoError(t, err)\n\n\t// Finally, read the root key from the DB and compare it to the one\n\t// we created earlier. This makes sure that the encryption/\n\t// decryption of the key in the DB worked as expected too.\n\tnewRootKey, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\trequire.Equal(t, rootKey, newRootKey)\n}\n\n// TestStoreChangePassword tests that the password for the store can be changed\n// without changing the root key.",
+      "length": 1088,
+      "tokens": 155,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStoreChangePassword(t *testing.T) {",
+      "content": "func TestStoreChangePassword(t *testing.T) {\n\ttempDir, store := newTestStore(t)\n\n\t// The store must be unlocked to replace the root key.\n\terr := store.ChangePassword(nil, nil)\n\trequire.Equal(t, macaroons.ErrStoreLocked, err)\n\n\t// Unlock the DB and read the current root key. This will need to stay\n\t// the same after changing the password for the test to succeed.\n\tpw := []byte(\"weks\")\n\terr = store.CreateUnlock(&pw)\n\trequire.NoError(t, err)\n\trootKey, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\n\t// Both passwords must be set.\n\terr = store.ChangePassword(nil, nil)\n\trequire.Equal(t, macaroons.ErrPasswordRequired, err)\n\n\t// Make sure that an error is returned if we try to change the password\n\t// without the correct old password.\n\twrongPw := []byte(\"wrong\")\n\tnewPw := []byte(\"newpassword\")\n\terr = store.ChangePassword(wrongPw, newPw)\n\trequire.Equal(t, snacl.ErrInvalidPassword, err)\n\n\t// Now really do change the password.\n\terr = store.ChangePassword(pw, newPw)\n\trequire.NoError(t, err)\n\n\t// Close the store. This will close the underlying DB and we need to\n\t// create a new store instance. Let's make sure we can't use it again\n\t// after closing.\n\terr = store.Close()\n\trequire.NoError(t, err)\n\terr = store.Backend.Close()\n\trequire.NoError(t, err)\n\n\terr = store.CreateUnlock(&newPw)\n\trequire.Error(t, err)\n\n\t// Let's open it again and try unlocking with the new password.\n\tstore = openTestStore(t, tempDir)\n\terr = store.CreateUnlock(&newPw)\n\trequire.NoError(t, err)\n\n\t// Finally read the root key from the DB using the new password and\n\t// make sure the root key stayed the same.\n\trootKeyDb, _, err := store.RootKey(defaultRootKeyIDContext)\n\trequire.NoError(t, err)\n\trequire.Equal(t, rootKey, rootKeyDb)\n}\n",
+      "length": 1643,
+      "tokens": 225,
+      "embedding": []
+    }
+  ]
+}

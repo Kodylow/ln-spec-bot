@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/postgres/db.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "func newPostgresBackend(ctx context.Context, config *Config, prefix string) (",
+      "content": "func newPostgresBackend(ctx context.Context, config *Config, prefix string) (\n\twalletdb.DB, error) {\n\n\tcfg := &sqlbase.Config{\n\t\tDriverName:            \"pgx\",\n\t\tDsn:                   config.Dsn,\n\t\tTimeout:               config.Timeout,\n\t\tSchema:                \"public\",\n\t\tTableNamePrefix:       prefix,\n\t\tSQLiteCmdReplacements: sqliteCmdReplacements,\n\t\tWithTxLevelLock:       true,\n\t}\n\n\treturn sqlbase.NewSqlBackend(ctx, cfg)\n}\n",
+      "length": 338,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

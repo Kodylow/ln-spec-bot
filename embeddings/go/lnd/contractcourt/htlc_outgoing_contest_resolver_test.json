@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/htlc_outgoing_contest_resolver_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "func TestHtlcOutgoingResolverTimeout(t *testing.T) {",
+      "content": "func TestHtlcOutgoingResolverTimeout(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\t// Setup the resolver with our test resolution.\n\tctx := newOutgoingResolverTestContext(t)\n\n\t// Start the resolution process in a goroutine.\n\tctx.resolve()\n\n\t// Notify arrival of the block after which the timeout path of the htlc\n\t// unlocks.\n\tctx.notifyEpoch(outgoingContestHtlcExpiry)\n\n\t// Assert that the resolver finishes without error and transforms in a\n\t// timeout resolver.\n\tctx.waitForResult(true)\n}\n\n// TestHtlcOutgoingResolverRemoteClaim tests resolution of an offered htlc that\n// is claimed by the remote party.",
+      "length": 539,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcOutgoingResolverRemoteClaim(t *testing.T) {",
+      "content": "func TestHtlcOutgoingResolverRemoteClaim(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\t// Setup the resolver with our test resolution and start the resolution\n\t// process.\n\tctx := newOutgoingResolverTestContext(t)\n\n\t// Replace our mocked checkpoint function with one which will push\n\t// reports into a channel for us to consume. We do so on the resolver\n\t// level because our test context has already created the resolver.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\tctx.resolve()\n\n\t// The remote party sweeps the htlc. Notify our resolver of this event.\n\tpreimage := lntypes.Preimage{}\n\tspendTx := &wire.MsgTx{\n\t\tTxIn: []*wire.TxIn{\n\t\t\t{\n\t\t\t\tWitness: [][]byte{\n\t\t\t\t\t{0}, {1}, {2}, preimage[:],\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\n\tspendHash := spendTx.TxHash()\n\n\tctx.notifier.SpendChan <- &chainntnfs.SpendDetail{\n\t\tSpendingTx:    spendTx,\n\t\tSpenderTxHash: &spendHash,\n\t}\n\n\t// We expect the extracted preimage to be added to the witness beacon.\n\t<-ctx.preimageDB.newPreimages\n\n\t// We also expect a resolution message to the incoming side of the\n\t// circuit.\n\t<-ctx.resolutionChan\n\n\t// Finally, check that we have a report as expected.\n\texpectedReport := &channeldb.ResolverReport{\n\t\tOutPoint:        wire.OutPoint{},\n\t\tAmount:          0,\n\t\tResolverType:    channeldb.ResolverTypeOutgoingHtlc,\n\t\tResolverOutcome: channeldb.ResolverOutcomeClaimed,\n\t\tSpendTxID:       &spendHash,\n\t}\n\n\tassertResolverReport(t, reportChan, expectedReport)\n\n\t// Assert that the resolver finishes without error.\n\tctx.waitForResult(false)\n}\n",
+      "length": 1626,
+      "tokens": 203,
+      "embedding": []
+    },
+    {
+      "slug": "type resolveResult struct {",
+      "content": "type resolveResult struct {\n\terr          error\n\tnextResolver ContractResolver\n}\n",
+      "length": 50,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type outgoingResolverTestContext struct {",
+      "content": "type outgoingResolverTestContext struct {\n\tresolver           *htlcOutgoingContestResolver\n\tnotifier           *mock.ChainNotifier\n\tpreimageDB         *mockWitnessBeacon\n\tresolverResultChan chan resolveResult\n\tresolutionChan     chan ResolutionMsg\n\tt                  *testing.T\n}\n",
+      "length": 232,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func newOutgoingResolverTestContext(t *testing.T) *outgoingResolverTestContext {",
+      "content": "func newOutgoingResolverTestContext(t *testing.T) *outgoingResolverTestContext {\n\tnotifier := &mock.ChainNotifier{\n\t\tEpochChan: make(chan *chainntnfs.BlockEpoch),\n\t\tSpendChan: make(chan *chainntnfs.SpendDetail),\n\t\tConfChan:  make(chan *chainntnfs.TxConfirmation),\n\t}\n\n\tcheckPointChan := make(chan struct{}, 1)\n\tresolutionChan := make(chan ResolutionMsg, 1)\n\n\tpreimageDB := newMockWitnessBeacon()\n\n\tonionProcessor := &mockOnionProcessor{}\n\n\tchainCfg := ChannelArbitratorConfig{\n\t\tChainArbitratorConfig: ChainArbitratorConfig{\n\t\t\tNotifier:   notifier,\n\t\t\tPreimageDB: preimageDB,\n\t\t\tDeliverResolutionMsg: func(msgs ...ResolutionMsg) error {\n\t\t\t\tif len(msgs) != 1 {\n\t\t\t\t\treturn fmt.Errorf(\"expected 1 \"+\n\t\t\t\t\t\t\"resolution msg, instead got %v\",\n\t\t\t\t\t\tlen(msgs))\n\t\t\t\t}\n\n\t\t\t\tresolutionChan <- msgs[0]\n\t\t\t\treturn nil\n\t\t\t},\n\t\t\tOnionProcessor: onionProcessor,\n\t\t},\n\t\tPutResolverReport: func(_ kvdb.RwTx,\n\t\t\t_ *channeldb.ResolverReport) error {\n\n\t\t\treturn nil\n\t\t},\n\t}\n\n\toutgoingRes := lnwallet.OutgoingHtlcResolution{\n\t\tExpiry: outgoingContestHtlcExpiry,\n\t\tSweepSignDesc: input.SignDescriptor{\n\t\t\tOutput: &wire.TxOut{},\n\t\t},\n\t}\n\n\tcfg := ResolverConfig{\n\t\tChannelArbitratorConfig: chainCfg,\n\t\tCheckpoint: func(_ ContractResolver,\n\t\t\t_ ...*channeldb.ResolverReport) error {\n\n\t\t\tcheckPointChan <- struct{}{}\n\t\t\treturn nil\n\t\t},\n\t}\n\n\tresolver := &htlcOutgoingContestResolver{\n\t\thtlcTimeoutResolver: &htlcTimeoutResolver{\n\t\t\tcontractResolverKit: *newContractResolverKit(cfg),\n\t\t\thtlcResolution:      outgoingRes,\n\t\t\thtlc: channeldb.HTLC{\n\t\t\t\tAmt:       lnwire.MilliSatoshi(testHtlcAmount),\n\t\t\t\tRHash:     testResHash,\n\t\t\t\tOnionBlob: testOnionBlob,\n\t\t\t},\n\t\t},\n\t}\n\n\treturn &outgoingResolverTestContext{\n\t\tresolver:       resolver,\n\t\tnotifier:       notifier,\n\t\tpreimageDB:     preimageDB,\n\t\tresolutionChan: resolutionChan,\n\t\tt:              t,\n\t}\n}\n",
+      "length": 1676,
+      "tokens": 143,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *outgoingResolverTestContext) resolve() {",
+      "content": "func (i *outgoingResolverTestContext) resolve() {\n\t// Start resolver.\n\ti.resolverResultChan = make(chan resolveResult, 1)\n\tgo func() {\n\t\tnextResolver, err := i.resolver.Resolve()\n\t\ti.resolverResultChan <- resolveResult{\n\t\t\tnextResolver: nextResolver,\n\t\t\terr:          err,\n\t\t}\n\t}()\n\n\t// Notify initial block height.\n\ti.notifyEpoch(testInitialBlockHeight)\n}\n",
+      "length": 294,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *outgoingResolverTestContext) notifyEpoch(height int32) {",
+      "content": "func (i *outgoingResolverTestContext) notifyEpoch(height int32) {\n\ti.notifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: height,\n\t}\n}\n",
+      "length": 68,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *outgoingResolverTestContext) waitForResult(expectTimeoutRes bool) {",
+      "content": "func (i *outgoingResolverTestContext) waitForResult(expectTimeoutRes bool) {\n\ti.t.Helper()\n\n\tresult := <-i.resolverResultChan\n\tif result.err != nil {\n\t\ti.t.Fatal(result.err)\n\t}\n\n\tif !expectTimeoutRes {\n\t\tif result.nextResolver != nil {\n\t\t\ti.t.Fatal(\"expected no next resolver\")\n\t\t}\n\t\treturn\n\t}\n\n\t_, ok := result.nextResolver.(*htlcTimeoutResolver)\n\tif !ok {\n\t\ti.t.Fatal(\"expected htlcTimeoutResolver\")\n\t}\n}\n",
+      "length": 311,
+      "tokens": 37,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/invoice_expiry_watcher_test.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type invoiceExpiryWatcherTest struct {",
+      "content": "type invoiceExpiryWatcherTest struct {\n\tt                *testing.T\n\twg               sync.WaitGroup\n\twatcher          *InvoiceExpiryWatcher\n\ttestData         invoiceExpiryTestData\n\tcanceledInvoices []lntypes.Hash\n}\n\n// newInvoiceExpiryWatcherTest creates a new InvoiceExpiryWatcher test fixture\n// and sets up the test environment.",
+      "length": 285,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func newInvoiceExpiryWatcherTest(t *testing.T, now time.Time,",
+      "content": "func newInvoiceExpiryWatcherTest(t *testing.T, now time.Time,\n\tnumExpiredInvoices, numPendingInvoices int) *invoiceExpiryWatcherTest {\n\n\tmockNotifier := newMockNotifier()\n\ttest := &invoiceExpiryWatcherTest{\n\t\twatcher: NewInvoiceExpiryWatcher(\n\t\t\tclock.NewTestClock(testTime), 0,\n\t\t\tuint32(testCurrentHeight), nil, mockNotifier,\n\t\t),\n\t\ttestData: generateInvoiceExpiryTestData(\n\t\t\tt, now, 0, numExpiredInvoices, numPendingInvoices,\n\t\t),\n\t}\n\n\ttest.wg.Add(numExpiredInvoices)\n\n\terr := test.watcher.Start(func(paymentHash lntypes.Hash,\n\t\tforce bool) error {\n\n\t\ttest.canceledInvoices = append(\n\t\t\ttest.canceledInvoices, paymentHash,\n\t\t)\n\t\ttest.wg.Done()\n\t\treturn nil\n\t})\n\n\trequire.NoError(t, err, \"cannot start InvoiceExpiryWatcher\")\n\n\treturn test\n}\n",
+      "length": 653,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *invoiceExpiryWatcherTest) waitForFinish(timeout time.Duration) {",
+      "content": "func (t *invoiceExpiryWatcherTest) waitForFinish(timeout time.Duration) {\n\tdone := make(chan struct{})\n\n\t// Wait for all cancels.\n\tgo func() {\n\t\tt.wg.Wait()\n\t\tclose(done)\n\t}()\n\n\tselect {\n\tcase <-done:\n\tcase <-time.After(timeout):\n\t\tt.t.Fatalf(\"test timeout\")\n\t}\n}\n",
+      "length": 176,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *invoiceExpiryWatcherTest) checkExpectations() {",
+      "content": "func (t *invoiceExpiryWatcherTest) checkExpectations() {\n\t// Check that invoices that got canceled during the test are the ones\n\t// that expired.\n\tif len(t.canceledInvoices) != len(t.testData.expiredInvoices) {\n\t\tt.t.Fatalf(\"expected %v cancellations, got %v\",\n\t\t\tlen(t.testData.expiredInvoices),\n\t\t\tlen(t.canceledInvoices))\n\t}\n\n\tfor i := range t.canceledInvoices {\n\t\tif _, ok := t.testData.expiredInvoices[t.canceledInvoices[i]]; !ok {\n\t\t\tt.t.Fatalf(\"wrong invoice canceled\")\n\t\t}\n\t}\n}\n\n// Tests that InvoiceExpiryWatcher can be started and stopped.",
+      "length": 477,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvoiceExpiryWatcherStartStop(t *testing.T) {",
+      "content": "func TestInvoiceExpiryWatcherStartStop(t *testing.T) {\n\twatcher := NewInvoiceExpiryWatcher(\n\t\tclock.NewTestClock(testTime), 0, uint32(testCurrentHeight), nil,\n\t\tnewMockNotifier(),\n\t)\n\tcancel := func(lntypes.Hash, bool) error {\n\t\tt.Fatalf(\"unexpected call\")\n\t\treturn nil\n\t}\n\n\tif err := watcher.Start(cancel); err != nil {\n\t\tt.Fatalf(\"unexpected error upon start: %v\", err)\n\t}\n\n\tif err := watcher.Start(cancel); err == nil {\n\t\tt.Fatalf(\"expected error upon second start\")\n\t}\n\n\twatcher.Stop()\n\n\tif err := watcher.Start(cancel); err != nil {\n\t\tt.Fatalf(\"unexpected error upon start: %v\", err)\n\t}\n}\n\n// Tests that no invoices will expire from an empty InvoiceExpiryWatcher.",
+      "length": 589,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvoiceExpiryWithNoInvoices(t *testing.T) {",
+      "content": "func TestInvoiceExpiryWithNoInvoices(t *testing.T) {\n\tt.Parallel()\n\n\ttest := newInvoiceExpiryWatcherTest(t, testTime, 0, 0)\n\n\ttest.waitForFinish(testTimeout)\n\ttest.watcher.Stop()\n\ttest.checkExpectations()\n}\n\n// Tests that if all add invoices are expired, then all invoices\n// will be canceled.",
+      "length": 230,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvoiceExpiryWithOnlyExpiredInvoices(t *testing.T) {",
+      "content": "func TestInvoiceExpiryWithOnlyExpiredInvoices(t *testing.T) {\n\tt.Parallel()\n\n\ttest := newInvoiceExpiryWatcherTest(t, testTime, 0, 5)\n\n\tfor paymentHash, invoice := range test.testData.pendingInvoices {\n\t\ttest.watcher.AddInvoices(makeInvoiceExpiry(paymentHash, invoice))\n\t}\n\n\ttest.waitForFinish(testTimeout)\n\ttest.watcher.Stop()\n\ttest.checkExpectations()\n}\n\n// Tests that if some invoices are expired, then those invoices\n// will be canceled.",
+      "length": 364,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvoiceExpiryWithPendingAndExpiredInvoices(t *testing.T) {",
+      "content": "func TestInvoiceExpiryWithPendingAndExpiredInvoices(t *testing.T) {\n\tt.Parallel()\n\n\ttest := newInvoiceExpiryWatcherTest(t, testTime, 5, 5)\n\n\tfor paymentHash, invoice := range test.testData.expiredInvoices {\n\t\ttest.watcher.AddInvoices(makeInvoiceExpiry(paymentHash, invoice))\n\t}\n\n\tfor paymentHash, invoice := range test.testData.pendingInvoices {\n\t\ttest.watcher.AddInvoices(makeInvoiceExpiry(paymentHash, invoice))\n\t}\n\n\ttest.waitForFinish(testTimeout)\n\ttest.watcher.Stop()\n\ttest.checkExpectations()\n}\n\n// Tests adding multiple invoices at once.",
+      "length": 458,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvoiceExpiryWhenAddingMultipleInvoices(t *testing.T) {",
+      "content": "func TestInvoiceExpiryWhenAddingMultipleInvoices(t *testing.T) {\n\tt.Parallel()\n\n\ttest := newInvoiceExpiryWatcherTest(t, testTime, 5, 5)\n\tvar invoices []invoiceExpiry\n\n\tfor hash, invoice := range test.testData.expiredInvoices {\n\t\tinvoices = append(invoices, makeInvoiceExpiry(hash, invoice))\n\t}\n\n\tfor hash, invoice := range test.testData.pendingInvoices {\n\t\tinvoices = append(invoices, makeInvoiceExpiry(hash, invoice))\n\t}\n\n\ttest.watcher.AddInvoices(invoices...)\n\ttest.waitForFinish(testTimeout)\n\ttest.watcher.Stop()\n\ttest.checkExpectations()\n}\n\n// TestExpiredHodlInv tests expiration of an already-expired hodl invoice\n// which has no htlcs.",
+      "length": 556,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func TestExpiredHodlInv(t *testing.T) {",
+      "content": "func TestExpiredHodlInv(t *testing.T) {\n\tt.Parallel()\n\n\tcreationDate := testTime.Add(time.Hour * -24)\n\texpiry := time.Hour\n\n\ttest := setupHodlExpiry(\n\t\tt, creationDate, expiry, 0, ContractOpen, nil,\n\t)\n\n\ttest.assertCanceled(t, test.hash)\n\ttest.watcher.Stop()\n}\n\n// TestAcceptedHodlNotExpired tests that hodl invoices which are in an accepted\n// state are not expired once their time-based expiry elapses, using a regular\n// invoice that expires at the same time as a control to ensure that invoices\n// with that timestamp would otherwise be expired.",
+      "length": 493,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAcceptedHodlNotExpired(t *testing.T) {",
+      "content": "func TestAcceptedHodlNotExpired(t *testing.T) {\n\tt.Parallel()\n\n\tcreationDate := testTime\n\texpiry := time.Hour\n\n\ttest := setupHodlExpiry(\n\t\tt, creationDate, expiry, 0, ContractAccepted, nil,\n\t)\n\tdefer test.watcher.Stop()\n\n\t// Add another invoice that will expire at our expiry time as a control\n\t// value.\n\ttsExpires := &invoiceExpiryTs{\n\t\tPaymentHash: lntypes.Hash{1, 2, 3},\n\t\tExpiry:      creationDate.Add(expiry),\n\t\tKeysend:     true,\n\t}\n\ttest.watcher.AddInvoices(tsExpires)\n\n\ttest.mockClock.SetTime(creationDate.Add(expiry + 1))\n\n\t// Assert that only the ts expiry invoice is expired.\n\ttest.assertCanceled(t, tsExpires.PaymentHash)\n}\n\n// TestHeightAlreadyExpired tests the case where we add an invoice with htlcs\n// that have already expired to the expiry watcher.",
+      "length": 693,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHeightAlreadyExpired(t *testing.T) {",
+      "content": "func TestHeightAlreadyExpired(t *testing.T) {\n\tt.Parallel()\n\n\texpiredHtlc := []*InvoiceHTLC{\n\t\t{\n\t\t\tState:  HtlcStateAccepted,\n\t\t\tExpiry: uint32(testCurrentHeight),\n\t\t},\n\t}\n\n\ttest := setupHodlExpiry(\n\t\tt, testTime, time.Hour, 0, ContractAccepted,\n\t\texpiredHtlc,\n\t)\n\tdefer test.watcher.Stop()\n\n\ttest.assertCanceled(t, test.hash)\n}\n\n// TestExpiryHeightArrives tests the case where we add a hodl invoice to the\n// expiry watcher when it has no htlcs, htlcs are added and then they finally\n// expire. We use a non-zero delta for this test to check that we expire with\n// sufficient buffer.",
+      "length": 518,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func TestExpiryHeightArrives(t *testing.T) {",
+      "content": "func TestExpiryHeightArrives(t *testing.T) {\n\tvar (\n\t\tcreationDate        = testTime\n\t\texpiry              = time.Hour * 2\n\t\tdelta        uint32 = 1\n\t)\n\n\t// Start out with a hodl invoice that is open, and has no htlcs.\n\ttest := setupHodlExpiry(\n\t\tt, creationDate, expiry, delta, ContractOpen, nil,\n\t)\n\tdefer test.watcher.Stop()\n\n\thtlc1 := uint32(testCurrentHeight + 10)\n\texpiry1 := makeHeightExpiry(test.hash, htlc1)\n\n\t// Add htlcs to our invoice and progress its state to accepted.\n\ttest.watcher.AddInvoices(expiry1)\n\ttest.setState(ContractAccepted)\n\n\t// Progress time so that our expiry has elapsed. We no longer expect\n\t// this invoice to be canceled because it has been accepted.\n\ttest.mockClock.SetTime(creationDate.Add(expiry))\n\n\t// Tick our mock block subscription with the next block, we don't\n\t// expect anything to happen.\n\tcurrentHeight := uint32(testCurrentHeight + 1)\n\ttest.announceBlock(t, currentHeight)\n\n\t// Now, we add another htlc to the invoice. This one has a lower expiry\n\t// height than our current ones.\n\thtlc2 := currentHeight + 5\n\texpiry2 := makeHeightExpiry(test.hash, htlc2)\n\ttest.watcher.AddInvoices(expiry2)\n\n\t// Announce our lowest htlc expiry block minus our delta, the invoice\n\t// should be expired now.\n\ttest.announceBlock(t, htlc2-delta)\n\ttest.assertCanceled(t, test.hash)\n}\n",
+      "length": 1225,
+      "tokens": 166,
+      "embedding": []
+    }
+  ]
+}

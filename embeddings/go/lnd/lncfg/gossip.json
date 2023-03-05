@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/gossip.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Gossip struct {",
+      "content": "type Gossip struct {\n\tPinnedSyncersRaw []string `long:\"pinned-syncers\" description:\"A set of peers that should always remain in an active sync state, which can be used to closely synchronize the routing tables of two nodes. The value should be a hex-encoded pubkey, the flag can be specified multiple times to add multiple peers. Connected peers matching this pubkey will remain active for the duration of the connection and not count towards the NumActiveSyncer count.\"`\n\n\tPinnedSyncers discovery.PinnedSyncers\n\n\tMaxChannelUpdateBurst int `long:\"max-channel-update-burst\" description:\"The maximum number of updates for a specific channel and direction that lnd will accept over the channel update interval.\"`\n\n\tChannelUpdateInterval time.Duration `long:\"channel-update-interval\" description:\"The interval used to determine how often lnd should allow a burst of new updates for a specific channel and direction.\"`\n\n\tSubBatchDelay time.Duration `long:\"sub-batch-delay\" description:\"The duration to wait before sending the next announcement batch if there are multiple. Use a small value if there are a lot announcements and they need to be broadcast quickly.\"`\n}\n\n// Parse the pubkeys for the pinned syncers.",
+      "length": 1175,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *Gossip) Parse() error {",
+      "content": "func (g *Gossip) Parse() error {\n\tpinnedSyncers := make(discovery.PinnedSyncers)\n\tfor _, pubkeyStr := range g.PinnedSyncersRaw {\n\t\tvertex, err := route.NewVertexFromStr(pubkeyStr)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\tpinnedSyncers[vertex] = struct{}{}\n\t}\n\n\tg.PinnedSyncers = pinnedSyncers\n\n\treturn nil\n}\n",
+      "length": 259,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

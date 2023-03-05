@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/init.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type Init struct {",
+      "content": "type Init struct {\n\t// ConnFeatures are the feature bits being advertised for the duration\n\t// of a single connection with a peer.\n\tConnFeatures *lnwire.RawFeatureVector\n\n\t// ChainHash is the genesis hash of the chain that the advertiser claims\n\t// to be on.\n\tChainHash chainhash.Hash\n}\n\n// NewInitMessage generates a new Init message from a raw connection feature\n// vector and chain hash.",
+      "length": 361,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInitMessage(connFeatures *lnwire.RawFeatureVector,",
+      "content": "func NewInitMessage(connFeatures *lnwire.RawFeatureVector,\n\tchainHash chainhash.Hash) *Init {\n\n\treturn &Init{\n\t\tConnFeatures: connFeatures,\n\t\tChainHash:    chainHash,\n\t}\n}\n\n// Encode serializes the target Init into the passed io.Writer observing the\n// protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 262,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (msg *Init) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (msg *Init) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tmsg.ConnFeatures,\n\t\tmsg.ChainHash,\n\t)\n}\n\n// Decode deserializes a serialized Init message stored in the passed io.Reader\n// observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 235,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (msg *Init) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (msg *Init) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&msg.ConnFeatures,\n\t\t&msg.ChainHash,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 197,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (msg *Init) MsgType() MessageType {",
+      "content": "func (msg *Init) MsgType() MessageType {\n\treturn MsgInit\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for an Init\n// complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 199,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (msg *Init) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (msg *Init) MaxPayloadLength(uint32) uint32 {\n\treturn MaxMessagePayload\n}\n\n// A compile-time constraint to ensure Init implements the Message interface.\nvar _ Message = (*Init)(nil)\n\n// CheckRemoteInit performs basic validation of the remote party's Init message.\n// This method checks that the remote Init's chain hash matches our advertised\n// chain hash and that the remote Init does not contain any required feature\n// bits that we don't understand.",
+      "length": 398,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (msg *Init) CheckRemoteInit(remoteInit *Init,",
+      "content": "func (msg *Init) CheckRemoteInit(remoteInit *Init,\n\tfeatureNames map[lnwire.FeatureBit]string) error {\n\n\t// Check that the remote peer is on the same chain.\n\tif msg.ChainHash != remoteInit.ChainHash {\n\t\treturn NewErrUnknownChainHash(remoteInit.ChainHash)\n\t}\n\n\tremoteConnFeatures := lnwire.NewFeatureVector(\n\t\tremoteInit.ConnFeatures, featureNames,\n\t)\n\n\t// Check that the remote peer doesn't have any required connection\n\t// feature bits that we ourselves are unaware of.\n\treturn feature.ValidateRequired(remoteConnFeatures)\n}\n\n// ErrUnknownChainHash signals that the remote Init has a different chain hash\n// from the one we advertised.",
+      "length": 568,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrUnknownChainHash struct {",
+      "content": "type ErrUnknownChainHash struct {\n\thash chainhash.Hash\n}\n\n// NewErrUnknownChainHash creates an ErrUnknownChainHash using the remote Init's\n// chain hash.",
+      "length": 115,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func NewErrUnknownChainHash(hash chainhash.Hash) *ErrUnknownChainHash {",
+      "content": "func NewErrUnknownChainHash(hash chainhash.Hash) *ErrUnknownChainHash {\n\treturn &ErrUnknownChainHash{hash}\n}\n\n// Error returns a human-readable error displaying the unknown chain hash.",
+      "length": 109,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ErrUnknownChainHash) Error() string {",
+      "content": "func (e *ErrUnknownChainHash) Error() string {\n\treturn fmt.Sprintf(\"remote init has unknown chain hash: %s\", e.hash)\n}\n",
+      "length": 70,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/labels/labels.go",
+  "package": "Package",
+  "sections": [
+    {
+      "slug": "func ValidateAPI(label string) (string, error) {",
+      "content": "func ValidateAPI(label string) (string, error) {\n\tif len(label) > wtxmgr.TxLabelLimit {\n\t\treturn \"\", fmt.Errorf(\"label length: %v exceeds \"+\n\t\t\t\"limit of %v\", len(label), wtxmgr.TxLabelLimit)\n\t}\n\n\t// If no label was provided by the user, add the generic user\n\t// send label.\n\tif len(label) == 0 {\n\t\treturn External, nil\n\t}\n\n\treturn label, nil\n}\n\n// LabelVersion versions our labels so they can be easily update to contain\n// new data while still easily string matched.",
+      "length": 404,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type LabelVersion uint8",
+      "content": "type LabelVersion uint8\n\n// LabelVersionZero is the label version for labels that contain label type and\n// channel ID (where available).\nconst LabelVersionZero LabelVersion = iota\n\n// LabelType indicates the type of label we are creating. It is a string rather\n// than an int for easy string matching and human-readability.",
+      "length": 294,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "type LabelType string",
+      "content": "type LabelType string\n\nconst (\n\t// LabelTypeChannelOpen is used to label channel opens.\n\tLabelTypeChannelOpen LabelType = \"openchannel\"\n\n\t// LabelTypeChannelClose is used to label channel closes.\n\tLabelTypeChannelClose LabelType = \"closechannel\"\n\n\t// LabelTypeJusticeTransaction is used to label justice transactions.\n\tLabelTypeJusticeTransaction LabelType = \"justicetx\"\n\n\t// LabelTypeSweepTransaction is used to label sweeps.\n\tLabelTypeSweepTransaction LabelType = \"sweep\"\n)\n\n// LabelField is used to tag a value within a label.",
+      "length": 492,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "type LabelField string",
+      "content": "type LabelField string\n\nconst (\n\t// ShortChanID is used to tag short channel id values in our labels.\n\tShortChanID LabelField = \"shortchanid\"\n)\n\n// MakeLabel creates a label with the provided type and short channel id. If\n// our short channel ID is not known, we simply return version:label_type. If\n// we do have a short channel ID set, the label will also contain its value:\n// shortchanid-{int64 chan ID}.",
+      "length": 376,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeLabel(labelType LabelType, channelID *lnwire.ShortChannelID) string {",
+      "content": "func MakeLabel(labelType LabelType, channelID *lnwire.ShortChannelID) string {\n\tif channelID == nil {\n\t\treturn fmt.Sprintf(\"%v:%v\", LabelVersionZero, labelType)\n\t}\n\n\treturn fmt.Sprintf(\"%v:%v:%v-%v\", LabelVersionZero, labelType,\n\t\tShortChanID, channelID.ToUint64())\n}\n",
+      "length": 182,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

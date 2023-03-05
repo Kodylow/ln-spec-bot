@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/profile.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "type profileEntry struct {",
+      "content": "type profileEntry struct {\n\tName        string            `json:\"name\"`\n\tRPCServer   string            `json:\"rpcserver\"`\n\tLndDir      string            `json:\"lnddir\"`\n\tChain       string            `json:\"chain\"`\n\tNetwork     string            `json:\"network\"`\n\tNoMacaroons bool              `json:\"no-macaroons,omitempty\"` // nolint:tagliatelle\n\tTLSCert     string            `json:\"tlscert\"`\n\tMacaroons   *macaroonJar      `json:\"macaroons\"`\n\tMetadata    map[string]string `json:\"metadata,omitempty\"`\n\tInsecure    bool              `json:\"insecure,omitempty\"`\n}\n\n// cert returns the profile's TLS certificate as a x509 certificate pool.",
+      "length": 601,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *profileEntry) cert() (*x509.CertPool, error) {",
+      "content": "func (e *profileEntry) cert() (*x509.CertPool, error) {\n\tif e.TLSCert == \"\" {\n\t\treturn nil, nil\n\t}\n\n\tcp := x509.NewCertPool()\n\tif !cp.AppendCertsFromPEM([]byte(e.TLSCert)) {\n\t\treturn nil, fmt.Errorf(\"credentials: failed to append \" +\n\t\t\t\"certificate\")\n\t}\n\treturn cp, nil\n}\n\n// getGlobalOptions returns the global connection options. If a profile file\n// exists, these global options might be read from a predefined profile. If no\n// profile exists, the global options from the command line are returned as an\n// ephemeral profile entry.",
+      "length": 465,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func getGlobalOptions(ctx *cli.Context, skipMacaroons bool) (*profileEntry,",
+      "content": "func getGlobalOptions(ctx *cli.Context, skipMacaroons bool) (*profileEntry,\n\terror) {\n\n\tvar profileName string\n\n\t// Try to load the default profile file and depending on its existence\n\t// what profile to use.\n\tf, err := loadProfileFile(defaultProfileFile)\n\tswitch {\n\t// The legacy case where no profile file exists and the user also didn't\n\t// request to use one. We only consider the global options here.\n\tcase err == errNoProfileFile && !ctx.GlobalIsSet(\"profile\"):\n\t\treturn profileFromContext(ctx, false, skipMacaroons)\n\n\t// The file doesn't exist but the user specified an explicit profile.\n\tcase err == errNoProfileFile && ctx.GlobalIsSet(\"profile\"):\n\t\treturn nil, fmt.Errorf(\"profile file %s does not exist\",\n\t\t\tdefaultProfileFile)\n\n\t// There is a file but we couldn't read/parse it.\n\tcase err != nil:\n\t\treturn nil, fmt.Errorf(\"could not read profile file %s: \"+\n\t\t\t\"%v\", defaultProfileFile, err)\n\n\t// The user explicitly disabled the use of profiles for this command by\n\t// setting the flag to an empty string. We fall back to the default/old\n\t// behavior.\n\tcase ctx.GlobalIsSet(\"profile\") && ctx.GlobalString(\"profile\") == \"\":\n\t\treturn profileFromContext(ctx, false, skipMacaroons)\n\n\t// There is a file, but no default profile is specified. The user also\n\t// didn't specify a profile to use so we fall back to the default/old\n\t// behavior.\n\tcase !ctx.GlobalIsSet(\"profile\") && len(f.Default) == 0:\n\t\treturn profileFromContext(ctx, false, skipMacaroons)\n\n\t// The user didn't specify a profile but there is a default one defined.\n\tcase !ctx.GlobalIsSet(\"profile\") && len(f.Default) > 0:\n\t\tprofileName = f.Default\n\n\t// The user specified a specific profile to use.\n\tcase ctx.GlobalIsSet(\"profile\"):\n\t\tprofileName = ctx.GlobalString(\"profile\")\n\t}\n\n\t// If we got to here, we do have a profile file and know the name of the\n\t// profile to use. Now we just need to make sure it does exist.\n\tfor _, prof := range f.Profiles {\n\t\tif prof.Name == profileName {\n\t\t\treturn prof, nil\n\t\t}\n\t}\n\n\treturn nil, fmt.Errorf(\"profile '%s' not found in file %s\", profileName,\n\t\tdefaultProfileFile)\n}\n\n// profileFromContext creates an ephemeral profile entry from the global options\n// set in the CLI context.",
+      "length": 2059,
+      "tokens": 313,
+      "embedding": []
+    },
+    {
+      "slug": "func profileFromContext(ctx *cli.Context, store, skipMacaroons bool) (",
+      "content": "func profileFromContext(ctx *cli.Context, store, skipMacaroons bool) (\n\t*profileEntry, error) {\n\n\t// Parse the paths of the cert and macaroon. This will validate the\n\t// chain and network value as well.\n\ttlsCertPath, macPath, err := extractPathArgs(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tinsecure := ctx.GlobalBool(\"insecure\")\n\n\t// Load the certificate file now, if specified. We store it as plain PEM\n\t// directly.\n\tvar tlsCert []byte\n\tif tlsCertPath != \"\" && !insecure {\n\t\tvar err error\n\t\ttlsCert, err = ioutil.ReadFile(tlsCertPath)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"could not load TLS cert \"+\n\t\t\t\t\"file: %v\", err)\n\t\t}\n\t}\n\n\tmetadata := make(map[string]string)\n\tfor _, m := range ctx.GlobalStringSlice(\"metadata\") {\n\t\tpair := strings.Split(m, \":\")\n\t\tif len(pair) != 2 {\n\t\t\treturn nil, fmt.Errorf(\"invalid format for metadata \" +\n\t\t\t\t\"flag; expected \\\"key:value\\\"\")\n\t\t}\n\n\t\tmetadata[pair[0]] = pair[1]\n\t}\n\n\tentry := &profileEntry{\n\t\tRPCServer: ctx.GlobalString(\"rpcserver\"),\n\t\tLndDir: lncfg.CleanAndExpandPath(\n\t\t\tctx.GlobalString(\"lnddir\"),\n\t\t),\n\t\tChain:       ctx.GlobalString(\"chain\"),\n\t\tNetwork:     ctx.GlobalString(\"network\"),\n\t\tNoMacaroons: ctx.GlobalBool(\"no-macaroons\"),\n\t\tTLSCert:     string(tlsCert),\n\t\tMetadata:    metadata,\n\t\tInsecure:    insecure,\n\t}\n\n\t// If we aren't using macaroons in general (flag --no-macaroons) or\n\t// don't need macaroons for this command (wallet unlocker), we can now\n\t// return already.\n\tif skipMacaroons || ctx.GlobalBool(\"no-macaroons\") {\n\t\treturn entry, nil\n\t}\n\n\t// Now load and possibly encrypt the macaroon file.\n\tmacBytes, err := ioutil.ReadFile(macPath)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to read macaroon path (check \"+\n\t\t\t\"the network setting!): %v\", err)\n\t}\n\tmac := &macaroon.Macaroon{}\n\tif err = mac.UnmarshalBinary(macBytes); err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to decode macaroon: %v\", err)\n\t}\n\n\tvar pw []byte\n\tif store {\n\t\t// Read a password from the terminal. If it's empty, we won't\n\t\t// encrypt the macaroon and store it plaintext.\n\t\tpw, err = capturePassword(\n\t\t\t\"Enter password to encrypt macaroon with or leave \"+\n\t\t\t\t\"blank to store in plaintext: \", true,\n\t\t\twalletunlocker.ValidatePassword,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to get encryption \"+\n\t\t\t\t\"password: %v\", err)\n\t\t}\n\t}\n\tmacEntry := &macaroonEntry{}\n\tif err = macEntry.storeMacaroon(mac, pw); err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to store macaroon: %v\", err)\n\t}\n\n\t// We determine the name of the macaroon from the file itself but cut\n\t// off the \".macaroon\" at the end.\n\tmacEntry.Name = path.Base(macPath)\n\tif path.Ext(macEntry.Name) == \"macaroon\" {\n\t\tmacEntry.Name = strings.TrimSuffix(macEntry.Name, \".macaroon\")\n\t}\n\n\t// Now that we have the macaroon jar as well, let's return the entry\n\t// with all the values populated.\n\tentry.Macaroons = &macaroonJar{\n\t\tDefault: macEntry.Name,\n\t\tTimeout: ctx.GlobalInt64(\"macaroontimeout\"),\n\t\tIP:      ctx.GlobalString(\"macaroonip\"),\n\t\tJar:     []*macaroonEntry{macEntry},\n\t}\n\n\treturn entry, nil\n}\n\n// loadProfileFile tries to load the file specified and JSON deserialize it into\n// the profile file struct.",
+      "length": 2963,
+      "tokens": 410,
+      "embedding": []
+    },
+    {
+      "slug": "func loadProfileFile(file string) (*profileFile, error) {",
+      "content": "func loadProfileFile(file string) (*profileFile, error) {\n\tif !lnrpc.FileExists(file) {\n\t\treturn nil, errNoProfileFile\n\t}\n\n\tcontent, err := ioutil.ReadFile(file)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not load profile file %s: %v\",\n\t\t\tfile, err)\n\t}\n\tf := &profileFile{}\n\terr = f.unmarshalJSON(content)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not unmarshal profile file %s: \"+\n\t\t\t\"%v\", file, err)\n\t}\n\treturn f, nil\n}\n\n// saveProfileFile stores the given profile file struct in the specified file,\n// overwriting it if it already existed.",
+      "length": 478,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func saveProfileFile(file string, f *profileFile) error {",
+      "content": "func saveProfileFile(file string, f *profileFile) error {\n\tcontent, err := f.marshalJSON()\n\tif err != nil {\n\t\treturn fmt.Errorf(\"could not marshal profile: %v\", err)\n\t}\n\treturn ioutil.WriteFile(file, content, 0644)\n}\n\n// profileFile is a struct that represents the whole content of a profile file.",
+      "length": 232,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type profileFile struct {",
+      "content": "type profileFile struct {\n\tDefault  string          `json:\"default,omitempty\"`\n\tProfiles []*profileEntry `json:\"profiles\"`\n}\n\n// unmarshalJSON tries to parse the given JSON and unmarshal it into the\n// receiving instance.",
+      "length": 190,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *profileFile) unmarshalJSON(content []byte) error {",
+      "content": "func (f *profileFile) unmarshalJSON(content []byte) error {\n\treturn json.Unmarshal(content, f)\n}\n\n// marshalJSON serializes the receiving instance to formatted/indented JSON.",
+      "length": 111,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *profileFile) marshalJSON() ([]byte, error) {",
+      "content": "func (f *profileFile) marshalJSON() ([]byte, error) {\n\tb, err := json.Marshal(f)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error JSON marshalling profile: %v\",\n\t\t\terr)\n\t}\n\n\tvar out bytes.Buffer\n\terr = json.Indent(&out, b, \"\", \"  \")\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error indenting profile JSON: %v\", err)\n\t}\n\tout.WriteString(\"\\n\")\n\treturn out.Bytes(), nil\n}\n",
+      "length": 301,
+      "tokens": 47,
+      "embedding": []
+    }
+  ]
+}

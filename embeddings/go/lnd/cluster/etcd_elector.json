@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/cluster/etcd_elector.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type etcdLeaderElector struct {",
+      "content": "type etcdLeaderElector struct {\n\tid       string\n\tctx      context.Context\n\tcli      *clientv3.Client\n\tsession  *concurrency.Session\n\telection *concurrency.Election\n}\n\n// newEtcdLeaderElector constructs a new etcdLeaderElector.",
+      "length": 188,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func newEtcdLeaderElector(ctx context.Context, id, electionPrefix string,",
+      "content": "func newEtcdLeaderElector(ctx context.Context, id, electionPrefix string,\n\tleaderSessionTTL int, cfg *etcd.Config) (*etcdLeaderElector, error) {\n\n\tclientCfg := clientv3.Config{\n\t\tContext:     ctx,\n\t\tEndpoints:   []string{cfg.Host},\n\t\tDialTimeout: etcdConnectionTimeout,\n\t\tUsername:    cfg.User,\n\t\tPassword:    cfg.Pass,\n\t}\n\n\tif !cfg.DisableTLS {\n\t\ttlsInfo := transport.TLSInfo{\n\t\t\tCertFile:           cfg.CertFile,\n\t\t\tKeyFile:            cfg.KeyFile,\n\t\t\tInsecureSkipVerify: cfg.InsecureSkipVerify,\n\t\t}\n\n\t\ttlsConfig, err := tlsInfo.ClientConfig()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tclientCfg.TLS = tlsConfig\n\t}\n\n\tcli, err := clientv3.New(clientCfg)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to connect to etcd: %v\", err)\n\t\treturn nil, err\n\t}\n\n\t// Apply the namespace.\n\tcli.KV = namespace.NewKV(cli.KV, cfg.Namespace)\n\tcli.Watcher = namespace.NewWatcher(cli.Watcher, cfg.Namespace)\n\tcli.Lease = namespace.NewLease(cli.Lease, cfg.Namespace)\n\tlog.Infof(\"Applied namespace to leader elector: %v\", cfg.Namespace)\n\n\tsession, err := concurrency.NewSession(\n\t\tcli, concurrency.WithTTL(leaderSessionTTL),\n\t)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to start new leader election session: %v\",\n\t\t\terr)\n\t\treturn nil, err\n\t}\n\n\treturn &etcdLeaderElector{\n\t\tid:      id,\n\t\tctx:     ctx,\n\t\tcli:     cli,\n\t\tsession: session,\n\t\telection: concurrency.NewElection(\n\t\t\tsession, electionPrefix,\n\t\t),\n\t}, nil\n}\n\n// Leader returns the leader value for the current election.",
+      "length": 1319,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *etcdLeaderElector) Leader(ctx context.Context) (string, error) {",
+      "content": "func (e *etcdLeaderElector) Leader(ctx context.Context) (string, error) {\n\tresp, err := e.election.Leader(ctx)\n\tif err != nil {\n\t\treturn \"\", err\n\t}\n\n\treturn string(resp.Kvs[0].Value), nil\n}\n\n// Campaign will start a new leader election campaign. Campaign will block until\n// the elector context is canceled or the the caller is elected as the leader.",
+      "length": 267,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *etcdLeaderElector) Campaign(ctx context.Context) error {",
+      "content": "func (e *etcdLeaderElector) Campaign(ctx context.Context) error {\n\treturn e.election.Campaign(ctx, e.id)\n}\n\n// Resign resigns the leader role allowing other election members to take\n// the place.",
+      "length": 125,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *etcdLeaderElector) Resign() error {",
+      "content": "func (e *etcdLeaderElector) Resign() error {\n\treturn e.election.Resign(context.Background())\n}\n",
+      "length": 48,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

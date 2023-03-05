@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/tower.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type TowerID uint64",
+      "content": "type TowerID uint64\n\n// TowerIDFromBytes constructs a TowerID from the provided byte slice. The\n// argument must have at least 8 bytes, and should contain the TowerID in\n// big-endian byte order.",
+      "length": 172,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func TowerIDFromBytes(towerIDBytes []byte) TowerID {",
+      "content": "func TowerIDFromBytes(towerIDBytes []byte) TowerID {\n\treturn TowerID(byteOrder.Uint64(towerIDBytes))\n}\n\n// Bytes encodes a TowerID into an 8-byte slice in big-endian byte order.",
+      "length": 121,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (id TowerID) Bytes() []byte {",
+      "content": "func (id TowerID) Bytes() []byte {\n\tvar buf [8]byte\n\tbyteOrder.PutUint64(buf[:], uint64(id))\n\treturn buf[:]\n}\n\n// Tower holds the necessary components required to connect to a remote tower.\n// Communication is handled by brontide, and requires both a public key and an\n// address.",
+      "length": 238,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "type Tower struct {",
+      "content": "type Tower struct {\n\t// ID is a unique ID for this record assigned by the database.\n\tID TowerID\n\n\t// IdentityKey is the public key of the remote node, used to\n\t// authenticate the brontide transport.\n\tIdentityKey *btcec.PublicKey\n\n\t// Addresses is a list of possible addresses to reach the tower.\n\tAddresses []net.Addr\n}\n\n// AddAddress adds the given address to the tower's in-memory list of addresses.\n// If the address's string is already present, the Tower will be left\n// unmodified. Otherwise, the address is prepended to the beginning of the\n// Tower's addresses, on the assumption that it is fresher than the others.\n//\n// NOTE: This method is NOT safe for concurrent use.",
+      "length": 643,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *Tower) AddAddress(addr net.Addr) {",
+      "content": "func (t *Tower) AddAddress(addr net.Addr) {\n\t// Ensure we don't add a duplicate address.\n\taddrStr := addr.String()\n\tfor _, existingAddr := range t.Addresses {\n\t\tif existingAddr.String() == addrStr {\n\t\t\treturn\n\t\t}\n\t}\n\n\t// Add this address to the front of the list, on the assumption that it\n\t// is a fresher address and will be tried first.\n\tt.Addresses = append([]net.Addr{addr}, t.Addresses...)\n}\n\n// RemoveAddress removes the given address from the tower's in-memory list of\n// addresses. If the address doesn't exist, then this will act as a NOP.",
+      "length": 491,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *Tower) RemoveAddress(addr net.Addr) {",
+      "content": "func (t *Tower) RemoveAddress(addr net.Addr) {\n\taddrStr := addr.String()\n\tfor i, address := range t.Addresses {\n\t\tif address.String() != addrStr {\n\t\t\tcontinue\n\t\t}\n\t\tt.Addresses = append(t.Addresses[:i], t.Addresses[i+1:]...)\n\t\treturn\n\t}\n}\n\n// String returns a user-friendly identifier of the tower.",
+      "length": 241,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *Tower) String() string {",
+      "content": "func (t *Tower) String() string {\n\tpubKey := hex.EncodeToString(t.IdentityKey.SerializeCompressed())\n\tif len(t.Addresses) == 0 {\n\t\treturn pubKey\n\t}\n\treturn fmt.Sprintf(\"%v@%v\", pubKey, t.Addresses[0])\n}\n\n// Encode writes the Tower to the passed io.Writer. The TowerID is not\n// serialized, since it acts as the key.",
+      "length": 273,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *Tower) Encode(w io.Writer) error {",
+      "content": "func (t *Tower) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\tt.IdentityKey,\n\t\tt.Addresses,\n\t)\n}\n\n// Decode reads a Tower from the passed io.Reader. The TowerID is meant to be\n// decoded from the key.",
+      "length": 158,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *Tower) Decode(r io.Reader) error {",
+      "content": "func (t *Tower) Decode(r io.Reader) error {\n\treturn ReadElements(r,\n\t\t&t.IdentityKey,\n\t\t&t.Addresses,\n\t)\n}\n",
+      "length": 58,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

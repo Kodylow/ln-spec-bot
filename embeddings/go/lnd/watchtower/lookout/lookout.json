@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/lookout/lookout.go",
+  "package": "lookout",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// DB provides persistent access to the watchtower's accepted state\n\t// updates such that they can be queried as new blocks arrive from the\n\t// network.\n\tDB DB\n\n\t// EpochRegistrar supports the ability to register for events corresponding to\n\t// newly created blocks.\n\tEpochRegistrar EpochRegistrar\n\n\t// BlockFetcher supports the ability to fetch blocks from the backend or\n\t// network.\n\tBlockFetcher BlockFetcher\n\n\t// Punisher handles the responsibility of crafting and broadcasting\n\t// justice transaction for any breached transactions.\n\tPunisher Punisher\n}\n\n// Lookout will check any incoming blocks against the transactions found in the\n// database, and in case of matches send the information needed to create a\n// penalty transaction to the punisher.",
+      "length": 736,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "type Lookout struct {",
+      "content": "type Lookout struct {\n\tstarted  int32 // atomic\n\tshutdown int32 // atomic\n\n\tcfg *Config\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// New constructs a new Lookout from the given LookoutConfig.",
+      "length": 163,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) *Lookout {",
+      "content": "func New(cfg *Config) *Lookout {\n\treturn &Lookout{\n\t\tcfg:  cfg,\n\t\tquit: make(chan struct{}),\n\t}\n}\n\n// Start safely spins up the Lookout and begins monitoring for breaches.",
+      "length": 132,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *Lookout) Start() error {",
+      "content": "func (l *Lookout) Start() error {\n\tif !atomic.CompareAndSwapInt32(&l.started, 0, 1) {\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"Starting lookout\")\n\n\tstartEpoch, err := l.cfg.DB.GetLookoutTip()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif startEpoch == nil {\n\t\tlog.Infof(\"Starting lookout from chain tip\")\n\t} else {\n\t\tlog.Infof(\"Starting lookout from epoch(height=%d hash=%v)\",\n\t\t\tstartEpoch.Height, startEpoch.Hash)\n\t}\n\n\tevents, err := l.cfg.EpochRegistrar.RegisterBlockEpochNtfn(startEpoch)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to register for block epochs: %v\", err)\n\t\treturn err\n\t}\n\n\tl.wg.Add(1)\n\tgo l.watchBlocks(events)\n\n\tlog.Infof(\"Lookout started successfully\")\n\n\treturn nil\n}\n\n// Stop safely shuts down the Lookout.",
+      "length": 638,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *Lookout) Stop() error {",
+      "content": "func (l *Lookout) Stop() error {\n\tif !atomic.CompareAndSwapInt32(&l.shutdown, 0, 1) {\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"Stopping lookout\")\n\n\tclose(l.quit)\n\tl.wg.Wait()\n\n\tlog.Infof(\"Lookout stopped successfully\")\n\n\treturn nil\n}\n\n// watchBlocks serially pulls incoming epochs from the epoch source and searches\n// our accepted state updates for any breached transactions. If any are found,\n// we will attempt to decrypt the state updates' encrypted blobs and exact\n// justice for the victim.\n//\n// This method MUST be run as a goroutine.",
+      "length": 478,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *Lookout) watchBlocks(epochs *chainntnfs.BlockEpochEvent) {",
+      "content": "func (l *Lookout) watchBlocks(epochs *chainntnfs.BlockEpochEvent) {\n\tdefer l.wg.Done()\n\tdefer epochs.Cancel()\n\n\tfor {\n\t\tselect {\n\t\tcase epoch := <-epochs.Epochs:\n\t\t\tlog.Debugf(\"Fetching block for (height=%d, hash=%s)\",\n\t\t\t\tepoch.Height, epoch.Hash)\n\n\t\t\t// Fetch the full block from the backend corresponding\n\t\t\t// to the newly arriving epoch.\n\t\t\tblock, err := l.cfg.BlockFetcher.GetBlock(epoch.Hash)\n\t\t\tif err != nil {\n\t\t\t\t// TODO(conner): add retry logic?\n\t\t\t\tlog.Errorf(\"Unable to fetch block for \"+\n\t\t\t\t\t\"(height=%x, hash=%s): %v\",\n\t\t\t\t\tepoch.Height, epoch.Hash, err)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Process the block to see if it contains any breaches\n\t\t\t// that we are monitoring on behalf of our clients.\n\t\t\terr = l.processEpoch(epoch, block)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Unable to process %v: %v\",\n\t\t\t\t\tepoch, err)\n\t\t\t}\n\n\t\tcase <-l.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// processEpoch accepts an Epoch and queries the database for any matching state\n// updates for the confirmed transactions. If any are found, the lookout\n// responds by attempting to decrypt the encrypted blob and publishing the\n// justice transaction.",
+      "length": 1011,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *Lookout) processEpoch(epoch *chainntnfs.BlockEpoch,",
+      "content": "func (l *Lookout) processEpoch(epoch *chainntnfs.BlockEpoch,\n\tblock *wire.MsgBlock) error {\n\n\tnumTxnsInBlock := len(block.Transactions)\n\n\tlog.Debugf(\"Scanning %d transaction in block (height=%d, hash=%s) \"+\n\t\t\"for breaches\", numTxnsInBlock, epoch.Height, epoch.Hash)\n\n\t// Iterate over the transactions contained in the block, deriving a\n\t// breach hint for each transaction and constructing an index mapping\n\t// the hint back to it's original transaction.\n\thintToTx := make(map[blob.BreachHint]*wire.MsgTx, numTxnsInBlock)\n\ttxHints := make([]blob.BreachHint, 0, numTxnsInBlock)\n\tfor _, tx := range block.Transactions {\n\t\thash := tx.TxHash()\n\t\thint := blob.NewBreachHintFromHash(&hash)\n\n\t\ttxHints = append(txHints, hint)\n\t\thintToTx[hint] = tx\n\t}\n\n\t// Query the database to see if any of the breach hints cause a match\n\t// with any of our accepted state updates.\n\tmatches, err := l.cfg.DB.QueryMatches(txHints)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// No matches were found, we are done.\n\tif len(matches) == 0 {\n\t\tlog.Debugf(\"No breaches found in (height=%d, hash=%s)\",\n\t\t\tepoch.Height, epoch.Hash)\n\t\treturn nil\n\t}\n\n\tbreachCountStr := \"breach\"\n\tif len(matches) > 1 {\n\t\tbreachCountStr = \"breaches\"\n\t}\n\n\tlog.Infof(\"Found %d %s in (height=%d, hash=%s)\",\n\t\tlen(matches), breachCountStr, epoch.Height, epoch.Hash)\n\n\t// For each match, use our index to retrieve the original transaction,\n\t// which corresponds to the breaching commitment transaction. If the\n\t// decryption succeeds, we will accumulate the assembled justice\n\t// descriptors in a single slice\n\tvar successes []*JusticeDescriptor\n\tfor _, match := range matches {\n\t\tcommitTx := hintToTx[match.Hint]\n\t\tlog.Infof(\"Dispatching punisher for client %s, breach-txid=%s\",\n\t\t\tmatch.ID, commitTx.TxHash())\n\n\t\t// The decryption key for the state update should be the full\n\t\t// txid of the breaching commitment transaction.\n\t\t// The decryption key for the state update should be computed as\n\t\t//   key = SHA256(txid).\n\t\tbreachTxID := commitTx.TxHash()\n\t\tbreachKey := blob.NewBreachKeyFromHash(&breachTxID)\n\n\t\t// Now, decrypt the blob of justice that we received in the\n\t\t// state update. This will contain all information required to\n\t\t// sweep the breached commitment outputs.\n\t\tjusticeKit, err := blob.Decrypt(\n\t\t\tbreachKey, match.EncryptedBlob,\n\t\t\tmatch.SessionInfo.Policy.BlobType,\n\t\t)\n\t\tif err != nil {\n\t\t\t// If the decryption fails, this implies either that the\n\t\t\t// client sent an invalid blob, or that the breach hint\n\t\t\t// caused a match on the txid, but this isn't actually\n\t\t\t// the right transaction.\n\t\t\tlog.Debugf(\"Unable to decrypt blob for client %s, \"+\n\t\t\t\t\"breach-txid %s: %v\", match.ID,\n\t\t\t\tcommitTx.TxHash(), err)\n\t\t\tcontinue\n\t\t}\n\n\t\tjusticeDesc := &JusticeDescriptor{\n\t\t\tBreachedCommitTx: commitTx,\n\t\t\tSessionInfo:      match.SessionInfo,\n\t\t\tJusticeKit:       justiceKit,\n\t\t}\n\t\tsuccesses = append(successes, justiceDesc)\n\t}\n\n\t// TODO(conner): mark successfully decrypted blob so that we can\n\t// reliably rebroadcast on startup\n\n\t// Now, we'll dispatch a punishment for each successful match in\n\t// parallel. This will assemble the justice transaction for each and\n\t// watch for their confirmation on chain.\n\tfor _, justiceDesc := range successes {\n\t\tl.wg.Add(1)\n\t\tgo l.dispatchPunisher(justiceDesc)\n\t}\n\n\treturn l.cfg.DB.SetLookoutTip(epoch)\n}\n\n// dispatchPunisher accepts a justice descriptor corresponding to a successfully\n// decrypted blob.  The punisher will then construct the witness scripts and\n// witness stacks for the breached outputs. If construction of the justice\n// transaction is successful, it will be published to the network to retrieve\n// the funds and claim the watchtower's reward.\n//\n// This method MUST be run as a goroutine.",
+      "length": 3543,
+      "tokens": 491,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *Lookout) dispatchPunisher(desc *JusticeDescriptor) {",
+      "content": "func (l *Lookout) dispatchPunisher(desc *JusticeDescriptor) {\n\tdefer l.wg.Done()\n\n\t// Give the justice descriptor to the punisher to construct and publish\n\t// the justice transaction. The lookout's quit channel is provided so\n\t// that long-running tasks that watch for on-chain events can be\n\t// canceled during shutdown since this method is waitgrouped.\n\terr := l.cfg.Punisher.Punish(desc, l.quit)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to punish breach-txid %s for %s: %v\",\n\t\t\tdesc.BreachedCommitTx.TxHash(), desc.SessionInfo.ID,\n\t\t\terr)\n\t\treturn\n\t}\n\n\tlog.Infof(\"Punishment for client %s with breach-txid=%s dispatched\",\n\t\tdesc.SessionInfo.ID, desc.BreachedCommitTx.TxHash())\n}\n",
+      "length": 600,
+      "tokens": 77,
+      "embedding": []
+    }
+  ]
+}

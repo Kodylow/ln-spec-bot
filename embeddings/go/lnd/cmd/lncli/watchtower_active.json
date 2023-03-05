@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/watchtower_active.go",
+  "package": "watchtowerrpc",
+  "sections": [
+    {
+      "slug": "func watchtowerCommands() []cli.Command {",
+      "content": "func watchtowerCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"tower\",\n\t\t\tUsage:    \"Interact with the watchtower.\",\n\t\t\tCategory: \"Watchtower\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\ttowerInfoCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",
+      "length": 180,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func getWatchtowerClient(ctx *cli.Context) (watchtowerrpc.WatchtowerClient, func()) {",
+      "content": "func getWatchtowerClient(ctx *cli.Context) (watchtowerrpc.WatchtowerClient, func()) {\n\tconn := getClientConn(ctx, false)\n\tcleanup := func() {\n\t\tconn.Close()\n\t}\n\treturn watchtowerrpc.NewWatchtowerClient(conn), cleanup\n}\n\nvar towerInfoCommand = cli.Command{\n\tName:   \"info\",\n\tUsage:  \"Returns basic information related to the active watchtower.\",\n\tAction: actionDecorator(towerInfo),\n}\n",
+      "length": 286,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func towerInfo(ctx *cli.Context) error {",
+      "content": "func towerInfo(ctx *cli.Context) error {\n\tctxc := getContext()\n\tif ctx.NArg() != 0 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"info\")\n\t}\n\n\tclient, cleanup := getWatchtowerClient(ctx)\n\tdefer cleanup()\n\n\treq := &watchtowerrpc.GetInfoRequest{}\n\tresp, err := client.GetInfo(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n",
+      "length": 307,
+      "tokens": 42,
+      "embedding": []
+    }
+  ]
+}

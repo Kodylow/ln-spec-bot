@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/chainrpc_default.go",
+  "package": "!chainrpc",
+  "sections": [
+    {
+      "slug": "func chainCommands() []cli.Command {",
+      "content": "func chainCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/types.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "type OutPoint string",
+      "content": "type OutPoint string\n\n// NewOutPointFromProto formats the lnrpc.OutPoint into an OutPoint for display.",
+      "length": 80,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewOutPointFromProto(op *lnrpc.OutPoint) OutPoint {",
+      "content": "func NewOutPointFromProto(op *lnrpc.OutPoint) OutPoint {\n\tvar hash chainhash.Hash\n\tcopy(hash[:], op.TxidBytes)\n\treturn OutPoint(fmt.Sprintf(\"%v:%d\", hash, op.OutputIndex))\n}\n\n// NewProtoOutPoint parses an OutPoint into its corresponding lnrpc.OutPoint\n// type.",
+      "length": 197,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func NewProtoOutPoint(op string) (*lnrpc.OutPoint, error) {",
+      "content": "func NewProtoOutPoint(op string) (*lnrpc.OutPoint, error) {\n\tparts := strings.Split(op, \":\")\n\tif len(parts) != 2 {\n\t\treturn nil, errors.New(\"outpoint should be of the form txid:index\")\n\t}\n\ttxid := parts[0]\n\tif hex.DecodedLen(len(txid)) != chainhash.HashSize {\n\t\treturn nil, fmt.Errorf(\"invalid hex-encoded txid %v\", txid)\n\t}\n\toutputIndex, err := strconv.Atoi(parts[1])\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"invalid output index: %v\", err)\n\t}\n\treturn &lnrpc.OutPoint{\n\t\tTxidStr:     txid,\n\t\tOutputIndex: uint32(outputIndex),\n\t}, nil\n}\n\n// Utxo displays information about an unspent output, including its address,\n// amount, pkscript, and confirmations.",
+      "length": 577,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "type Utxo struct {",
+      "content": "type Utxo struct {\n\tType          lnrpc.AddressType `json:\"address_type\"`\n\tAddress       string            `json:\"address\"`\n\tAmountSat     int64             `json:\"amount_sat\"`\n\tPkScript      string            `json:\"pk_script\"`\n\tOutPoint      OutPoint          `json:\"outpoint\"`\n\tConfirmations int64             `json:\"confirmations\"`\n}\n\n// NewUtxoFromProto creates a display Utxo from the Utxo proto. This filters out\n// the raw txid bytes from the provided outpoint, which will otherwise be\n// printed in base64.",
+      "length": 486,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func NewUtxoFromProto(utxo *lnrpc.Utxo) *Utxo {",
+      "content": "func NewUtxoFromProto(utxo *lnrpc.Utxo) *Utxo {\n\treturn &Utxo{\n\t\tType:          utxo.AddressType,\n\t\tAddress:       utxo.Address,\n\t\tAmountSat:     utxo.AmountSat,\n\t\tPkScript:      utxo.PkScript,\n\t\tOutPoint:      NewOutPointFromProto(utxo.Outpoint),\n\t\tConfirmations: utxo.Confirmations,\n\t}\n}\n\n// FailedUpdate displays information about a failed update, including its\n// address, reason and update error.",
+      "length": 342,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type FailedUpdate struct {",
+      "content": "type FailedUpdate struct {\n\tOutPoint    OutPoint `json:\"outpoint\"`\n\tReason      string   `json:\"reason\"`\n\tUpdateError string   `json:\"update_error\"`\n}\n\n// NewFailedUpdateFromProto creates a display from the FailedUpdate\n// proto. This filters out the raw txid bytes from the provided outpoint,\n// which will otherwise be printed in base64.",
+      "length": 305,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFailedUpdateFromProto(update *lnrpc.FailedUpdate) *FailedUpdate {",
+      "content": "func NewFailedUpdateFromProto(update *lnrpc.FailedUpdate) *FailedUpdate {\n\treturn &FailedUpdate{\n\t\tOutPoint:    NewOutPointFromProto(update.Outpoint),\n\t\tReason:      update.Reason.String(),\n\t\tUpdateError: update.UpdateError,\n\t}\n}\n",
+      "length": 150,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

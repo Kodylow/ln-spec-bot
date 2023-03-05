@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/varint.go",
+  "package": "tlv",
+  "sections": [
+    {
+      "slug": "func ReadVarInt(r io.Reader, buf *[8]byte) (uint64, error) {",
+      "content": "func ReadVarInt(r io.Reader, buf *[8]byte) (uint64, error) {\n\t_, err := io.ReadFull(r, buf[:1])\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\tdiscriminant := buf[0]\n\n\tvar rv uint64\n\tswitch {\n\tcase discriminant < 0xfd:\n\t\trv = uint64(discriminant)\n\n\tcase discriminant == 0xfd:\n\t\t_, err := io.ReadFull(r, buf[:2])\n\t\tswitch {\n\t\tcase err == io.EOF:\n\t\t\treturn 0, io.ErrUnexpectedEOF\n\t\tcase err != nil:\n\t\t\treturn 0, err\n\t\t}\n\t\trv = uint64(binary.BigEndian.Uint16(buf[:2]))\n\n\t\t// The encoding is not canonical if the value could have been\n\t\t// encoded using fewer bytes.\n\t\tif rv < 0xfd {\n\t\t\treturn 0, ErrVarIntNotCanonical\n\t\t}\n\n\tcase discriminant == 0xfe:\n\t\t_, err := io.ReadFull(r, buf[:4])\n\t\tswitch {\n\t\tcase err == io.EOF:\n\t\t\treturn 0, io.ErrUnexpectedEOF\n\t\tcase err != nil:\n\t\t\treturn 0, err\n\t\t}\n\t\trv = uint64(binary.BigEndian.Uint32(buf[:4]))\n\n\t\t// The encoding is not canonical if the value could have been\n\t\t// encoded using fewer bytes.\n\t\tif rv <= 0xffff {\n\t\t\treturn 0, ErrVarIntNotCanonical\n\t\t}\n\n\tdefault:\n\t\t_, err := io.ReadFull(r, buf[:])\n\t\tswitch {\n\t\tcase err == io.EOF:\n\t\t\treturn 0, io.ErrUnexpectedEOF\n\t\tcase err != nil:\n\t\t\treturn 0, err\n\t\t}\n\t\trv = binary.BigEndian.Uint64(buf[:])\n\n\t\t// The encoding is not canonical if the value could have been\n\t\t// encoded using fewer bytes.\n\t\tif rv <= 0xffffffff {\n\t\t\treturn 0, ErrVarIntNotCanonical\n\t\t}\n\t}\n\n\treturn rv, nil\n}\n\n// WriteVarInt serializes val to w using a variable number of bytes depending\n// on its value.",
+      "length": 1327,
+      "tokens": 213,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteVarInt(w io.Writer, val uint64, buf *[8]byte) error {",
+      "content": "func WriteVarInt(w io.Writer, val uint64, buf *[8]byte) error {\n\tvar length int\n\tswitch {\n\tcase val < 0xfd:\n\t\tbuf[0] = uint8(val)\n\t\tlength = 1\n\n\tcase val <= 0xffff:\n\t\tbuf[0] = uint8(0xfd)\n\t\tbinary.BigEndian.PutUint16(buf[1:3], uint16(val))\n\t\tlength = 3\n\n\tcase val <= 0xffffffff:\n\t\tbuf[0] = uint8(0xfe)\n\t\tbinary.BigEndian.PutUint32(buf[1:5], uint32(val))\n\t\tlength = 5\n\n\tdefault:\n\t\tbuf[0] = uint8(0xff)\n\t\t_, err := w.Write(buf[:1])\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tbinary.BigEndian.PutUint64(buf[:], uint64(val))\n\t\tlength = 8\n\t}\n\n\t_, err := w.Write(buf[:length])\n\treturn err\n}\n\n// VarIntSize returns the required number of bytes to encode a var int.",
+      "length": 558,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func VarIntSize(val uint64) uint64 {",
+      "content": "func VarIntSize(val uint64) uint64 {\n\treturn uint64(wire.VarIntSerializeSize(val))\n}\n",
+      "length": 46,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

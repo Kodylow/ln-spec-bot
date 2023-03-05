@@ -1,0 +1,111 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/commit_sweep_resolver.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type commitSweepResolver struct {",
+      "content": "type commitSweepResolver struct {\n\t// commitResolution contains all data required to successfully sweep\n\t// this HTLC on-chain.\n\tcommitResolution lnwallet.CommitOutputResolution\n\n\t// resolved reflects if the contract has been fully resolved or not.\n\tresolved bool\n\n\t// broadcastHeight is the height that the original contract was\n\t// broadcast to the main-chain at. We'll use this value to bound any\n\t// historical queries to the chain for spends/confirmations.\n\tbroadcastHeight uint32\n\n\t// chanPoint is the channel point of the original contract.\n\tchanPoint wire.OutPoint\n\n\t// channelInitiator denotes whether the party responsible for resolving\n\t// the contract initiated the channel.\n\tchannelInitiator bool\n\n\t// leaseExpiry denotes the additional waiting period the contract must\n\t// hold until it can be resolved. This waiting period is known as the\n\t// expiration of a script-enforced leased channel and only applies to\n\t// the channel initiator.\n\t//\n\t// NOTE: This value should only be set when the contract belongs to a\n\t// leased channel.\n\tleaseExpiry uint32\n\n\t// currentReport stores the current state of the resolver for reporting\n\t// over the rpc interface.\n\tcurrentReport ContractReport\n\n\t// reportLock prevents concurrent access to the resolver report.\n\treportLock sync.Mutex\n\n\tcontractResolverKit\n}\n\n// newCommitSweepResolver instantiates a new direct commit output resolver.",
+      "length": 1317,
+      "tokens": 190,
+      "embedding": []
+    },
+    {
+      "slug": "func newCommitSweepResolver(res lnwallet.CommitOutputResolution,",
+      "content": "func newCommitSweepResolver(res lnwallet.CommitOutputResolution,\n\tbroadcastHeight uint32, chanPoint wire.OutPoint,\n\tresCfg ResolverConfig) *commitSweepResolver {\n\n\tr := &commitSweepResolver{\n\t\tcontractResolverKit: *newContractResolverKit(resCfg),\n\t\tcommitResolution:    res,\n\t\tbroadcastHeight:     broadcastHeight,\n\t\tchanPoint:           chanPoint,\n\t}\n\n\tr.initLogger(r)\n\tr.initReport()\n\n\treturn r\n}\n\n// ResolverKey returns an identifier which should be globally unique for this\n// particular resolver within the chain the original contract resides within.",
+      "length": 473,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) ResolverKey() []byte {",
+      "content": "func (c *commitSweepResolver) ResolverKey() []byte {\n\tkey := newResolverID(c.commitResolution.SelfOutPoint)\n\treturn key[:]\n}\n\n// waitForHeight registers for block notifications and waits for the provided\n// block height to be reached.",
+      "length": 176,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func waitForHeight(waitHeight uint32, notifier chainntnfs.ChainNotifier,",
+      "content": "func waitForHeight(waitHeight uint32, notifier chainntnfs.ChainNotifier,\n\tquit <-chan struct{}) error {\n\n\t// Register for block epochs. After registration, the current height\n\t// will be sent on the channel immediately.\n\tblockEpochs, err := notifier.RegisterBlockEpochNtfn(nil)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer blockEpochs.Cancel()\n\n\tfor {\n\t\tselect {\n\t\tcase newBlock, ok := <-blockEpochs.Epochs:\n\t\t\tif !ok {\n\t\t\t\treturn errResolverShuttingDown\n\t\t\t}\n\t\t\theight := newBlock.Height\n\t\t\tif height >= int32(waitHeight) {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\tcase <-quit:\n\t\t\treturn errResolverShuttingDown\n\t\t}\n\t}\n}\n\n// waitForSpend waits for the given outpoint to be spent, and returns the\n// details of the spending tx.",
+      "length": 603,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func waitForSpend(op *wire.OutPoint, pkScript []byte, heightHint uint32,",
+      "content": "func waitForSpend(op *wire.OutPoint, pkScript []byte, heightHint uint32,\n\tnotifier chainntnfs.ChainNotifier, quit <-chan struct{}) (\n\t*chainntnfs.SpendDetail, error) {\n\n\tspendNtfn, err := notifier.RegisterSpendNtfn(\n\t\top, pkScript, heightHint,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tselect {\n\tcase spendDetail, ok := <-spendNtfn.Spend:\n\t\tif !ok {\n\t\t\treturn nil, errResolverShuttingDown\n\t\t}\n\n\t\treturn spendDetail, nil\n\n\tcase <-quit:\n\t\treturn nil, errResolverShuttingDown\n\t}\n}\n\n// getCommitTxConfHeight waits for confirmation of the commitment tx and returns\n// the confirmation height.",
+      "length": 491,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error) {",
+      "content": "func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error) {\n\ttxID := c.commitResolution.SelfOutPoint.Hash\n\tsignDesc := c.commitResolution.SelfOutputSignDesc\n\tpkScript := signDesc.Output.PkScript\n\tconst confDepth = 1\n\tconfChan, err := c.Notifier.RegisterConfirmationsNtfn(\n\t\t&txID, pkScript, confDepth, c.broadcastHeight,\n\t)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\tdefer confChan.Cancel()\n\n\tselect {\n\tcase txConfirmation, ok := <-confChan.Confirmed:\n\t\tif !ok {\n\t\t\treturn 0, fmt.Errorf(\"cannot get confirmation \"+\n\t\t\t\t\"for commit tx %v\", txID)\n\t\t}\n\n\t\treturn txConfirmation.BlockHeight, nil\n\n\tcase <-c.quit:\n\t\treturn 0, errResolverShuttingDown\n\t}\n}\n\n// Resolve instructs the contract resolver to resolve the output on-chain. Once\n// the output has been *fully* resolved, the function should return immediately\n// with a nil ContractResolver value for the first return value.  In the case\n// that the contract requires further resolution, then another resolve is\n// returned.\n//\n// NOTE: This function MUST be run as a goroutine.",
+      "length": 930,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) Resolve() (ContractResolver, error) {",
+      "content": "func (c *commitSweepResolver) Resolve() (ContractResolver, error) {\n\t// If we're already resolved, then we can exit early.\n\tif c.resolved {\n\t\treturn nil, nil\n\t}\n\n\tconfHeight, err := c.getCommitTxConfHeight()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Wait up until the CSV expires, unless we also have a CLTV that\n\t// expires after.\n\tunlockHeight := confHeight + c.commitResolution.MaturityDelay\n\tif c.hasCLTV() {\n\t\tunlockHeight = uint32(math.Max(\n\t\t\tfloat64(unlockHeight), float64(c.leaseExpiry),\n\t\t))\n\t}\n\n\tc.log.Debugf(\"commit conf_height=%v, unlock_height=%v\",\n\t\tconfHeight, unlockHeight)\n\n\t// Update report now that we learned the confirmation height.\n\tc.reportLock.Lock()\n\tc.currentReport.MaturityHeight = unlockHeight\n\tc.reportLock.Unlock()\n\n\t// If there is a csv/cltv lock, we'll wait for that.\n\tif c.commitResolution.MaturityDelay > 0 || c.hasCLTV() {\n\t\t// Determine what height we should wait until for the locks to\n\t\t// expire.\n\t\tvar waitHeight uint32\n\t\tswitch {\n\t\t// If we have both a csv and cltv lock, we'll need to look at\n\t\t// both and see which expires later.\n\t\tcase c.commitResolution.MaturityDelay > 0 && c.hasCLTV():\n\t\t\tc.log.Debugf(\"waiting for CSV and CLTV lock to expire \"+\n\t\t\t\t\"at height %v\", unlockHeight)\n\t\t\t// If the CSV expires after the CLTV, or there is no\n\t\t\t// CLTV, then we can broadcast a sweep a block before.\n\t\t\t// Otherwise, we need to broadcast at our expected\n\t\t\t// unlock height.\n\t\t\twaitHeight = uint32(math.Max(\n\t\t\t\tfloat64(unlockHeight-1), float64(c.leaseExpiry),\n\t\t\t))\n\n\t\t// If we only have a csv lock, wait for the height before the\n\t\t// lock expires as the spend path should be unlocked by then.\n\t\tcase c.commitResolution.MaturityDelay > 0:\n\t\t\tc.log.Debugf(\"waiting for CSV lock to expire at \"+\n\t\t\t\t\"height %v\", unlockHeight)\n\t\t\twaitHeight = unlockHeight - 1\n\t\t}\n\n\t\terr := waitForHeight(waitHeight, c.Notifier, c.quit)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// The output is on our local commitment if the script starts with\n\t// OP_IF for the revocation clause. On the remote commitment it will\n\t// either be a regular P2WKH or a simple sig spend with a CSV delay.\n\tisLocalCommitTx := c.commitResolution.SelfOutputSignDesc.WitnessScript[0] == txscript.OP_IF\n\tisDelayedOutput := c.commitResolution.MaturityDelay != 0\n\n\tc.log.Debugf(\"isDelayedOutput=%v, isLocalCommitTx=%v\", isDelayedOutput,\n\t\tisLocalCommitTx)\n\n\t// There're three types of commitments, those that have tweaks\n\t// for the remote key (us in this case), those that don't, and a third\n\t// where there is no tweak and the output is delayed. On the local\n\t// commitment our output will always be delayed. We'll rely on the\n\t// presence of the commitment tweak to to discern which type of\n\t// commitment this is.\n\tvar witnessType input.WitnessType\n\tswitch {\n\t// Delayed output to us on our local commitment for a channel lease in\n\t// which we are the initiator.\n\tcase isLocalCommitTx && c.hasCLTV():\n\t\twitnessType = input.LeaseCommitmentTimeLock\n\n\t// Delayed output to us on our local commitment.\n\tcase isLocalCommitTx:\n\t\twitnessType = input.CommitmentTimeLock\n\n\t// A confirmed output to us on the remote commitment for a channel lease\n\t// in which we are the initiator.\n\tcase isDelayedOutput && c.hasCLTV():\n\t\twitnessType = input.LeaseCommitmentToRemoteConfirmed\n\n\t// A confirmed output to us on the remote commitment.\n\tcase isDelayedOutput:\n\t\twitnessType = input.CommitmentToRemoteConfirmed\n\n\t// A non-delayed output on the remote commitment where the key is\n\t// tweakless.\n\tcase c.commitResolution.SelfOutputSignDesc.SingleTweak == nil:\n\t\twitnessType = input.CommitSpendNoDelayTweakless\n\n\t// A non-delayed output on the remote commitment where the key is\n\t// tweaked.\n\tdefault:\n\t\twitnessType = input.CommitmentNoDelay\n\t}\n\n\tc.log.Infof(\"Sweeping with witness type: %v\", witnessType)\n\n\t// We'll craft an input with all the information required for\n\t// the sweeper to create a fully valid sweeping transaction to\n\t// recover these coins.\n\tvar inp *input.BaseInput\n\tif c.hasCLTV() {\n\t\tinp = input.NewCsvInputWithCltv(\n\t\t\t&c.commitResolution.SelfOutPoint, witnessType,\n\t\t\t&c.commitResolution.SelfOutputSignDesc,\n\t\t\tc.broadcastHeight, c.commitResolution.MaturityDelay,\n\t\t\tc.leaseExpiry,\n\t\t)\n\t} else {\n\t\tinp = input.NewCsvInput(\n\t\t\t&c.commitResolution.SelfOutPoint, witnessType,\n\t\t\t&c.commitResolution.SelfOutputSignDesc,\n\t\t\tc.broadcastHeight, c.commitResolution.MaturityDelay,\n\t\t)\n\t}\n\n\t// With our input constructed, we'll now offer it to the\n\t// sweeper.\n\tc.log.Infof(\"sweeping commit output\")\n\n\tfeePref := sweep.FeePreference{ConfTarget: commitOutputConfTarget}\n\tresultChan, err := c.Sweeper.SweepInput(inp, sweep.Params{Fee: feePref})\n\tif err != nil {\n\t\tc.log.Errorf(\"unable to sweep input: %v\", err)\n\n\t\treturn nil, err\n\t}\n\n\tvar sweepTxID chainhash.Hash\n\n\t// Sweeper is going to join this input with other inputs if\n\t// possible and publish the sweep tx. When the sweep tx\n\t// confirms, it signals us through the result channel with the\n\t// outcome. Wait for this to happen.\n\toutcome := channeldb.ResolverOutcomeClaimed\n\tselect {\n\tcase sweepResult := <-resultChan:\n\t\tswitch sweepResult.Err {\n\t\tcase sweep.ErrRemoteSpend:\n\t\t\t// If the remote party was able to sweep this output\n\t\t\t// it's likely what we sent was actually a revoked\n\t\t\t// commitment. Report the error and continue to wrap up\n\t\t\t// the contract.\n\t\t\tc.log.Warnf(\"local commitment output was swept by \"+\n\t\t\t\t\"remote party via %v\", sweepResult.Tx.TxHash())\n\t\t\toutcome = channeldb.ResolverOutcomeUnclaimed\n\t\tcase nil:\n\t\t\t// No errors, therefore continue processing.\n\t\t\tc.log.Infof(\"local commitment output fully resolved by \"+\n\t\t\t\t\"sweep tx: %v\", sweepResult.Tx.TxHash())\n\t\tdefault:\n\t\t\t// Unknown errors.\n\t\t\tc.log.Errorf(\"unable to sweep input: %v\",\n\t\t\t\tsweepResult.Err)\n\n\t\t\treturn nil, sweepResult.Err\n\t\t}\n\n\t\tsweepTxID = sweepResult.Tx.TxHash()\n\n\tcase <-c.quit:\n\t\treturn nil, errResolverShuttingDown\n\t}\n\n\t// Funds have been swept and balance is no longer in limbo.\n\tc.reportLock.Lock()\n\tif outcome == channeldb.ResolverOutcomeClaimed {\n\t\t// We only record the balance as recovered if it actually came\n\t\t// back to us.\n\t\tc.currentReport.RecoveredBalance = c.currentReport.LimboBalance\n\t}\n\tc.currentReport.LimboBalance = 0\n\tc.reportLock.Unlock()\n\treport := c.currentReport.resolverReport(\n\t\t&sweepTxID, channeldb.ResolverTypeCommit, outcome,\n\t)\n\tc.resolved = true\n\n\t// Checkpoint the resolver with a closure that will write the outcome\n\t// of the resolver and its sweep transaction to disk.\n\treturn nil, c.Checkpoint(c, report)\n}\n\n// Stop signals the resolver to cancel any current resolution processes, and\n// suspend.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 6374,
+      "tokens": 865,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) Stop() {",
+      "content": "func (c *commitSweepResolver) Stop() {\n\tclose(c.quit)\n}\n\n// IsResolved returns true if the stored state in the resolve is fully\n// resolved. In this case the target output can be forgotten.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 196,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) IsResolved() bool {",
+      "content": "func (c *commitSweepResolver) IsResolved() bool {\n\treturn c.resolved\n}\n\n// SupplementState allows the user of a ContractResolver to supplement it with\n// state required for the proper resolution of a contract.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 205,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) SupplementState(state *channeldb.OpenChannel) {",
+      "content": "func (c *commitSweepResolver) SupplementState(state *channeldb.OpenChannel) {\n\tif state.ChanType.HasLeaseExpiration() {\n\t\tc.leaseExpiry = state.ThawHeight\n\t}\n\tc.channelInitiator = state.IsInitiator\n}\n\n// hasCLTV denotes whether the resolver must wait for an additional CLTV to\n// expire before resolving the contract.",
+      "length": 232,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) hasCLTV() bool {",
+      "content": "func (c *commitSweepResolver) hasCLTV() bool {\n\treturn c.channelInitiator && c.leaseExpiry > 0\n}\n\n// Encode writes an encoded version of the ContractResolver into the passed\n// Writer.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 183,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) Encode(w io.Writer) error {",
+      "content": "func (c *commitSweepResolver) Encode(w io.Writer) error {\n\tif err := encodeCommitResolution(w, &c.commitResolution); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Write(w, endian, c.resolved); err != nil {\n\t\treturn err\n\t}\n\tif err := binary.Write(w, endian, c.broadcastHeight); err != nil {\n\t\treturn err\n\t}\n\tif _, err := w.Write(c.chanPoint.Hash[:]); err != nil {\n\t\treturn err\n\t}\n\terr := binary.Write(w, endian, c.chanPoint.Index)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Previously a sweep tx was serialized at this point. Refactoring\n\t// removed this, but keep in mind that this data may still be present in\n\t// the database.\n\n\treturn nil\n}\n\n// newCommitSweepResolverFromReader attempts to decode an encoded\n// ContractResolver from the passed Reader instance, returning an active\n// ContractResolver instance.",
+      "length": 725,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func newCommitSweepResolverFromReader(r io.Reader, resCfg ResolverConfig) (",
+      "content": "func newCommitSweepResolverFromReader(r io.Reader, resCfg ResolverConfig) (\n\t*commitSweepResolver, error) {\n\n\tc := &commitSweepResolver{\n\t\tcontractResolverKit: *newContractResolverKit(resCfg),\n\t}\n\n\tif err := decodeCommitResolution(r, &c.commitResolution); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := binary.Read(r, endian, &c.resolved); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := binary.Read(r, endian, &c.broadcastHeight); err != nil {\n\t\treturn nil, err\n\t}\n\t_, err := io.ReadFull(r, c.chanPoint.Hash[:])\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\terr = binary.Read(r, endian, &c.chanPoint.Index)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Previously a sweep tx was deserialized at this point. Refactoring\n\t// removed this, but keep in mind that this data may still be present in\n\t// the database.\n\n\tc.initLogger(c)\n\tc.initReport()\n\n\treturn c, nil\n}\n\n// report returns a report on the resolution state of the contract.",
+      "length": 807,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) report() *ContractReport {",
+      "content": "func (c *commitSweepResolver) report() *ContractReport {\n\tc.reportLock.Lock()\n\tdefer c.reportLock.Unlock()\n\n\tcpy := c.currentReport\n\treturn &cpy\n}\n\n// initReport initializes the pending channels report for this resolver.",
+      "length": 156,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitSweepResolver) initReport() {",
+      "content": "func (c *commitSweepResolver) initReport() {\n\tamt := btcutil.Amount(\n\t\tc.commitResolution.SelfOutputSignDesc.Output.Value,\n\t)\n\n\t// Set the initial report. All fields are filled in, except for the\n\t// maturity height which remains 0 until Resolve() is executed.\n\t//\n\t// TODO(joostjager): Resolvers only activate after the commit tx\n\t// confirms. With more refactoring in channel arbitrator, it would be\n\t// possible to make the confirmation height part of ResolverConfig and\n\t// populate MaturityHeight here.\n\tc.currentReport = ContractReport{\n\t\tOutpoint:         c.commitResolution.SelfOutPoint,\n\t\tType:             ReportOutputUnencumbered,\n\t\tAmount:           amt,\n\t\tLimboBalance:     amt,\n\t\tRecoveredBalance: 0,\n\t}\n}\n\n// A compile time assertion to ensure commitSweepResolver meets the\n// ContractResolver interface.\nvar _ reportingContractResolver = (*commitSweepResolver)(nil)\n",
+      "length": 814,
+      "tokens": 97,
+      "embedding": []
+    }
+  ]
+}

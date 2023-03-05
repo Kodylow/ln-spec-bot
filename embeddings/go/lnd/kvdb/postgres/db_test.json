@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/postgres/db_test.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "func TestInterface(t *testing.T) {",
+      "content": "func TestInterface(t *testing.T) {\n\tstop, err := StartEmbeddedPostgres()\n\trequire.NoError(t, err)\n\tdefer stop()\n\n\tf, err := NewFixture(\"\")\n\trequire.NoError(t, err)\n\n\t// dbType is the database type name for this driver.\n\tconst dbType = \"postgres\"\n\n\tctx := context.Background()\n\tcfg := &Config{\n\t\tDsn: f.Dsn,\n\t}\n\n\twalletdbtest.TestInterface(t, dbType, ctx, cfg, prefix)\n}\n\n// TestPanic tests recovery from panic conditions.",
+      "length": 368,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPanic(t *testing.T) {",
+      "content": "func TestPanic(t *testing.T) {\n\tstop, err := StartEmbeddedPostgres()\n\trequire.NoError(t, err)\n\tdefer stop()\n\n\tf, err := NewFixture(\"\")\n\trequire.NoError(t, err)\n\n\terr = f.Db.Update(func(tx walletdb.ReadWriteTx) error {\n\t\tbucket, err := tx.CreateTopLevelBucket([]byte(\"test\"))\n\t\trequire.NoError(t, err)\n\n\t\t// Stop database server.\n\t\tstop()\n\n\t\t// Keep trying to get data until Get panics because the\n\t\t// connection is lost.\n\t\tfor i := 0; i < 50; i++ {\n\t\t\tbucket.Get([]byte(\"key\"))\n\t\t\ttime.Sleep(100 * time.Millisecond)\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n\n\trequire.Contains(t, err.Error(), \"terminating connection\")\n}\n",
+      "length": 556,
+      "tokens": 70,
+      "embedding": []
+    }
+  ]
+}

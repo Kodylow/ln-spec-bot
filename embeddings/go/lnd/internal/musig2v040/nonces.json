@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/internal/musig2v040/nonces.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "type Nonces struct {",
+      "content": "type Nonces struct {\n\t// PubNonce holds the two 33-byte compressed encoded points that serve\n\t// as the public set of nonces.\n\tPubNonce [PubNonceSize]byte\n\n\t// SecNonce holds the two 32-byte scalar values that are the private\n\t// keys to the two public nonces.\n\tSecNonce [SecNonceSize]byte\n}\n\n// secNonceToPubNonce takes our two secrete nonces, and produces their two\n// corresponding EC points, serialized in compressed format.",
+      "length": 397,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func secNonceToPubNonce(secNonce [SecNonceSize]byte) [PubNonceSize]byte {",
+      "content": "func secNonceToPubNonce(secNonce [SecNonceSize]byte) [PubNonceSize]byte {\n\tvar k1Mod, k2Mod btcec.ModNScalar\n\tk1Mod.SetByteSlice(secNonce[:btcec.PrivKeyBytesLen])\n\tk2Mod.SetByteSlice(secNonce[btcec.PrivKeyBytesLen:])\n\n\tvar r1, r2 btcec.JacobianPoint\n\tbtcec.ScalarBaseMultNonConst(&k1Mod, &r1)\n\tbtcec.ScalarBaseMultNonConst(&k2Mod, &r2)\n\n\t// Next, we'll convert the key in jacobian format to a normal public\n\t// key expressed in affine coordinates.\n\tr1.ToAffine()\n\tr2.ToAffine()\n\tr1Pub := btcec.NewPublicKey(&r1.X, &r1.Y)\n\tr2Pub := btcec.NewPublicKey(&r2.X, &r2.Y)\n\n\tvar pubNonce [PubNonceSize]byte\n\n\t// The public nonces are serialized as: R1 || R2, where both keys are\n\t// serialized in compressed format.\n\tcopy(pubNonce[:], r1Pub.SerializeCompressed())\n\tcopy(\n\t\tpubNonce[btcec.PubKeyBytesLenCompressed:],\n\t\tr2Pub.SerializeCompressed(),\n\t)\n\n\treturn pubNonce\n}\n\n// NonceGenOption is a function option that allows callers to modify how nonce\n// generation happens.",
+      "length": 860,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "type NonceGenOption func(*nonceGenOpts)",
+      "content": "type NonceGenOption func(*nonceGenOpts)\n\n// nonceGenOpts is the set of options that control how nonce generation\n// happens.",
+      "length": 82,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type nonceGenOpts struct {",
+      "content": "type nonceGenOpts struct {\n\t// randReader is what we'll use to generate a set of random bytes. If\n\t// unspecified, then the normal crypto/rand rand.Read method will be\n\t// used in place.\n\trandReader io.Reader\n\n\t// secretKey is an optional argument that's used to further augment the\n\t// generated nonce by xor'ing it with this secret key.\n\tsecretKey []byte\n\n\t// combinedKey is an optional argument that if specified, will be\n\t// combined along with the nonce generation.\n\tcombinedKey []byte\n\n\t// msg is an optional argument that will be mixed into the nonce\n\t// derivation algorithm.\n\tmsg []byte\n\n\t// auxInput is an optional argument that will be mixed into the nonce\n\t// derivation algorithm.\n\tauxInput []byte\n}\n\n// cryptoRandAdapter is an adapter struct that allows us to pass in the package\n// level Read function from crypto/rand into a context that accepts an\n// io.Reader.",
+      "length": 827,
+      "tokens": 139,
+      "embedding": []
+    },
+    {
+      "slug": "type cryptoRandAdapter struct {",
+      "content": "type cryptoRandAdapter struct {\n}\n\n// Read implements the io.Reader interface for the crypto/rand package.  By\n// default, we always use the crypto/rand reader, but the caller is able to\n// specify their own generation, which can be useful for deterministic tests.",
+      "length": 228,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *cryptoRandAdapter) Read(p []byte) (n int, err error) {",
+      "content": "func (c *cryptoRandAdapter) Read(p []byte) (n int, err error) {\n\treturn rand.Read(p)\n}\n\n// defaultNonceGenOpts returns the default set of nonce generation options.",
+      "length": 96,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultNonceGenOpts() *nonceGenOpts {",
+      "content": "func defaultNonceGenOpts() *nonceGenOpts {\n\treturn &nonceGenOpts{\n\t\trandReader: &cryptoRandAdapter{},\n\t}\n}\n\n// WithCustomRand allows a caller to use a custom random number generator in\n// place for crypto/rand. This should only really be used to generate\n// determinstic tests.",
+      "length": 227,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func WithCustomRand(r io.Reader) NonceGenOption {",
+      "content": "func WithCustomRand(r io.Reader) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.randReader = r\n\t}\n}\n\n// WithNonceSecretKeyAux allows a caller to optionally specify a secret key\n// that should be used to augment the randomness used to generate the nonces.",
+      "length": 204,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func WithNonceSecretKeyAux(secKey *btcec.PrivateKey) NonceGenOption {",
+      "content": "func WithNonceSecretKeyAux(secKey *btcec.PrivateKey) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.secretKey = secKey.Serialize()\n\t}\n}\n\n// WithNonceCombinedKeyAux allows a caller to optionally specify the combined\n// key used in this signing session to further augment the randomness used to\n// generate nonces.",
+      "length": 241,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func WithNonceCombinedKeyAux(combinedKey *btcec.PublicKey) NonceGenOption {",
+      "content": "func WithNonceCombinedKeyAux(combinedKey *btcec.PublicKey) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.combinedKey = schnorr.SerializePubKey(combinedKey)\n\t}\n}\n\n// WithNonceMessageAux allows a caller to optionally specify a message to be\n// mixed into the randomness generated to create the nonce.",
+      "length": 223,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func WithNonceMessageAux(msg [32]byte) NonceGenOption {",
+      "content": "func WithNonceMessageAux(msg [32]byte) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.msg = msg[:]\n\t}\n}\n\n// WithNonceAuxInput is a set of auxiliary randomness, similar to BIP 340 that\n// can be used to further augment the nonce generation process.",
+      "length": 191,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func WithNonceAuxInput(aux []byte) NonceGenOption {",
+      "content": "func WithNonceAuxInput(aux []byte) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.auxInput = aux\n\t}\n}\n\n// withCustomOptions allows a caller to pass a complete set of custom\n// nonceGenOpts, without needing to create custom and checked structs such as\n// *btcec.PrivateKey. This is mainly used to match the testcases provided by\n// the MuSig2 BIP.",
+      "length": 292,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func withCustomOptions(customOpts nonceGenOpts) NonceGenOption {",
+      "content": "func withCustomOptions(customOpts nonceGenOpts) NonceGenOption {\n\treturn func(o *nonceGenOpts) {\n\t\to.randReader = customOpts.randReader\n\t\to.secretKey = customOpts.secretKey\n\t\to.combinedKey = customOpts.combinedKey\n\t\to.msg = customOpts.msg\n\t\to.auxInput = customOpts.auxInput\n\t}\n}\n\n// lengthWriter is a function closure that allows a caller to control how the\n// length prefix of a byte slice is written.",
+      "length": 327,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "type lengthWriter func(w io.Writer, b []byte) error",
+      "content": "type lengthWriter func(w io.Writer, b []byte) error\n\n// uint8Writer is an implementation of lengthWriter that writes the length of\n// the byte slice using 1 byte.",
+      "length": 108,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func uint8Writer(w io.Writer, b []byte) error {",
+      "content": "func uint8Writer(w io.Writer, b []byte) error {\n\treturn binary.Write(w, byteOrder, uint8(len(b)))\n}\n\n// uint32Writer is an implementation of lengthWriter that writes the length of\n// the byte slice using 4 bytes.",
+      "length": 160,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func uint32Writer(w io.Writer, b []byte) error {",
+      "content": "func uint32Writer(w io.Writer, b []byte) error {\n\treturn binary.Write(w, byteOrder, uint32(len(b)))\n}\n\n// writeBytesPrefix is used to write out: len(b) || b, to the passed io.Writer.\n// The lengthWriter function closure is used to allow the caller to specify the\n// precise byte packing of the length.",
+      "length": 247,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func writeBytesPrefix(w io.Writer, b []byte, lenWriter lengthWriter) error {",
+      "content": "func writeBytesPrefix(w io.Writer, b []byte, lenWriter lengthWriter) error {\n\t// Write out the length of the byte first, followed by the set of bytes\n\t// itself.\n\tif err := lenWriter(w, b); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := w.Write(b); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// genNonceAuxBytes writes out the full byte string used to derive a secret\n// nonce based on some initial randomness as well as the series of optional\n// fields. The byte string used for derivation is:\n//   - tagged_hash(\"MuSig/nonce\", rand || len(aggpk) || aggpk || len(m)\n//     || m || len(in) || in || i).\n//\n// where i is the ith secret nonce being generated.",
+      "length": 560,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func genNonceAuxBytes(rand []byte, i int,",
+      "content": "func genNonceAuxBytes(rand []byte, i int,\n\topts *nonceGenOpts) (*chainhash.Hash, error) {\n\n\tvar w bytes.Buffer\n\n\t// First, write out the randomness generated in the prior step.\n\tif _, err := w.Write(rand); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Next, we'll write out: len(aggpk) || aggpk.\n\terr := writeBytesPrefix(&w, opts.combinedKey, uint8Writer)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Next, we'll write out the length prefixed message.\n\terr = writeBytesPrefix(&w, opts.msg, uint8Writer)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally we'll write out the auxiliary input.\n\terr = writeBytesPrefix(&w, opts.auxInput, uint32Writer)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Next we'll write out the interaction/index number which will\n\t// uniquely generate two nonces given the rest of the possibly static\n\t// parameters.\n\tif err := binary.Write(&w, byteOrder, uint8(i)); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// With the message buffer complete, we'll now derive the tagged hash\n\t// using our set of params.\n\treturn chainhash.TaggedHash(NonceGenTag, w.Bytes()), nil\n}\n\n// GenNonces generates the secret nonces, as well as the public nonces which\n// correspond to an EC point generated using the secret nonce as a private key.",
+      "length": 1150,
+      "tokens": 188,
+      "embedding": []
+    },
+    {
+      "slug": "func GenNonces(options ...NonceGenOption) (*Nonces, error) {",
+      "content": "func GenNonces(options ...NonceGenOption) (*Nonces, error) {\n\topts := defaultNonceGenOpts()\n\tfor _, opt := range options {\n\t\topt(opts)\n\t}\n\n\t// First, we'll start out by generating 32 random bytes drawn from our\n\t// CSPRNG.\n\tvar randBytes [32]byte\n\tif _, err := opts.randReader.Read(randBytes[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If the options contain a secret key, we XOR it with with the tagged\n\t// random bytes.\n\tif len(opts.secretKey) == 32 {\n\t\ttaggedHash := chainhash.TaggedHash(NonceAuxTag, randBytes[:])\n\n\t\tfor i := 0; i < chainhash.HashSize; i++ {\n\t\t\trandBytes[i] = opts.secretKey[i] ^ taggedHash[i]\n\t\t}\n\t}\n\n\t// Using our randomness and the set of optional params, generate our\n\t// two secret nonces: k1 and k2.\n\tk1, err := genNonceAuxBytes(randBytes[:], 0, opts)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tk2, err := genNonceAuxBytes(randBytes[:], 1, opts)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar k1Mod, k2Mod btcec.ModNScalar\n\tk1Mod.SetBytes((*[32]byte)(k1))\n\tk2Mod.SetBytes((*[32]byte)(k2))\n\n\t// The secret nonces are serialized as the concatenation of the two 32\n\t// byte secret nonce values.\n\tvar nonces Nonces\n\tk1Mod.PutBytesUnchecked(nonces.SecNonce[:])\n\tk2Mod.PutBytesUnchecked(nonces.SecNonce[btcec.PrivKeyBytesLen:])\n\n\t// Next, we'll generate R_1 = k_1*G and R_2 = k_2*G. Along the way we\n\t// need to map our nonce values into mod n scalars so we can work with\n\t// the btcec API.\n\tnonces.PubNonce = secNonceToPubNonce(nonces.SecNonce)\n\n\treturn &nonces, nil\n}\n\n// AggregateNonces aggregates the set of a pair of public nonces for each party\n// into a single aggregated nonces to be used for multi-signing.",
+      "length": 1516,
+      "tokens": 231,
+      "embedding": []
+    },
+    {
+      "slug": "func AggregateNonces(pubNonces [][PubNonceSize]byte) ([PubNonceSize]byte, error) {",
+      "content": "func AggregateNonces(pubNonces [][PubNonceSize]byte) ([PubNonceSize]byte, error) {\n\t// combineNonces is a helper function that aggregates (adds) up a\n\t// series of nonces encoded in compressed format. It uses a slicing\n\t// function to extra 33 bytes at a time from the packed 2x public\n\t// nonces.\n\ttype nonceSlicer func([PubNonceSize]byte) []byte\n\tcombineNonces := func(slicer nonceSlicer) (btcec.JacobianPoint, error) {\n\t\t// Convert the set of nonces into jacobian coordinates we can\n\t\t// use to accumulate them all into each other.\n\t\tpubNonceJs := make([]*btcec.JacobianPoint, len(pubNonces))\n\t\tfor i, pubNonceBytes := range pubNonces {\n\t\t\t// Using the slicer, extract just the bytes we need to\n\t\t\t// decode.\n\t\t\tvar nonceJ btcec.JacobianPoint\n\n\t\t\tnonceJ, err := btcec.ParseJacobian(slicer(pubNonceBytes))\n\t\t\tif err != nil {\n\t\t\t\treturn btcec.JacobianPoint{}, err\n\t\t\t}\n\n\t\t\tpubNonceJs[i] = &nonceJ\n\t\t}\n\n\t\t// Now that we have the set of complete nonces, we'll aggregate\n\t\t// them: R = R_i + R_i+1 + ... + R_i+n.\n\t\tvar aggregateNonce btcec.JacobianPoint\n\t\tfor _, pubNonceJ := range pubNonceJs {\n\t\t\tbtcec.AddNonConst(\n\t\t\t\t&aggregateNonce, pubNonceJ, &aggregateNonce,\n\t\t\t)\n\t\t}\n\n\t\taggregateNonce.ToAffine()\n\t\treturn aggregateNonce, nil\n\t}\n\n\t// The final nonce public nonce is actually two nonces, one that\n\t// aggregate the first nonce of all the parties, and the other that\n\t// aggregates the second nonce of all the parties.\n\tvar finalNonce [PubNonceSize]byte\n\tcombinedNonce1, err := combineNonces(func(n [PubNonceSize]byte) []byte {\n\t\treturn n[:btcec.PubKeyBytesLenCompressed]\n\t})\n\tif err != nil {\n\t\treturn finalNonce, err\n\t}\n\n\tcombinedNonce2, err := combineNonces(func(n [PubNonceSize]byte) []byte {\n\t\treturn n[btcec.PubKeyBytesLenCompressed:]\n\t})\n\tif err != nil {\n\t\treturn finalNonce, err\n\t}\n\n\tcopy(finalNonce[:], btcec.JacobianToByteSlice(combinedNonce1))\n\tcopy(\n\t\tfinalNonce[btcec.PubKeyBytesLenCompressed:],\n\t\tbtcec.JacobianToByteSlice(combinedNonce2),\n\t)\n\n\treturn finalNonce, nil\n}\n",
+      "length": 1842,
+      "tokens": 243,
+      "embedding": []
+    }
+  ]
+}

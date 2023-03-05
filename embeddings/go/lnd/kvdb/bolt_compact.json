@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/bolt_compact.go",
+  "package": "The",
+  "sections": [
+    {
+      "slug": "type compacter struct {",
+      "content": "type compacter struct {\n\tsrcPath   string\n\tdstPath   string\n\ttxMaxSize int64\n\n\t// dbTimeout specifies the timeout value used when opening the db.\n\tdbTimeout time.Duration\n}\n\n// execute opens the source and destination databases and then compacts the\n// source into destination and returns the size of both files as a result.",
+      "length": 291,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (cmd *compacter) execute() (int64, int64, error) {",
+      "content": "func (cmd *compacter) execute() (int64, int64, error) {\n\tif cmd.txMaxSize == 0 {\n\t\tcmd.txMaxSize = defaultTxMaxSize\n\t}\n\n\t// Ensure source file exists.\n\tfi, err := os.Stat(cmd.srcPath)\n\tif err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error determining source database \"+\n\t\t\t\"size: %v\", err)\n\t}\n\tinitialSize := fi.Size()\n\tmarginSize := float64(initialSize) * defaultResultFileSizeMultiplier\n\n\t// Before opening any of the databases, let's first make sure we have\n\t// enough free space on the destination file system to create a full\n\t// copy of the source DB (worst-case scenario if the compaction doesn't\n\t// actually shrink the file size).\n\tdestFolder := path.Dir(cmd.dstPath)\n\tfreeSpace, err := healthcheck.AvailableDiskSpace(destFolder)\n\tif err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error determining free disk space on \"+\n\t\t\t\"%s: %v\", destFolder, err)\n\t}\n\tlog.Debugf(\"Free disk space on compaction destination file system: \"+\n\t\t\"%d bytes\", freeSpace)\n\tif freeSpace < uint64(marginSize) {\n\t\treturn 0, 0, fmt.Errorf(\"could not start compaction, \"+\n\t\t\t\"destination folder %s only has %d bytes of free disk \"+\n\t\t\t\"space available while we need at least %d for worst-\"+\n\t\t\t\"case compaction\", destFolder, freeSpace, uint64(marginSize))\n\t}\n\n\t// Open source database. We open it in read only mode to avoid (and fix)\n\t// possible freelist sync problems.\n\tsrc, err := bbolt.Open(cmd.srcPath, 0444, &bbolt.Options{\n\t\tReadOnly: true,\n\t\tTimeout:  cmd.dbTimeout,\n\t})\n\tif err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error opening source database: %v\",\n\t\t\terr)\n\t}\n\tdefer func() {\n\t\tif err := src.Close(); err != nil {\n\t\t\tlog.Errorf(\"Compact error: closing source DB: %v\", err)\n\t\t}\n\t}()\n\n\t// Open destination database.\n\tdst, err := bbolt.Open(cmd.dstPath, fi.Mode(), &bbolt.Options{\n\t\tTimeout: cmd.dbTimeout,\n\t})\n\tif err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error opening destination database: \"+\n\t\t\t\"%v\", err)\n\t}\n\tdefer func() {\n\t\tif err := dst.Close(); err != nil {\n\t\t\tlog.Errorf(\"Compact error: closing dest DB: %v\", err)\n\t\t}\n\t}()\n\n\t// Run compaction.\n\tif err := cmd.compact(dst, src); err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error running compaction: %v\", err)\n\t}\n\n\t// Report stats on new size.\n\tfi, err = os.Stat(cmd.dstPath)\n\tif err != nil {\n\t\treturn 0, 0, fmt.Errorf(\"error determining destination \"+\n\t\t\t\"database size: %v\", err)\n\t} else if fi.Size() == 0 {\n\t\treturn 0, 0, fmt.Errorf(\"zero db size\")\n\t}\n\n\treturn initialSize, fi.Size(), nil\n}\n\n// compact tries to create a compacted copy of the source database in a new\n// destination database.",
+      "length": 2388,
+      "tokens": 365,
+      "embedding": []
+    },
+    {
+      "slug": "func (cmd *compacter) compact(dst, src *bbolt.DB) error {",
+      "content": "func (cmd *compacter) compact(dst, src *bbolt.DB) error {\n\t// Commit regularly, or we'll run out of memory for large datasets if\n\t// using one transaction.\n\tvar size int64\n\ttx, err := dst.Begin(true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer func() {\n\t\t_ = tx.Rollback()\n\t}()\n\n\tif err := cmd.walk(src, func(keys [][]byte, k, v []byte, seq uint64) error {\n\t\t// On each key/value, check if we have exceeded tx size.\n\t\tsz := int64(len(k) + len(v))\n\t\tif size+sz > cmd.txMaxSize && cmd.txMaxSize != 0 {\n\t\t\t// Commit previous transaction.\n\t\t\tif err := tx.Commit(); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// Start new transaction.\n\t\t\ttx, err = dst.Begin(true)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tsize = 0\n\t\t}\n\t\tsize += sz\n\n\t\t// Create bucket on the root transaction if this is the first\n\t\t// level.\n\t\tnk := len(keys)\n\t\tif nk == 0 {\n\t\t\tbkt, err := tx.CreateBucket(k)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tif err := bkt.SetSequence(seq); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\treturn nil\n\t\t}\n\n\t\t// Create buckets on subsequent levels, if necessary.\n\t\tb := tx.Bucket(keys[0])\n\t\tif nk > 1 {\n\t\t\tfor _, k := range keys[1:] {\n\t\t\t\tb = b.Bucket(k)\n\t\t\t}\n\t\t}\n\n\t\t// Fill the entire page for best compaction.\n\t\tb.FillPercent = bucketFillSize\n\n\t\t// If there is no value then this is a bucket call.\n\t\tif v == nil {\n\t\t\tbkt, err := b.CreateBucket(k)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\tif err := bkt.SetSequence(seq); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\treturn nil\n\t\t}\n\n\t\t// Otherwise treat it as a key/value pair.\n\t\treturn b.Put(k, v)\n\t}); err != nil {\n\t\treturn err\n\t}\n\n\treturn tx.Commit()\n}\n\n// walkFunc is the type of the function called for keys (buckets and \"normal\"\n// values) discovered by Walk. keys is the list of keys to descend to the bucket\n// owning the discovered key/value pair k/v.",
+      "length": 1647,
+      "tokens": 304,
+      "embedding": []
+    },
+    {
+      "slug": "type walkFunc func(keys [][]byte, k, v []byte, seq uint64) error",
+      "content": "type walkFunc func(keys [][]byte, k, v []byte, seq uint64) error\n\n// walk walks recursively the bolt database db, calling walkFn for each key it\n// finds.",
+      "length": 87,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (cmd *compacter) walk(db *bbolt.DB, walkFn walkFunc) error {",
+      "content": "func (cmd *compacter) walk(db *bbolt.DB, walkFn walkFunc) error {\n\treturn db.View(func(tx *bbolt.Tx) error {\n\t\treturn tx.ForEach(func(name []byte, b *bbolt.Bucket) error {\n\t\t\t// This will log the top level buckets only to give the\n\t\t\t// user some sense of progress.\n\t\t\tlog.Debugf(\"Compacting top level bucket '%s'\",\n\t\t\t\tLoggableKeyName(name))\n\n\t\t\treturn cmd.walkBucket(\n\t\t\t\tb, nil, name, nil, b.Sequence(), walkFn,\n\t\t\t)\n\t\t})\n\t})\n}\n\n// LoggableKeyName returns a printable name of the given key.",
+      "length": 413,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func LoggableKeyName(key []byte) string {",
+      "content": "func LoggableKeyName(key []byte) string {\n\tstrKey := string(key)\n\tif hasSpecialChars(strKey) {\n\t\treturn hex.EncodeToString(key)\n\t}\n\n\treturn strKey\n}\n\n// hasSpecialChars returns true if any of the characters in the given string\n// cannot be printed.",
+      "length": 197,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func hasSpecialChars(s string) bool {",
+      "content": "func hasSpecialChars(s string) bool {\n\tfor _, b := range s {\n\t\tif !(b >= 'a' && b <= 'z') && !(b >= 'A' && b <= 'Z') &&\n\t\t\t!(b >= '0' && b <= '9') && b != '-' && b != '_' {\n\n\t\t\treturn true\n\t\t}\n\t}\n\n\treturn false\n}\n\n// walkBucket recursively walks through a bucket.",
+      "length": 214,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (cmd *compacter) walkBucket(b *bbolt.Bucket, keyPath [][]byte, k, v []byte,",
+      "content": "func (cmd *compacter) walkBucket(b *bbolt.Bucket, keyPath [][]byte, k, v []byte,\n\tseq uint64, fn walkFunc) error {\n\n\t// Execute callback.\n\tif err := fn(keyPath, k, v, seq); err != nil {\n\t\treturn err\n\t}\n\n\t// If this is not a bucket then stop.\n\tif v != nil {\n\t\treturn nil\n\t}\n\n\t// Iterate over each child key/value.\n\tkeyPath = append(keyPath, k)\n\treturn b.ForEach(func(k, v []byte) error {\n\t\tif v == nil {\n\t\t\tbkt := b.Bucket(k)\n\t\t\treturn cmd.walkBucket(\n\t\t\t\tbkt, keyPath, k, nil, bkt.Sequence(), fn,\n\t\t\t)\n\t\t}\n\t\treturn cmd.walkBucket(b, keyPath, k, v, b.Sequence(), fn)\n\t})\n}\n",
+      "length": 467,
+      "tokens": 83,
+      "embedding": []
+    }
+  ]
+}

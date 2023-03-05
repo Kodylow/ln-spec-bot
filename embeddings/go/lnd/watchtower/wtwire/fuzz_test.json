@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/fuzz_test.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "func prefixWithMsgType(data []byte, prefix MessageType) []byte {",
+      "content": "func prefixWithMsgType(data []byte, prefix MessageType) []byte {\n\tvar prefixBytes [2]byte\n\tbinary.BigEndian.PutUint16(prefixBytes[:], uint16(prefix))\n\tdata = append(prefixBytes[:], data...)\n\n\treturn data\n}\n\n// harness performs the actual fuzz testing of the appropriate wire message.\n// This function will check that the passed-in message passes wire length\n// checks, is a valid message once deserialized, and passes a sequence of\n// serialization and deserialization checks. Returns an int that determines\n// whether the input is unique or not.",
+      "length": 470,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func harness(t *testing.T, data []byte, emptyMsg Message) {",
+      "content": "func harness(t *testing.T, data []byte, emptyMsg Message) {\n\tt.Helper()\n\n\t// Create a reader with the byte array.\n\tr := bytes.NewReader(data)\n\n\t// Make sure byte array length (excluding 2 bytes for message type) is\n\t// less than max payload size for the wire message.\n\tpayloadLen := uint32(len(data)) - 2\n\tif payloadLen > emptyMsg.MaxPayloadLength(0) {\n\t\t// Ignore this input - max payload constraint violated.\n\t\treturn\n\t}\n\n\tmsg, err := ReadMessage(r, 0)\n\tif err != nil {\n\t\treturn\n\t}\n\n\t// We will serialize the message into a new bytes buffer.\n\tvar b bytes.Buffer\n\tif _, err := WriteMessage(&b, msg, 0); err != nil {\n\t\t// Could not serialize message into bytes buffer, panic.\n\t\tt.Fatal(err)\n\t}\n\n\t// Deserialize the message from the serialized bytes buffer, and then\n\t// assert that the original message is equal to the newly deserialized\n\t// message.\n\tnewMsg, err := ReadMessage(&b, 0)\n\tif err != nil {\n\t\t// Could not deserialize message from bytes buffer, panic.\n\t\tt.Fatal(err)\n\t}\n\n\tif !reflect.DeepEqual(msg, newMsg) {\n\t\t// Deserialized message and original message are not\n\t\t// deeply equal.\n\t\tt.Fatal(\"deserialized message and original message \" +\n\t\t\t\"are not deeply equal.\")\n\t}\n}\n",
+      "length": 1084,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzCreateSessionReply(f *testing.F) {",
+      "content": "func FuzzCreateSessionReply(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgCreateSessionReply.\n\t\tdata = prefixWithMsgType(data, MsgCreateSessionReply)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := CreateSessionReply{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 390,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzCreateSession(f *testing.F) {",
+      "content": "func FuzzCreateSession(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgCreateSession.\n\t\tdata = prefixWithMsgType(data, MsgCreateSession)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := CreateSession{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 375,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzDeleteSessionReply(f *testing.F) {",
+      "content": "func FuzzDeleteSessionReply(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgDeleteSessionReply.\n\t\tdata = prefixWithMsgType(data, MsgDeleteSessionReply)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := DeleteSessionReply{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 390,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzDeleteSession(f *testing.F) {",
+      "content": "func FuzzDeleteSession(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgDeleteSession.\n\t\tdata = prefixWithMsgType(data, MsgDeleteSession)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := DeleteSession{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 375,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzError(f *testing.F) {",
+      "content": "func FuzzError(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgError.\n\t\tdata = prefixWithMsgType(data, MsgError)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := Error{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 351,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzInit(f *testing.F) {",
+      "content": "func FuzzInit(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgInit.\n\t\tdata = prefixWithMsgType(data, MsgInit)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := Init{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 348,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzStateUpdateReply(f *testing.F) {",
+      "content": "func FuzzStateUpdateReply(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgStateUpdateReply.\n\t\tdata = prefixWithMsgType(data, MsgStateUpdateReply)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := StateUpdateReply{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 384,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func FuzzStateUpdate(f *testing.F) {",
+      "content": "func FuzzStateUpdate(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, data []byte) {\n\t\t// Prefix with MsgStateUpdate.\n\t\tdata = prefixWithMsgType(data, MsgStateUpdate)\n\n\t\t// Create an empty message so that the FuzzHarness func can\n\t\t// check if the max payload constraint is violated.\n\t\temptyMsg := StateUpdate{}\n\n\t\t// Pass the message into our general fuzz harness for wire\n\t\t// messages!\n\t\tharness(t, data, &emptyMsg)\n\t})\n}\n",
+      "length": 369,
+      "tokens": 54,
+      "embedding": []
+    }
+  ]
+}

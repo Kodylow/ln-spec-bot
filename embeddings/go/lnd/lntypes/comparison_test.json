@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lntypes/comparison_test.go",
+  "package": "lntypes",
+  "sections": [
+    {
+      "slug": "func TestMin(t *testing.T) {",
+      "content": "func TestMin(t *testing.T) {\n\tt.Parallel()\n\n\trequire.Equal(t, 1, Min(1, 1))\n\trequire.Equal(t, 1, Min(1, 2))\n\trequire.Equal(t, 1.5, Min(1.5, 2.5))\n}\n\n// TestMax tests getting correct maximal numbers.",
+      "length": 162,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMax(t *testing.T) {",
+      "content": "func TestMax(t *testing.T) {\n\tt.Parallel()\n\n\trequire.Equal(t, 1, Max(1, 1))\n\trequire.Equal(t, 2, Max(1, 2))\n\trequire.Equal(t, 2.5, Max(1.5, 2.5))\n}\n",
+      "length": 113,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_tx.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "type readWriteTx struct {",
+      "content": "type readWriteTx struct {\n\tdb *db\n\ttx *sql.Tx\n\n\t// onCommit gets called upon commit.\n\tonCommit func()\n\n\t// active is true if the transaction hasn't been committed yet.\n\tactive bool\n\n\t// locker is a pointer to the global db lock.\n\tlocker sync.Locker\n}\n\n// newReadWriteTx creates an rw transaction using a connection from the\n// specified pool.",
+      "length": 302,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadWriteTx(db *db, readOnly bool) (*readWriteTx, error) {",
+      "content": "func newReadWriteTx(db *db, readOnly bool) (*readWriteTx, error) {\n\tlocker := newNoopLocker()\n\tif db.cfg.WithTxLevelLock {\n\t\t// Obtain the global lock instance. An alternative here is to\n\t\t// obtain a database lock from Postgres. Unfortunately there is\n\t\t// no database-level lock in Postgres, meaning that each table\n\t\t// would need to be locked individually. Perhaps an advisory\n\t\t// lock could perform this function too.\n\t\tlocker = &db.lock\n\t\tif readOnly {\n\t\t\tlocker = db.lock.RLocker()\n\t\t}\n\t}\n\tlocker.Lock()\n\n\t// Start the transaction. Don't use the timeout context because it would\n\t// be applied to the transaction as a whole. If possible, mark the\n\t// transaction as read-only to make sure that potential programming\n\t// errors cannot cause changes to the database.\n\ttx, err := db.db.BeginTx(\n\t\tcontext.Background(),\n\t\t&sql.TxOptions{\n\t\t\tReadOnly: readOnly,\n\t\t},\n\t)\n\tif err != nil {\n\t\tlocker.Unlock()\n\t\treturn nil, err\n\t}\n\n\treturn &readWriteTx{\n\t\tdb:     db,\n\t\ttx:     tx,\n\t\tactive: true,\n\t\tlocker: locker,\n\t}, nil\n}\n\n// ReadBucket opens the root bucket for read only access.  If the bucket\n// described by the key does not exist, nil is returned.",
+      "length": 1049,
+      "tokens": 166,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) ReadBucket(key []byte) walletdb.ReadBucket {",
+      "content": "func (tx *readWriteTx) ReadBucket(key []byte) walletdb.ReadBucket {\n\treturn tx.ReadWriteBucket(key)\n}\n\n// ForEachBucket iterates through all top level buckets.",
+      "length": 88,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) ForEachBucket(fn func(key []byte) error) error {",
+      "content": "func (tx *readWriteTx) ForEachBucket(fn func(key []byte) error) error {\n\t// Fetch binary top level buckets.\n\tbucket := newReadWriteBucket(tx, nil)\n\terr := bucket.ForEach(func(k, _ []byte) error {\n\t\treturn fn(k)\n\t})\n\treturn err\n}\n\n// Rollback closes the transaction, discarding changes (if any) if the\n// database was modified by a write transaction.",
+      "length": 268,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) Rollback() error {",
+      "content": "func (tx *readWriteTx) Rollback() error {\n\t// If the transaction has been closed roolback will fail.\n\tif !tx.active {\n\t\treturn walletdb.ErrTxClosed\n\t}\n\n\terr := tx.tx.Rollback()\n\n\t// Unlock the transaction regardless of the error result.\n\ttx.active = false\n\ttx.locker.Unlock()\n\treturn err\n}\n\n// ReadWriteBucket opens the root bucket for read/write access.  If the\n// bucket described by the key does not exist, nil is returned.",
+      "length": 370,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {",
+      "content": "func (tx *readWriteTx) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {\n\tif len(key) == 0 {\n\t\treturn nil\n\t}\n\n\tbucket := newReadWriteBucket(tx, nil)\n\treturn bucket.NestedReadWriteBucket(key)\n}\n\n// CreateTopLevelBucket creates the top level bucket for a key if it\n// does not exist.  The newly-created bucket it returned.",
+      "length": 238,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) CreateTopLevelBucket(key []byte) (",
+      "content": "func (tx *readWriteTx) CreateTopLevelBucket(key []byte) (\n\twalletdb.ReadWriteBucket, error) {\n\n\tif len(key) == 0 {\n\t\treturn nil, walletdb.ErrBucketNameRequired\n\t}\n\n\tbucket := newReadWriteBucket(tx, nil)\n\treturn bucket.CreateBucketIfNotExists(key)\n}\n\n// DeleteTopLevelBucket deletes the top level bucket for a key.  This\n// errors if the bucket can not be found or the key keys a single value\n// instead of a bucket.",
+      "length": 345,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) DeleteTopLevelBucket(key []byte) error {",
+      "content": "func (tx *readWriteTx) DeleteTopLevelBucket(key []byte) error {\n\t// Execute a cascading delete on the key.\n\tresult, err := tx.Exec(\n\t\t\"DELETE FROM \"+tx.db.table+\" WHERE key=$1 \"+\n\t\t\t\"AND parent_id IS NULL\",\n\t\tkey,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\trows, err := result.RowsAffected()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif rows == 0 {\n\t\treturn walletdb.ErrBucketNotFound\n\t}\n\n\treturn nil\n}\n\n// Commit commits the transaction if not already committed.",
+      "length": 365,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) Commit() error {",
+      "content": "func (tx *readWriteTx) Commit() error {\n\t// Commit will fail if the transaction is already committed.\n\tif !tx.active {\n\t\treturn walletdb.ErrTxClosed\n\t}\n\n\t// Try committing the transaction.\n\terr := tx.tx.Commit()\n\tif err == nil && tx.onCommit != nil {\n\t\ttx.onCommit()\n\t}\n\n\t// Unlock the transaction regardless of the error result.\n\ttx.active = false\n\ttx.locker.Unlock()\n\n\treturn err\n}\n\n// OnCommit sets the commit callback (overriding if already set).",
+      "length": 392,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) OnCommit(cb func()) {",
+      "content": "func (tx *readWriteTx) OnCommit(cb func()) {\n\ttx.onCommit = cb\n}\n\n// QueryRow executes a QueryRow call with a timeout context.",
+      "length": 78,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) QueryRow(query string, args ...interface{}) (*sql.Row,",
+      "content": "func (tx *readWriteTx) QueryRow(query string, args ...interface{}) (*sql.Row,\n\tfunc()) {\n\n\tctx, cancel := tx.db.getTimeoutCtx()\n\treturn tx.tx.QueryRowContext(ctx, query, args...), cancel\n}\n\n// Query executes a multi-row query call with a timeout context.",
+      "length": 170,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) Query(query string, args ...interface{}) (*sql.Rows,",
+      "content": "func (tx *readWriteTx) Query(query string, args ...interface{}) (*sql.Rows,\n\tfunc(), error) {\n\n\tctx, cancel := tx.db.getTimeoutCtx()\n\trows, err := tx.tx.QueryContext(ctx, query, args...)\n\tif err != nil {\n\t\tcancel()\n\n\t\treturn nil, func() {}, err\n\t}\n\n\treturn rows, cancel, nil\n}\n\n// Exec executes a Exec call with a timeout context.",
+      "length": 241,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (tx *readWriteTx) Exec(query string, args ...interface{}) (sql.Result,",
+      "content": "func (tx *readWriteTx) Exec(query string, args ...interface{}) (sql.Result,\n\terror) {\n\n\tctx, cancel := tx.db.getTimeoutCtx()\n\tdefer cancel()\n\n\treturn tx.tx.ExecContext(ctx, query, args...)\n}\n\n// noopLocker is an implementation of a no-op sync.Locker.",
+      "length": 166,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type noopLocker struct{}",
+      "content": "type noopLocker struct{}\n\n// newNoopLocker creates a new noopLocker.",
+      "length": 42,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func newNoopLocker() sync.Locker {",
+      "content": "func newNoopLocker() sync.Locker {\n\treturn &noopLocker{}\n}\n\n// Lock is a noop.\n//\n// NOTE: this is part of the sync.Locker interface.",
+      "length": 93,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *noopLocker) Lock() {",
+      "content": "func (n *noopLocker) Lock() {\n}\n\n// Unlock is a noop.\n//\n// NOTE: this is part of the sync.Locker interface.",
+      "length": 74,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *noopLocker) Unlock() {",
+      "content": "func (n *noopLocker) Unlock() {\n}\n\nvar _ sync.Locker = (*noopLocker)(nil)\n",
+      "length": 39,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

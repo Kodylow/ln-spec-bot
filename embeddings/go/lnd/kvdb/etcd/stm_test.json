@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/stm_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func reverseKVs(a []KV) []KV {",
+      "content": "func reverseKVs(a []KV) []KV {\n\tfor i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {\n\t\ta[i], a[j] = a[j], a[i]\n\t}\n\n\treturn a\n}\n",
+      "length": 87,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPutToEmpty(t *testing.T) {",
+      "content": "func TestPutToEmpty(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\tctx, cancel := context.WithCancel(context.Background())\n\n\ttxQueue := NewCommitQueue(ctx)\n\tt.Cleanup(func() {\n\t\tcancel()\n\t\ttxQueue.Stop()\n\t})\n\n\tdb, err := newEtcdBackend(ctx, f.BackendConfig())\n\trequire.NoError(t, err)\n\n\tapply := func(stm STM) error {\n\t\tstm.Put(\"123\", \"abc\")\n\t\treturn nil\n\t}\n\n\tcallCount, err := RunSTM(db.cli, apply, txQueue)\n\trequire.NoError(t, err)\n\trequire.Equal(t, 1, callCount)\n\n\trequire.Equal(t, \"abc\", f.Get(\"123\"))\n}\n",
+      "length": 460,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func TestGetPutDel(t *testing.T) {",
+      "content": "func TestGetPutDel(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\tctx, cancel := context.WithCancel(context.Background())\n\n\ttxQueue := NewCommitQueue(ctx)\n\tt.Cleanup(func() {\n\t\tcancel()\n\t\ttxQueue.Stop()\n\t})\n\n\ttestKeyValues := []KV{\n\t\t{\"a\", \"1\"},\n\t\t{\"b\", \"2\"},\n\t\t{\"c\", \"3\"},\n\t\t{\"d\", \"4\"},\n\t\t{\"e\", \"5\"},\n\t}\n\n\t// Extra 2 => Get(x), Commit()\n\texpectedCallCount := len(testKeyValues) + 2\n\n\tfor _, kv := range testKeyValues {\n\t\tf.Put(kv.key, kv.val)\n\t}\n\n\tdb, err := newEtcdBackend(ctx, f.BackendConfig())\n\trequire.NoError(t, err)\n\n\tapply := func(stm STM) error {\n\t\t// Get some non existing keys.\n\t\tv, err := stm.Get(\"\")\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, v)\n\n\t\t// Fetches: 1.\n\t\tv, err = stm.Get(\"x\")\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, v)\n\n\t\t// Get all existing keys. Fetches: len(testKeyValues)\n\t\tfor _, kv := range testKeyValues {\n\t\t\tv, err = stm.Get(kv.key)\n\t\t\trequire.NoError(t, err)\n\t\t\trequire.Equal(t, []byte(kv.val), v)\n\t\t}\n\n\t\t// Overwrite, then delete an existing key.\n\t\tstm.Put(\"c\", \"6\")\n\n\t\tv, err = stm.Get(\"c\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, []byte(\"6\"), v)\n\n\t\tstm.Del(\"c\")\n\n\t\tv, err = stm.Get(\"c\")\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, v)\n\n\t\t// Re-add the deleted key.\n\t\tstm.Put(\"c\", \"7\")\n\n\t\tv, err = stm.Get(\"c\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, []byte(\"7\"), v)\n\n\t\t// Add a new key.\n\t\tstm.Put(\"x\", \"x\")\n\n\t\tv, err = stm.Get(\"x\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, []byte(\"x\"), v)\n\n\t\treturn nil\n\t}\n\n\tcallCount, err := RunSTM(db.cli, apply, txQueue)\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedCallCount, callCount)\n\n\trequire.Equal(t, \"1\", f.Get(\"a\"))\n\trequire.Equal(t, \"2\", f.Get(\"b\"))\n\trequire.Equal(t, \"7\", f.Get(\"c\"))\n\trequire.Equal(t, \"4\", f.Get(\"d\"))\n\trequire.Equal(t, \"5\", f.Get(\"e\"))\n\trequire.Equal(t, \"x\", f.Get(\"x\"))\n}\n",
+      "length": 1686,
+      "tokens": 205,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFirstLastNextPrev(t *testing.T) {",
+      "content": "func TestFirstLastNextPrev(t *testing.T) {\n\tt.Parallel()\n\n\ttestFirstLastNextPrev(t, nil, nil, 41)\n\ttestFirstLastNextPrev(t, nil, []string{\"k\"}, 4)\n\ttestFirstLastNextPrev(t, nil, []string{\"k\", \"w\"}, 2)\n\ttestFirstLastNextPrev(t, []string{\"kb\"}, nil, 42)\n\ttestFirstLastNextPrev(t, []string{\"kb\", \"ke\"}, nil, 42)\n\ttestFirstLastNextPrev(t, []string{\"kb\", \"ke\", \"w\"}, []string{\"k\", \"w\"}, 2)\n}\n",
+      "length": 335,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func testFirstLastNextPrev(t *testing.T, prefetchKeys []string,",
+      "content": "func testFirstLastNextPrev(t *testing.T, prefetchKeys []string,\n\tprefetchRange []string, expectedCallCount int) {\n\n\tf := NewEtcdTestFixture(t)\n\tctx, cancel := context.WithCancel(context.Background())\n\n\ttxQueue := NewCommitQueue(ctx)\n\tt.Cleanup(func() {\n\t\tcancel()\n\t\ttxQueue.Stop()\n\t})\n\n\ttestKeyValues := []KV{\n\t\t{\"kb\", \"1\"},\n\t\t{\"kc\", \"2\"},\n\t\t{\"kda\", \"3\"},\n\t\t{\"ke\", \"4\"},\n\t\t{\"w\", \"w\"},\n\t}\n\tfor _, kv := range testKeyValues {\n\t\tf.Put(kv.key, kv.val)\n\t}\n\n\tdb, err := newEtcdBackend(ctx, f.BackendConfig())\n\trequire.NoError(t, err)\n\n\tapply := func(stm STM) error {\n\t\tstm.Prefetch(prefetchKeys, prefetchRange)\n\n\t\t// First/Last on valid multi item interval.\n\t\tkv, err := stm.First(\"k\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kb\", \"1\"}, kv)\n\n\t\tkv, err = stm.Last(\"k\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"ke\", \"4\"}, kv)\n\n\t\t// First/Last on single item interval.\n\t\tkv, err = stm.First(\"w\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"w\", \"w\"}, kv)\n\n\t\tkv, err = stm.Last(\"w\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"w\", \"w\"}, kv)\n\n\t\t// Non existing.\n\t\tval, err := stm.Get(\"ke1\")\n\t\trequire.Nil(t, val)\n\t\trequire.Nil(t, err)\n\n\t\tval, err = stm.Get(\"ke2\")\n\t\trequire.Nil(t, val)\n\t\trequire.Nil(t, err)\n\n\t\t// Next/Prev on start/end.\n\t\tkv, err = stm.Next(\"k\", \"ke\")\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, kv)\n\n\t\t// Non existing.\n\t\tval, err = stm.Get(\"ka\")\n\t\trequire.Nil(t, val)\n\t\trequire.Nil(t, err)\n\n\t\tkv, err = stm.Prev(\"k\", \"kb\")\n\t\trequire.NoError(t, err)\n\t\trequire.Nil(t, kv)\n\n\t\t// Next/Prev in the middle.\n\t\tkv, err = stm.Next(\"k\", \"kc\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kda\", \"3\"}, kv)\n\n\t\tkv, err = stm.Prev(\"k\", \"ke\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kda\", \"3\"}, kv)\n\n\t\t// Delete first item, then add an item before the\n\t\t// deleted one. Check that First/Next will \"jump\"\n\t\t// over the deleted item and return the new first.\n\t\tstm.Del(\"kb\")\n\t\tstm.Put(\"ka\", \"0\")\n\n\t\tkv, err = stm.First(\"k\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"ka\", \"0\"}, kv)\n\n\t\tkv, err = stm.Prev(\"k\", \"kc\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"ka\", \"0\"}, kv)\n\n\t\t// Similarly test that a new end is returned if\n\t\t// the old end is deleted first.\n\t\tstm.Del(\"ke\")\n\t\tstm.Put(\"kf\", \"5\")\n\n\t\tkv, err = stm.Last(\"k\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kf\", \"5\"}, kv)\n\n\t\tkv, err = stm.Next(\"k\", \"kda\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kf\", \"5\"}, kv)\n\n\t\t// Overwrite one in the middle.\n\t\tstm.Put(\"kda\", \"6\")\n\n\t\tkv, err = stm.Next(\"k\", \"kc\")\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, &KV{\"kda\", \"6\"}, kv)\n\n\t\t// Add three in the middle, then delete one.\n\t\tstm.Put(\"kdb\", \"7\")\n\t\tstm.Put(\"kdc\", \"8\")\n\t\tstm.Put(\"kdd\", \"9\")\n\t\tstm.Del(\"kdc\")\n\n\t\t// Check that stepping from first to last returns\n\t\t// the expected sequence.\n\t\tvar kvs []KV\n\n\t\tcurr, err := stm.First(\"k\")\n\t\trequire.NoError(t, err)\n\n\t\tfor curr != nil {\n\t\t\tkvs = append(kvs, *curr)\n\t\t\tcurr, err = stm.Next(\"k\", curr.key)\n\t\t\trequire.NoError(t, err)\n\t\t}\n\n\t\texpected := []KV{\n\t\t\t{\"ka\", \"0\"},\n\t\t\t{\"kc\", \"2\"},\n\t\t\t{\"kda\", \"6\"},\n\t\t\t{\"kdb\", \"7\"},\n\t\t\t{\"kdd\", \"9\"},\n\t\t\t{\"kf\", \"5\"},\n\t\t}\n\t\trequire.Equal(t, expected, kvs)\n\n\t\t// Similarly check that stepping from last to first\n\t\t// returns the expected sequence.\n\t\tkvs = []KV{}\n\n\t\tcurr, err = stm.Last(\"k\")\n\t\trequire.NoError(t, err)\n\n\t\tfor curr != nil {\n\t\t\tkvs = append(kvs, *curr)\n\t\t\tcurr, err = stm.Prev(\"k\", curr.key)\n\t\t\trequire.NoError(t, err)\n\t\t}\n\n\t\texpected = reverseKVs(expected)\n\t\trequire.Equal(t, expected, kvs)\n\n\t\treturn nil\n\t}\n\n\tcallCount, err := RunSTM(db.cli, apply, txQueue)\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedCallCount, callCount)\n\n\trequire.Equal(t, \"0\", f.Get(\"ka\"))\n\trequire.Equal(t, \"2\", f.Get(\"kc\"))\n\trequire.Equal(t, \"6\", f.Get(\"kda\"))\n\trequire.Equal(t, \"7\", f.Get(\"kdb\"))\n\trequire.Equal(t, \"9\", f.Get(\"kdd\"))\n\trequire.Equal(t, \"5\", f.Get(\"kf\"))\n\trequire.Equal(t, \"w\", f.Get(\"w\"))\n}\n",
+      "length": 3663,
+      "tokens": 459,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCommitError(t *testing.T) {",
+      "content": "func TestCommitError(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\tctx, cancel := context.WithCancel(context.Background())\n\n\ttxQueue := NewCommitQueue(ctx)\n\tt.Cleanup(func() {\n\t\tcancel()\n\t\ttxQueue.Stop()\n\t})\n\n\tdb, err := newEtcdBackend(ctx, f.BackendConfig())\n\trequire.NoError(t, err)\n\n\t// Preset DB state.\n\tf.Put(\"123\", \"xyz\")\n\n\t// Count the number of applies.\n\tcnt := 0\n\n\tapply := func(stm STM) error {\n\t\t// STM must have the key/value.\n\t\tval, err := stm.Get(\"123\")\n\t\trequire.NoError(t, err)\n\n\t\tif cnt == 0 {\n\t\t\trequire.Equal(t, []byte(\"xyz\"), val)\n\n\t\t\t// Put a conflicting key/value during the first apply.\n\t\t\tf.Put(\"123\", \"def\")\n\t\t}\n\n\t\t// We'd expect to\n\t\tstm.Put(\"123\", \"abc\")\n\n\t\tcnt++\n\t\treturn nil\n\t}\n\n\tcallCount, err := RunSTM(db.cli, apply, txQueue)\n\trequire.NoError(t, err)\n\trequire.Equal(t, 2, cnt)\n\t// Get() + 2 * Commit().\n\trequire.Equal(t, 3, callCount)\n\n\trequire.Equal(t, \"abc\", f.Get(\"123\"))\n}\n",
+      "length": 839,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func TestManualTxError(t *testing.T) {",
+      "content": "func TestManualTxError(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\tctx, cancel := context.WithCancel(context.Background())\n\n\ttxQueue := NewCommitQueue(ctx)\n\tt.Cleanup(func() {\n\t\tcancel()\n\t\ttxQueue.Stop()\n\t})\n\n\tdb, err := newEtcdBackend(ctx, f.BackendConfig())\n\trequire.NoError(t, err)\n\n\t// Preset DB state.\n\tf.Put(\"123\", \"xyz\")\n\n\tstm := NewSTM(db.cli, txQueue)\n\n\tval, err := stm.Get(\"123\")\n\trequire.NoError(t, err)\n\trequire.Equal(t, []byte(\"xyz\"), val)\n\n\t// Put a conflicting key/value.\n\tf.Put(\"123\", \"def\")\n\n\t// Should still get the original version.\n\tval, err = stm.Get(\"123\")\n\trequire.NoError(t, err)\n\trequire.Equal(t, []byte(\"xyz\"), val)\n\n\t// Commit will fail with CommitError.\n\terr = stm.Commit()\n\tvar e CommitError\n\trequire.True(t, errors.As(err, &e))\n\n\t// We expect that the transacton indeed did not commit.\n\trequire.Equal(t, \"def\", f.Get(\"123\"))\n}\n",
+      "length": 795,
+      "tokens": 94,
+      "embedding": []
+    }
+  ]
+}

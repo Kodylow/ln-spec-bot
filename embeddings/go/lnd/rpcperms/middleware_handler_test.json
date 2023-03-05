@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/rpcperms/middleware_handler_test.go",
+  "package": "rpcperms",
+  "sections": [
+    {
+      "slug": "func TestReplaceProtoMsg(t *testing.T) {",
+      "content": "func TestReplaceProtoMsg(t *testing.T) {\n\ttestCases := []struct {\n\t\tname        string\n\t\toriginal    interface{}\n\t\treplacement interface{}\n\t\texpectedErr string\n\t}{{\n\t\tname: \"simple content replacement\",\n\t\toriginal: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is a memo string\",\n\t\t\tValue: 123456,\n\t\t},\n\t\treplacement: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is the replaced string\",\n\t\t\tValue: 654321,\n\t\t},\n\t}, {\n\t\tname: \"replace with empty message\",\n\t\toriginal: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is a memo string\",\n\t\t\tValue: 123456,\n\t\t},\n\t\treplacement: &lnrpc.Invoice{},\n\t}, {\n\t\tname: \"replace with fewer fields\",\n\t\toriginal: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is a memo string\",\n\t\t\tValue: 123456,\n\t\t},\n\t\treplacement: &lnrpc.Invoice{\n\t\t\tValue: 654321,\n\t\t},\n\t}, {\n\t\tname: \"wrong replacement type\",\n\t\toriginal: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is a memo string\",\n\t\t\tValue: 123456,\n\t\t},\n\t\treplacement: &lnrpc.AddInvoiceResponse{},\n\t\texpectedErr: \"replacement message is of wrong type\",\n\t}, {\n\t\tname:     \"wrong original type\",\n\t\toriginal: &interceptRequest{},\n\t\treplacement: &lnrpc.Invoice{\n\t\t\tMemo:  \"This is the replaced string\",\n\t\t\tValue: 654321,\n\t\t},\n\t\texpectedErr: \"target is not a proto message\",\n\t}}\n\n\tfor _, tc := range testCases {\n\t\tt.Run(tc.name, func(tt *testing.T) {\n\t\t\terr := replaceProtoMsg(tc.original, tc.replacement)\n\n\t\t\tif tc.expectedErr != \"\" {\n\t\t\t\trequire.Error(tt, err)\n\t\t\t\trequire.Contains(\n\t\t\t\t\ttt, err.Error(), tc.expectedErr,\n\t\t\t\t)\n\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\trequire.NoError(tt, err)\n\t\t\tjsonEqual(tt, tc.replacement, tc.original)\n\t\t})\n\t}\n}\n",
+      "length": 1420,
+      "tokens": 172,
+      "embedding": []
+    },
+    {
+      "slug": "func jsonEqual(t *testing.T, expected, actual interface{}) {",
+      "content": "func jsonEqual(t *testing.T, expected, actual interface{}) {\n\texpectedJSON, err := json.Marshal(expected)\n\trequire.NoError(t, err)\n\n\tactualJSON, err := json.Marshal(actual)\n\trequire.NoError(t, err)\n\n\trequire.JSONEq(t, string(expectedJSON), string(actualJSON))\n}\n",
+      "length": 193,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

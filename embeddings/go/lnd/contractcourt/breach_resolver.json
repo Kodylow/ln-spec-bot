@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/breach_resolver.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type breachResolver struct {",
+      "content": "type breachResolver struct {\n\t// resolved reflects if the contract has been fully resolved or not.\n\tresolved bool\n\n\t// subscribed denotes whether or not the breach resolver has subscribed\n\t// to the breacharbiter for breach resolution.\n\tsubscribed bool\n\n\t// replyChan is closed when the breach arbiter has completed serving\n\t// justice.\n\treplyChan chan struct{}\n\n\tcontractResolverKit\n}\n\n// newBreachResolver instantiates a new breach resolver.",
+      "length": 400,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func newBreachResolver(resCfg ResolverConfig) *breachResolver {",
+      "content": "func newBreachResolver(resCfg ResolverConfig) *breachResolver {\n\tr := &breachResolver{\n\t\tcontractResolverKit: *newContractResolverKit(resCfg),\n\t\treplyChan:           make(chan struct{}),\n\t}\n\n\tr.initLogger(r)\n\n\treturn r\n}\n\n// ResolverKey returns the unique identifier for this resolver.",
+      "length": 211,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) ResolverKey() []byte {",
+      "content": "func (b *breachResolver) ResolverKey() []byte {\n\tkey := newResolverID(b.ChanPoint)\n\treturn key[:]\n}\n\n// Resolve queries the breacharbiter to see if the justice transaction has been\n// broadcast.",
+      "length": 141,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) Resolve() (ContractResolver, error) {",
+      "content": "func (b *breachResolver) Resolve() (ContractResolver, error) {\n\tif !b.subscribed {\n\t\tcomplete, err := b.SubscribeBreachComplete(\n\t\t\t&b.ChanPoint, b.replyChan,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// If the breach resolution process is already complete, then\n\t\t// we can cleanup and checkpoint the resolved state.\n\t\tif complete {\n\t\t\tb.resolved = true\n\t\t\treturn nil, b.Checkpoint(b)\n\t\t}\n\n\t\t// Prevent duplicate subscriptions.\n\t\tb.subscribed = true\n\t}\n\n\tselect {\n\tcase <-b.replyChan:\n\t\t// The replyChan has been closed, signalling that the breach\n\t\t// has been fully resolved. Checkpoint the resolved state and\n\t\t// exit.\n\t\tb.resolved = true\n\t\treturn nil, b.Checkpoint(b)\n\tcase <-b.quit:\n\t}\n\n\treturn nil, errResolverShuttingDown\n}\n\n// Stop signals the breachResolver to stop.",
+      "length": 688,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) Stop() {",
+      "content": "func (b *breachResolver) Stop() {\n\tclose(b.quit)\n}\n\n// IsResolved returns true if the breachResolver is fully resolved and cleanup\n// can occur.",
+      "length": 106,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) IsResolved() bool {",
+      "content": "func (b *breachResolver) IsResolved() bool {\n\treturn b.resolved\n}\n\n// SupplementState adds additional state to the breachResolver.",
+      "length": 82,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) SupplementState(_ *channeldb.OpenChannel) {",
+      "content": "func (b *breachResolver) SupplementState(_ *channeldb.OpenChannel) {\n}\n\n// Encode encodes the breachResolver to the passed writer.",
+      "length": 59,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *breachResolver) Encode(w io.Writer) error {",
+      "content": "func (b *breachResolver) Encode(w io.Writer) error {\n\treturn binary.Write(w, endian, b.resolved)\n}\n\n// newBreachResolverFromReader attempts to decode an encoded breachResolver\n// from the passed Reader instance, returning an active breachResolver.",
+      "length": 190,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func newBreachResolverFromReader(r io.Reader, resCfg ResolverConfig) (",
+      "content": "func newBreachResolverFromReader(r io.Reader, resCfg ResolverConfig) (\n\t*breachResolver, error) {\n\n\tb := &breachResolver{\n\t\tcontractResolverKit: *newContractResolverKit(resCfg),\n\t\treplyChan:           make(chan struct{}),\n\t}\n\n\tif err := binary.Read(r, endian, &b.resolved); err != nil {\n\t\treturn nil, err\n\t}\n\n\tb.initLogger(b)\n\n\treturn b, nil\n}\n\n// A compile time assertion to ensure breachResolver meets the ContractResolver\n// interface.\nvar _ ContractResolver = (*breachResolver)(nil)\n",
+      "length": 397,
+      "tokens": 49,
+      "embedding": []
+    }
+  ]
+}

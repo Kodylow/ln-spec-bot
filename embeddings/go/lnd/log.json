@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/log.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "type replaceableLogger struct {",
+      "content": "type replaceableLogger struct {\n\tbtclog.Logger\n\tsubsystem string\n}\n\n// Loggers can not be used before the log rotator has been initialized with a\n// log file. This must be performed early during application startup by\n// calling InitLogRotator() on the main log writer instance in the config.\nvar (\n\t// lndPkgLoggers is a list of all lnd package level loggers that are\n\t// registered. They are tracked here so they can be replaced once the\n\t// SetupLoggers function is called with the final root logger.\n\tlndPkgLoggers []*replaceableLogger\n\n\t// addLndPkgLogger is a helper function that creates a new replaceable\n\t// main lnd package level logger and adds it to the list of loggers that\n\t// are replaced again later, once the final root logger is ready.\n\taddLndPkgLogger = func(subsystem string) *replaceableLogger {\n\t\tl := &replaceableLogger{\n\t\t\tLogger:    build.NewSubLogger(subsystem, nil),\n\t\t\tsubsystem: subsystem,\n\t\t}\n\t\tlndPkgLoggers = append(lndPkgLoggers, l)\n\t\treturn l\n\t}\n\n\t// Loggers that need to be accessible from the lnd package can be placed\n\t// here. Loggers that are only used in sub modules can be added directly\n\t// by using the addSubLogger method. We declare all loggers so we never\n\t// run into a nil reference if they are used early. But the SetupLoggers\n\t// function should always be called as soon as possible to finish\n\t// setting them up properly with a root logger.\n\tltndLog = addLndPkgLogger(\"LTND\")\n\trpcsLog = addLndPkgLogger(\"RPCS\")\n\tsrvrLog = addLndPkgLogger(\"SRVR\")\n\tatplLog = addLndPkgLogger(\"ATPL\")\n)\n\n// genSubLogger creates a logger for a subsystem. We provide an instance of\n// a signal.Interceptor to be able to shutdown in the case of a critical error.",
+      "length": 1620,
+      "tokens": 260,
+      "embedding": []
+    },
+    {
+      "slug": "func genSubLogger(root *build.RotatingLogWriter,",
+      "content": "func genSubLogger(root *build.RotatingLogWriter,\n\tinterceptor signal.Interceptor) func(string) btclog.Logger {\n\n\t// Create a shutdown function which will request shutdown from our\n\t// interceptor if it is listening.\n\tshutdown := func() {\n\t\tif !interceptor.Listening() {\n\t\t\treturn\n\t\t}\n\n\t\tinterceptor.RequestShutdown()\n\t}\n\n\t// Return a function which will create a sublogger from our root\n\t// logger without shutdown fn.\n\treturn func(tag string) btclog.Logger {\n\t\treturn root.GenSubLogger(tag, shutdown)\n\t}\n}\n\n// SetupLoggers initializes all package-global logger variables.",
+      "length": 504,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func SetupLoggers(root *build.RotatingLogWriter, interceptor signal.Interceptor) {",
+      "content": "func SetupLoggers(root *build.RotatingLogWriter, interceptor signal.Interceptor) {\n\tgenLogger := genSubLogger(root, interceptor)\n\n\t// Now that we have the proper root logger, we can replace the\n\t// placeholder lnd package loggers.\n\tfor _, l := range lndPkgLoggers {\n\t\tl.Logger = build.NewSubLogger(l.subsystem, genLogger)\n\t\tSetSubLogger(root, l.subsystem, l.Logger)\n\t}\n\n\t// Some of the loggers declared in the main lnd package are also used\n\t// in sub packages.\n\tsignal.UseLogger(ltndLog)\n\tautopilot.UseLogger(atplLog)\n\n\tAddSubLogger(root, \"LNWL\", interceptor, lnwallet.UseLogger)\n\tAddSubLogger(root, \"DISC\", interceptor, discovery.UseLogger)\n\tAddSubLogger(root, \"NTFN\", interceptor, chainntnfs.UseLogger)\n\tAddSubLogger(root, \"CHDB\", interceptor, channeldb.UseLogger)\n\tAddSubLogger(root, \"HSWC\", interceptor, htlcswitch.UseLogger)\n\tAddSubLogger(root, \"CMGR\", interceptor, connmgr.UseLogger)\n\tAddSubLogger(root, \"BTCN\", interceptor, neutrino.UseLogger)\n\tAddSubLogger(root, \"CNCT\", interceptor, contractcourt.UseLogger)\n\tAddSubLogger(root, \"UTXN\", interceptor, contractcourt.UseNurseryLogger)\n\tAddSubLogger(root, \"BRAR\", interceptor, contractcourt.UseBreachLogger)\n\tAddSubLogger(root, \"SPHX\", interceptor, sphinx.UseLogger)\n\tAddSubLogger(root, \"SWPR\", interceptor, sweep.UseLogger)\n\tAddSubLogger(root, \"SGNR\", interceptor, signrpc.UseLogger)\n\tAddSubLogger(root, \"WLKT\", interceptor, walletrpc.UseLogger)\n\tAddSubLogger(root, \"ARPC\", interceptor, autopilotrpc.UseLogger)\n\tAddSubLogger(root, \"NRPC\", interceptor, neutrinorpc.UseLogger)\n\tAddSubLogger(root, \"DRPC\", interceptor, devrpc.UseLogger)\n\tAddSubLogger(root, \"INVC\", interceptor, invoices.UseLogger)\n\tAddSubLogger(root, \"NANN\", interceptor, netann.UseLogger)\n\tAddSubLogger(root, \"WTWR\", interceptor, watchtower.UseLogger)\n\tAddSubLogger(root, \"NTFR\", interceptor, chainrpc.UseLogger)\n\tAddSubLogger(root, \"IRPC\", interceptor, invoicesrpc.UseLogger)\n\tAddSubLogger(root, \"CHNF\", interceptor, channelnotifier.UseLogger)\n\tAddSubLogger(root, \"CHBU\", interceptor, chanbackup.UseLogger)\n\tAddSubLogger(root, \"PROM\", interceptor, monitoring.UseLogger)\n\tAddSubLogger(root, \"WTCL\", interceptor, wtclient.UseLogger)\n\tAddSubLogger(root, \"PRNF\", interceptor, peernotifier.UseLogger)\n\tAddSubLogger(root, \"CHFD\", interceptor, chanfunding.UseLogger)\n\tAddSubLogger(root, \"PEER\", interceptor, peer.UseLogger)\n\tAddSubLogger(root, \"CHCL\", interceptor, chancloser.UseLogger)\n\n\tAddSubLogger(root, routing.Subsystem, interceptor, routing.UseLogger)\n\tAddSubLogger(root, routerrpc.Subsystem, interceptor, routerrpc.UseLogger)\n\tAddSubLogger(root, chanfitness.Subsystem, interceptor, chanfitness.UseLogger)\n\tAddSubLogger(root, verrpc.Subsystem, interceptor, verrpc.UseLogger)\n\tAddSubLogger(root, healthcheck.Subsystem, interceptor, healthcheck.UseLogger)\n\tAddSubLogger(root, chainreg.Subsystem, interceptor, chainreg.UseLogger)\n\tAddSubLogger(root, chanacceptor.Subsystem, interceptor, chanacceptor.UseLogger)\n\tAddSubLogger(root, funding.Subsystem, interceptor, funding.UseLogger)\n\tAddSubLogger(root, cluster.Subsystem, interceptor, cluster.UseLogger)\n\tAddSubLogger(root, rpcperms.Subsystem, interceptor, rpcperms.UseLogger)\n\tAddSubLogger(root, tor.Subsystem, interceptor, tor.UseLogger)\n\tAddSubLogger(root, btcwallet.Subsystem, interceptor, btcwallet.UseLogger)\n\tAddSubLogger(root, rpcwallet.Subsystem, interceptor, rpcwallet.UseLogger)\n\tAddSubLogger(root, peersrpc.Subsystem, interceptor, peersrpc.UseLogger)\n}\n\n// AddSubLogger is a helper method to conveniently create and register the\n// logger of one or more sub systems.",
+      "length": 3401,
+      "tokens": 254,
+      "embedding": []
+    },
+    {
+      "slug": "func AddSubLogger(root *build.RotatingLogWriter, subsystem string,",
+      "content": "func AddSubLogger(root *build.RotatingLogWriter, subsystem string,\n\tinterceptor signal.Interceptor, useLoggers ...func(btclog.Logger)) {\n\n\t// genSubLogger will return a callback for creating a logger instance,\n\t// which we will give to the root logger.\n\tgenLogger := genSubLogger(root, interceptor)\n\n\t// Create and register just a single logger to prevent them from\n\t// overwriting each other internally.\n\tlogger := build.NewSubLogger(subsystem, genLogger)\n\tSetSubLogger(root, subsystem, logger, useLoggers...)\n}\n\n// SetSubLogger is a helper method to conveniently register the logger of a sub\n// system.",
+      "length": 524,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func SetSubLogger(root *build.RotatingLogWriter, subsystem string,",
+      "content": "func SetSubLogger(root *build.RotatingLogWriter, subsystem string,\n\tlogger btclog.Logger, useLoggers ...func(btclog.Logger)) {\n\n\troot.RegisterSubLogger(subsystem, logger)\n\tfor _, useLogger := range useLoggers {\n\t\tuseLogger(logger)\n\t}\n}\n\n// logClosure is used to provide a closure over expensive logging operations so\n// don't have to be performed when the logging level doesn't warrant it.",
+      "length": 313,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type logClosure func() string",
+      "content": "type logClosure func() string\n\n// String invokes the underlying function and returns the result.",
+      "length": 65,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (c logClosure) String() string {",
+      "content": "func (c logClosure) String() string {\n\treturn c()\n}\n\n// newLogClosure returns a new closure over a function that returns a string\n// which itself provides a Stringer interface so that it can be used with the\n// logging system.",
+      "length": 183,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func newLogClosure(c func() string) logClosure {",
+      "content": "func newLogClosure(c func() string) logClosure {\n\treturn logClosure(c)\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

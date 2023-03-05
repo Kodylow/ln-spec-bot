@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/shachain/utils.go",
+  "package": "shachain",
+  "sections": [
+    {
+      "slug": "func getBit(index index, position uint8) uint8 {",
+      "content": "func getBit(index index, position uint8) uint8 {\n\treturn uint8((uint64(index) >> position) & 1)\n}\n",
+      "length": 47,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func getPrefix(index index, position uint8) uint64 {",
+      "content": "func getPrefix(index index, position uint8) uint64 {\n\t//\t+ -------------------------- +\n\t// \t| \u2116  | value | mask | return |\n\t//\t+ -- + ----- + ---- + ------ +\n\t//\t| 63 |\t 1   |  0   |\t 0   |\n\t//\t| 62 |\t 0   |  0   |\t 0   |\n\t//\t| 61 |   1   |  0   |\t 0   |\n\t//\t\t....\n\t//\t|  4 |\t 1   |  0   |\t 0   |\n\t//\t|  3 |   1   |  0   |\t 0   |\n\t//\t|  2 |   1   |  1   |\t 1   | <--- position\n\t//\t|  1 |   0   |  1   |\t 0   |\n\t//\t|  0 |   1   |  1   |\t 1   |\n\t//\t+ -- + ----- + ---- + ------ +\n\n\tvar zero uint64\n\tmask := (zero - 1) - uint64((1<<position)-1)\n\treturn (uint64(index) & mask)\n}\n\n// countTrailingZeros counts number of trailing zero bits, this function is\n// used to determine the number of element bucket.",
+      "length": 630,
+      "tokens": 153,
+      "embedding": []
+    },
+    {
+      "slug": "func countTrailingZeros(index index) uint8 {",
+      "content": "func countTrailingZeros(index index) uint8 {\n\tvar zeros uint8\n\tfor ; zeros < maxHeight; zeros++ {\n\n\t\tif getBit(index, zeros) != 0 {\n\t\t\tbreak\n\t\t}\n\t}\n\n\treturn zeros\n}\n\n// hashFromString takes a hex-encoded string as input and creates an instance of\n// chainhash.Hash. The chainhash.NewHashFromStr function not suitable because\n// it reverse the given hash.",
+      "length": 296,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func hashFromString(s string) (*chainhash.Hash, error) {",
+      "content": "func hashFromString(s string) (*chainhash.Hash, error) {\n\t// Return an error if hash string is too long.\n\tif len(s) > chainhash.MaxHashStringSize {\n\t\treturn nil, chainhash.ErrHashStrSize\n\t}\n\n\t// Hex decoder expects the hash to be a multiple of two.\n\tif len(s)%2 != 0 {\n\t\ts = \"0\" + s\n\t}\n\n\t// Convert string hash to bytes.\n\tbuf, err := hex.DecodeString(s)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thash, err := chainhash.NewHash(buf)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn hash, nil\n}\n",
+      "length": 409,
+      "tokens": 78,
+      "embedding": []
+    }
+  ]
+}

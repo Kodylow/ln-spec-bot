@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/backend_js.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "type BoltBackendConfig struct {",
+      "content": "type BoltBackendConfig struct {\n\t// DBPath is the directory path in which the database file should be\n\t// stored.\n\tDBPath string\n\n\t// DBFileName is the name of the database file.\n\tDBFileName string\n\n\t// NoFreelistSync, if true, prevents the database from syncing its\n\t// freelist to disk, resulting in improved performance at the expense of\n\t// increased startup time.\n\tNoFreelistSync bool\n\n\t// AutoCompact specifies if a Bolt based database backend should be\n\t// automatically compacted on startup (if the minimum age of the\n\t// database file is reached). This will require additional disk space\n\t// for the compacted copy of the database but will result in an overall\n\t// lower database size after the compaction.\n\tAutoCompact bool\n\n\t// AutoCompactMinAge specifies the minimum time that must have passed\n\t// since a bolt database file was last compacted for the compaction to\n\t// be considered again.\n\tAutoCompactMinAge time.Duration\n\n\t// DBTimeout specifies the timeout value to use when opening the wallet\n\t// database.\n\tDBTimeout time.Duration\n}\n\n// GetBoltBackend opens (or creates if doesn't exits) a bbolt backed database\n// and returns a kvdb.Backend wrapping it.",
+      "length": 1110,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "func GetBoltBackend(cfg *BoltBackendConfig) (Backend, error) {",
+      "content": "func GetBoltBackend(cfg *BoltBackendConfig) (Backend, error) {\n\treturn nil, fmt.Errorf(\"bolt backend not supported in WebAssembly\")\n}\n",
+      "length": 69,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func GetTestBackend(path, name string) (Backend, func(), error) {",
+      "content": "func GetTestBackend(path, name string) (Backend, func(), error) {\n\treturn nil, nil, fmt.Errorf(\"bolt backend not supported in WebAssembly\")\n}\n",
+      "length": 74,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

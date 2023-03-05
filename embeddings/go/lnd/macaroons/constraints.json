@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/constraints.go",
+  "package": "macaroons",
+  "sections": [
+    {
+      "slug": "type CustomCaveatAcceptor interface {",
+      "content": "type CustomCaveatAcceptor interface {\n\t// CustomCaveatSupported returns nil if a macaroon with the given custom\n\t// caveat name can be validated by any component in lnd (for example an\n\t// RPC middleware). If no component is registered to handle the given\n\t// custom caveat then an error must be returned. This method only checks\n\t// the availability of a validating component, not the validity of the\n\t// macaroon itself.\n\tCustomCaveatSupported(customCaveatName string) error\n}\n\n// Constraint type adds a layer of indirection over macaroon caveats.",
+      "length": 502,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "type Constraint func(*macaroon.Macaroon) error",
+      "content": "type Constraint func(*macaroon.Macaroon) error\n\n// Checker type adds a layer of indirection over macaroon checkers. A Checker\n// returns the name of the checker and the checker function; these are used to\n// register the function with the bakery service's compound checker.",
+      "length": 223,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "type Checker func() (string, checkers.Func)",
+      "content": "type Checker func() (string, checkers.Func)\n\n// AddConstraints returns new derived macaroon by applying every passed\n// constraint and tightening its restrictions.",
+      "length": 117,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func AddConstraints(mac *macaroon.Macaroon,",
+      "content": "func AddConstraints(mac *macaroon.Macaroon,\n\tcs ...Constraint) (*macaroon.Macaroon, error) {\n\n\t// The macaroon library's Clone() method has a subtle bug that doesn't\n\t// correctly clone all caveats. We need to use our own, safe clone\n\t// function instead.\n\tnewMac, err := SafeCopyMacaroon(mac)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tfor _, constraint := range cs {\n\t\tif err := constraint(newMac); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\treturn newMac, nil\n}\n\n// Each *Constraint function is a functional option, which takes a pointer\n// to the macaroon and adds another restriction to it. For each *Constraint,\n// the corresponding *Checker is provided if not provided by default.\n\n// TimeoutConstraint restricts the lifetime of the macaroon\n// to the amount of seconds given.",
+      "length": 710,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func TimeoutConstraint(seconds int64) func(*macaroon.Macaroon) error {",
+      "content": "func TimeoutConstraint(seconds int64) func(*macaroon.Macaroon) error {\n\treturn func(mac *macaroon.Macaroon) error {\n\t\tmacaroonTimeout := time.Duration(seconds)\n\t\trequestTimeout := time.Now().Add(time.Second * macaroonTimeout)\n\t\tcaveat := checkers.TimeBeforeCaveat(requestTimeout)\n\t\treturn mac.AddFirstPartyCaveat([]byte(caveat.Condition))\n\t}\n}\n\n// IPLockConstraint locks macaroon to a specific IP address.\n// If address is an empty string, this constraint does nothing to\n// accommodate default value's desired behavior.",
+      "length": 439,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func IPLockConstraint(ipAddr string) func(*macaroon.Macaroon) error {",
+      "content": "func IPLockConstraint(ipAddr string) func(*macaroon.Macaroon) error {\n\treturn func(mac *macaroon.Macaroon) error {\n\t\tif ipAddr != \"\" {\n\t\t\tmacaroonIPAddr := net.ParseIP(ipAddr)\n\t\t\tif macaroonIPAddr == nil {\n\t\t\t\treturn fmt.Errorf(\"incorrect macaroon IP-\" +\n\t\t\t\t\t\"lock address\")\n\t\t\t}\n\t\t\tcaveat := checkers.Condition(\"ipaddr\",\n\t\t\t\tmacaroonIPAddr.String())\n\t\t\treturn mac.AddFirstPartyCaveat([]byte(caveat))\n\t\t}\n\t\treturn nil\n\t}\n}\n\n// IPLockChecker accepts client IP from the validation context and compares it\n// with IP locked in the macaroon. It is of the `Checker` type.",
+      "length": 481,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func IPLockChecker() (string, checkers.Func) {",
+      "content": "func IPLockChecker() (string, checkers.Func) {\n\treturn \"ipaddr\", func(ctx context.Context, cond, arg string) error {\n\t\t// Get peer info and extract IP address from it for macaroon\n\t\t// check.\n\t\tpr, ok := peer.FromContext(ctx)\n\t\tif !ok {\n\t\t\treturn fmt.Errorf(\"unable to get peer info from context\")\n\t\t}\n\t\tpeerAddr, _, err := net.SplitHostPort(pr.Addr.String())\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to parse peer address\")\n\t\t}\n\n\t\tif !net.ParseIP(arg).Equal(net.ParseIP(peerAddr)) {\n\t\t\tmsg := \"macaroon locked to different IP address\"\n\t\t\treturn fmt.Errorf(msg)\n\t\t}\n\t\treturn nil\n\t}\n}\n\n// CustomConstraint returns a function that adds a custom caveat condition to\n// a macaroon.",
+      "length": 615,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func CustomConstraint(name, condition string) func(*macaroon.Macaroon) error {",
+      "content": "func CustomConstraint(name, condition string) func(*macaroon.Macaroon) error {\n\treturn func(mac *macaroon.Macaroon) error {\n\t\t// We rely on a name being set for the interception, so don't\n\t\t// allow creating a caveat without a name in the first place.\n\t\tif name == \"\" {\n\t\t\treturn fmt.Errorf(\"name cannot be empty\")\n\t\t}\n\n\t\t// The inner (custom) condition is optional.\n\t\touterCondition := fmt.Sprintf(\"%s %s\", name, condition)\n\t\tif condition == \"\" {\n\t\t\touterCondition = name\n\t\t}\n\n\t\tcaveat := checkers.Condition(CondLndCustom, outerCondition)\n\t\treturn mac.AddFirstPartyCaveat([]byte(caveat))\n\t}\n}\n\n// CustomChecker returns a Checker function that is used by the macaroon bakery\n// library to check whether a custom caveat is supported by lnd in general or\n// not. Support in this context means: An additional gRPC interceptor was set up\n// that validates the content (=condition) of the custom caveat. If such an\n// interceptor is in place then the acceptor should return a nil error. If no\n// interceptor exists for the custom caveat in the macaroon of a request context\n// then a non-nil error should be returned and the macaroon is rejected as a\n// whole.",
+      "length": 1051,
+      "tokens": 172,
+      "embedding": []
+    },
+    {
+      "slug": "func CustomChecker(acceptor CustomCaveatAcceptor) Checker {",
+      "content": "func CustomChecker(acceptor CustomCaveatAcceptor) Checker {\n\t// We return the general name of all lnd custom macaroons and a function\n\t// that splits the outer condition to extract the name of the custom\n\t// condition and the condition itself. In the bakery library that's used\n\t// here, a caveat always has the following form:\n\t//\n\t// <condition-name> <condition-value>\n\t//\n\t// Because a checker function needs to be bound to the condition name we\n\t// have to choose a static name for the first part (\"lnd-custom\", see\n\t// CondLndCustom. Otherwise we'd need to register a new Checker function\n\t// for each custom caveat that's registered. To allow for a generic\n\t// custom caveat handling, we just add another layer and expand the\n\t// initial <condition-value> into\n\t//\n\t// \"<custom-condition-name> <custom-condition-value>\"\n\t//\n\t// The full caveat string entry of a macaroon that uses this generic\n\t// mechanism would therefore look like this:\n\t//\n\t// \"lnd-custom <custom-condition-name> <custom-condition-value>\"\n\tchecker := func(_ context.Context, _, outerCondition string) error {\n\t\tif outerCondition != strings.TrimSpace(outerCondition) {\n\t\t\treturn fmt.Errorf(\"unexpected white space found in \" +\n\t\t\t\t\"caveat condition\")\n\t\t}\n\t\tif outerCondition == \"\" {\n\t\t\treturn fmt.Errorf(\"expected custom caveat, got empty \" +\n\t\t\t\t\"string\")\n\t\t}\n\n\t\t// The condition part of the original caveat is now name and\n\t\t// condition of the custom caveat (we add a layer of conditions\n\t\t// to allow one custom checker to work for all custom lnd\n\t\t// conditions that implement arbitrary business logic).\n\t\tparts := strings.Split(outerCondition, \" \")\n\t\tcustomCaveatName := parts[0]\n\n\t\treturn acceptor.CustomCaveatSupported(customCaveatName)\n\t}\n\n\treturn func() (string, checkers.Func) {\n\t\treturn CondLndCustom, checker\n\t}\n}\n\n// HasCustomCaveat tests if the given macaroon has a custom caveat with the\n// given custom caveat name.",
+      "length": 1802,
+      "tokens": 271,
+      "embedding": []
+    },
+    {
+      "slug": "func HasCustomCaveat(mac *macaroon.Macaroon, customCaveatName string) bool {",
+      "content": "func HasCustomCaveat(mac *macaroon.Macaroon, customCaveatName string) bool {\n\tif mac == nil {\n\t\treturn false\n\t}\n\n\tcaveatPrefix := []byte(fmt.Sprintf(\n\t\t\"%s %s\", CondLndCustom, customCaveatName,\n\t))\n\tfor _, caveat := range mac.Caveats() {\n\t\tif bytes.HasPrefix(caveat.Id, caveatPrefix) {\n\t\t\treturn true\n\t\t}\n\t}\n\n\treturn false\n}\n\n// GetCustomCaveatCondition returns the custom caveat condition for the given\n// custom caveat name from the given macaroon.",
+      "length": 356,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func GetCustomCaveatCondition(mac *macaroon.Macaroon,",
+      "content": "func GetCustomCaveatCondition(mac *macaroon.Macaroon,\n\tcustomCaveatName string) string {\n\n\tif mac == nil {\n\t\treturn \"\"\n\t}\n\n\tcaveatPrefix := []byte(fmt.Sprintf(\n\t\t\"%s %s \", CondLndCustom, customCaveatName,\n\t))\n\tfor _, caveat := range mac.Caveats() {\n\t\t// The caveat id has a format of\n\t\t// \"lnd-custom [custom-caveat-name] [custom-caveat-condition]\"\n\t\t// and we only want the condition part. If we match the prefix\n\t\t// part we return the condition that comes after the prefix.\n\t\tif bytes.HasPrefix(caveat.Id, caveatPrefix) {\n\t\t\tcaveatSplit := strings.SplitN(\n\t\t\t\tstring(caveat.Id),\n\t\t\t\tstring(caveatPrefix),\n\t\t\t\t2,\n\t\t\t)\n\t\t\tif len(caveatSplit) == 2 {\n\t\t\t\treturn caveatSplit[1]\n\t\t\t}\n\t\t}\n\t}\n\n\t// We didn't find a condition for the given custom caveat name.\n\treturn \"\"\n}\n",
+      "length": 684,
+      "tokens": 100,
+      "embedding": []
+    }
+  ]
+}

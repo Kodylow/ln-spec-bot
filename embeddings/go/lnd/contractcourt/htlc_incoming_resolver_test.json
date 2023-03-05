@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/htlc_incoming_resolver_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "func TestHtlcIncomingResolverFwdPreimageKnown(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverFwdPreimageKnown(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, false)\n\tctx.witnessBeacon.lookupPreimage[testResHash] = testResPreimage\n\tctx.resolve()\n\tctx.waitForResult(true)\n}\n\n// TestHtlcIncomingResolverFwdContestedSuccess tests resolution of a forwarded\n// htlc for which the preimage becomes known after the resolver has been\n// started.",
+      "length": 343,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverFwdContestedSuccess(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverFwdContestedSuccess(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, false)\n\tctx.resolve()\n\n\t// Simulate a new block coming in. HTLC is not yet expired.\n\tctx.notifyEpoch(testInitialBlockHeight + 1)\n\n\tctx.witnessBeacon.preImageUpdates <- testResPreimage\n\tctx.waitForResult(true)\n}\n\n// TestHtlcIncomingResolverFwdContestedTimeout tests resolution of a forwarded\n// htlc that times out after the resolver has been started.",
+      "length": 412,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverFwdContestedTimeout(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverFwdContestedTimeout(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, false)\n\n\t// Replace our checkpoint with one which will push reports into a\n\t// channel for us to consume. We replace this function on the resolver\n\t// itself because it is created by the test context.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\tctx.resolve()\n\n\t// Simulate a new block coming in. HTLC expires.\n\tctx.notifyEpoch(testHtlcExpiry)\n\n\t// Assert that we have a failure resolution because our invoice was\n\t// cancelled.\n\tassertResolverReport(t, reportChan, &channeldb.ResolverReport{\n\t\tAmount:          lnwire.MilliSatoshi(testHtlcAmount).ToSatoshis(),\n\t\tResolverType:    channeldb.ResolverTypeIncomingHtlc,\n\t\tResolverOutcome: channeldb.ResolverOutcomeTimeout,\n\t})\n\n\tctx.waitForResult(false)\n}\n\n// TestHtlcIncomingResolverFwdTimeout tests resolution of a forwarded htlc that\n// has already expired when the resolver starts.",
+      "length": 1108,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverFwdTimeout(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverFwdTimeout(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\tctx.witnessBeacon.lookupPreimage[testResHash] = testResPreimage\n\tctx.resolver.htlcExpiry = 90\n\tctx.resolve()\n\tctx.waitForResult(false)\n}\n\n// TestHtlcIncomingResolverExitSettle tests resolution of an exit hop htlc for\n// which the invoice has already been settled when the resolver starts.",
+      "length": 360,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverExitSettle(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverExitSettle(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\tctx.registry.notifyResolution = invoices.NewSettleResolution(\n\t\ttestResPreimage, testResCircuitKey, testAcceptHeight,\n\t\tinvoices.ResultReplayToSettled,\n\t)\n\n\tctx.resolve()\n\n\tdata := <-ctx.registry.notifyChan\n\tif data.expiry != testHtlcExpiry {\n\t\tt.Fatal(\"incorrect expiry\")\n\t}\n\tif data.currentHeight != testInitialBlockHeight {\n\t\tt.Fatal(\"incorrect block height\")\n\t}\n\n\tctx.waitForResult(true)\n\n\tif !bytes.Equal(\n\t\tctx.onionProcessor.offeredOnionBlob, testOnionBlob,\n\t) {\n\n\t\tt.Fatal(\"unexpected onion blob\")\n\t}\n}\n\n// TestHtlcIncomingResolverExitCancel tests resolution of an exit hop htlc for\n// an invoice that is already canceled when the resolver starts.",
+      "length": 708,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverExitCancel(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverExitCancel(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\tctx.registry.notifyResolution = invoices.NewFailResolution(\n\t\ttestResCircuitKey, testAcceptHeight,\n\t\tinvoices.ResultInvoiceAlreadyCanceled,\n\t)\n\n\tctx.resolve()\n\tctx.waitForResult(false)\n}\n\n// TestHtlcIncomingResolverExitSettleHodl tests resolution of an exit hop htlc\n// for a hodl invoice that is settled after the resolver has started.",
+      "length": 405,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverExitSettleHodl(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverExitSettleHodl(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\tctx.resolve()\n\n\tnotifyData := <-ctx.registry.notifyChan\n\tnotifyData.hodlChan <- invoices.NewSettleResolution(\n\t\ttestResPreimage, testResCircuitKey, testAcceptHeight,\n\t\tinvoices.ResultSettled,\n\t)\n\n\tctx.waitForResult(true)\n}\n\n// TestHtlcIncomingResolverExitTimeoutHodl tests resolution of an exit hop htlc\n// for a hodl invoice that times out.",
+      "length": 408,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverExitTimeoutHodl(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverExitTimeoutHodl(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\n\t// Replace our checkpoint with one which will push reports into a\n\t// channel for us to consume. We replace this function on the resolver\n\t// itself because it is created by the test context.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\tctx.resolve()\n\tctx.notifyEpoch(testHtlcExpiry)\n\n\t// Assert that we have a failure resolution because our invoice was\n\t// cancelled.\n\tassertResolverReport(t, reportChan, &channeldb.ResolverReport{\n\t\tAmount:          lnwire.MilliSatoshi(testHtlcAmount).ToSatoshis(),\n\t\tResolverType:    channeldb.ResolverTypeIncomingHtlc,\n\t\tResolverOutcome: channeldb.ResolverOutcomeTimeout,\n\t})\n\n\tctx.waitForResult(false)\n}\n\n// TestHtlcIncomingResolverExitCancelHodl tests resolution of an exit hop htlc\n// for a hodl invoice that is canceled after the resolver has started.",
+      "length": 1079,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func TestHtlcIncomingResolverExitCancelHodl(t *testing.T) {",
+      "content": "func TestHtlcIncomingResolverExitCancelHodl(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tctx := newIncomingResolverTestContext(t, true)\n\n\t// Replace our checkpoint with one which will push reports into a\n\t// channel for us to consume. We replace this function on the resolver\n\t// itself because it is created by the test context.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\tctx.resolve()\n\tnotifyData := <-ctx.registry.notifyChan\n\tnotifyData.hodlChan <- invoices.NewFailResolution(\n\t\ttestResCircuitKey, testAcceptHeight, invoices.ResultCanceled,\n\t)\n\n\t// Assert that we have a failure resolution because our invoice was\n\t// cancelled.\n\tassertResolverReport(t, reportChan, &channeldb.ResolverReport{\n\t\tAmount:          lnwire.MilliSatoshi(testHtlcAmount).ToSatoshis(),\n\t\tResolverType:    channeldb.ResolverTypeIncomingHtlc,\n\t\tResolverOutcome: channeldb.ResolverOutcomeAbandoned,\n\t})\n\n\tctx.waitForResult(false)\n}\n",
+      "length": 1057,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "type mockHopIterator struct {",
+      "content": "type mockHopIterator struct {\n\tisExit bool\n\thop.Iterator\n}\n",
+      "length": 26,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHopIterator) HopPayload() (*hop.Payload, error) {",
+      "content": "func (h *mockHopIterator) HopPayload() (*hop.Payload, error) {\n\tvar nextAddress [8]byte\n\tif !h.isExit {\n\t\tnextAddress = [8]byte{0x01}\n\t}\n\n\treturn hop.NewLegacyPayload(&sphinx.HopData{\n\t\tRealm:         [1]byte{},\n\t\tNextAddress:   nextAddress,\n\t\tForwardAmount: 100,\n\t\tOutgoingCltv:  40,\n\t\tExtraBytes:    [12]byte{},\n\t}), nil\n}\n",
+      "length": 249,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHopIterator) EncodeNextHop(w io.Writer) error {",
+      "content": "func (h *mockHopIterator) EncodeNextHop(w io.Writer) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type mockOnionProcessor struct {",
+      "content": "type mockOnionProcessor struct {\n\tisExit           bool\n\tofferedOnionBlob []byte\n}\n",
+      "length": 47,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockOnionProcessor) ReconstructHopIterator(r io.Reader, rHash []byte) (",
+      "content": "func (o *mockOnionProcessor) ReconstructHopIterator(r io.Reader, rHash []byte) (\n\thop.Iterator, error) {\n\n\tdata, err := ioutil.ReadAll(r)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\to.offeredOnionBlob = data\n\n\treturn &mockHopIterator{isExit: o.isExit}, nil\n}\n",
+      "length": 163,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type incomingResolverTestContext struct {",
+      "content": "type incomingResolverTestContext struct {\n\tregistry               *mockRegistry\n\twitnessBeacon          *mockWitnessBeacon\n\tresolver               *htlcIncomingContestResolver\n\tnotifier               *mock.ChainNotifier\n\tonionProcessor         *mockOnionProcessor\n\tresolveErr             chan error\n\tnextResolver           ContractResolver\n\tfinalHtlcOutcomeStored bool\n\tt                      *testing.T\n}\n",
+      "length": 354,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func newIncomingResolverTestContext(t *testing.T, isExit bool) *incomingResolverTestContext {",
+      "content": "func newIncomingResolverTestContext(t *testing.T, isExit bool) *incomingResolverTestContext {\n\tnotifier := &mock.ChainNotifier{\n\t\tEpochChan: make(chan *chainntnfs.BlockEpoch),\n\t\tSpendChan: make(chan *chainntnfs.SpendDetail),\n\t\tConfChan:  make(chan *chainntnfs.TxConfirmation),\n\t}\n\twitnessBeacon := newMockWitnessBeacon()\n\tregistry := &mockRegistry{\n\t\tnotifyChan: make(chan notifyExitHopData, 1),\n\t}\n\n\tonionProcessor := &mockOnionProcessor{isExit: isExit}\n\n\tcheckPointChan := make(chan struct{}, 1)\n\n\tc := &incomingResolverTestContext{\n\t\tregistry:       registry,\n\t\twitnessBeacon:  witnessBeacon,\n\t\tnotifier:       notifier,\n\t\tonionProcessor: onionProcessor,\n\t\tt:              t,\n\t}\n\n\thtlcNotifier := &mockHTLCNotifier{}\n\n\tchainCfg := ChannelArbitratorConfig{\n\t\tChainArbitratorConfig: ChainArbitratorConfig{\n\t\t\tNotifier:       notifier,\n\t\t\tPreimageDB:     witnessBeacon,\n\t\t\tRegistry:       registry,\n\t\t\tOnionProcessor: onionProcessor,\n\t\t\tPutFinalHtlcOutcome: func(chanId lnwire.ShortChannelID,\n\t\t\t\thtlcId uint64, settled bool) error {\n\n\t\t\t\tc.finalHtlcOutcomeStored = true\n\n\t\t\t\treturn nil\n\t\t\t},\n\t\t\tHtlcNotifier: htlcNotifier,\n\t\t},\n\t\tPutResolverReport: func(_ kvdb.RwTx,\n\t\t\t_ *channeldb.ResolverReport) error {\n\n\t\t\treturn nil\n\t\t},\n\t}\n\n\tcfg := ResolverConfig{\n\t\tChannelArbitratorConfig: chainCfg,\n\t\tCheckpoint: func(_ ContractResolver,\n\t\t\t_ ...*channeldb.ResolverReport) error {\n\n\t\t\tcheckPointChan <- struct{}{}\n\t\t\treturn nil\n\t\t},\n\t}\n\n\tc.resolver = &htlcIncomingContestResolver{\n\t\thtlcSuccessResolver: &htlcSuccessResolver{\n\t\t\tcontractResolverKit: *newContractResolverKit(cfg),\n\t\t\thtlcResolution:      lnwallet.IncomingHtlcResolution{},\n\t\t\thtlc: channeldb.HTLC{\n\t\t\t\tAmt:       lnwire.MilliSatoshi(testHtlcAmount),\n\t\t\t\tRHash:     testResHash,\n\t\t\t\tOnionBlob: testOnionBlob,\n\t\t\t},\n\t\t},\n\t\thtlcExpiry: testHtlcExpiry,\n\t}\n\n\treturn c\n}\n",
+      "length": 1660,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *incomingResolverTestContext) resolve() {",
+      "content": "func (i *incomingResolverTestContext) resolve() {\n\t// Start resolver.\n\ti.resolveErr = make(chan error, 1)\n\tgo func() {\n\t\tvar err error\n\t\ti.nextResolver, err = i.resolver.Resolve()\n\t\ti.resolveErr <- err\n\t}()\n\n\t// Notify initial block height.\n\ti.notifyEpoch(testInitialBlockHeight)\n}\n",
+      "length": 221,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *incomingResolverTestContext) notifyEpoch(height int32) {",
+      "content": "func (i *incomingResolverTestContext) notifyEpoch(height int32) {\n\ti.notifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: height,\n\t}\n}\n",
+      "length": 68,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *incomingResolverTestContext) waitForResult(expectSuccessRes bool) {",
+      "content": "func (i *incomingResolverTestContext) waitForResult(expectSuccessRes bool) {\n\ti.t.Helper()\n\n\terr := <-i.resolveErr\n\tif err != nil {\n\t\ti.t.Fatal(err)\n\t}\n\n\tif !expectSuccessRes {\n\t\tif i.nextResolver != nil {\n\t\t\ti.t.Fatal(\"expected no next resolver\")\n\t\t}\n\n\t\trequire.True(i.t, i.finalHtlcOutcomeStored,\n\t\t\t\"expected final htlc outcome to be stored\")\n\n\t\treturn\n\t}\n\n\tsuccessResolver, ok := i.nextResolver.(*htlcSuccessResolver)\n\tif !ok {\n\t\ti.t.Fatal(\"expected htlcSuccessResolver\")\n\t}\n\n\tif successResolver.htlcResolution.Preimage != testResPreimage {\n\t\ti.t.Fatal(\"invalid preimage\")\n\t}\n\n\tsuccessTx := successResolver.htlcResolution.SignedSuccessTx\n\tif successTx != nil &&\n\t\t!bytes.Equal(successTx.TxIn[0].Witness[3], testResPreimage[:]) {\n\n\t\ti.t.Fatal(\"invalid preimage\")\n\t}\n}\n",
+      "length": 660,
+      "tokens": 68,
+      "embedding": []
+    }
+  ]
+}

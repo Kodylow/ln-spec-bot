@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/resolution_result.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type acceptResolutionResult uint8",
+      "content": "type acceptResolutionResult uint8\n\nconst (\n\tresultInvalidAccept acceptResolutionResult = iota\n\n\t// resultReplayToAccepted is returned when we replay an accepted\n\t// invoice.\n\tresultReplayToAccepted\n\n\t// resultDuplicateToAccepted is returned when we accept a duplicate\n\t// htlc.\n\tresultDuplicateToAccepted\n\n\t// resultAccepted is returned when we accept a hodl invoice.\n\tresultAccepted\n\n\t// resultPartialAccepted is returned when we have partially received\n\t// payment.\n\tresultPartialAccepted\n)\n\n// String returns a string representation of the result.",
+      "length": 496,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (a acceptResolutionResult) String() string {",
+      "content": "func (a acceptResolutionResult) String() string {\n\tswitch a {\n\tcase resultInvalidAccept:\n\t\treturn \"invalid accept result\"\n\n\tcase resultReplayToAccepted:\n\t\treturn \"replayed htlc to accepted invoice\"\n\n\tcase resultDuplicateToAccepted:\n\t\treturn \"accepting duplicate payment to accepted invoice\"\n\n\tcase resultAccepted:\n\t\treturn \"accepted\"\n\n\tcase resultPartialAccepted:\n\t\treturn \"partial payment accepted\"\n\n\tdefault:\n\t\treturn \"unknown accept resolution result\"\n\t}\n}\n\n// FailResolutionResult provides metadata about a htlc that was failed by\n// the registry. It can be used to take custom actions on resolution of the\n// htlc.",
+      "length": 546,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "type FailResolutionResult uint8",
+      "content": "type FailResolutionResult uint8\n\nconst (\n\tresultInvalidFailure FailResolutionResult = iota\n\n\t// ResultReplayToCanceled is returned when we replay a canceled invoice.\n\tResultReplayToCanceled\n\n\t// ResultInvoiceAlreadyCanceled is returned when trying to pay an\n\t// invoice that is already canceled.\n\tResultInvoiceAlreadyCanceled\n\n\t// ResultInvoiceAlreadySettled is returned when trying to pay an invoice\n\t// that is already settled.\n\tResultInvoiceAlreadySettled\n\n\t// ResultAmountTooLow is returned when an invoice is underpaid.\n\tResultAmountTooLow\n\n\t// ResultExpiryTooSoon is returned when we do not accept an invoice\n\t// payment because it expires too soon.\n\tResultExpiryTooSoon\n\n\t// ResultCanceled is returned when we cancel an invoice and its\n\t// associated htlcs.\n\tResultCanceled\n\n\t// ResultInvoiceNotOpen is returned when a mpp invoice is not open.\n\tResultInvoiceNotOpen\n\n\t// ResultMppTimeout is returned when an invoice paid with multiple\n\t// partial payments times out before it is fully paid.\n\tResultMppTimeout\n\n\t// ResultAddressMismatch is returned when the payment address for a mpp\n\t// invoice does not match.\n\tResultAddressMismatch\n\n\t// ResultHtlcSetTotalMismatch is returned when the amount paid by a\n\t// htlc does not match its set total.\n\tResultHtlcSetTotalMismatch\n\n\t// ResultHtlcSetTotalTooLow is returned when a mpp set total is too low\n\t// for an invoice.\n\tResultHtlcSetTotalTooLow\n\n\t// ResultHtlcSetOverpayment is returned when a mpp set is overpaid.\n\tResultHtlcSetOverpayment\n\n\t// ResultInvoiceNotFound is returned when an attempt is made to pay an\n\t// invoice that is unknown to us.\n\tResultInvoiceNotFound\n\n\t// ResultKeySendError is returned when we receive invalid keysend\n\t// parameters.\n\tResultKeySendError\n\n\t// ResultMppInProgress is returned when we are busy receiving a mpp\n\t// payment.\n\tResultMppInProgress\n\n\t// ResultHtlcInvoiceTypeMismatch is returned when an AMP HTLC targets a\n\t// non-AMP invoice and vice versa.\n\tResultHtlcInvoiceTypeMismatch\n\n\t// ResultAmpError is returned when we receive invalid AMP parameters.\n\tResultAmpError\n\n\t// ResultAmpReconstruction is returned when the derived child\n\t// hash/preimage pairs were invalid for at least one HTLC in the set.\n\tResultAmpReconstruction\n)\n\n// String returns a string representation of the result.",
+      "length": 2177,
+      "tokens": 296,
+      "embedding": []
+    },
+    {
+      "slug": "func (f FailResolutionResult) String() string {",
+      "content": "func (f FailResolutionResult) String() string {\n\treturn f.FailureString()\n}\n\n// FailureString returns a string representation of the result.\n//\n// Note: it is part of the FailureDetail interface.",
+      "length": 142,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (f FailResolutionResult) FailureString() string {",
+      "content": "func (f FailResolutionResult) FailureString() string {\n\tswitch f {\n\tcase resultInvalidFailure:\n\t\treturn \"invalid failure result\"\n\n\tcase ResultReplayToCanceled:\n\t\treturn \"replayed htlc to canceled invoice\"\n\n\tcase ResultInvoiceAlreadyCanceled:\n\t\treturn \"invoice already canceled\"\n\n\tcase ResultInvoiceAlreadySettled:\n\t\treturn \"invoice already settled\"\n\n\tcase ResultAmountTooLow:\n\t\treturn \"amount too low\"\n\n\tcase ResultExpiryTooSoon:\n\t\treturn \"expiry too soon\"\n\n\tcase ResultCanceled:\n\t\treturn \"canceled\"\n\n\tcase ResultInvoiceNotOpen:\n\t\treturn \"invoice no longer open\"\n\n\tcase ResultMppTimeout:\n\t\treturn \"mpp timeout\"\n\n\tcase ResultAddressMismatch:\n\t\treturn \"payment address mismatch\"\n\n\tcase ResultHtlcSetTotalMismatch:\n\t\treturn \"htlc total amt doesn't match set total\"\n\n\tcase ResultHtlcSetTotalTooLow:\n\t\treturn \"set total too low for invoice\"\n\n\tcase ResultHtlcSetOverpayment:\n\t\treturn \"mpp is overpaying set total\"\n\n\tcase ResultInvoiceNotFound:\n\t\treturn \"invoice not found\"\n\n\tcase ResultKeySendError:\n\t\treturn \"invalid keysend parameters\"\n\n\tcase ResultMppInProgress:\n\t\treturn \"mpp reception in progress\"\n\n\tcase ResultHtlcInvoiceTypeMismatch:\n\t\treturn \"htlc invoice type mismatch\"\n\n\tcase ResultAmpError:\n\t\treturn \"invalid amp parameters\"\n\n\tcase ResultAmpReconstruction:\n\t\treturn \"amp reconstruction failed\"\n\n\tdefault:\n\t\treturn \"unknown failure resolution result\"\n\t}\n}\n\n// IsSetFailure returns true if this failure should result in the entire HTLC\n// set being failed with the same result.",
+      "length": 1361,
+      "tokens": 157,
+      "embedding": []
+    },
+    {
+      "slug": "func (f FailResolutionResult) IsSetFailure() bool {",
+      "content": "func (f FailResolutionResult) IsSetFailure() bool {\n\tswitch f {\n\tcase\n\t\tResultAmpReconstruction,\n\t\tResultHtlcSetTotalTooLow,\n\t\tResultHtlcSetTotalMismatch,\n\t\tResultHtlcSetOverpayment:\n\n\t\treturn true\n\n\tdefault:\n\t\treturn false\n\t}\n}\n\n// SettleResolutionResult provides metadata which about a htlc that was failed\n// by the registry. It can be used to take custom actions on resolution of the\n// htlc.",
+      "length": 328,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "type SettleResolutionResult uint8",
+      "content": "type SettleResolutionResult uint8\n\nconst (\n\tresultInvalidSettle SettleResolutionResult = iota\n\n\t// ResultSettled is returned when we settle an invoice.\n\tResultSettled\n\n\t// ResultReplayToSettled is returned when we replay a settled invoice.\n\tResultReplayToSettled\n\n\t// ResultDuplicateToSettled is returned when we settle an invoice which\n\t// has already been settled at least once.\n\tResultDuplicateToSettled\n)\n\n// String returns a string representation of the result.",
+      "length": 417,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (s SettleResolutionResult) String() string {",
+      "content": "func (s SettleResolutionResult) String() string {\n\tswitch s {\n\tcase resultInvalidSettle:\n\t\treturn \"invalid settle result\"\n\n\tcase ResultSettled:\n\t\treturn \"settled\"\n\n\tcase ResultReplayToSettled:\n\t\treturn \"replayed htlc to settled invoice\"\n\n\tcase ResultDuplicateToSettled:\n\t\treturn \"accepting duplicate payment to settled invoice\"\n\n\tdefault:\n\t\treturn \"unknown settle resolution result\"\n\t}\n}\n",
+      "length": 321,
+      "tokens": 38,
+      "embedding": []
+    }
+  ]
+}

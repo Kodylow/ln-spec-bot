@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/config.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "type BoltConfig struct {",
+      "content": "type BoltConfig struct {\n\tNoFreelistSync bool `long:\"nofreelistsync\" description:\"Whether the databases used within lnd should sync their freelist to disk. This is set to true by default, meaning we don't sync the free-list resulting in imporved memory performance during operation, but with an increase in startup time.\"`\n\n\tAutoCompact bool `long:\"auto-compact\" description:\"Whether the databases used within lnd should automatically be compacted on every startup (and if the database has the configured minimum age). This is disabled by default because it requires additional disk space to be available during the compaction that is freed afterwards. In general compaction leads to smaller database files.\"`\n\n\tAutoCompactMinAge time.Duration `long:\"auto-compact-min-age\" description:\"How long ago the last compaction of a database file must be for it to be considered for auto compaction again. Can be set to 0 to compact on every startup.\"`\n\n\tDBTimeout time.Duration `long:\"dbtimeout\" description:\"Specify the timeout value used when opening the database.\"`\n}\n",
+      "length": 1030,
+      "tokens": 143,
+      "embedding": []
+    }
+  ]
+}

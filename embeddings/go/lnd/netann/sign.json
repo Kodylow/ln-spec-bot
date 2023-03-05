@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/netann/sign.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "func SignAnnouncement(signer lnwallet.MessageSigner, keyLoc keychain.KeyLocator,",
+      "content": "func SignAnnouncement(signer lnwallet.MessageSigner, keyLoc keychain.KeyLocator,\n\tmsg lnwire.Message) (input.Signature, error) {\n\n\tvar (\n\t\tdata []byte\n\t\terr  error\n\t)\n\n\tswitch m := msg.(type) {\n\tcase *lnwire.ChannelAnnouncement:\n\t\tdata, err = m.DataToSign()\n\tcase *lnwire.ChannelUpdate:\n\t\tdata, err = m.DataToSign()\n\tcase *lnwire.NodeAnnouncement:\n\t\tdata, err = m.DataToSign()\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"can't sign %T message\", m)\n\t}\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to get data to sign: %v\", err)\n\t}\n\n\treturn signer.SignMessage(keyLoc, data, true)\n}\n",
+      "length": 473,
+      "tokens": 65,
+      "embedding": []
+    }
+  ]
+}

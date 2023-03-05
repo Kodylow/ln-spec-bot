@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/mock_htlcnotifier_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type mockHTLCNotifier struct {",
+      "content": "type mockHTLCNotifier struct {\n\tHtlcNotifier\n}\n",
+      "length": 14,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockHTLCNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,",
+      "content": "func (m *mockHTLCNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,\n\tinfo channeldb.FinalHtlcInfo) { //nolint:whitespace\n}\n",
+      "length": 53,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

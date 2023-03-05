@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/record/record_test.go",
+  "package": "record_test",
+  "sections": [
+    {
+      "slug": "type recordEncDecTest struct {",
+      "content": "type recordEncDecTest struct {\n\tname      string\n\tencRecord func() tlv.RecordProducer\n\tdecRecord func() tlv.RecordProducer\n\tassert    func(*testing.T, interface{})\n}\n\nvar (\n\ttestTotal      = lnwire.MilliSatoshi(45)\n\ttestAddr       = [32]byte{0x01, 0x02}\n\ttestShare      = [32]byte{0x03, 0x04}\n\ttestSetID      = [32]byte{0x05, 0x06}\n\ttestChildIndex = uint32(17)\n)\n\nvar recordEncDecTests = []recordEncDecTest{\n\t{\n\t\tname: \"mpp\",\n\t\tencRecord: func() tlv.RecordProducer {\n\t\t\treturn record.NewMPP(testTotal, testAddr)\n\t\t},\n\t\tdecRecord: func() tlv.RecordProducer {\n\t\t\treturn new(record.MPP)\n\t\t},\n\t\tassert: func(t *testing.T, r interface{}) {\n\t\t\tmpp := r.(*record.MPP)\n\t\t\tif mpp.TotalMsat() != testTotal {\n\t\t\t\tt.Fatal(\"incorrect total msat\")\n\t\t\t}\n\t\t\tif mpp.PaymentAddr() != testAddr {\n\t\t\t\tt.Fatal(\"incorrect payment addr\")\n\t\t\t}\n\t\t},\n\t},\n\t{\n\t\tname: \"amp\",\n\t\tencRecord: func() tlv.RecordProducer {\n\t\t\treturn record.NewAMP(\n\t\t\t\ttestShare, testSetID, testChildIndex,\n\t\t\t)\n\t\t},\n\t\tdecRecord: func() tlv.RecordProducer {\n\t\t\treturn new(record.AMP)\n\t\t},\n\t\tassert: func(t *testing.T, r interface{}) {\n\t\t\tamp := r.(*record.AMP)\n\t\t\tif amp.RootShare() != testShare {\n\t\t\t\tt.Fatal(\"incorrect root share\")\n\t\t\t}\n\t\t\tif amp.SetID() != testSetID {\n\t\t\t\tt.Fatal(\"incorrect set id\")\n\t\t\t}\n\t\t\tif amp.ChildIndex() != testChildIndex {\n\t\t\t\tt.Fatal(\"incorrect child index\")\n\t\t\t}\n\t\t},\n\t},\n}\n\n// TestRecordEncodeDecode is a generic test framework for custom TLV records. It\n// asserts that records can encode and decode themselves, and that the value of\n// the original record matches the decoded record.",
+      "length": 1474,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func TestRecordEncodeDecode(t *testing.T) {",
+      "content": "func TestRecordEncodeDecode(t *testing.T) {\n\tfor _, test := range recordEncDecTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tr := test.encRecord()\n\t\t\tr2 := test.decRecord()\n\t\t\tencStream := tlv.MustNewStream(r.Record())\n\t\t\tdecStream := tlv.MustNewStream(r2.Record())\n\n\t\t\ttest.assert(t, r)\n\n\t\t\tvar b bytes.Buffer\n\t\t\terr := encStream.Encode(&b)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to encode record: %v\", err)\n\t\t\t}\n\n\t\t\terr = decStream.Decode(bytes.NewReader(b.Bytes()))\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to decode record: %v\", err)\n\t\t\t}\n\n\t\t\ttest.assert(t, r2)\n\t\t})\n\t}\n}\n",
+      "length": 526,
+      "tokens": 66,
+      "embedding": []
+    }
+  ]
+}

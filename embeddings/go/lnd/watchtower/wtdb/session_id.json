@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/session_id.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type SessionID [SessionIDSize]byte",
+      "content": "type SessionID [SessionIDSize]byte\n\n// NewSessionIDFromPubKey creates a new SessionID from a public key.",
+      "length": 68,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSessionIDFromPubKey(pubKey *btcec.PublicKey) SessionID {",
+      "content": "func NewSessionIDFromPubKey(pubKey *btcec.PublicKey) SessionID {\n\tvar sid SessionID\n\tcopy(sid[:], pubKey.SerializeCompressed())\n\treturn sid\n}\n\n// String returns a hex encoding of the session id.",
+      "length": 124,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (s SessionID) String() string {",
+      "content": "func (s SessionID) String() string {\n\treturn hex.EncodeToString(s[:])\n}\n",
+      "length": 33,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

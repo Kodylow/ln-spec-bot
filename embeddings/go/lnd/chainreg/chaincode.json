@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chainreg/chaincode.go",
+  "package": "chainreg",
+  "sections": [
+    {
+      "slug": "type ChainCode uint32",
+      "content": "type ChainCode uint32\n\nconst (\n\t// BitcoinChain is Bitcoin's chain.\n\tBitcoinChain ChainCode = iota\n\n\t// LitecoinChain is Litecoin's chain.\n\tLitecoinChain\n)\n\n// String returns a string representation of the target ChainCode.",
+      "length": 192,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChainCode) String() string {",
+      "content": "func (c ChainCode) String() string {\n\tswitch c {\n\tcase BitcoinChain:\n\t\treturn \"bitcoin\"\n\tcase LitecoinChain:\n\t\treturn \"litecoin\"\n\tdefault:\n\t\treturn \"kekcoin\"\n\t}\n}\n",
+      "length": 117,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

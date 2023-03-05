@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/conf.go",
+  "package": "watchtower",
+  "sections": [
+    {
+      "slug": "type Conf struct {",
+      "content": "type Conf struct {\n\t// RawListeners configures the watchtower's listening ports/interfaces.\n\tRawListeners []string `long:\"listen\" description:\"Add interfaces/ports to listen for peer connections\"`\n\n\t// RawExternalIPs configures the watchtower's external ports/interfaces.\n\tRawExternalIPs []string `long:\"externalip\" description:\"Add interfaces/ports where the watchtower can accept peer connections\"`\n\n\t// ReadTimeout specifies the duration the tower will wait when trying to\n\t// read a message from a client before hanging up.\n\tReadTimeout time.Duration `long:\"readtimeout\" description:\"Duration the watchtower server will wait for messages to be received before hanging up on clients\"`\n\n\t// WriteTimeout specifies the duration the tower will wait when trying\n\t// to write a message from a client before hanging up.\n\tWriteTimeout time.Duration `long:\"writetimeout\" description:\"Duration the watchtower server will wait for messages to be written before hanging up on client connections\"`\n}\n\n// Apply completes the passed Config struct by applying any parsed Conf options.\n// If the corresponding values parsed by Conf are already set in the Config,\n// those fields will be not be modified.",
+      "length": 1154,
+      "tokens": 155,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Conf) Apply(cfg *Config,",
+      "content": "func (c *Conf) Apply(cfg *Config,\n\tnormalizer AddressNormalizer) (*Config, error) {\n\n\t// Set the Config's listening addresses if they are empty.\n\tif cfg.ListenAddrs == nil {\n\t\t// Without a network, we will be unable to resolve the listening\n\t\t// addresses.\n\t\tif cfg.Net == nil {\n\t\t\treturn nil, ErrNoNetwork\n\t\t}\n\n\t\t// If no addresses are specified by the Config, we will resort\n\t\t// to the default peer port.\n\t\tif len(c.RawListeners) == 0 {\n\t\t\taddr := DefaultListenAddr\n\t\t\tc.RawListeners = append(c.RawListeners, addr)\n\t\t}\n\n\t\t// Normalize the raw listening addresses so that they can be\n\t\t// used by the brontide listener.\n\t\tvar err error\n\t\tcfg.ListenAddrs, err = normalizer(\n\t\t\tc.RawListeners, strconv.Itoa(DefaultPeerPort),\n\t\t\tcfg.Net.ResolveTCPAddr,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Set the Config's external ips if they are empty.\n\tif cfg.ExternalIPs == nil {\n\t\t// Without a network, we will be unable to resolve the external\n\t\t// IP addresses.\n\t\tif cfg.Net == nil {\n\t\t\treturn nil, ErrNoNetwork\n\t\t}\n\n\t\tvar err error\n\t\tcfg.ExternalIPs, err = normalizer(\n\t\t\tc.RawExternalIPs, strconv.Itoa(DefaultPeerPort),\n\t\t\tcfg.Net.ResolveTCPAddr,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// If the Config has no read timeout, we will use the parsed Conf\n\t// value.\n\tif cfg.ReadTimeout == 0 && c.ReadTimeout != 0 {\n\t\tcfg.ReadTimeout = c.ReadTimeout\n\t}\n\n\t// If the Config has no write timeout, we will use the parsed Conf\n\t// value.\n\tif cfg.WriteTimeout == 0 && c.WriteTimeout != 0 {\n\t\tcfg.WriteTimeout = c.WriteTimeout\n\t}\n\n\treturn cfg, nil\n}\n",
+      "length": 1463,
+      "tokens": 234,
+      "embedding": []
+    }
+  ]
+}

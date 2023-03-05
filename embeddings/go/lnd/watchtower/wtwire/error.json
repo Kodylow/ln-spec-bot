@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/error.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type Error struct {",
+      "content": "type Error struct {\n\t// Code specifies the error code encountered by the server.\n\tCode ErrorCode\n\n\t// Data encodes a payload whose contents can be interpreted by the\n\t// client in response to the error code.\n\tData []byte\n}\n\n// NewError returns an freshly-initialized Error message.",
+      "length": 253,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func NewError() *Error {",
+      "content": "func NewError() *Error {\n\treturn &Error{}\n}\n\n// A compile time check to ensure Error implements the wtwire.Message interface.\nvar _ Message = (*Error)(nil)\n\n// Decode deserializes a serialized Error message stored in the passed io.Reader\n// observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 300,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *Error) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (e *Error) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&e.Code,\n\t\t&e.Data,\n\t)\n}\n\n// Encode serializes the target Error into the passed io.Writer observing the\n// protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 203,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *Error) Encode(w io.Writer, prver uint32) error {",
+      "content": "func (e *Error) Encode(w io.Writer, prver uint32) error {\n\treturn WriteElements(w,\n\t\te.Code,\n\t\te.Data,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 179,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *Error) MsgType() MessageType {",
+      "content": "func (e *Error) MsgType() MessageType {\n\treturn MsgError\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a Error\n// complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 200,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *Error) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (e *Error) MaxPayloadLength(uint32) uint32 {\n\treturn MaxMessagePayload\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/bolt_fixture.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "type boltFixture struct {",
+      "content": "type boltFixture struct {\n\tt       *testing.T\n\ttempDir string\n}\n",
+      "length": 35,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBoltFixture(t *testing.T) *boltFixture {",
+      "content": "func NewBoltFixture(t *testing.T) *boltFixture {\n\treturn &boltFixture{\n\t\tt:       t,\n\t\ttempDir: t.TempDir(),\n\t}\n}\n",
+      "length": 60,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *boltFixture) NewBackend() walletdb.DB {",
+      "content": "func (b *boltFixture) NewBackend() walletdb.DB {\n\tdbPath := filepath.Join(b.tempDir)\n\n\tdb, err := GetBoltBackend(&BoltBackendConfig{\n\t\tDBPath:         dbPath,\n\t\tDBFileName:     \"test.db\",\n\t\tNoFreelistSync: true,\n\t\tDBTimeout:      DefaultDBTimeout,\n\t})\n\trequire.NoError(b.t, err)\n\n\treturn db\n}\n",
+      "length": 232,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

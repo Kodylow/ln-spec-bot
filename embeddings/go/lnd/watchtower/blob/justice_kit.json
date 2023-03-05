@@ -1,0 +1,111 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/blob/justice_kit.go",
+  "package": "blob",
+  "sections": [
+    {
+      "slug": "func Size(blobType Type) int {",
+      "content": "func Size(blobType Type) int {\n\treturn NonceSize + PlaintextSize(blobType) + CiphertextExpansion\n}\n\n// PlaintextSize returns the size of the encoded-but-unencrypted blob in bytes.",
+      "length": 145,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func PlaintextSize(blobType Type) int {",
+      "content": "func PlaintextSize(blobType Type) int {\n\tswitch {\n\tcase blobType.Has(FlagCommitOutputs):\n\t\treturn V0PlaintextSize\n\tdefault:\n\t\treturn 0\n\t}\n}\n\nvar (\n\t// byteOrder specifies a big-endian encoding of all integer values.\n\tbyteOrder = binary.BigEndian\n\n\t// ErrUnknownBlobType signals that we don't understand the requested\n\t// blob encoding scheme.\n\tErrUnknownBlobType = errors.New(\"unknown blob type\")\n\n\t// ErrCiphertextTooSmall is a decryption error signaling that the\n\t// ciphertext is smaller than the ciphertext expansion factor.\n\tErrCiphertextTooSmall = errors.New(\n\t\t\"ciphertext is too small for chacha20poly1305\",\n\t)\n\n\t// ErrNoCommitToRemoteOutput is returned when trying to retrieve the\n\t// commit to-remote output from the blob, though none exists.\n\tErrNoCommitToRemoteOutput = errors.New(\n\t\t\"cannot obtain commit to-remote p2wkh output script from blob\",\n\t)\n\n\t// ErrSweepAddressToLong is returned when trying to encode or decode a\n\t// sweep address with length greater than the maximum length of 42\n\t// bytes, which supports p2wkh and p2sh addresses.\n\tErrSweepAddressToLong = fmt.Errorf(\n\t\t\"sweep address must be less than or equal to %d bytes long\",\n\t\tMaxSweepAddrSize,\n\t)\n)\n\n// PubKey is a 33-byte, serialized compressed public key.",
+      "length": 1162,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "type PubKey [33]byte",
+      "content": "type PubKey [33]byte\n\n// JusticeKit is l\u00e9 Blob of Justice. The JusticeKit contains information\n// required to construct a justice transaction, that sweeps a remote party's\n// revoked commitment transaction. It supports encryption and decryption using\n// chacha20poly1305, allowing the client to encrypt the contents of the blob,\n// and for a watchtower to later decrypt if action must be taken. The encoding\n// format is versioned to allow future extensions.",
+      "length": 431,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type JusticeKit struct {",
+      "content": "type JusticeKit struct {\n\t// BlobType encodes a bitfield that inform the tower of various features\n\t// requested by the client when resolving a breach. Examples include\n\t// whether the justice transaction contains a reward for the tower, or\n\t// whether the channel is a legacy or anchor channel.\n\t//\n\t// NOTE: This value is not serialized in the encrypted payload. It is\n\t// stored separately and added to the JusticeKit after decryption.\n\tBlobType Type\n\n\t// SweepAddress is the witness program of the output where the client's\n\t// fund will be deposited. This value is included in the blobs, as\n\t// opposed to the session info, such that the sweep addresses can't be\n\t// correlated across sessions and/or towers.\n\t//\n\t// NOTE: This is chosen to be the length of a maximally sized witness\n\t// program.\n\tSweepAddress []byte\n\n\t// RevocationPubKey is the compressed pubkey that guards the revocation\n\t// clause of the remote party's to-local output.\n\tRevocationPubKey PubKey\n\n\t// LocalDelayPubKey is the compressed pubkey in the to-local script of\n\t// the remote party, which guards the path where the remote party\n\t// claims their commitment output.\n\tLocalDelayPubKey PubKey\n\n\t// CSVDelay is the relative timelock in the remote party's to-local\n\t// output, which the remote party must wait out before sweeping their\n\t// commitment output.\n\tCSVDelay uint32\n\n\t// CommitToLocalSig is a signature under RevocationPubKey using\n\t// SIGHASH_ALL.\n\tCommitToLocalSig lnwire.Sig\n\n\t// CommitToRemotePubKey is the public key in the to-remote output of the revoked\n\t// commitment transaction.\n\t//\n\t// NOTE: This value is only used if it contains a valid compressed\n\t// public key.\n\tCommitToRemotePubKey PubKey\n\n\t// CommitToRemoteSig is a signature under CommitToRemotePubKey using SIGHASH_ALL.\n\t//\n\t// NOTE: This value is only used if CommitToRemotePubKey contains a valid\n\t// compressed public key.\n\tCommitToRemoteSig lnwire.Sig\n}\n\n// CommitToLocalWitnessScript returns the serialized witness script for the\n// commitment to-local output.",
+      "length": 1947,
+      "tokens": 301,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) CommitToLocalWitnessScript() ([]byte, error) {",
+      "content": "func (b *JusticeKit) CommitToLocalWitnessScript() ([]byte, error) {\n\trevocationPubKey, err := btcec.ParsePubKey(\n\t\tb.RevocationPubKey[:],\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tlocalDelayedPubKey, err := btcec.ParsePubKey(\n\t\tb.LocalDelayPubKey[:],\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn input.CommitScriptToSelf(\n\t\tb.CSVDelay, localDelayedPubKey, revocationPubKey,\n\t)\n}\n\n// CommitToLocalRevokeWitnessStack constructs a witness stack spending the\n// revocation clause of the commitment to-local output.\n//\n//\t<revocation-sig> 1",
+      "length": 451,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) CommitToLocalRevokeWitnessStack() ([][]byte, error) {",
+      "content": "func (b *JusticeKit) CommitToLocalRevokeWitnessStack() ([][]byte, error) {\n\ttoLocalSig, err := b.CommitToLocalSig.ToSignature()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\twitnessStack := make([][]byte, 2)\n\twitnessStack[0] = append(toLocalSig.Serialize(),\n\t\tbyte(txscript.SigHashAll))\n\twitnessStack[1] = []byte{1}\n\n\treturn witnessStack, nil\n}\n\n// HasCommitToRemoteOutput returns true if the blob contains a to-remote p2wkh\n// pubkey.",
+      "length": 340,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) HasCommitToRemoteOutput() bool {",
+      "content": "func (b *JusticeKit) HasCommitToRemoteOutput() bool {\n\treturn btcec.IsCompressedPubKey(b.CommitToRemotePubKey[:])\n}\n\n// CommitToRemoteWitnessScript returns the witness script for the commitment\n// to-remote output given the blob type. The script returned will either be for\n// a p2wpkh to-remote output or an p2wsh anchor to-remote output which includes\n// a CSV delay.",
+      "length": 309,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) CommitToRemoteWitnessScript() ([]byte, error) {",
+      "content": "func (b *JusticeKit) CommitToRemoteWitnessScript() ([]byte, error) {\n\tif !btcec.IsCompressedPubKey(b.CommitToRemotePubKey[:]) {\n\t\treturn nil, ErrNoCommitToRemoteOutput\n\t}\n\n\t// If this is a blob for an anchor channel, we'll return the p2wsh\n\t// output containing a CSV delay of 1.\n\tif b.BlobType.IsAnchorChannel() {\n\t\tpk, err := btcec.ParsePubKey(b.CommitToRemotePubKey[:])\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn input.CommitScriptToRemoteConfirmed(pk)\n\t}\n\n\treturn b.CommitToRemotePubKey[:], nil\n}\n\n// CommitToRemoteWitnessStack returns a witness stack spending the commitment\n// to-remote output, which consists of a single signature satisfying either the\n// legacy or anchor witness scripts.\n//\n//\t<to-remote-sig>",
+      "length": 635,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) CommitToRemoteWitnessStack() ([][]byte, error) {",
+      "content": "func (b *JusticeKit) CommitToRemoteWitnessStack() ([][]byte, error) {\n\ttoRemoteSig, err := b.CommitToRemoteSig.ToSignature()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\twitnessStack := make([][]byte, 1)\n\twitnessStack[0] = append(toRemoteSig.Serialize(),\n\t\tbyte(txscript.SigHashAll))\n\n\treturn witnessStack, nil\n}\n\n// Encrypt encodes the blob of justice using encoding version, and then\n// creates a ciphertext using chacha20poly1305 under the chosen (nonce, key)\n// pair.\n//\n// NOTE: It is the caller's responsibility to ensure that this method is only\n// called once for a given (nonce, key) pair.",
+      "length": 506,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) Encrypt(key BreachKey) ([]byte, error) {",
+      "content": "func (b *JusticeKit) Encrypt(key BreachKey) ([]byte, error) {\n\t// Encode the plaintext using the provided version, to obtain the\n\t// plaintext bytes.\n\tvar ptxtBuf bytes.Buffer\n\terr := b.encode(&ptxtBuf, b.BlobType)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Create a new chacha20poly1305 cipher, using a 32-byte key.\n\tcipher, err := chacha20poly1305.NewX(key[:])\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Allocate the ciphertext, which will contain the nonce, encrypted\n\t// plaintext and MAC.\n\tplaintext := ptxtBuf.Bytes()\n\tciphertext := make([]byte, Size(b.BlobType))\n\n\t// Generate a random  24-byte nonce in the ciphertext's prefix.\n\tnonce := ciphertext[:NonceSize]\n\tif _, err := io.ReadFull(rand.Reader, nonce); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally, encrypt the plaintext using the given nonce, storing the\n\t// result in the ciphertext buffer.\n\tcipher.Seal(ciphertext[NonceSize:NonceSize], nonce, plaintext, nil)\n\n\treturn ciphertext, nil\n}\n\n// Decrypt unenciphers a blob of justice by decrypting the ciphertext using\n// chacha20poly1305 with the chosen (nonce, key) pair. The internal plaintext is\n// then deserialized using the given encoding version.",
+      "length": 1070,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func Decrypt(key BreachKey, ciphertext []byte,",
+      "content": "func Decrypt(key BreachKey, ciphertext []byte,\n\tblobType Type) (*JusticeKit, error) {\n\n\t// Fail if the blob's overall length is less than required for the nonce\n\t// and expansion factor.\n\tif len(ciphertext) < NonceSize+CiphertextExpansion {\n\t\treturn nil, ErrCiphertextTooSmall\n\t}\n\n\t// Create a new chacha20poly1305 cipher, using a 32-byte key.\n\tcipher, err := chacha20poly1305.NewX(key[:])\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Allocate the final buffer that will contain the blob's plaintext\n\t// bytes, which is computed by subtracting the ciphertext expansion\n\t// factor from the blob's length.\n\tplaintext := make([]byte, len(ciphertext)-CiphertextExpansion)\n\n\t// Decrypt the ciphertext, placing the resulting plaintext in our\n\t// plaintext buffer.\n\tnonce := ciphertext[:NonceSize]\n\t_, err = cipher.Open(plaintext[:0], nonce, ciphertext[NonceSize:], nil)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If decryption succeeded, we will then decode the plaintext bytes\n\t// using the specified blob version.\n\tboj := &JusticeKit{\n\t\tBlobType: blobType,\n\t}\n\terr = boj.decode(bytes.NewReader(plaintext), blobType)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn boj, nil\n}\n\n// encode serializes the JusticeKit according to the version, returning an\n// error if the version is unknown.",
+      "length": 1191,
+      "tokens": 176,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) encode(w io.Writer, blobType Type) error {",
+      "content": "func (b *JusticeKit) encode(w io.Writer, blobType Type) error {\n\tswitch {\n\tcase blobType.Has(FlagCommitOutputs):\n\t\treturn b.encodeV0(w)\n\tdefault:\n\t\treturn ErrUnknownBlobType\n\t}\n}\n\n// decode deserializes the JusticeKit according to the version, returning an\n// error if the version is unknown.",
+      "length": 219,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) decode(r io.Reader, blobType Type) error {",
+      "content": "func (b *JusticeKit) decode(r io.Reader, blobType Type) error {\n\tswitch {\n\tcase blobType.Has(FlagCommitOutputs):\n\t\treturn b.decodeV0(r)\n\tdefault:\n\t\treturn ErrUnknownBlobType\n\t}\n}\n\n// encodeV0 encodes the JusticeKit using the version 0 encoding scheme to the\n// provided io.Writer. The encoding supports sweeping of the commit to-local\n// output, and  optionally the  commit to-remote output. The encoding produces a\n// constant-size plaintext size of 274 bytes.\n//\n// blob version 0 plaintext encoding:\n//\n//\tsweep address length:            1 byte\n//\tpadded sweep address:           42 bytes\n//\trevocation pubkey:              33 bytes\n//\tlocal delay pubkey:             33 bytes\n//\tcsv delay:                       4 bytes\n//\tcommit to-local revocation sig: 64 bytes\n//\tcommit to-remote pubkey:        33 bytes, maybe blank\n//\tcommit to-remote sig:           64 bytes, maybe blank",
+      "length": 796,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) encodeV0(w io.Writer) error {",
+      "content": "func (b *JusticeKit) encodeV0(w io.Writer) error {\n\t// Assert the sweep address length is sane.\n\tif len(b.SweepAddress) > MaxSweepAddrSize {\n\t\treturn ErrSweepAddressToLong\n\t}\n\n\t// Write the actual length of the sweep address as a single byte.\n\terr := binary.Write(w, byteOrder, uint8(len(b.SweepAddress)))\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Pad the sweep address to our maximum length of 42 bytes.\n\tvar sweepAddressBuf [MaxSweepAddrSize]byte\n\tcopy(sweepAddressBuf[:], b.SweepAddress)\n\n\t// Write padded 42-byte sweep address.\n\t_, err = w.Write(sweepAddressBuf[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 33-byte revocation public key.\n\t_, err = w.Write(b.RevocationPubKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 33-byte local delay public key.\n\t_, err = w.Write(b.LocalDelayPubKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 4-byte CSV delay.\n\terr = binary.Write(w, byteOrder, b.CSVDelay)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 64-byte revocation signature for commit to-local output.\n\t_, err = w.Write(b.CommitToLocalSig[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 33-byte commit to-remote public key, which may be blank.\n\t_, err = w.Write(b.CommitToRemotePubKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Write 64-byte commit to-remote signature, which may be blank.\n\t_, err = w.Write(b.CommitToRemoteSig[:])\n\treturn err\n}\n\n// decodeV0 reconstructs a JusticeKit from the io.Reader, using version 0\n// encoding scheme. This will parse a constant size input stream of 274 bytes to\n// recover information for the commit to-local output, and possibly the commit\n// to-remote output.\n//\n// blob version 0 plaintext encoding:\n//\n//\tsweep address length:            1 byte\n//\tpadded sweep address:           42 bytes\n//\trevocation pubkey:              33 bytes\n//\tlocal delay pubkey:             33 bytes\n//\tcsv delay:                       4 bytes\n//\tcommit to-local revocation sig: 64 bytes\n//\tcommit to-remote pubkey:        33 bytes, maybe blank\n//\tcommit to-remote sig:           64 bytes, maybe blank",
+      "length": 1906,
+      "tokens": 293,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *JusticeKit) decodeV0(r io.Reader) error {",
+      "content": "func (b *JusticeKit) decodeV0(r io.Reader) error {\n\t// Read the sweep address length as a single byte.\n\tvar sweepAddrLen uint8\n\terr := binary.Read(r, byteOrder, &sweepAddrLen)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Assert the sweep address length is sane.\n\tif sweepAddrLen > MaxSweepAddrSize {\n\t\treturn ErrSweepAddressToLong\n\t}\n\n\t// Read padded 42-byte sweep address.\n\tvar sweepAddressBuf [MaxSweepAddrSize]byte\n\t_, err = io.ReadFull(r, sweepAddressBuf[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Parse sweep address from padded buffer.\n\tb.SweepAddress = make([]byte, sweepAddrLen)\n\tcopy(b.SweepAddress, sweepAddressBuf[:])\n\n\t// Read 33-byte revocation public key.\n\t_, err = io.ReadFull(r, b.RevocationPubKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Read 33-byte local delay public key.\n\t_, err = io.ReadFull(r, b.LocalDelayPubKey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Read 4-byte CSV delay.\n\terr = binary.Read(r, byteOrder, &b.CSVDelay)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Read 64-byte revocation signature for commit to-local output.\n\t_, err = io.ReadFull(r, b.CommitToLocalSig[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar (\n\t\tcommitToRemotePubkey PubKey\n\t\tcommitToRemoteSig    lnwire.Sig\n\t)\n\n\t// Read 33-byte commit to-remote public key, which may be discarded.\n\t_, err = io.ReadFull(r, commitToRemotePubkey[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Read 64-byte commit to-remote signature, which may be discarded.\n\t_, err = io.ReadFull(r, commitToRemoteSig[:])\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Only populate the commit to-remote fields in the decoded blob if a\n\t// valid compressed public key was read from the reader.\n\tif btcec.IsCompressedPubKey(commitToRemotePubkey[:]) {\n\t\tb.CommitToRemotePubKey = commitToRemotePubkey\n\t\tb.CommitToRemoteSig = commitToRemoteSig\n\t}\n\n\treturn nil\n}\n",
+      "length": 1670,
+      "tokens": 246,
+      "embedding": []
+    }
+  ]
+}

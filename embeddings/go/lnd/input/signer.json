@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/input/signer.go",
+  "package": "input",
+  "sections": [
+    {
+      "slug": "type Signer interface {",
+      "content": "type Signer interface {\n\t// MuSig2Signer is an embedded interface to make sure all our signers\n\t// also support MuSig2 signing, so we can forward calls to a remote\n\t// signer as well.\n\tMuSig2Signer\n\n\t// SignOutputRaw generates a signature for the passed transaction\n\t// according to the data within the passed SignDescriptor.\n\t//\n\t// NOTE: The resulting signature should be void of a sighash byte.\n\tSignOutputRaw(tx *wire.MsgTx, signDesc *SignDescriptor) (Signature,\n\t\terror)\n\n\t// ComputeInputScript generates a complete InputIndex for the passed\n\t// transaction with the signature as defined within the passed\n\t// SignDescriptor. This method should be capable of generating the\n\t// proper input script for both regular p2wkh/p2tr outputs and p2wkh\n\t// outputs nested within a regular p2sh output.\n\t//\n\t// NOTE: This method will ignore any tweak parameters set within the\n\t// passed SignDescriptor as it assumes a set of typical script\n\t// templates (p2wkh, p2tr, np2wkh, etc).\n\tComputeInputScript(tx *wire.MsgTx, signDesc *SignDescriptor) (*Script,\n\t\terror)\n}\n\n// Script represents any script inputs required to redeem a previous\n// output. This struct is used rather than just a witness, or scripSig in order\n// to accommodate nested p2sh which utilizes both types of input scripts.",
+      "length": 1233,
+      "tokens": 190,
+      "embedding": []
+    },
+    {
+      "slug": "type Script struct {",
+      "content": "type Script struct {\n\t// Witness is the full witness stack required to unlock this output.\n\tWitness wire.TxWitness\n\n\t// SigScript will only be populated if this is an input script sweeping\n\t// a nested p2sh output.\n\tSigScript []byte\n}\n",
+      "length": 207,
+      "tokens": 35,
+      "embedding": []
+    }
+  ]
+}

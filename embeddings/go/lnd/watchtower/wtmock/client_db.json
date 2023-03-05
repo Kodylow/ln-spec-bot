@@ -1,0 +1,223 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtmock/client_db.go",
+  "package": "wtmock",
+  "sections": [
+    {
+      "slug": "type towerPK [33]byte",
+      "content": "type towerPK [33]byte\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type keyIndexKey struct {",
+      "content": "type keyIndexKey struct {\n\ttowerID  wtdb.TowerID\n\tblobType blob.Type\n}\n",
+      "length": 42,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type rangeIndexArrayMap map[wtdb.SessionID]map[lnwire.ChannelID]*wtdb.RangeIndex",
+      "content": "type rangeIndexArrayMap map[wtdb.SessionID]map[lnwire.ChannelID]*wtdb.RangeIndex\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type rangeIndexKVStore map[wtdb.SessionID]map[lnwire.ChannelID]*mockKVStore",
+      "content": "type rangeIndexKVStore map[wtdb.SessionID]map[lnwire.ChannelID]*mockKVStore\n\n// ClientDB is a mock, in-memory database or testing the watchtower client\n// behavior.",
+      "length": 86,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type ClientDB struct {",
+      "content": "type ClientDB struct {\n\tnextTowerID uint64 // to be used atomically\n\n\tmu                    sync.Mutex\n\tsummaries             map[lnwire.ChannelID]wtdb.ClientChanSummary\n\tactiveSessions        map[wtdb.SessionID]wtdb.ClientSession\n\tackedUpdates          rangeIndexArrayMap\n\tpersistedAckedUpdates rangeIndexKVStore\n\tcommittedUpdates      map[wtdb.SessionID][]wtdb.CommittedUpdate\n\ttowerIndex            map[towerPK]wtdb.TowerID\n\ttowers                map[wtdb.TowerID]*wtdb.Tower\n\n\tnextIndex     uint32\n\tindexes       map[keyIndexKey]uint32\n\tlegacyIndexes map[wtdb.TowerID]uint32\n}\n\n// NewClientDB initializes a new mock ClientDB.",
+      "length": 590,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func NewClientDB() *ClientDB {",
+      "content": "func NewClientDB() *ClientDB {\n\treturn &ClientDB{\n\t\tsummaries: make(\n\t\t\tmap[lnwire.ChannelID]wtdb.ClientChanSummary,\n\t\t),\n\t\tactiveSessions: make(\n\t\t\tmap[wtdb.SessionID]wtdb.ClientSession,\n\t\t),\n\t\tackedUpdates:          make(rangeIndexArrayMap),\n\t\tpersistedAckedUpdates: make(rangeIndexKVStore),\n\t\tcommittedUpdates: make(\n\t\t\tmap[wtdb.SessionID][]wtdb.CommittedUpdate,\n\t\t),\n\t\ttowerIndex:    make(map[towerPK]wtdb.TowerID),\n\t\ttowers:        make(map[wtdb.TowerID]*wtdb.Tower),\n\t\tindexes:       make(map[keyIndexKey]uint32),\n\t\tlegacyIndexes: make(map[wtdb.TowerID]uint32),\n\t}\n}\n\n// CreateTower initialize an address record used to communicate with a\n// watchtower. Each Tower is assigned a unique ID, that is used to amortize\n// storage costs of the public key when used by multiple sessions. If the tower\n// already exists, the address is appended to the list of all addresses used to\n// that tower previously and its corresponding sessions are marked as active.",
+      "length": 904,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) CreateTower(lnAddr *lnwire.NetAddress) (*wtdb.Tower, error) {",
+      "content": "func (m *ClientDB) CreateTower(lnAddr *lnwire.NetAddress) (*wtdb.Tower, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tvar towerPubKey towerPK\n\tcopy(towerPubKey[:], lnAddr.IdentityKey.SerializeCompressed())\n\n\tvar tower *wtdb.Tower\n\ttowerID, ok := m.towerIndex[towerPubKey]\n\tif ok {\n\t\ttower = m.towers[towerID]\n\t\ttower.AddAddress(lnAddr.Address)\n\n\t\ttowerSessions, err := m.listClientSessions(&towerID)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tfor id, session := range towerSessions {\n\t\t\tsession.Status = wtdb.CSessionActive\n\t\t\tm.activeSessions[id] = *session\n\t\t}\n\t} else {\n\t\ttowerID = wtdb.TowerID(atomic.AddUint64(&m.nextTowerID, 1))\n\t\ttower = &wtdb.Tower{\n\t\t\tID:          towerID,\n\t\t\tIdentityKey: lnAddr.IdentityKey,\n\t\t\tAddresses:   []net.Addr{lnAddr.Address},\n\t\t}\n\t}\n\n\tm.towerIndex[towerPubKey] = towerID\n\tm.towers[towerID] = tower\n\n\treturn copyTower(tower), nil\n}\n\n// RemoveTower modifies a tower's record within the database. If an address is\n// provided, then _only_ the address record should be removed from the tower's\n// persisted state. Otherwise, we'll attempt to mark the tower as inactive by\n// marking all of its sessions inactive. If any of its sessions has unacked\n// updates, then ErrTowerUnackedUpdates is returned. If the tower doesn't have\n// any sessions at all, it'll be completely removed from the database.\n//\n// NOTE: An error is not returned if the tower doesn't exist.",
+      "length": 1271,
+      "tokens": 166,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) RemoveTower(pubKey *btcec.PublicKey, addr net.Addr) error {",
+      "content": "func (m *ClientDB) RemoveTower(pubKey *btcec.PublicKey, addr net.Addr) error {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\ttower, err := m.loadTower(pubKey)\n\tif err == wtdb.ErrTowerNotFound {\n\t\treturn nil\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif addr != nil {\n\t\ttower.RemoveAddress(addr)\n\t\tif len(tower.Addresses) == 0 {\n\t\t\treturn wtdb.ErrLastTowerAddr\n\t\t}\n\t\tm.towers[tower.ID] = tower\n\t\treturn nil\n\t}\n\n\ttowerSessions, err := m.listClientSessions(&tower.ID)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif len(towerSessions) == 0 {\n\t\tvar towerPK towerPK\n\t\tcopy(towerPK[:], pubKey.SerializeCompressed())\n\t\tdelete(m.towerIndex, towerPK)\n\t\tdelete(m.towers, tower.ID)\n\t\treturn nil\n\t}\n\n\tfor id, session := range towerSessions {\n\t\tif len(m.committedUpdates[session.ID]) > 0 {\n\t\t\treturn wtdb.ErrTowerUnackedUpdates\n\t\t}\n\t\tsession.Status = wtdb.CSessionInactive\n\t\tm.activeSessions[id] = *session\n\t}\n\n\treturn nil\n}\n\n// LoadTower retrieves a tower by its public key.",
+      "length": 814,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) LoadTower(pubKey *btcec.PublicKey) (*wtdb.Tower, error) {",
+      "content": "func (m *ClientDB) LoadTower(pubKey *btcec.PublicKey) (*wtdb.Tower, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\treturn m.loadTower(pubKey)\n}\n\n// loadTower retrieves a tower by its public key.\n//\n// NOTE: This method requires the database's lock to be acquired.",
+      "length": 176,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) loadTower(pubKey *btcec.PublicKey) (*wtdb.Tower, error) {",
+      "content": "func (m *ClientDB) loadTower(pubKey *btcec.PublicKey) (*wtdb.Tower, error) {\n\tvar towerPK towerPK\n\tcopy(towerPK[:], pubKey.SerializeCompressed())\n\n\ttowerID, ok := m.towerIndex[towerPK]\n\tif !ok {\n\t\treturn nil, wtdb.ErrTowerNotFound\n\t}\n\ttower, ok := m.towers[towerID]\n\tif !ok {\n\t\treturn nil, wtdb.ErrTowerNotFound\n\t}\n\n\treturn copyTower(tower), nil\n}\n\n// LoadTowerByID retrieves a tower by its tower ID.",
+      "length": 308,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) LoadTowerByID(towerID wtdb.TowerID) (*wtdb.Tower, error) {",
+      "content": "func (m *ClientDB) LoadTowerByID(towerID wtdb.TowerID) (*wtdb.Tower, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tif tower, ok := m.towers[towerID]; ok {\n\t\treturn copyTower(tower), nil\n\t}\n\n\treturn nil, wtdb.ErrTowerNotFound\n}\n\n// ListTowers retrieves the list of towers available within the database.",
+      "length": 212,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) ListTowers() ([]*wtdb.Tower, error) {",
+      "content": "func (m *ClientDB) ListTowers() ([]*wtdb.Tower, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\ttowers := make([]*wtdb.Tower, 0, len(m.towers))\n\tfor _, tower := range m.towers {\n\t\ttowers = append(towers, copyTower(tower))\n\t}\n\n\treturn towers, nil\n}\n\n// MarkBackupIneligible records that particular commit height is ineligible for\n// backup. This allows the client to track which updates it should not attempt\n// to retry after startup.",
+      "length": 361,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) MarkBackupIneligible(_ lnwire.ChannelID, _ uint64) error {",
+      "content": "func (m *ClientDB) MarkBackupIneligible(_ lnwire.ChannelID, _ uint64) error {\n\treturn nil\n}\n\n// ListClientSessions returns the set of all client sessions known to the db. An\n// optional tower ID can be used to filter out any client sessions in the\n// response that do not correspond to this tower.",
+      "length": 214,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) ListClientSessions(tower *wtdb.TowerID,",
+      "content": "func (m *ClientDB) ListClientSessions(tower *wtdb.TowerID,\n\topts ...wtdb.ClientSessionListOption) (\n\tmap[wtdb.SessionID]*wtdb.ClientSession, error) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\treturn m.listClientSessions(tower, opts...)\n}\n\n// listClientSessions returns the set of all client sessions known to the db. An\n// optional tower ID can be used to filter out any client sessions in the\n// response that do not correspond to this tower.",
+      "length": 368,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) listClientSessions(tower *wtdb.TowerID,",
+      "content": "func (m *ClientDB) listClientSessions(tower *wtdb.TowerID,\n\topts ...wtdb.ClientSessionListOption) (\n\tmap[wtdb.SessionID]*wtdb.ClientSession, error) {\n\n\tcfg := wtdb.NewClientSessionCfg()\n\tfor _, o := range opts {\n\t\to(cfg)\n\t}\n\n\tsessions := make(map[wtdb.SessionID]*wtdb.ClientSession)\n\tfor _, session := range m.activeSessions {\n\t\tsession := session\n\t\tif tower != nil && *tower != session.TowerID {\n\t\t\tcontinue\n\t\t}\n\t\tsessions[session.ID] = &session\n\n\t\tif cfg.PerMaxHeight != nil {\n\t\t\tfor chanID, index := range m.ackedUpdates[session.ID] {\n\t\t\t\tcfg.PerMaxHeight(\n\t\t\t\t\t&session, chanID, index.MaxHeight(),\n\t\t\t\t)\n\t\t\t}\n\t\t}\n\n\t\tif cfg.PerNumAckedUpdates != nil {\n\t\t\tfor chanID, index := range m.ackedUpdates[session.ID] {\n\t\t\t\tcfg.PerNumAckedUpdates(\n\t\t\t\t\t&session, chanID,\n\t\t\t\t\tuint16(index.NumInSet()),\n\t\t\t\t)\n\t\t\t}\n\t\t}\n\n\t\tif cfg.PerCommittedUpdate != nil {\n\t\t\tfor _, update := range m.committedUpdates[session.ID] {\n\t\t\t\tupdate := update\n\t\t\t\tcfg.PerCommittedUpdate(&session, &update)\n\t\t\t}\n\t\t}\n\t}\n\n\treturn sessions, nil\n}\n\n// FetchSessionCommittedUpdates retrieves the current set of un-acked updates\n// of the given session.",
+      "length": 1011,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) FetchSessionCommittedUpdates(id *wtdb.SessionID) (",
+      "content": "func (m *ClientDB) FetchSessionCommittedUpdates(id *wtdb.SessionID) (\n\t[]wtdb.CommittedUpdate, error) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tupdates, ok := m.committedUpdates[*id]\n\tif !ok {\n\t\treturn nil, wtdb.ErrClientSessionNotFound\n\t}\n\n\treturn updates, nil\n}\n\n// IsAcked returns true if the given backup has been backed up using the given\n// session.",
+      "length": 268,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) IsAcked(id *wtdb.SessionID, backupID *wtdb.BackupID) (bool,",
+      "content": "func (m *ClientDB) IsAcked(id *wtdb.SessionID, backupID *wtdb.BackupID) (bool,\n\terror) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tindex, ok := m.ackedUpdates[*id][backupID.ChanID]\n\tif !ok {\n\t\treturn false, nil\n\t}\n\n\treturn index.IsInIndex(backupID.CommitHeight), nil\n}\n\n// NumAckedUpdates returns the number of backups that have been successfully\n// backed up using the given session.",
+      "length": 286,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) NumAckedUpdates(id *wtdb.SessionID) (uint64, error) {",
+      "content": "func (m *ClientDB) NumAckedUpdates(id *wtdb.SessionID) (uint64, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tvar numAcked uint64\n\n\tfor _, index := range m.ackedUpdates[*id] {\n\t\tnumAcked += index.NumInSet()\n\t}\n\n\treturn numAcked, nil\n}\n\n// CreateClientSession records a newly negotiated client session in the set of\n// active sessions. The session can be identified by its SessionID.",
+      "length": 295,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) CreateClientSession(session *wtdb.ClientSession) error {",
+      "content": "func (m *ClientDB) CreateClientSession(session *wtdb.ClientSession) error {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\t// Ensure that we aren't overwriting an existing session.\n\tif _, ok := m.activeSessions[session.ID]; ok {\n\t\treturn wtdb.ErrClientSessionAlreadyExists\n\t}\n\n\tkey := keyIndexKey{\n\t\ttowerID:  session.TowerID,\n\t\tblobType: session.Policy.BlobType,\n\t}\n\n\t// Ensure that a session key index has been reserved for this tower.\n\tkeyIndex, err := m.getSessionKeyIndex(key)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Ensure that the session's index matches the reserved index.\n\tif keyIndex != session.KeyIndex {\n\t\treturn wtdb.ErrIncorrectKeyIndex\n\t}\n\n\t// Remove the key index reservation for this tower. Once committed, this\n\t// permits us to create another session with this tower.\n\tdelete(m.indexes, key)\n\tif key.blobType == blob.TypeAltruistCommit {\n\t\tdelete(m.legacyIndexes, key.towerID)\n\t}\n\n\tm.activeSessions[session.ID] = wtdb.ClientSession{\n\t\tID: session.ID,\n\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\tSeqNum:           session.SeqNum,\n\t\t\tTowerLastApplied: session.TowerLastApplied,\n\t\t\tTowerID:          session.TowerID,\n\t\t\tKeyIndex:         session.KeyIndex,\n\t\t\tPolicy:           session.Policy,\n\t\t\tRewardPkScript:   cloneBytes(session.RewardPkScript),\n\t\t},\n\t}\n\tm.ackedUpdates[session.ID] = make(map[lnwire.ChannelID]*wtdb.RangeIndex)\n\tm.persistedAckedUpdates[session.ID] = make(\n\t\tmap[lnwire.ChannelID]*mockKVStore,\n\t)\n\tm.committedUpdates[session.ID] = make([]wtdb.CommittedUpdate, 0)\n\n\treturn nil\n}\n\n// NextSessionKeyIndex reserves a new session key derivation index for a\n// particular tower id. The index is reserved for that tower until\n// CreateClientSession is invoked for that tower and index, at which point a new\n// index for that tower can be reserved. Multiple calls to this method before\n// CreateClientSession is invoked should return the same index.",
+      "length": 1738,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) NextSessionKeyIndex(towerID wtdb.TowerID,",
+      "content": "func (m *ClientDB) NextSessionKeyIndex(towerID wtdb.TowerID,\n\tblobType blob.Type) (uint32, error) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tkey := keyIndexKey{\n\t\ttowerID:  towerID,\n\t\tblobType: blobType,\n\t}\n\n\tif index, err := m.getSessionKeyIndex(key); err == nil {\n\t\treturn index, nil\n\t}\n\n\tm.nextIndex++\n\tindex := m.nextIndex\n\tm.indexes[key] = index\n\n\treturn index, nil\n}\n",
+      "length": 288,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) getSessionKeyIndex(key keyIndexKey) (uint32, error) {",
+      "content": "func (m *ClientDB) getSessionKeyIndex(key keyIndexKey) (uint32, error) {\n\tif index, ok := m.indexes[key]; ok {\n\t\treturn index, nil\n\t}\n\n\tif key.blobType == blob.TypeAltruistCommit {\n\t\tif index, ok := m.legacyIndexes[key.towerID]; ok {\n\t\t\treturn index, nil\n\t\t}\n\t}\n\n\treturn 0, wtdb.ErrNoReservedKeyIndex\n}\n\n// CommitUpdate persists the CommittedUpdate provided in the slot for (session,\n// seqNum). This allows the client to retransmit this update on startup.",
+      "length": 369,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) CommitUpdate(id *wtdb.SessionID,",
+      "content": "func (m *ClientDB) CommitUpdate(id *wtdb.SessionID,\n\tupdate *wtdb.CommittedUpdate) (uint16, error) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\t// Fail if session doesn't exist.\n\tsession, ok := m.activeSessions[*id]\n\tif !ok {\n\t\treturn 0, wtdb.ErrClientSessionNotFound\n\t}\n\n\t// Check if an update has already been committed for this state.\n\tfor _, dbUpdate := range m.committedUpdates[session.ID] {\n\t\tif dbUpdate.SeqNum == update.SeqNum {\n\t\t\t// If the breach hint matches, we'll just return the\n\t\t\t// last applied value so the client can retransmit.\n\t\t\tif dbUpdate.Hint == update.Hint {\n\t\t\t\treturn session.TowerLastApplied, nil\n\t\t\t}\n\n\t\t\t// Otherwise, fail since the breach hint doesn't match.\n\t\t\treturn 0, wtdb.ErrUpdateAlreadyCommitted\n\t\t}\n\t}\n\n\t// Sequence number must increment.\n\tif update.SeqNum != session.SeqNum+1 {\n\t\treturn 0, wtdb.ErrCommitUnorderedUpdate\n\t}\n\n\t// Save the update and increment the sequence number.\n\tm.committedUpdates[session.ID] = append(\n\t\tm.committedUpdates[session.ID], *update,\n\t)\n\tsession.SeqNum++\n\tm.activeSessions[*id] = session\n\n\treturn session.TowerLastApplied, nil\n}\n\n// AckUpdate persists an acknowledgment for a given (session, seqnum) pair. This\n// removes the update from the set of committed updates, and validates the\n// lastApplied value returned from the tower.",
+      "length": 1202,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) AckUpdate(id *wtdb.SessionID, seqNum,",
+      "content": "func (m *ClientDB) AckUpdate(id *wtdb.SessionID, seqNum,\n\tlastApplied uint16) error {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\t// Fail if session doesn't exist.\n\tsession, ok := m.activeSessions[*id]\n\tif !ok {\n\t\treturn wtdb.ErrClientSessionNotFound\n\t}\n\n\t// Ensure the returned last applied value does not exceed the highest\n\t// allocated sequence number.\n\tif lastApplied > session.SeqNum {\n\t\treturn wtdb.ErrUnallocatedLastApplied\n\t}\n\n\t// Ensure the last applied value isn't lower than a previous one sent by\n\t// the tower.\n\tif lastApplied < session.TowerLastApplied {\n\t\treturn wtdb.ErrLastAppliedReversion\n\t}\n\n\t// Retrieve the committed update, failing if none is found. We should\n\t// only receive acks for state updates that we send.\n\tupdates := m.committedUpdates[session.ID]\n\tfor i, update := range updates {\n\t\tif update.SeqNum != seqNum {\n\t\t\tcontinue\n\t\t}\n\n\t\t// Remove the committed update from disk and mark the update as\n\t\t// acked. The tower last applied value is also recorded to send\n\t\t// along with the next update.\n\t\tcopy(updates[:i], updates[i+1:])\n\t\tupdates[len(updates)-1] = wtdb.CommittedUpdate{}\n\t\tm.committedUpdates[session.ID] = updates[:len(updates)-1]\n\n\t\tchanID := update.BackupID.ChanID\n\t\tif _, ok := m.ackedUpdates[*id][update.BackupID.ChanID]; !ok {\n\t\t\tindex, err := wtdb.NewRangeIndex(nil)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tm.ackedUpdates[*id][chanID] = index\n\t\t\tm.persistedAckedUpdates[*id][chanID] = newMockKVStore()\n\t\t}\n\n\t\terr := m.ackedUpdates[*id][chanID].Add(\n\t\t\tupdate.BackupID.CommitHeight,\n\t\t\tm.persistedAckedUpdates[*id][chanID],\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tsession.TowerLastApplied = lastApplied\n\n\t\tm.activeSessions[*id] = session\n\t\treturn nil\n\t}\n\n\treturn wtdb.ErrCommittedUpdateNotFound\n}\n\n// FetchChanSummaries loads a mapping from all registered channels to their\n// channel summaries.",
+      "length": 1717,
+      "tokens": 218,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) FetchChanSummaries() (wtdb.ChannelSummaries, error) {",
+      "content": "func (m *ClientDB) FetchChanSummaries() (wtdb.ChannelSummaries, error) {\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tsummaries := make(map[lnwire.ChannelID]wtdb.ClientChanSummary)\n\tfor chanID, summary := range m.summaries {\n\t\tsummaries[chanID] = wtdb.ClientChanSummary{\n\t\t\tSweepPkScript: cloneBytes(summary.SweepPkScript),\n\t\t}\n\t}\n\n\treturn summaries, nil\n}\n\n// RegisterChannel registers a channel for use within the client database. For\n// now, all that is stored in the channel summary is the sweep pkscript that\n// we'd like any tower sweeps to pay into. In the future, this will be extended\n// to contain more info to allow the client efficiently request historical\n// states to be backed up under the client's active policy.",
+      "length": 629,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *ClientDB) RegisterChannel(chanID lnwire.ChannelID,",
+      "content": "func (m *ClientDB) RegisterChannel(chanID lnwire.ChannelID,\n\tsweepPkScript []byte) error {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tif _, ok := m.summaries[chanID]; ok {\n\t\treturn wtdb.ErrChannelAlreadyRegistered\n\t}\n\n\tm.summaries[chanID] = wtdb.ClientChanSummary{\n\t\tSweepPkScript: cloneBytes(sweepPkScript),\n\t}\n\n\treturn nil\n}\n",
+      "length": 246,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func cloneBytes(b []byte) []byte {",
+      "content": "func cloneBytes(b []byte) []byte {\n\tif b == nil {\n\t\treturn nil\n\t}\n\n\tbb := make([]byte, len(b))\n\tcopy(bb, b)\n\n\treturn bb\n}\n",
+      "length": 78,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func copyTower(tower *wtdb.Tower) *wtdb.Tower {",
+      "content": "func copyTower(tower *wtdb.Tower) *wtdb.Tower {\n\tt := &wtdb.Tower{\n\t\tID:          tower.ID,\n\t\tIdentityKey: tower.IdentityKey,\n\t\tAddresses:   make([]net.Addr, len(tower.Addresses)),\n\t}\n\tcopy(t.Addresses, tower.Addresses)\n\n\treturn t\n}\n",
+      "length": 176,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "type mockKVStore struct {",
+      "content": "type mockKVStore struct {\n\tkv map[uint64]uint64\n\n\terr error\n}\n",
+      "length": 32,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockKVStore() *mockKVStore {",
+      "content": "func newMockKVStore() *mockKVStore {\n\treturn &mockKVStore{\n\t\tkv: make(map[uint64]uint64),\n\t}\n}\n",
+      "length": 54,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockKVStore) Put(key, value []byte) error {",
+      "content": "func (m *mockKVStore) Put(key, value []byte) error {\n\tif m.err != nil {\n\t\treturn m.err\n\t}\n\n\tk := byteOrder.Uint64(key)\n\tv := byteOrder.Uint64(value)\n\n\tm.kv[k] = v\n\n\treturn nil\n}\n",
+      "length": 114,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockKVStore) Delete(key []byte) error {",
+      "content": "func (m *mockKVStore) Delete(key []byte) error {\n\tif m.err != nil {\n\t\treturn m.err\n\t}\n\n\tk := byteOrder.Uint64(key)\n\tdelete(m.kv, k)\n\n\treturn nil\n}\n",
+      "length": 89,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

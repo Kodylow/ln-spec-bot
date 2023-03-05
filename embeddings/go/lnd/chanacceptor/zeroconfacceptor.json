@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/zeroconfacceptor.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "type ZeroConfAcceptor struct {",
+      "content": "type ZeroConfAcceptor struct {\n\tchainedAcceptor *ChainedAcceptor\n}\n\n// NewZeroConfAcceptor initializes a ZeroConfAcceptor.",
+      "length": 88,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func NewZeroConfAcceptor() *ZeroConfAcceptor {",
+      "content": "func NewZeroConfAcceptor() *ZeroConfAcceptor {\n\treturn &ZeroConfAcceptor{\n\t\tchainedAcceptor: NewChainedAcceptor(),\n\t}\n}\n\n// AddAcceptor adds a sub-ChannelAcceptor to the internal ChainedAcceptor.",
+      "length": 143,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (z *ZeroConfAcceptor) AddAcceptor(acceptor ChannelAcceptor) uint64 {",
+      "content": "func (z *ZeroConfAcceptor) AddAcceptor(acceptor ChannelAcceptor) uint64 {\n\treturn z.chainedAcceptor.AddAcceptor(acceptor)\n}\n\n// RemoveAcceptor removes a sub-ChannelAcceptor from the internal\n// ChainedAcceptor.",
+      "length": 132,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (z *ZeroConfAcceptor) RemoveAcceptor(id uint64) {",
+      "content": "func (z *ZeroConfAcceptor) RemoveAcceptor(id uint64) {\n\tz.chainedAcceptor.RemoveAcceptor(id)\n}\n\n// Accept will deny the channel open request if the internal ChainedAcceptor is\n// empty. If the internal ChainedAcceptor has any acceptors, then Accept will\n// instead be called on it.\n//\n// NOTE: Part of the ChannelAcceptor interface.",
+      "length": 270,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (z *ZeroConfAcceptor) Accept(",
+      "content": "func (z *ZeroConfAcceptor) Accept(\n\treq *ChannelAcceptRequest) *ChannelAcceptResponse {\n\n\t// Alias for less verbosity.\n\tchannelType := req.OpenChanMsg.ChannelType\n\n\t// Check if the channel type sets the zero-conf bit.\n\tvar zeroConfSet bool\n\n\tif channelType != nil {\n\t\tchannelFeatures := lnwire.RawFeatureVector(*channelType)\n\t\tzeroConfSet = channelFeatures.IsSet(lnwire.ZeroConfRequired)\n\t}\n\n\t// If there are no acceptors and the counter-party is requesting a zero\n\t// conf channel, reject the attempt.\n\tif z.chainedAcceptor.numAcceptors() == 0 && zeroConfSet {\n\t\t// Deny the channel open request.\n\t\trejectChannel := NewChannelAcceptResponse(\n\t\t\tfalse, nil, nil, 0, 0, 0, 0, 0, 0, false,\n\t\t)\n\t\treturn rejectChannel\n\t}\n\n\t// Otherwise, the ChainedAcceptor has sub-acceptors, so call Accept on\n\t// it.\n\treturn z.chainedAcceptor.Accept(req)\n}\n\n// A compile-time constraint to ensure ZeroConfAcceptor implements the\n// MultiplexAcceptor interface.\nvar _ MultiplexAcceptor = (*ZeroConfAcceptor)(nil)\n",
+      "length": 928,
+      "tokens": 118,
+      "embedding": []
+    }
+  ]
+}

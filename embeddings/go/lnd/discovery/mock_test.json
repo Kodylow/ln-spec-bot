@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/mock_test.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "type mockPeer struct {",
+      "content": "type mockPeer struct {\n\tpk       *btcec.PublicKey\n\tsentMsgs chan lnwire.Message\n\tquit     chan struct{}\n}\n\nvar _ lnpeer.Peer = (*mockPeer)(nil)\n",
+      "length": 115,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) SendMessage(_ bool, msgs ...lnwire.Message) error {",
+      "content": "func (p *mockPeer) SendMessage(_ bool, msgs ...lnwire.Message) error {\n\tif p.sentMsgs == nil && p.quit == nil {\n\t\treturn nil\n\t}\n\n\tfor _, msg := range msgs {\n\t\tselect {\n\t\tcase p.sentMsgs <- msg:\n\t\tcase <-p.quit:\n\t\t\treturn errors.New(\"peer disconnected\")\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 190,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) SendMessageLazy(sync bool, msgs ...lnwire.Message) error {",
+      "content": "func (p *mockPeer) SendMessageLazy(sync bool, msgs ...lnwire.Message) error {\n\treturn p.SendMessage(sync, msgs...)\n}\n",
+      "length": 37,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) AddNewChannel(_ *channeldb.OpenChannel, _ <-chan struct{}) error {",
+      "content": "func (p *mockPeer) AddNewChannel(_ *channeldb.OpenChannel, _ <-chan struct{}) error {\n\treturn nil\n}",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) WipeChannel(_ *wire.OutPoint)  {}",
+      "content": "func (p *mockPeer) WipeChannel(_ *wire.OutPoint)  {}",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) IdentityKey() *btcec.PublicKey { return p.pk }",
+      "content": "func (p *mockPeer) IdentityKey() *btcec.PublicKey { return p.pk }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) PubKey() [33]byte {",
+      "content": "func (p *mockPeer) PubKey() [33]byte {\n\tvar pubkey [33]byte\n\tcopy(pubkey[:], p.pk.SerializeCompressed())\n\treturn pubkey\n}",
+      "length": 79,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) Address() net.Addr { return nil }",
+      "content": "func (p *mockPeer) Address() net.Addr { return nil }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) QuitSignal() <-chan struct{} {",
+      "content": "func (p *mockPeer) QuitSignal() <-chan struct{} {\n\treturn p.quit\n}",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) LocalFeatures() *lnwire.FeatureVector {",
+      "content": "func (p *mockPeer) LocalFeatures() *lnwire.FeatureVector {\n\treturn nil\n}",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPeer) RemoteFeatures() *lnwire.FeatureVector {",
+      "content": "func (p *mockPeer) RemoteFeatures() *lnwire.FeatureVector {\n\treturn nil\n}\n\n// mockMessageStore is an in-memory implementation of the MessageStore interface\n// used for the gossiper's unit tests.",
+      "length": 130,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMessageStore struct {",
+      "content": "type mockMessageStore struct {\n\tsync.Mutex\n\tmessages map[[33]byte]map[lnwire.Message]struct{}\n}\n",
+      "length": 62,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockMessageStore() *mockMessageStore {",
+      "content": "func newMockMessageStore() *mockMessageStore {\n\treturn &mockMessageStore{\n\t\tmessages: make(map[[33]byte]map[lnwire.Message]struct{}),\n\t}\n}\n\nvar _ GossipMessageStore = (*mockMessageStore)(nil)\n",
+      "length": 139,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockMessageStore) AddMessage(msg lnwire.Message, pubKey [33]byte) error {",
+      "content": "func (s *mockMessageStore) AddMessage(msg lnwire.Message, pubKey [33]byte) error {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tif _, ok := s.messages[pubKey]; !ok {\n\t\ts.messages[pubKey] = make(map[lnwire.Message]struct{})\n\t}\n\n\ts.messages[pubKey][msg] = struct{}{}\n\n\treturn nil\n}\n",
+      "length": 171,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockMessageStore) DeleteMessage(msg lnwire.Message, pubKey [33]byte) error {",
+      "content": "func (s *mockMessageStore) DeleteMessage(msg lnwire.Message, pubKey [33]byte) error {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tpeerMsgs, ok := s.messages[pubKey]\n\tif !ok {\n\t\treturn nil\n\t}\n\n\tdelete(peerMsgs, msg)\n\treturn nil\n}\n",
+      "length": 118,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockMessageStore) Messages() (map[[33]byte][]lnwire.Message, error) {",
+      "content": "func (s *mockMessageStore) Messages() (map[[33]byte][]lnwire.Message, error) {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tmsgs := make(map[[33]byte][]lnwire.Message, len(s.messages))\n\tfor peer, peerMsgs := range s.messages {\n\t\tfor msg := range peerMsgs {\n\t\t\tmsgs[peer] = append(msgs[peer], msg)\n\t\t}\n\t}\n\treturn msgs, nil\n}\n",
+      "length": 219,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockMessageStore) Peers() (map[[33]byte]struct{}, error) {",
+      "content": "func (s *mockMessageStore) Peers() (map[[33]byte]struct{}, error) {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tpeers := make(map[[33]byte]struct{}, len(s.messages))\n\tfor peer := range s.messages {\n\t\tpeers[peer] = struct{}{}\n\t}\n\treturn peers, nil\n}\n",
+      "length": 158,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockMessageStore) MessagesForPeer(pubKey [33]byte) ([]lnwire.Message, error) {",
+      "content": "func (s *mockMessageStore) MessagesForPeer(pubKey [33]byte) ([]lnwire.Message, error) {\n\ts.Lock()\n\tdefer s.Unlock()\n\n\tpeerMsgs, ok := s.messages[pubKey]\n\tif !ok {\n\t\treturn nil, nil\n\t}\n\n\tmsgs := make([]lnwire.Message, 0, len(peerMsgs))\n\tfor msg := range peerMsgs {\n\t\tmsgs = append(msgs, msg)\n\t}\n\n\treturn msgs, nil\n}\n",
+      "length": 212,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

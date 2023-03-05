@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_bucket.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type readWriteBucket struct {",
+      "content": "type readWriteBucket struct {\n\t// id is used to identify the bucket and is created by\n\t// hashing the parent id with the bucket key. For each key/value,\n\t// sub-bucket or the bucket sequence the bucket id is used with the\n\t// appropriate prefix to prefix the key.\n\tid []byte\n\n\t// key is the bucket key.\n\tkey []byte\n\n\t// tx holds the parent transaction.\n\ttx *readWriteTx\n}\n\n// newReadWriteBucket creates a new rw bucket with the passed transaction\n// and bucket id.",
+      "length": 420,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadWriteBucket(tx *readWriteTx, key, id []byte) *readWriteBucket {",
+      "content": "func newReadWriteBucket(tx *readWriteTx, key, id []byte) *readWriteBucket {\n\treturn &readWriteBucket{\n\t\tid:  id,\n\t\tkey: key,\n\t\ttx:  tx,\n\t}\n}\n\n// NestedReadBucket retrieves a nested read bucket with the given key.\n// Returns nil if the bucket does not exist.",
+      "length": 173,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NestedReadBucket(key []byte) walletdb.ReadBucket {",
+      "content": "func (b *readWriteBucket) NestedReadBucket(key []byte) walletdb.ReadBucket {\n\treturn b.NestedReadWriteBucket(key)\n}\n\n// ForEach invokes the passed function with every key/value pair in\n// the bucket. This includes nested buckets, in which case the value\n// is nil, but it does not include the key/value pairs within those\n// nested buckets.",
+      "length": 257,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ForEach(cb func(k, v []byte) error) error {",
+      "content": "func (b *readWriteBucket) ForEach(cb func(k, v []byte) error) error {\n\tprefix := string(b.id)\n\n\t// Get the first matching key that is in the bucket.\n\tkv, err := b.tx.stm.First(prefix)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor kv != nil {\n\t\tkey, val := getKeyVal(kv)\n\n\t\tif err := cb(key, val); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Step to the next key.\n\t\tkv, err = b.tx.stm.Next(prefix, kv.key)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// ForAll is an optimized version of ForEach for the case when we know we will\n// fetch all (or almost all) items.\n//\n// NOTE: ForAll differs from ForEach in that no additional queries can\n// be executed within the callback.",
+      "length": 571,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ForAll(cb func(k, v []byte) error) error {",
+      "content": "func (b *readWriteBucket) ForAll(cb func(k, v []byte) error) error {\n\t// When we opened this bucket, we fetched the bucket key using the STM\n\t// which put a revision \"lock\" in the read set. We can leverage this\n\t// by incrementing the revision on the bucket, making any transaction\n\t// retry that'd touch this same bucket. This way we can safely read all\n\t// keys from the bucket and not cache them in the STM.\n\t// To increment the bucket's revision, we simply put in the bucket key\n\t// value again (which is idempotent if the bucket has just been created).\n\tb.tx.stm.Put(string(b.key), string(b.id))\n\n\t// TODO(bhandras): page size should be configurable in ForAll.\n\treturn b.tx.stm.FetchRangePaginatedRaw(\n\t\tstring(b.id), 1000,\n\t\tfunc(kv KV) error {\n\t\t\tkey, val := getKeyVal(&kv)\n\t\t\treturn cb(key, val)\n\t\t},\n\t)\n}\n\n// Get returns the value for the given key. Returns nil if the key does\n// not exist in this bucket.",
+      "length": 826,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Get(key []byte) []byte {",
+      "content": "func (b *readWriteBucket) Get(key []byte) []byte {\n\t// Return nil if the key is empty.\n\tif len(key) == 0 {\n\t\treturn nil\n\t}\n\n\t// Fetch the associated value.\n\tval, err := b.tx.stm.Get(string(makeValueKey(b.id, key)))\n\tif err != nil {\n\t\t// TODO: we should return the error once the\n\t\t// kvdb inteface is extended.\n\t\treturn nil\n\t}\n\n\tif val == nil {\n\t\treturn nil\n\t}\n\n\treturn val\n}\n",
+      "length": 306,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ReadCursor() walletdb.ReadCursor {",
+      "content": "func (b *readWriteBucket) ReadCursor() walletdb.ReadCursor {\n\treturn newReadWriteCursor(b)\n}\n\n// NestedReadWriteBucket retrieves a nested bucket with the given key.\n// Returns nil if the bucket does not exist.",
+      "length": 144,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {",
+      "content": "func (b *readWriteBucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {\n\tif len(key) == 0 {\n\t\treturn nil\n\t}\n\n\t// Get the bucket id (and return nil if bucket doesn't exist).\n\tbucketKey := makeBucketKey(b.id, key)\n\tbucketVal, err := b.tx.stm.Get(string(bucketKey))\n\tif err != nil {\n\t\t// TODO: we should return the error once the\n\t\t// kvdb inteface is extended.\n\t\treturn nil\n\t}\n\n\tif !isValidBucketID(bucketVal) {\n\t\treturn nil\n\t}\n\n\t// Return the bucket with the fetched bucket id.\n\treturn newReadWriteBucket(b.tx, bucketKey, bucketVal)\n}\n\n// assertNoValue checks if the value for the passed key exists.",
+      "length": 505,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) assertNoValue(key []byte) error {",
+      "content": "func (b *readWriteBucket) assertNoValue(key []byte) error {\n\tif !etcdDebug {\n\t\treturn nil\n\t}\n\n\tval, err := b.tx.stm.Get(string(makeValueKey(b.id, key)))\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif val != nil {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\treturn nil\n}\n\n// assertNoBucket checks if the bucket for the passed key exists.",
+      "length": 251,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) assertNoBucket(key []byte) error {",
+      "content": "func (b *readWriteBucket) assertNoBucket(key []byte) error {\n\tif !etcdDebug {\n\t\treturn nil\n\t}\n\n\tval, err := b.tx.stm.Get(string(makeBucketKey(b.id, key)))\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif val != nil {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\treturn nil\n}\n\n// CreateBucket creates and returns a new nested bucket with the given\n// key. Returns ErrBucketExists if the bucket already exists,\n// ErrBucketNameRequired if the key is empty, or ErrIncompatibleValue\n// if the key value is otherwise invalid for the particular database\n// implementation.  Other errors are possible depending on the\n// implementation.",
+      "length": 535,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) CreateBucket(key []byte) (",
+      "content": "func (b *readWriteBucket) CreateBucket(key []byte) (\n\twalletdb.ReadWriteBucket, error) {\n\n\tif len(key) == 0 {\n\t\treturn nil, walletdb.ErrBucketNameRequired\n\t}\n\n\t// Check if the bucket already exists.\n\tbucketKey := makeBucketKey(b.id, key)\n\n\tbucketVal, err := b.tx.stm.Get(string(bucketKey))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif isValidBucketID(bucketVal) {\n\t\treturn nil, walletdb.ErrBucketExists\n\t}\n\n\tif err := b.assertNoValue(key); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Create a deterministic bucket id from the bucket key.\n\tnewID := makeBucketID(bucketKey)\n\n\t// Create the bucket.\n\tb.tx.stm.Put(string(bucketKey), string(newID[:]))\n\n\treturn newReadWriteBucket(b.tx, bucketKey, newID[:]), nil\n}\n\n// CreateBucketIfNotExists creates and returns a new nested bucket with\n// the given key if it does not already exist.  Returns\n// ErrBucketNameRequired if the key is empty or ErrIncompatibleValue\n// if the key value is otherwise invalid for the particular database\n// backend.  Other errors are possible depending on the implementation.",
+      "length": 952,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) CreateBucketIfNotExists(key []byte) (",
+      "content": "func (b *readWriteBucket) CreateBucketIfNotExists(key []byte) (\n\twalletdb.ReadWriteBucket, error) {\n\n\tif len(key) == 0 {\n\t\treturn nil, walletdb.ErrBucketNameRequired\n\t}\n\n\t// Check for the bucket and create if it doesn't exist.\n\tbucketKey := makeBucketKey(b.id, key)\n\n\tbucketVal, err := b.tx.stm.Get(string(bucketKey))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif !isValidBucketID(bucketVal) {\n\t\tif err := b.assertNoValue(key); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tnewID := makeBucketID(bucketKey)\n\t\tb.tx.stm.Put(string(bucketKey), string(newID[:]))\n\n\t\treturn newReadWriteBucket(b.tx, bucketKey, newID[:]), nil\n\t}\n\n\t// Otherwise return the bucket with the fetched bucket id.\n\treturn newReadWriteBucket(b.tx, bucketKey, bucketVal), nil\n}\n\n// DeleteNestedBucket deletes the nested bucket and its sub-buckets\n// pointed to by the passed key. All values in the bucket and sub-buckets\n// will be deleted as well.",
+      "length": 811,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) DeleteNestedBucket(key []byte) error {",
+      "content": "func (b *readWriteBucket) DeleteNestedBucket(key []byte) error {\n\t// TODO shouldn't empty key return ErrBucketNameRequired ?\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\t// Get the bucket first.\n\tbucketKey := string(makeBucketKey(b.id, key))\n\n\tbucketVal, err := b.tx.stm.Get(bucketKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif !isValidBucketID(bucketVal) {\n\t\treturn walletdb.ErrBucketNotFound\n\t}\n\n\t// Enqueue the top level bucket id.\n\tqueue := [][]byte{bucketVal}\n\n\t// Traverse the buckets breadth first.\n\tfor len(queue) != 0 {\n\t\tif !isValidBucketID(queue[0]) {\n\t\t\treturn walletdb.ErrBucketNotFound\n\t\t}\n\n\t\tid := queue[0]\n\t\tqueue = queue[1:]\n\n\t\tkv, err := b.tx.stm.First(string(id))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor kv != nil {\n\t\t\tb.tx.stm.Del(kv.key)\n\n\t\t\tif isBucketKey(kv.key) {\n\t\t\t\tqueue = append(queue, []byte(kv.val))\n\t\t\t}\n\n\t\t\tkv, err = b.tx.stm.Next(string(id), kv.key)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\t// Finally delete the sequence key for the bucket.\n\t\tb.tx.stm.Del(string(makeSequenceKey(id)))\n\t}\n\n\t// Delete the top level bucket and sequence key.\n\tb.tx.stm.Del(bucketKey)\n\tb.tx.stm.Del(string(makeSequenceKey(bucketVal)))\n\n\treturn nil\n}\n\n// Put updates the value for the passed key.\n// Returns ErrKeyRequired if the passed key is empty.",
+      "length": 1161,
+      "tokens": 159,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Put(key, value []byte) error {",
+      "content": "func (b *readWriteBucket) Put(key, value []byte) error {\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrKeyRequired\n\t}\n\n\tif err := b.assertNoBucket(key); err != nil {\n\t\treturn err\n\t}\n\n\t// Update the transaction with the new value.\n\tb.tx.stm.Put(string(makeValueKey(b.id, key)), string(value))\n\n\treturn nil\n}\n\n// Delete deletes the key/value pointed to by the passed key.\n// Returns ErrKeyRequired if the passed key is empty.",
+      "length": 346,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Delete(key []byte) error {",
+      "content": "func (b *readWriteBucket) Delete(key []byte) error {\n\tif key == nil {\n\t\treturn nil\n\t}\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrKeyRequired\n\t}\n\n\t// Update the transaction to delete the key/value.\n\tb.tx.stm.Del(string(makeValueKey(b.id, key)))\n\n\treturn nil\n}\n\n// ReadWriteCursor returns a new read-write cursor for this bucket.",
+      "length": 259,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ReadWriteCursor() walletdb.ReadWriteCursor {",
+      "content": "func (b *readWriteBucket) ReadWriteCursor() walletdb.ReadWriteCursor {\n\treturn newReadWriteCursor(b)\n}\n\n// Tx returns the buckets transaction.",
+      "length": 68,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Tx() walletdb.ReadWriteTx {",
+      "content": "func (b *readWriteBucket) Tx() walletdb.ReadWriteTx {\n\treturn b.tx\n}\n\n// NextSequence returns an auto-incrementing sequence number for this bucket.\n// Note that this is not a thread safe function and as such it must not be used\n// for synchronization.",
+      "length": 192,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NextSequence() (uint64, error) {",
+      "content": "func (b *readWriteBucket) NextSequence() (uint64, error) {\n\tseq := b.Sequence() + 1\n\n\treturn seq, b.SetSequence(seq)\n}\n\n// SetSequence updates the sequence number for the bucket.",
+      "length": 114,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) SetSequence(v uint64) error {",
+      "content": "func (b *readWriteBucket) SetSequence(v uint64) error {\n\t// Convert the number to string.\n\tval := strconv.FormatUint(v, 10)\n\n\t// Update the transaction with the new value for the sequence key.\n\tb.tx.stm.Put(string(makeSequenceKey(b.id)), val)\n\n\treturn nil\n}\n\n// Sequence returns the current sequence number for this bucket without\n// incrementing it.",
+      "length": 284,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Sequence() uint64 {",
+      "content": "func (b *readWriteBucket) Sequence() uint64 {\n\tval, err := b.tx.stm.Get(string(makeSequenceKey(b.id)))\n\tif err != nil {\n\t\t// TODO: This update kvdb interface such that error\n\t\t// may be returned here.\n\t\treturn 0\n\t}\n\n\tif val == nil {\n\t\t// If the sequence number is not yet\n\t\t// stored, then take the default value.\n\t\treturn 0\n\t}\n\n\t// Otherwise try to parse a 64-bit unsigned integer from the value.\n\tnum, _ := strconv.ParseUint(string(val), 10, 64)\n\n\treturn num\n}\n",
+      "length": 399,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func flattenMap(m map[string]struct{}) []string {",
+      "content": "func flattenMap(m map[string]struct{}) []string {\n\tresult := make([]string, len(m))\n\ti := 0\n\n\tfor key := range m {\n\t\tresult[i] = key\n\t\ti++\n\t}\n\n\treturn result\n}\n\n// Prefetch will prefetch all keys in the passed-in paths as well as all bucket\n// keys along the paths.",
+      "length": 203,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Prefetch(paths ...[]string) {",
+      "content": "func (b *readWriteBucket) Prefetch(paths ...[]string) {\n\tkeys := make(map[string]struct{})\n\tranges := make(map[string]struct{})\n\n\tfor _, path := range paths {\n\t\tparent := b.id\n\t\tfor _, bucket := range path {\n\t\t\tbucketKey := makeBucketKey(parent, []byte(bucket))\n\t\t\tkeys[string(bucketKey[:])] = struct{}{}\n\n\t\t\tid := makeBucketID(bucketKey)\n\t\t\tparent = id[:]\n\t\t}\n\n\t\tranges[string(parent)] = struct{}{}\n\t}\n\n\tb.tx.stm.Prefetch(flattenMap(keys), flattenMap(ranges))\n}\n",
+      "length": 389,
+      "tokens": 44,
+      "embedding": []
+    }
+  ]
+}

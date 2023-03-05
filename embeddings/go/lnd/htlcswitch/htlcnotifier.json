@@ -1,0 +1,174 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/htlcnotifier.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type HtlcNotifier struct {",
+      "content": "type HtlcNotifier struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\t// now returns the current time, it is set in the htlcnotifier to allow\n\t// for timestamp mocking in tests.\n\tnow func() time.Time\n\n\tntfnServer *subscribe.Server\n}\n\n// NewHtlcNotifier creates a new HtlcNotifier which gets htlc forwarded,\n// failed and settled events from links our node has established with peers\n// and sends notifications to subscribing clients.",
+      "length": 391,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func NewHtlcNotifier(now func() time.Time) *HtlcNotifier {",
+      "content": "func NewHtlcNotifier(now func() time.Time) *HtlcNotifier {\n\treturn &HtlcNotifier{\n\t\tnow:        now,\n\t\tntfnServer: subscribe.NewServer(),\n\t}\n}\n\n// Start starts the HtlcNotifier and all goroutines it needs to consume\n// events and provide subscriptions to clients.",
+      "length": 197,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) Start() error {",
+      "content": "func (h *HtlcNotifier) Start() error {\n\tvar err error\n\th.started.Do(func() {\n\t\tlog.Info(\"HtlcNotifier starting\")\n\t\terr = h.ntfnServer.Start()\n\t})\n\treturn err\n}\n\n// Stop signals the notifier for a graceful shutdown.",
+      "length": 167,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) Stop() error {",
+      "content": "func (h *HtlcNotifier) Stop() error {\n\tvar err error\n\th.stopped.Do(func() {\n\t\tlog.Info(\"HtlcNotifier shutting down\")\n\t\tif err = h.ntfnServer.Stop(); err != nil {\n\t\t\tlog.Warnf(\"error stopping htlc notifier: %v\", err)\n\t\t}\n\t})\n\treturn err\n}\n\n// SubscribeHtlcEvents returns a subscribe.Client that will receive updates\n// any time the server is made aware of a new event.",
+      "length": 318,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) SubscribeHtlcEvents() (*subscribe.Client, error) {",
+      "content": "func (h *HtlcNotifier) SubscribeHtlcEvents() (*subscribe.Client, error) {\n\treturn h.ntfnServer.Subscribe()\n}\n\n// HtlcKey uniquely identifies the htlc.",
+      "length": 73,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcKey struct {",
+      "content": "type HtlcKey struct {\n\t// IncomingCircuit is the channel an htlc id of the incoming htlc.\n\tIncomingCircuit models.CircuitKey\n\n\t// OutgoingCircuit is the channel and htlc id of the outgoing htlc.\n\tOutgoingCircuit models.CircuitKey\n}\n\n// String returns a string representation of a htlc key.",
+      "length": 260,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (k HtlcKey) String() string {",
+      "content": "func (k HtlcKey) String() string {\n\tswitch {\n\tcase k.IncomingCircuit.ChanID == hop.Source:\n\t\treturn k.OutgoingCircuit.String()\n\n\tcase k.OutgoingCircuit.ChanID == hop.Exit:\n\t\treturn k.IncomingCircuit.String()\n\n\tdefault:\n\t\treturn fmt.Sprintf(\"%v -> %v\", k.IncomingCircuit,\n\t\t\tk.OutgoingCircuit)\n\t}\n}\n\n// HtlcInfo provides the details of a htlc that our node has processed. For\n// forwards, incoming and outgoing values are set, whereas sends and receives\n// will only have outgoing or incoming details set.",
+      "length": 454,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcInfo struct {",
+      "content": "type HtlcInfo struct {\n\t// IncomingTimelock is the time lock of the htlc on our incoming\n\t// channel.\n\tIncomingTimeLock uint32\n\n\t// OutgoingTimelock is the time lock the htlc on our outgoing channel.\n\tOutgoingTimeLock uint32\n\n\t// IncomingAmt is the amount of the htlc on our incoming channel.\n\tIncomingAmt lnwire.MilliSatoshi\n\n\t// OutgoingAmt is the amount of the htlc on our outgoing channel.\n\tOutgoingAmt lnwire.MilliSatoshi\n}\n\n// String returns a string representation of a htlc.",
+      "length": 445,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (h HtlcInfo) String() string {",
+      "content": "func (h HtlcInfo) String() string {\n\tvar details []string\n\n\t// If the incoming information is not zero, as is the case for a send,\n\t// we include the incoming amount and timelock.\n\tif h.IncomingAmt != 0 || h.IncomingTimeLock != 0 {\n\t\tstr := fmt.Sprintf(\"incoming amount: %v, \"+\n\t\t\t\"incoming timelock: %v\", h.IncomingAmt,\n\t\t\th.IncomingTimeLock)\n\n\t\tdetails = append(details, str)\n\t}\n\n\t// If the outgoing information is not zero, as is the case for a\n\t// receive, we include the outgoing amount and timelock.\n\tif h.OutgoingAmt != 0 || h.OutgoingTimeLock != 0 {\n\t\tstr := fmt.Sprintf(\"outgoing amount: %v, \"+\n\t\t\t\"outgoing timelock: %v\", h.OutgoingAmt,\n\t\t\th.OutgoingTimeLock)\n\n\t\tdetails = append(details, str)\n\t}\n\n\treturn strings.Join(details, \", \")\n}\n\n// HtlcEventType represents the type of event that a htlc was part of.",
+      "length": 756,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcEventType int",
+      "content": "type HtlcEventType int\n\nconst (\n\t// HtlcEventTypeSend represents a htlc that was part of a send from\n\t// our node.\n\tHtlcEventTypeSend HtlcEventType = iota\n\n\t// HtlcEventTypeReceive represents a htlc that was part of a receive\n\t// to our node.\n\tHtlcEventTypeReceive\n\n\t// HtlcEventTypeForward represents a htlc that was forwarded through\n\t// our node.\n\tHtlcEventTypeForward\n)\n\n// String returns a string representation of a htlc event type.",
+      "length": 400,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (h HtlcEventType) String() string {",
+      "content": "func (h HtlcEventType) String() string {\n\tswitch h {\n\tcase HtlcEventTypeSend:\n\t\treturn \"send\"\n\n\tcase HtlcEventTypeReceive:\n\t\treturn \"receive\"\n\n\tcase HtlcEventTypeForward:\n\t\treturn \"forward\"\n\n\tdefault:\n\t\treturn \"unknown\"\n\t}\n}\n\n// ForwardingEvent represents a htlc that was forwarded onwards from our node.\n// Sends which originate from our node will report forward events with zero\n// incoming circuits in their htlc key.",
+      "length": 362,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "type ForwardingEvent struct {",
+      "content": "type ForwardingEvent struct {\n\t// HtlcKey uniquely identifies the htlc, and can be used to match the\n\t// forwarding event with subsequent settle/fail events.\n\tHtlcKey\n\n\t// HtlcInfo contains details about the htlc.\n\tHtlcInfo\n\n\t// HtlcEventType classifies the event as part of a local send or\n\t// receive, or as part of a forward.\n\tHtlcEventType\n\n\t// Timestamp is the time when this htlc was forwarded.\n\tTimestamp time.Time\n}\n\n// LinkFailEvent describes a htlc that failed on our incoming or outgoing\n// link. The incoming bool is true for failures on incoming links, and false\n// for failures on outgoing links. The failure reason is provided by a lnwire\n// failure message which is enriched with a failure detail in the cases where\n// the wire failure message does not contain full information about the\n// failure.",
+      "length": 765,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "type LinkFailEvent struct {",
+      "content": "type LinkFailEvent struct {\n\t// HtlcKey uniquely identifies the htlc.\n\tHtlcKey\n\n\t// HtlcInfo contains details about the htlc.\n\tHtlcInfo\n\n\t// HtlcEventType classifies the event as part of a local send or\n\t// receive, or as part of a forward.\n\tHtlcEventType\n\n\t// LinkError is the reason that we failed the htlc.\n\tLinkError *LinkError\n\n\t// Incoming is true if the htlc was failed on an incoming link.\n\t// If it failed on the outgoing link, it is false.\n\tIncoming bool\n\n\t// Timestamp is the time when the link failure occurred.\n\tTimestamp time.Time\n}\n\n// ForwardingFailEvent represents a htlc failure which occurred down the line\n// after we forwarded a htlc onwards. An error is not included in this event\n// because errors returned down the route are encrypted. HtlcInfo is not\n// reliably available for forwarding failures, so it is omitted. These events\n// should be matched with their corresponding forward event to obtain this\n// information.",
+      "length": 890,
+      "tokens": 151,
+      "embedding": []
+    },
+    {
+      "slug": "type ForwardingFailEvent struct {",
+      "content": "type ForwardingFailEvent struct {\n\t// HtlcKey uniquely identifies the htlc, and can be used to match the\n\t// htlc with its corresponding forwarding event.\n\tHtlcKey\n\n\t// HtlcEventType classifies the event as part of a local send or\n\t// receive, or as part of a forward.\n\tHtlcEventType\n\n\t// Timestamp is the time when the forwarding failure was received.\n\tTimestamp time.Time\n}\n\n// SettleEvent represents a htlc that was settled. HtlcInfo is not reliably\n// available for forwarding failures, so it is omitted. These events should\n// be matched with corresponding forward events or invoices (for receives)\n// to obtain additional information about the htlc.",
+      "length": 606,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "type SettleEvent struct {",
+      "content": "type SettleEvent struct {\n\t// HtlcKey uniquely identifies the htlc, and can be used to match\n\t// forwards with their corresponding forwarding event.\n\tHtlcKey\n\n\t// Preimage that was released for settling the htlc.\n\tPreimage lntypes.Preimage\n\n\t// HtlcEventType classifies the event as part of a local send or\n\t// receive, or as part of a forward.\n\tHtlcEventType\n\n\t// Timestamp is the time when this htlc was settled.\n\tTimestamp time.Time\n}\n",
+      "length": 398,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "type FinalHtlcEvent struct {",
+      "content": "type FinalHtlcEvent struct {\n\tCircuitKey\n\n\tSettled bool\n\n\t// Offchain is indicating whether the htlc was resolved off-chain.\n\tOffchain bool\n\n\t// Timestamp is the time when this htlc was settled.\n\tTimestamp time.Time\n}\n\n// NotifyForwardingEvent notifies the HtlcNotifier than a htlc has been\n// forwarded.\n//\n// Note this is part of the htlcNotifier interface.",
+      "length": 316,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) NotifyForwardingEvent(key HtlcKey, info HtlcInfo,",
+      "content": "func (h *HtlcNotifier) NotifyForwardingEvent(key HtlcKey, info HtlcInfo,\n\teventType HtlcEventType) {\n\n\tevent := &ForwardingEvent{\n\t\tHtlcKey:       key,\n\t\tHtlcInfo:      info,\n\t\tHtlcEventType: eventType,\n\t\tTimestamp:     h.now(),\n\t}\n\n\tlog.Tracef(\"Notifying forward event: %v over %v, %v\", eventType, key,\n\t\tinfo)\n\n\tif err := h.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send forwarding event: %v\", err)\n\t}\n}\n\n// NotifyLinkFailEvent notifies that a htlc has failed on our incoming\n// or outgoing link.\n//\n// Note this is part of the htlcNotifier interface.",
+      "length": 484,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) NotifyLinkFailEvent(key HtlcKey, info HtlcInfo,",
+      "content": "func (h *HtlcNotifier) NotifyLinkFailEvent(key HtlcKey, info HtlcInfo,\n\teventType HtlcEventType, linkErr *LinkError, incoming bool) {\n\n\tevent := &LinkFailEvent{\n\t\tHtlcKey:       key,\n\t\tHtlcInfo:      info,\n\t\tHtlcEventType: eventType,\n\t\tLinkError:     linkErr,\n\t\tIncoming:      incoming,\n\t\tTimestamp:     h.now(),\n\t}\n\n\tlog.Tracef(\"Notifying link failure event: %v over %v, %v\", eventType,\n\t\tkey, info)\n\n\tif err := h.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send link fail event: %v\", err)\n\t}\n}\n\n// NotifyForwardingFailEvent notifies the HtlcNotifier that a htlc we\n// forwarded has failed down the line.\n//\n// Note this is part of the htlcNotifier interface.",
+      "length": 589,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) NotifyForwardingFailEvent(key HtlcKey,",
+      "content": "func (h *HtlcNotifier) NotifyForwardingFailEvent(key HtlcKey,\n\teventType HtlcEventType) {\n\n\tevent := &ForwardingFailEvent{\n\t\tHtlcKey:       key,\n\t\tHtlcEventType: eventType,\n\t\tTimestamp:     h.now(),\n\t}\n\n\tlog.Tracef(\"Notifying forwarding failure event: %v over %v\", eventType,\n\t\tkey)\n\n\tif err := h.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send forwarding fail event: %v\", err)\n\t}\n}\n\n// NotifySettleEvent notifies the HtlcNotifier that a htlc that we committed\n// to as part of a forward or a receive to our node has been settled.\n//\n// Note this is part of the htlcNotifier interface.",
+      "length": 527,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) NotifySettleEvent(key HtlcKey,",
+      "content": "func (h *HtlcNotifier) NotifySettleEvent(key HtlcKey,\n\tpreimage lntypes.Preimage, eventType HtlcEventType) {\n\n\tevent := &SettleEvent{\n\t\tHtlcKey:       key,\n\t\tPreimage:      preimage,\n\t\tHtlcEventType: eventType,\n\t\tTimestamp:     h.now(),\n\t}\n\n\tlog.Tracef(\"Notifying settle event: %v over %v\", eventType, key)\n\n\tif err := h.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send settle event: %v\", err)\n\t}\n}\n\n// NotifyFinalHtlcEvent notifies the HtlcNotifier that the final outcome for an\n// htlc has been determined.\n//\n// Note this is part of the htlcNotifier interface.",
+      "length": 512,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HtlcNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,",
+      "content": "func (h *HtlcNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,\n\tinfo channeldb.FinalHtlcInfo) {\n\n\tevent := &FinalHtlcEvent{\n\t\tCircuitKey: key,\n\t\tSettled:    info.Settled,\n\t\tOffchain:   info.Offchain,\n\t\tTimestamp:  h.now(),\n\t}\n\n\tlog.Tracef(\"Notifying final settle event: %v\", key)\n\n\tif err := h.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send settle event: %v\", err)\n\t}\n}\n\n// newHtlc key returns a htlc key for the packet provided. If the packet\n// has a zero incoming channel ID, the packet is for one of our own sends,\n// which has the payment id stashed in the incoming htlc id. If this is the\n// case, we replace the incoming htlc id with zero so that the notifier\n// consistently reports zero circuit keys for events that terminate or\n// originate at our node.",
+      "length": 703,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func newHtlcKey(pkt *htlcPacket) HtlcKey {",
+      "content": "func newHtlcKey(pkt *htlcPacket) HtlcKey {\n\thtlcKey := HtlcKey{\n\t\tIncomingCircuit: models.CircuitKey{\n\t\t\tChanID: pkt.incomingChanID,\n\t\t\tHtlcID: pkt.incomingHTLCID,\n\t\t},\n\t\tOutgoingCircuit: CircuitKey{\n\t\t\tChanID: pkt.outgoingChanID,\n\t\t\tHtlcID: pkt.outgoingHTLCID,\n\t\t},\n\t}\n\n\t// If the packet has a zero incoming channel ID, it is a send that was\n\t// initiated at our node. If this is the case, our internal pid is in\n\t// the incoming htlc ID, so we overwrite it with 0 for notification\n\t// purposes.\n\tif pkt.incomingChanID == hop.Source {\n\t\thtlcKey.IncomingCircuit.HtlcID = 0\n\t}\n\n\treturn htlcKey\n}\n\n// newHtlcInfo returns HtlcInfo for the packet provided.",
+      "length": 587,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func newHtlcInfo(pkt *htlcPacket) HtlcInfo {",
+      "content": "func newHtlcInfo(pkt *htlcPacket) HtlcInfo {\n\treturn HtlcInfo{\n\t\tIncomingTimeLock: pkt.incomingTimeout,\n\t\tOutgoingTimeLock: pkt.outgoingTimeout,\n\t\tIncomingAmt:      pkt.incomingAmount,\n\t\tOutgoingAmt:      pkt.amount,\n\t}\n}\n\n// getEventType returns the htlc type based on the fields set in the htlc\n// packet. Sends that originate at our node have the source (zero) incoming\n// channel ID. Receives to our node have the exit (zero) outgoing channel ID\n// and forwards have both fields set.",
+      "length": 431,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func getEventType(pkt *htlcPacket) HtlcEventType {",
+      "content": "func getEventType(pkt *htlcPacket) HtlcEventType {\n\tswitch {\n\tcase pkt.incomingChanID == hop.Source:\n\t\treturn HtlcEventTypeSend\n\n\tcase pkt.outgoingChanID == hop.Exit:\n\t\treturn HtlcEventTypeReceive\n\n\tdefault:\n\t\treturn HtlcEventTypeForward\n\t}\n}\n",
+      "length": 181,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

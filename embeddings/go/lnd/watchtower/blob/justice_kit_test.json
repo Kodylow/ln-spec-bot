@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/blob/justice_kit_test.go",
+  "package": "blob_test",
+  "sections": [
+    {
+      "slug": "func makePubKey(i uint64) blob.PubKey {",
+      "content": "func makePubKey(i uint64) blob.PubKey {\n\tvar pk blob.PubKey\n\tpk[0] = 0x02\n\tif i%2 == 1 {\n\t\tpk[0] |= 0x01\n\t}\n\tbinary.BigEndian.PutUint64(pk[1:9], i)\n\treturn pk\n}\n",
+      "length": 113,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func makeSig(i int) lnwire.Sig {",
+      "content": "func makeSig(i int) lnwire.Sig {\n\tvar sig lnwire.Sig\n\tbinary.BigEndian.PutUint64(sig[:8], uint64(i))\n\treturn sig\n}\n",
+      "length": 78,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func makeAddr(size int) []byte {",
+      "content": "func makeAddr(size int) []byte {\n\taddr := make([]byte, size)\n\tif _, err := io.ReadFull(rand.Reader, addr); err != nil {\n\t\tpanic(\"unable to create addr\")\n\t}\n\n\treturn addr\n}\n",
+      "length": 132,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type descriptorTest struct {",
+      "content": "type descriptorTest struct {\n\tname                 string\n\tencVersion           blob.Type\n\tdecVersion           blob.Type\n\tsweepAddr            []byte\n\trevPubKey            blob.PubKey\n\tdelayPubKey          blob.PubKey\n\tcsvDelay             uint32\n\tcommitToLocalSig     lnwire.Sig\n\thasCommitToRemote    bool\n\tcommitToRemotePubKey blob.PubKey\n\tcommitToRemoteSig    lnwire.Sig\n\tencErr               error\n\tdecErr               error\n}\n\nvar descriptorTests = []descriptorTest{\n\t{\n\t\tname:             \"to-local only\",\n\t\tencVersion:       blob.TypeAltruistCommit,\n\t\tdecVersion:       blob.TypeAltruistCommit,\n\t\tsweepAddr:        makeAddr(22),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t},\n\t{\n\t\tname:                 \"to-local and p2wkh\",\n\t\tencVersion:           blob.TypeRewardCommit,\n\t\tdecVersion:           blob.TypeRewardCommit,\n\t\tsweepAddr:            makeAddr(22),\n\t\trevPubKey:            makePubKey(0),\n\t\tdelayPubKey:          makePubKey(1),\n\t\tcsvDelay:             144,\n\t\tcommitToLocalSig:     makeSig(1),\n\t\thasCommitToRemote:    true,\n\t\tcommitToRemotePubKey: makePubKey(2),\n\t\tcommitToRemoteSig:    makeSig(2),\n\t},\n\t{\n\t\tname:             \"unknown encrypt version\",\n\t\tencVersion:       0,\n\t\tdecVersion:       blob.TypeAltruistCommit,\n\t\tsweepAddr:        makeAddr(34),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t\tencErr:           blob.ErrUnknownBlobType,\n\t},\n\t{\n\t\tname:             \"unknown decrypt version\",\n\t\tencVersion:       blob.TypeAltruistCommit,\n\t\tdecVersion:       0,\n\t\tsweepAddr:        makeAddr(34),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t\tdecErr:           blob.ErrUnknownBlobType,\n\t},\n\t{\n\t\tname:             \"sweep addr length zero\",\n\t\tencVersion:       blob.TypeAltruistCommit,\n\t\tdecVersion:       blob.TypeAltruistCommit,\n\t\tsweepAddr:        makeAddr(0),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t},\n\t{\n\t\tname:             \"sweep addr max size\",\n\t\tencVersion:       blob.TypeAltruistCommit,\n\t\tdecVersion:       blob.TypeAltruistCommit,\n\t\tsweepAddr:        makeAddr(blob.MaxSweepAddrSize),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t},\n\t{\n\t\tname:             \"sweep addr too long\",\n\t\tencVersion:       blob.TypeAltruistCommit,\n\t\tdecVersion:       blob.TypeAltruistCommit,\n\t\tsweepAddr:        makeAddr(blob.MaxSweepAddrSize + 1),\n\t\trevPubKey:        makePubKey(0),\n\t\tdelayPubKey:      makePubKey(1),\n\t\tcsvDelay:         144,\n\t\tcommitToLocalSig: makeSig(1),\n\t\tencErr:           blob.ErrSweepAddressToLong,\n\t},\n}\n\n// TestBlobJusticeKitEncryptDecrypt asserts that encrypting and decrypting a\n// plaintext blob produces the original. The tests include negative assertions\n// when passed invalid combinations, and that all successfully encrypted blobs\n// are of constant size.",
+      "length": 2989,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBlobJusticeKitEncryptDecrypt(t *testing.T) {",
+      "content": "func TestBlobJusticeKitEncryptDecrypt(t *testing.T) {\n\tfor _, test := range descriptorTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestBlobJusticeKitEncryptDecrypt(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 129,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func testBlobJusticeKitEncryptDecrypt(t *testing.T, test descriptorTest) {",
+      "content": "func testBlobJusticeKitEncryptDecrypt(t *testing.T, test descriptorTest) {\n\tboj := &blob.JusticeKit{\n\t\tBlobType:             test.encVersion,\n\t\tSweepAddress:         test.sweepAddr,\n\t\tRevocationPubKey:     test.revPubKey,\n\t\tLocalDelayPubKey:     test.delayPubKey,\n\t\tCSVDelay:             test.csvDelay,\n\t\tCommitToLocalSig:     test.commitToLocalSig,\n\t\tCommitToRemotePubKey: test.commitToRemotePubKey,\n\t\tCommitToRemoteSig:    test.commitToRemoteSig,\n\t}\n\n\t// Generate a random encryption key for the blob. The key is\n\t// sized at 32 byte, as in practice we will be using the remote\n\t// party's commitment txid as the key.\n\tvar key blob.BreachKey\n\t_, err := rand.Read(key[:])\n\trequire.NoError(t, err, \"unable to generate blob encryption key\")\n\n\t// Encrypt the blob plaintext using the generated key and\n\t// target version for this test.\n\tctxt, err := boj.Encrypt(key)\n\tif err != test.encErr {\n\t\tt.Fatalf(\"unable to encrypt blob: %v\", err)\n\t} else if test.encErr != nil {\n\t\t// If the test expected an encryption failure, we can\n\t\t// continue to the next test.\n\t\treturn\n\t}\n\n\t// Ensure that all encrypted blobs are padded out to the same\n\t// size: 282 bytes for version 0.\n\tif len(ctxt) != blob.Size(test.encVersion) {\n\t\tt.Fatalf(\"expected blob to have size %d, got %d instead\",\n\t\t\tblob.Size(test.encVersion), len(ctxt))\n\n\t}\n\n\t// Decrypt the encrypted blob, reconstructing the original\n\t// blob plaintext from the decrypted contents. We use the target\n\t// decryption version specified by this test case.\n\tboj2, err := blob.Decrypt(key, ctxt, test.decVersion)\n\tif err != test.decErr {\n\t\tt.Fatalf(\"unable to decrypt blob: %v\", err)\n\t} else if test.decErr != nil {\n\t\t// If the test expected an decryption failure, we can\n\t\t// continue to the next test.\n\t\treturn\n\t}\n\n\t// Check that the decrypted blob properly reports whether it has\n\t// a to-remote output or not.\n\tif boj2.HasCommitToRemoteOutput() != test.hasCommitToRemote {\n\t\tt.Fatalf(\"expected blob has_to_remote to be %v, got %v\",\n\t\t\ttest.hasCommitToRemote, boj2.HasCommitToRemoteOutput())\n\t}\n\n\t// Check that the original blob plaintext matches the\n\t// one reconstructed from the encrypted blob.\n\tif !reflect.DeepEqual(boj, boj2) {\n\t\tt.Fatalf(\"decrypted plaintext does not match original, \"+\n\t\t\t\"want: %v, got %v\", boj, boj2)\n\t}\n}\n",
+      "length": 2138,
+      "tokens": 297,
+      "embedding": []
+    },
+    {
+      "slug": "type remoteWitnessTest struct {",
+      "content": "type remoteWitnessTest struct {\n\tname             string\n\tblobType         blob.Type\n\texpWitnessScript func(pk *btcec.PublicKey) []byte\n}\n\n// TestJusticeKitRemoteWitnessConstruction tests that a JusticeKit returns the\n// proper to-remote witnes script and to-remote witness stack. This should be\n// equivalent to p2wkh spend.",
+      "length": 286,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func TestJusticeKitRemoteWitnessConstruction(t *testing.T) {",
+      "content": "func TestJusticeKitRemoteWitnessConstruction(t *testing.T) {\n\ttests := []remoteWitnessTest{\n\t\t{\n\t\t\tname:     \"legacy commitment\",\n\t\t\tblobType: blob.Type(blob.FlagCommitOutputs),\n\t\t\texpWitnessScript: func(pk *btcec.PublicKey) []byte {\n\t\t\t\treturn pk.SerializeCompressed()\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"anchor commitment\",\n\t\t\tblobType: blob.Type(blob.FlagCommitOutputs |\n\t\t\t\tblob.FlagAnchorChannel),\n\t\t\texpWitnessScript: func(pk *btcec.PublicKey) []byte {\n\t\t\t\tscript, _ := input.CommitScriptToRemoteConfirmed(pk)\n\t\t\t\treturn script\n\t\t\t},\n\t\t},\n\t}\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestJusticeKitRemoteWitnessConstruction(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 598,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func testJusticeKitRemoteWitnessConstruction(",
+      "content": "func testJusticeKitRemoteWitnessConstruction(\n\tt *testing.T, test remoteWitnessTest) {\n\n\t// Generate the to-remote pubkey.\n\ttoRemotePrivKey, err := btcec.NewPrivateKey()\n\trequire.Nil(t, err)\n\n\t// Copy the to-remote pubkey into the format expected by our justice\n\t// kit.\n\tvar toRemotePubKey blob.PubKey\n\tcopy(toRemotePubKey[:], toRemotePrivKey.PubKey().SerializeCompressed())\n\n\t// Sign a message using the to-remote private key. The exact message\n\t// doesn't matter as we won't be validating the signature's validity.\n\tdigest := bytes.Repeat([]byte(\"a\"), 32)\n\trawToRemoteSig := ecdsa.Sign(toRemotePrivKey, digest)\n\n\t// Convert the DER-encoded signature into a fixed-size sig.\n\tcommitToRemoteSig, err := lnwire.NewSigFromSignature(rawToRemoteSig)\n\trequire.Nil(t, err)\n\n\t// Populate the justice kit fields relevant to the to-remote output.\n\tjusticeKit := &blob.JusticeKit{\n\t\tBlobType:             test.blobType,\n\t\tCommitToRemotePubKey: toRemotePubKey,\n\t\tCommitToRemoteSig:    commitToRemoteSig,\n\t}\n\n\t// Now, compute the to-remote witness script returned by the justice\n\t// kit.\n\ttoRemoteScript, err := justiceKit.CommitToRemoteWitnessScript()\n\trequire.Nil(t, err)\n\n\t// Assert this is exactly the to-remote, compressed pubkey.\n\texpToRemoteScript := test.expWitnessScript(toRemotePrivKey.PubKey())\n\trequire.Equal(t, expToRemoteScript, toRemoteScript)\n\n\t// Next, compute the to-remote witness stack, which should be a p2wkh\n\t// witness stack consisting solely of a signature.\n\ttoRemoteWitnessStack, err := justiceKit.CommitToRemoteWitnessStack()\n\trequire.Nil(t, err)\n\n\t// Compute the expected first element, by appending a sighash all byte\n\t// to our raw DER-encoded signature.\n\trawToRemoteSigWithSigHash := append(\n\t\trawToRemoteSig.Serialize(), byte(txscript.SigHashAll),\n\t)\n\n\t// Assert that the expected witness stack is returned.\n\texpWitnessStack := [][]byte{\n\t\trawToRemoteSigWithSigHash,\n\t}\n\trequire.Equal(t, expWitnessStack, toRemoteWitnessStack)\n\n\t// Finally, set the CommitToRemotePubKey to be a blank value.\n\tjusticeKit.CommitToRemotePubKey = blob.PubKey{}\n\n\t// When trying to compute the witness script, this should now return\n\t// ErrNoCommitToRemoteOutput since a valid pubkey could not be parsed\n\t// from CommitToRemotePubKey.\n\t_, err = justiceKit.CommitToRemoteWitnessScript()\n\trequire.Error(t, blob.ErrNoCommitToRemoteOutput, err)\n}\n\n// TestJusticeKitToLocalWitnessConstruction tests that a JusticeKit returns the\n// proper to-local witness script and to-local witness stack for spending the\n// revocation path.",
+      "length": 2408,
+      "tokens": 272,
+      "embedding": []
+    },
+    {
+      "slug": "func TestJusticeKitToLocalWitnessConstruction(t *testing.T) {",
+      "content": "func TestJusticeKitToLocalWitnessConstruction(t *testing.T) {\n\tcsvDelay := uint32(144)\n\n\t// Generate the revocation and delay private keys.\n\trevPrivKey, err := btcec.NewPrivateKey()\n\trequire.Nil(t, err)\n\n\tdelayPrivKey, err := btcec.NewPrivateKey()\n\trequire.Nil(t, err)\n\n\t// Copy the revocation and delay pubkeys into the format expected by our\n\t// justice kit.\n\tvar revPubKey blob.PubKey\n\tcopy(revPubKey[:], revPrivKey.PubKey().SerializeCompressed())\n\n\tvar delayPubKey blob.PubKey\n\tcopy(delayPubKey[:], delayPrivKey.PubKey().SerializeCompressed())\n\n\t// Sign a message using the revocation private key. The exact message\n\t// doesn't matter as we won't be validating the signature's validity.\n\tdigest := bytes.Repeat([]byte(\"a\"), 32)\n\trawRevSig := ecdsa.Sign(revPrivKey, digest)\n\n\t// Convert the DER-encoded signature into a fixed-size sig.\n\tcommitToLocalSig, err := lnwire.NewSigFromSignature(rawRevSig)\n\trequire.Nil(t, err)\n\n\t// Populate the justice kit with fields relevant to the to-local output.\n\tjusticeKit := &blob.JusticeKit{\n\t\tCSVDelay:         csvDelay,\n\t\tRevocationPubKey: revPubKey,\n\t\tLocalDelayPubKey: delayPubKey,\n\t\tCommitToLocalSig: commitToLocalSig,\n\t}\n\n\t// Compute the expected to-local script, which is a function of the CSV\n\t// delay, revocation pubkey and delay pubkey.\n\texpToLocalScript, err := input.CommitScriptToSelf(\n\t\tcsvDelay, delayPrivKey.PubKey(), revPrivKey.PubKey(),\n\t)\n\trequire.Nil(t, err)\n\n\t// Compute the to-local script that is returned by the justice kit.\n\ttoLocalScript, err := justiceKit.CommitToLocalWitnessScript()\n\trequire.Nil(t, err)\n\n\t// Assert that the expected to-local script matches the actual script.\n\trequire.Equal(t, expToLocalScript, toLocalScript)\n\n\t// Next, compute the to-local witness stack returned by the justice kit.\n\ttoLocalWitnessStack, err := justiceKit.CommitToLocalRevokeWitnessStack()\n\trequire.Nil(t, err)\n\n\t// Compute the expected signature in the bottom element of the stack, by\n\t// appending a sighash all flag to the raw DER signature.\n\trawRevSigWithSigHash := append(\n\t\trawRevSig.Serialize(), byte(txscript.SigHashAll),\n\t)\n\n\t// Finally, validate against our expected witness stack.\n\texpWitnessStack := [][]byte{\n\t\trawRevSigWithSigHash,\n\t\t{1},\n\t}\n\trequire.Equal(t, expWitnessStack, toLocalWitnessStack)\n}\n",
+      "length": 2144,
+      "tokens": 247,
+      "embedding": []
+    }
+  ]
+}

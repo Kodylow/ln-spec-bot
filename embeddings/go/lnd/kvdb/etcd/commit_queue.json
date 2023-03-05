@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/commit_queue.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type commitQueue struct {",
+      "content": "type commitQueue struct {\n\tctx       context.Context\n\tmx        sync.Mutex\n\treaderMap map[string]int\n\twriterMap map[string]int\n\n\tqueue     *list.List\n\tqueueMx   sync.Mutex\n\tqueueCond *sync.Cond\n\n\tshutdown chan struct{}\n}\n",
+      "length": 184,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type commitQueueTxn struct {",
+      "content": "type commitQueueTxn struct {\n\tcommitLoop func()\n\tblocked    bool\n\trset       []string\n\twset       []string\n}\n\n// NewCommitQueue creates a new commit queue, with the passed abort context.",
+      "length": 151,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCommitQueue(ctx context.Context) *commitQueue {",
+      "content": "func NewCommitQueue(ctx context.Context) *commitQueue {\n\tq := &commitQueue{\n\t\tctx:       ctx,\n\t\treaderMap: make(map[string]int),\n\t\twriterMap: make(map[string]int),\n\t\tqueue:     list.New(),\n\t\tshutdown:  make(chan struct{}),\n\t}\n\tq.queueCond = sync.NewCond(&q.queueMx)\n\n\t// Start the queue consumer loop.\n\tgo q.mainLoop()\n\n\treturn q\n}\n\n// Stop signals the queue to stop after the queue context has been canceled and\n// waits until the has stopped.",
+      "length": 372,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitQueue) Stop() {",
+      "content": "func (c *commitQueue) Stop() {\n\t// Signal the queue's condition variable to ensure the mainLoop reliably\n\t// unblocks to check for the exit condition.\n\tc.queueCond.Signal()\n\t<-c.shutdown\n}\n\n// Add increases lock counts and queues up tx commit closure for execution.\n// Transactions that don't have any conflicts are executed immediately by\n// \"downgrading\" the count mutex to allow concurrency.",
+      "length": 355,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitQueue) Add(commitLoop func(), rset []string, wset []string) {",
+      "content": "func (c *commitQueue) Add(commitLoop func(), rset []string, wset []string) {\n\tc.mx.Lock()\n\tblocked := false\n\n\t// Mark as blocked if there's any writer changing any of the keys in\n\t// the read set. Do not increment the reader counts yet as we'll need to\n\t// use the original reader counts when scanning through the write set.\n\tfor _, key := range rset {\n\t\tif c.writerMap[key] > 0 {\n\t\t\tblocked = true\n\t\t\tbreak\n\t\t}\n\t}\n\n\t// Mark as blocked if there's any writer or reader for any of the keys\n\t// in the write set.\n\tfor _, key := range wset {\n\t\tblocked = blocked || c.readerMap[key] > 0 || c.writerMap[key] > 0\n\n\t\t// Increment the writer count.\n\t\tc.writerMap[key] += 1\n\t}\n\n\t// Finally we can increment the reader counts for keys in the read set.\n\tfor _, key := range rset {\n\t\tc.readerMap[key] += 1\n\t}\n\n\tc.queueCond.L.Lock()\n\tc.queue.PushBack(&commitQueueTxn{\n\t\tcommitLoop: commitLoop,\n\t\tblocked:    blocked,\n\t\trset:       rset,\n\t\twset:       wset,\n\t})\n\tc.queueCond.L.Unlock()\n\n\tc.mx.Unlock()\n\n\tc.queueCond.Signal()\n}\n\n// done decreases lock counts of the keys in the read/write sets.",
+      "length": 960,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitQueue) done(rset []string, wset []string) {",
+      "content": "func (c *commitQueue) done(rset []string, wset []string) {\n\tc.mx.Lock()\n\tdefer c.mx.Unlock()\n\n\tfor _, key := range rset {\n\t\tc.readerMap[key] -= 1\n\t\tif c.readerMap[key] == 0 {\n\t\t\tdelete(c.readerMap, key)\n\t\t}\n\t}\n\n\tfor _, key := range wset {\n\t\tc.writerMap[key] -= 1\n\t\tif c.writerMap[key] == 0 {\n\t\t\tdelete(c.writerMap, key)\n\t\t}\n\t}\n}\n\n// mainLoop executes queued transaction commits for transactions that have\n// dependencies. The queue ensures that the top element doesn't conflict with\n// any other transactions and therefore can be executed freely.",
+      "length": 467,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitQueue) mainLoop() {",
+      "content": "func (c *commitQueue) mainLoop() {\n\tdefer close(c.shutdown)\n\n\tfor {\n\t\t// Wait until there are no unblocked transactions being\n\t\t// executed, and for there to be at least one blocked\n\t\t// transaction in our queue.\n\t\tc.queueCond.L.Lock()\n\t\tfor c.queue.Front() == nil {\n\t\t\tc.queueCond.Wait()\n\n\t\t\t// Check the exit condition before looping again.\n\t\t\tselect {\n\t\t\tcase <-c.ctx.Done():\n\t\t\t\tc.queueCond.L.Unlock()\n\t\t\t\treturn\n\t\t\tdefault:\n\t\t\t}\n\t\t}\n\n\t\t// Now collect all txns until we find the next blocking one.\n\t\t// These shouldn't conflict (if the precollected read/write\n\t\t// keys sets don't grow), meaning we can safely commit them\n\t\t// in parallel.\n\t\twork := make([]*commitQueueTxn, 1)\n\t\te := c.queue.Front()\n\t\twork[0] = c.queue.Remove(e).(*commitQueueTxn)\n\n\t\tfor {\n\t\t\te := c.queue.Front()\n\t\t\tif e == nil {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\tnext := e.Value.(*commitQueueTxn)\n\t\t\tif !next.blocked {\n\t\t\t\twork = append(work, next)\n\t\t\t\tc.queue.Remove(e)\n\t\t\t} else {\n\t\t\t\t// We found the next blocking txn which means\n\t\t\t\t// the block of work needs to be cut here.\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\n\t\tc.queueCond.L.Unlock()\n\n\t\t// Check if we need to exit before continuing.\n\t\tselect {\n\t\tcase <-c.ctx.Done():\n\t\t\treturn\n\t\tdefault:\n\t\t}\n\n\t\tvar wg sync.WaitGroup\n\t\twg.Add(len(work))\n\n\t\t// Fire up N goroutines where each will run its commit loop\n\t\t// and then clean up the reader/writer maps.\n\t\tfor _, txn := range work {\n\t\t\tgo func(txn *commitQueueTxn) {\n\t\t\t\tdefer wg.Done()\n\t\t\t\ttxn.commitLoop()\n\n\t\t\t\t// We can safely cleanup here as done only\n\t\t\t\t// holds the main mutex.\n\t\t\t\tc.done(txn.rset, txn.wset)\n\t\t\t}(txn)\n\t\t}\n\n\t\twg.Wait()\n\n\t\t// Check if we need to exit before continuing.\n\t\tselect {\n\t\tcase <-c.ctx.Done():\n\t\t\treturn\n\t\tdefault:\n\t\t}\n\t}\n}\n",
+      "length": 1586,
+      "tokens": 237,
+      "embedding": []
+    }
+  ]
+}

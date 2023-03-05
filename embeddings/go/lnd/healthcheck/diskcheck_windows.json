@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/healthcheck/diskcheck_windows.go",
+  "package": "healthcheck",
+  "sections": [
+    {
+      "slug": "func AvailableDiskSpaceRatio(path string) (float64, error) {",
+      "content": "func AvailableDiskSpaceRatio(path string) (float64, error) {\n\tvar free, total, avail uint64\n\n\tpathPtr, err := windows.UTF16PtrFromString(path)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\terr = windows.GetDiskFreeSpaceEx(pathPtr, &free, &total, &avail)\n\n\treturn float64(avail) / float64(total), nil\n}\n\n// AvailableDiskSpace returns the available disk space in bytes of the given\n// file system for windows.",
+      "length": 325,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func AvailableDiskSpace(path string) (uint64, error) {",
+      "content": "func AvailableDiskSpace(path string) (uint64, error) {\n\tvar free, total, avail uint64\n\n\tpathPtr, err := windows.UTF16PtrFromString(path)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\terr = windows.GetDiskFreeSpaceEx(pathPtr, &free, &total, &avail)\n\n\treturn avail, nil\n}\n",
+      "length": 196,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

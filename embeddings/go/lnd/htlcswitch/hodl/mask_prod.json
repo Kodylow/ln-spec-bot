@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/hodl/mask_prod.go",
+  "package": "!dev",
+  "sections": [
+    {
+      "slug": "func MaskFromFlags(_ ...Flag) Mask {",
+      "content": "func MaskFromFlags(_ ...Flag) Mask {\n\treturn MaskNone\n}\n\n// Active in production always returns false for all Flags.",
+      "length": 76,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (m Mask) Active(_ Flag) bool {",
+      "content": "func (m Mask) Active(_ Flag) bool {\n\treturn false\n}\n\n// String returns the human-readable identifier for MaskNone.",
+      "length": 75,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m Mask) String() string {",
+      "content": "func (m Mask) String() string {\n\treturn \"hodl.Mask(NONE)\"\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

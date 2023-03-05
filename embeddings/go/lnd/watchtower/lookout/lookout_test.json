@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/lookout/lookout_test.go",
+  "package": "lookout_test",
+  "sections": [
+    {
+      "slug": "type mockPunisher struct {",
+      "content": "type mockPunisher struct {\n\tmatches chan *lookout.JusticeDescriptor\n}\n",
+      "length": 41,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPunisher) Punish(",
+      "content": "func (p *mockPunisher) Punish(\n\tinfo *lookout.JusticeDescriptor, quit <-chan struct{}) error {\n\n\tp.matches <- info\n\treturn nil\n}\n",
+      "length": 93,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func makeArray32(i uint64) [32]byte {",
+      "content": "func makeArray32(i uint64) [32]byte {\n\tvar arr [32]byte\n\tbinary.BigEndian.PutUint64(arr[:], i)\n\treturn arr\n}\n",
+      "length": 67,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func makeArray33(i uint64) [33]byte {",
+      "content": "func makeArray33(i uint64) [33]byte {\n\tvar arr [33]byte\n\tbinary.BigEndian.PutUint64(arr[:], i)\n\treturn arr\n}\n",
+      "length": 67,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func makePubKey(i uint64) [33]byte {",
+      "content": "func makePubKey(i uint64) [33]byte {\n\tvar arr [33]byte\n\tarr[0] = 0x02\n\tif i%2 == 1 {\n\t\tarr[0] |= 0x01\n\t}\n\tbinary.BigEndian.PutUint64(arr[1:], i)\n\treturn arr\n}\n",
+      "length": 114,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func makeArray64(i uint64) [64]byte {",
+      "content": "func makeArray64(i uint64) [64]byte {\n\tvar arr [64]byte\n\tbinary.BigEndian.PutUint64(arr[:], i)\n\treturn arr\n}\n",
+      "length": 67,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func makeAddrSlice(size int) []byte {",
+      "content": "func makeAddrSlice(size int) []byte {\n\taddr := make([]byte, size)\n\tif _, err := io.ReadFull(rand.Reader, addr); err != nil {\n\t\tpanic(\"cannot make addr\")\n\t}\n\treturn addr\n}\n",
+      "length": 127,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func TestLookoutBreachMatching(t *testing.T) {",
+      "content": "func TestLookoutBreachMatching(t *testing.T) {\n\tdb := wtmock.NewTowerDB()\n\n\t// Initialize an mock backend to feed the lookout blocks.\n\tbackend := lookout.NewMockBackend()\n\n\t// Initialize a punisher that will feed any successfully constructed\n\t// justice descriptors across the matches channel.\n\tmatches := make(chan *lookout.JusticeDescriptor)\n\tpunisher := &mockPunisher{matches: matches}\n\n\t// With the resources in place, initialize and start our watcher.\n\twatcher := lookout.New(&lookout.Config{\n\t\tBlockFetcher:   backend,\n\t\tDB:             db,\n\t\tEpochRegistrar: backend,\n\t\tPunisher:       punisher,\n\t})\n\tif err := watcher.Start(); err != nil {\n\t\tt.Fatalf(\"unable to start watcher: %v\", err)\n\t}\n\n\trewardAndCommitType := blob.TypeFromFlags(\n\t\tblob.FlagReward, blob.FlagCommitOutputs,\n\t)\n\n\t// Create two sessions, representing two distinct clients.\n\tsessionInfo1 := &wtdb.SessionInfo{\n\t\tID: makeArray33(1),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     rewardAndCommitType,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 10,\n\t\t},\n\t\tRewardAddress: makeAddrSlice(22),\n\t}\n\tsessionInfo2 := &wtdb.SessionInfo{\n\t\tID: makeArray33(2),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     rewardAndCommitType,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 10,\n\t\t},\n\t\tRewardAddress: makeAddrSlice(22),\n\t}\n\n\t// Insert both sessions into the watchtower's database.\n\terr := db.InsertSessionInfo(sessionInfo1)\n\trequire.NoError(t, err, \"unable to insert session info\")\n\terr = db.InsertSessionInfo(sessionInfo2)\n\trequire.NoError(t, err, \"unable to insert session info\")\n\n\t// Construct two distinct transactions, that will be used to test the\n\t// breach hint matching.\n\ttx := wire.NewMsgTx(wire.TxVersion)\n\thash1 := tx.TxHash()\n\n\ttx2 := wire.NewMsgTx(wire.TxVersion + 1)\n\thash2 := tx2.TxHash()\n\n\tif bytes.Equal(hash1[:], hash2[:]) {\n\t\tt.Fatalf(\"breach txids should be different\")\n\t}\n\n\t// Construct a justice kit for each possible breach transaction.\n\tblobType := blob.FlagCommitOutputs.Type()\n\tblob1 := &blob.JusticeKit{\n\t\tBlobType:         blobType,\n\t\tSweepAddress:     makeAddrSlice(22),\n\t\tRevocationPubKey: makePubKey(1),\n\t\tLocalDelayPubKey: makePubKey(1),\n\t\tCSVDelay:         144,\n\t\tCommitToLocalSig: makeArray64(1),\n\t}\n\tblob2 := &blob.JusticeKit{\n\t\tBlobType:         blobType,\n\t\tSweepAddress:     makeAddrSlice(22),\n\t\tRevocationPubKey: makePubKey(2),\n\t\tLocalDelayPubKey: makePubKey(2),\n\t\tCSVDelay:         144,\n\t\tCommitToLocalSig: makeArray64(2),\n\t}\n\n\tkey1 := blob.NewBreachKeyFromHash(&hash1)\n\tkey2 := blob.NewBreachKeyFromHash(&hash2)\n\n\t// Encrypt the first justice kit under breach key one.\n\tencBlob1, err := blob1.Encrypt(key1)\n\trequire.NoError(t, err, \"unable to encrypt sweep detail 1\")\n\n\t// Encrypt the second justice kit under breach key two.\n\tencBlob2, err := blob2.Encrypt(key2)\n\trequire.NoError(t, err, \"unable to encrypt sweep detail 2\")\n\n\t// Add both state updates to the tower's database.\n\ttxBlob1 := &wtdb.SessionStateUpdate{\n\t\tID:            makeArray33(1),\n\t\tHint:          blob.NewBreachHintFromHash(&hash1),\n\t\tEncryptedBlob: encBlob1,\n\t\tSeqNum:        1,\n\t}\n\ttxBlob2 := &wtdb.SessionStateUpdate{\n\t\tID:            makeArray33(2),\n\t\tHint:          blob.NewBreachHintFromHash(&hash2),\n\t\tEncryptedBlob: encBlob2,\n\t\tSeqNum:        1,\n\t}\n\tif _, err := db.InsertStateUpdate(txBlob1); err != nil {\n\t\tt.Fatalf(\"unable to add tx to db: %v\", err)\n\t}\n\tif _, err := db.InsertStateUpdate(txBlob2); err != nil {\n\t\tt.Fatalf(\"unable to add tx to db: %v\", err)\n\t}\n\n\t// Create a block containing the first transaction, connecting this\n\t// block should match the first state update's breach hint.\n\tblock := &wire.MsgBlock{\n\t\tHeader: wire.BlockHeader{\n\t\t\tNonce: 1,\n\t\t},\n\t\tTransactions: []*wire.MsgTx{tx},\n\t}\n\tblockHash := block.BlockHash()\n\tepoch := &chainntnfs.BlockEpoch{\n\t\tHash:   &blockHash,\n\t\tHeight: 1,\n\t}\n\n\t// Connect the block via our mock backend.\n\tbackend.ConnectEpoch(epoch, block)\n\n\t// This should trigger dispatch of the justice kit for the first tx.\n\tselect {\n\tcase match := <-matches:\n\t\ttxid := match.BreachedCommitTx.TxHash()\n\t\tif !bytes.Equal(txid[:], hash1[:]) {\n\t\t\tt.Fatalf(\"matched breach did not match tx1's txid\")\n\t\t}\n\tcase <-time.After(5 * time.Second):\n\t\tt.Fatalf(\"breach tx1 was not matched\")\n\t}\n\n\t// Ensure that at most one txn was matched as a result of connecting the\n\t// first block.\n\tselect {\n\tcase <-matches:\n\t\tt.Fatalf(\"only one txn should have been matched\")\n\tcase <-time.After(50 * time.Millisecond):\n\t}\n\n\t// Now, construct a second block containing the second breach\n\t// transaction.\n\tblock2 := &wire.MsgBlock{\n\t\tHeader: wire.BlockHeader{\n\t\t\tNonce: 2,\n\t\t},\n\t\tTransactions: []*wire.MsgTx{tx2},\n\t}\n\tblockHash2 := block2.BlockHash()\n\tepoch2 := &chainntnfs.BlockEpoch{\n\t\tHash:   &blockHash2,\n\t\tHeight: 2,\n\t}\n\n\t// Verify that the block hashes do no collide, otherwise the mock\n\t// backend may not function properly.\n\tif bytes.Equal(blockHash[:], blockHash2[:]) {\n\t\tt.Fatalf(\"block hashes should be different\")\n\t}\n\n\t// Connect the second block, such that the block is delivered via the\n\t// epoch stream.\n\tbackend.ConnectEpoch(epoch2, block2)\n\n\t// This should trigger dispatch of the justice kit for the second txn.\n\tselect {\n\tcase match := <-matches:\n\t\ttxid := match.BreachedCommitTx.TxHash()\n\t\tif !bytes.Equal(txid[:], hash2[:]) {\n\t\t\tt.Fatalf(\"received breach did not match tx2's txid\")\n\t\t}\n\tcase <-time.After(5 * time.Second):\n\t\tt.Fatalf(\"tx was not matched\")\n\t}\n\n\t// Ensure that at most one txn was matched as a result of connecting the\n\t// second block.\n\tselect {\n\tcase <-matches:\n\t\tt.Fatalf(\"only one txn should have been matched\")\n\tcase <-time.After(50 * time.Millisecond):\n\t}\n}\n",
+      "length": 5457,
+      "tokens": 653,
+      "embedding": []
+    }
+  ]
+}

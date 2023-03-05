@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration3/codec.go",
+  "package": "migration3",
+  "sections": [
+    {
+      "slug": "type ChannelID [32]byte",
+      "content": "type ChannelID [32]byte\n\n// String returns the string representation of the ChannelID. This is just the\n// hex string encoding of the ChannelID itself.",
+      "length": 125,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChannelID) String() string {",
+      "content": "func (c ChannelID) String() string {\n\treturn hex.EncodeToString(c[:])\n}\n",
+      "length": 33,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

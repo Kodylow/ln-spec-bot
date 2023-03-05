@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/announcement_signatures.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type AnnounceSignatures struct {",
+      "content": "type AnnounceSignatures struct {\n\t// ChannelID is the unique description of the funding transaction.\n\t// Channel id is better for users and debugging and short channel id is\n\t// used for quick test on existence of the particular utxo inside the\n\t// block chain, because it contains information about block.\n\tChannelID ChannelID\n\n\t// ShortChannelID is the unique description of the funding\n\t// transaction. It is constructed with the most significant 3 bytes\n\t// as the block height, the next 3 bytes indicating the transaction\n\t// index within the block, and the least significant two bytes\n\t// indicating the output index which pays to the channel.\n\tShortChannelID ShortChannelID\n\n\t// NodeSignature is the signature which contains the signed announce\n\t// channel message, by this signature we proof that we possess of the\n\t// node pub key and creating the reference node_key -> bitcoin_key.\n\tNodeSignature Sig\n\n\t// BitcoinSignature is the signature which contains the signed node\n\t// public key, by this signature we proof that we possess of the\n\t// bitcoin key and and creating the reverse reference bitcoin_key ->\n\t// node_key.\n\tBitcoinSignature Sig\n\n\t// ExtraOpaqueData is the set of data that was appended to this\n\t// message, some of which we may not actually know how to iterate or\n\t// parse. By holding onto this data, we ensure that we're able to\n\t// properly validate the set of signatures that cover these new fields,\n\t// and ensure we're able to make upgrades to the network in a forwards\n\t// compatible manner.\n\tExtraOpaqueData ExtraOpaqueData\n}\n\n// A compile time check to ensure AnnounceSignatures implements the\n// lnwire.Message interface.\nvar _ Message = (*AnnounceSignatures)(nil)\n\n// Decode deserializes a serialized AnnounceSignatures stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 1810,
+      "tokens": 292,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *AnnounceSignatures) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&a.ChannelID,\n\t\t&a.ShortChannelID,\n\t\t&a.NodeSignature,\n\t\t&a.BitcoinSignature,\n\t\t&a.ExtraOpaqueData,\n\t)\n}\n\n// Encode serializes the target AnnounceSignatures into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 293,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (a *AnnounceSignatures) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteChannelID(w, a.ChannelID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteShortChannelID(w, a.ShortChannelID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteSig(w, a.NodeSignature); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteSig(w, a.BitcoinSignature); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, a.ExtraOpaqueData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 460,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *AnnounceSignatures) MsgType() MessageType {",
+      "content": "func (a *AnnounceSignatures) MsgType() MessageType {\n\treturn MsgAnnounceSignatures\n}\n",
+      "length": 30,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

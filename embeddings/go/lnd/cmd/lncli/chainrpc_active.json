@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/chainrpc_active.go",
+  "package": "chainrpc",
+  "sections": [
+    {
+      "slug": "func chainCommands() []cli.Command {",
+      "content": "func chainCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"chain\",\n\t\t\tCategory: \"On-chain\",\n\t\t\tUsage:    \"Interact with the bitcoin blockchain.\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tgetBlockCommand,\n\t\t\t\tgetBestBlockCommand,\n\t\t\t\tgetBlockHashCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",
+      "length": 233,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func getChainClient(ctx *cli.Context) (chainrpc.ChainKitClient, func()) {",
+      "content": "func getChainClient(ctx *cli.Context) (chainrpc.ChainKitClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn chainrpc.NewChainKitClient(conn), cleanUp\n}\n\nvar getBlockCommand = cli.Command{\n\tName:        \"getblock\",\n\tCategory:    \"On-chain\",\n\tUsage:       \"Get block by block hash.\",\n\tDescription: \"Returns a block given the corresponding block hash.\",\n\tFlags: []cli.Flag{\n\t\tcli.StringFlag{\n\t\t\tName:  \"hash\",\n\t\t\tUsage: \"the target block hash\",\n\t\t},\n\t\tcli.BoolFlag{\n\t\t\tName:  \"verbose\",\n\t\t\tUsage: \"print entire block as JSON\",\n\t\t},\n\t},\n\tAction: actionDecorator(getBlock),\n}\n",
+      "length": 521,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func getBlock(ctx *cli.Context) error {",
+      "content": "func getBlock(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\tvar (\n\t\targs            = ctx.Args()\n\t\tblockHashString string\n\t)\n\n\tverbose := false\n\tif ctx.IsSet(\"verbose\") {\n\t\tverbose = true\n\t}\n\n\tswitch {\n\tcase ctx.IsSet(\"hash\"):\n\t\tblockHashString = ctx.String(\"hash\")\n\n\tcase args.Present():\n\t\tblockHashString = args.First()\n\n\tdefault:\n\t\treturn fmt.Errorf(\"hash argument missing\")\n\t}\n\n\tblockHash, err := chainhash.NewHashFromStr(blockHashString)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tclient, cleanUp := getChainClient(ctx)\n\tdefer cleanUp()\n\n\treq := &chainrpc.GetBlockRequest{BlockHash: blockHash.CloneBytes()}\n\tresp, err := client.GetBlock(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Convert raw block bytes into wire.MsgBlock.\n\tmsgBlock := &wire.MsgBlock{}\n\tblockReader := bytes.NewReader(resp.RawBlock)\n\terr = msgBlock.Deserialize(blockReader)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif verbose {\n\t\tprintJSON(msgBlock)\n\t} else {\n\t\tprintJSON(msgBlock.Header)\n\t}\n\n\treturn nil\n}\n\nvar getBestBlockCommand = cli.Command{\n\tName:     \"getbestblock\",\n\tCategory: \"On-chain\",\n\tUsage:    \"Get best block.\",\n\tDescription: \"Returns the latest block hash and height from the \" +\n\t\t\"valid most-work chain.\",\n\tAction: actionDecorator(getBestBlock),\n}\n",
+      "length": 1133,
+      "tokens": 140,
+      "embedding": []
+    },
+    {
+      "slug": "func getBestBlock(ctx *cli.Context) error {",
+      "content": "func getBestBlock(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\tclient, cleanUp := getChainClient(ctx)\n\tdefer cleanUp()\n\n\tresp, err := client.GetBestBlock(ctxc, &chainrpc.GetBestBlockRequest{})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Cast gRPC block hash bytes as chain hash type.\n\tvar blockHash chainhash.Hash\n\tcopy(blockHash[:], resp.BlockHash)\n\n\tprintJSON(struct {\n\t\tBlockHash   chainhash.Hash `json:\"block_hash\"`\n\t\tBlockHeight int32          `json:\"block_height\"`\n\t}{\n\t\tBlockHash:   blockHash,\n\t\tBlockHeight: resp.BlockHeight,\n\t})\n\n\treturn nil\n}\n\nvar getBlockHashCommand = cli.Command{\n\tName:     \"getblockhash\",\n\tCategory: \"On-chain\",\n\tUsage:    \"Get block hash by block height.\",\n\tDescription: \"Returns the block hash from the best chain at a given \" +\n\t\t\"height.\",\n\tFlags: []cli.Flag{\n\t\tcli.Int64Flag{\n\t\t\tName:  \"height\",\n\t\t\tUsage: \"target block height\",\n\t\t},\n\t},\n\tAction: actionDecorator(getBlockHash),\n}\n",
+      "length": 832,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func getBlockHash(ctx *cli.Context) error {",
+      "content": "func getBlockHash(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif ctx.NArg()+ctx.NumFlags() != 1 {\n\t\treturn cli.ShowCommandHelp(ctx, \"getblockhash\")\n\t}\n\n\tvar (\n\t\targs        = ctx.Args()\n\t\tblockHeight int64\n\t)\n\n\tswitch {\n\tcase ctx.IsSet(\"height\"):\n\t\tblockHeight = ctx.Int64(\"height\")\n\n\tcase args.Present():\n\t\tblockHeightString := args.First()\n\n\t\t// Convert block height positional argument from string to\n\t\t// int64.\n\t\tvar err error\n\t\tblockHeight, err = strconv.ParseInt(blockHeightString, 10, 64)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\tdefault:\n\t\treturn fmt.Errorf(\"block height argument missing\")\n\t}\n\n\tclient, cleanUp := getChainClient(ctx)\n\tdefer cleanUp()\n\n\treq := &chainrpc.GetBlockHashRequest{BlockHeight: blockHeight}\n\tresp, err := client.GetBlockHash(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Cast gRPC block hash bytes as chain hash type.\n\tvar blockHash chainhash.Hash\n\tcopy(blockHash[:], resp.BlockHash)\n\n\tprintJSON(struct {\n\t\tBlockHash chainhash.Hash `json:\"block_hash\"`\n\t}{\n\t\tBlockHash: blockHash,\n\t})\n\n\treturn nil\n}\n",
+      "length": 1044,
+      "tokens": 134,
+      "embedding": []
+    }
+  ]
+}

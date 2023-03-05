@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/primitive_test.go",
+  "package": "tlv_test",
+  "sections": [
+    {
+      "slug": "type primitive struct {",
+      "content": "type primitive struct {\n\tu8    byte\n\tu16   uint16\n\tu32   uint32\n\tu64   uint64\n\tb32   [32]byte\n\tb33   [33]byte\n\tb64   [64]byte\n\tpk    *btcec.PublicKey\n\tbytes []byte\n}\n\n// TestWrongEncodingType asserts that all primitives encoders will fail with a\n// ErrTypeForEncoding when an incorrect type is provided.",
+      "length": 267,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWrongEncodingType(t *testing.T) {",
+      "content": "func TestWrongEncodingType(t *testing.T) {\n\tencoders := []tlv.Encoder{\n\t\ttlv.EUint8,\n\t\ttlv.EUint16,\n\t\ttlv.EUint32,\n\t\ttlv.EUint64,\n\t\ttlv.EBytes32,\n\t\ttlv.EBytes33,\n\t\ttlv.EBytes64,\n\t\ttlv.EPubKey,\n\t\ttlv.EVarBytes,\n\t}\n\n\t// We'll use an int32 since it is not a primitive type, which should\n\t// cause the primitive encoders to fail with an ErrTypeForEncoding\n\t// failure.\n\tvar (\n\t\tvalue int32\n\t\tbuf   [8]byte\n\t\tb     bytes.Buffer\n\t)\n\tfor _, encoder := range encoders {\n\t\terr := encoder(&b, &value, &buf)\n\t\tif _, ok := err.(tlv.ErrTypeForEncoding); !ok {\n\t\t\tt.Fatalf(\"expected error of type ErrTypeForEncoding, \"+\n\t\t\t\t\"got %T\", err)\n\t\t}\n\t}\n}\n\n// TestWrongDecodingType asserts that all primitives decoders will fail with a\n// ErrTypeForDecoding when an incorrect type is provided.",
+      "length": 698,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWrongDecodingType(t *testing.T) {",
+      "content": "func TestWrongDecodingType(t *testing.T) {\n\tdecoders := []tlv.Decoder{\n\t\ttlv.DUint8,\n\t\ttlv.DUint16,\n\t\ttlv.DUint32,\n\t\ttlv.DUint64,\n\t\ttlv.DBytes32,\n\t\ttlv.DBytes33,\n\t\ttlv.DBytes64,\n\t\ttlv.DPubKey,\n\t\ttlv.DVarBytes,\n\t}\n\n\t// We'll use an int32 since it is not a primitive type, which should\n\t// cause the primitive decoders to fail with an ErrTypeForDecoding\n\t// failure.\n\tvar (\n\t\tvalue int32\n\t\tbuf   [8]byte\n\t\tb     bytes.Buffer\n\t)\n\tfor _, decoder := range decoders {\n\t\terr := decoder(&b, &value, &buf, 0)\n\t\tif _, ok := err.(tlv.ErrTypeForDecoding); !ok {\n\t\t\tt.Fatalf(\"expected error of type ErrTypeForDecoding, \"+\n\t\t\t\t\"got %T\", err)\n\t\t}\n\t}\n}\n",
+      "length": 566,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "type fieldEncoder struct {",
+      "content": "type fieldEncoder struct {\n\tval     interface{}\n\tencoder tlv.Encoder\n}\n",
+      "length": 41,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type fieldDecoder struct {",
+      "content": "type fieldDecoder struct {\n\tval     interface{}\n\tdecoder tlv.Decoder\n\tsize    uint64\n}\n\n// TestPrimitiveEncodings tests that we are able to serialize all known\n// primitive field types. After successfully encoding, we check that we are able\n// to decode the output and arrive at the same fields.",
+      "length": 261,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPrimitiveEncodings(t *testing.T) {",
+      "content": "func TestPrimitiveEncodings(t *testing.T) {\n\tprim := primitive{\n\t\tu8:    0x01,\n\t\tu16:   0x0201,\n\t\tu32:   0x02000001,\n\t\tu64:   0x0200000000000001,\n\t\tb32:   [32]byte{0x02, 0x01},\n\t\tb33:   [33]byte{0x03, 0x01},\n\t\tb64:   [64]byte{0x02, 0x01},\n\t\tpk:    testPK,\n\t\tbytes: []byte{0xaa, 0xbb},\n\t}\n\n\tencoders := []fieldEncoder{\n\t\t{\n\t\t\tval:     &prim.u8,\n\t\t\tencoder: tlv.EUint8,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.u16,\n\t\t\tencoder: tlv.EUint16,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.u32,\n\t\t\tencoder: tlv.EUint32,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.u64,\n\t\t\tencoder: tlv.EUint64,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.b32,\n\t\t\tencoder: tlv.EBytes32,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.b33,\n\t\t\tencoder: tlv.EBytes33,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.b64,\n\t\t\tencoder: tlv.EBytes64,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.pk,\n\t\t\tencoder: tlv.EPubKey,\n\t\t},\n\t\t{\n\t\t\tval:     &prim.bytes,\n\t\t\tencoder: tlv.EVarBytes,\n\t\t},\n\t}\n\n\t// First we'll encode the primitive fields into a buffer.\n\tvar (\n\t\tb   bytes.Buffer\n\t\tbuf [8]byte\n\t)\n\tfor _, field := range encoders {\n\t\terr := field.encoder(&b, field.val, &buf)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to encode %T: %v\",\n\t\t\t\tfield.val, err)\n\t\t}\n\t}\n\n\t// Next, we'll attempt to decode the primitive fields into a separate\n\t// primitive struct.\n\tr := bytes.NewReader(b.Bytes())\n\tvar prim2 primitive\n\n\tdecoders := []fieldDecoder{\n\t\t{\n\t\t\tval:     &prim2.u8,\n\t\t\tdecoder: tlv.DUint8,\n\t\t\tsize:    1,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.u16,\n\t\t\tdecoder: tlv.DUint16,\n\t\t\tsize:    2,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.u32,\n\t\t\tdecoder: tlv.DUint32,\n\t\t\tsize:    4,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.u64,\n\t\t\tdecoder: tlv.DUint64,\n\t\t\tsize:    8,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.b32,\n\t\t\tdecoder: tlv.DBytes32,\n\t\t\tsize:    32,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.b33,\n\t\t\tdecoder: tlv.DBytes33,\n\t\t\tsize:    33,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.b64,\n\t\t\tdecoder: tlv.DBytes64,\n\t\t\tsize:    64,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.pk,\n\t\t\tdecoder: tlv.DPubKey,\n\t\t\tsize:    33,\n\t\t},\n\t\t{\n\t\t\tval:     &prim2.bytes,\n\t\t\tdecoder: tlv.DVarBytes,\n\t\t\tsize:    2,\n\t\t},\n\t}\n\n\tfor _, field := range decoders {\n\t\terr := field.decoder(r, field.val, &buf, field.size)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to decode %T: %v\",\n\t\t\t\tfield.val, err)\n\t\t}\n\t}\n\n\t// Finally, we'll compare that the original and the decode structs are\n\t// equal.\n\tif !reflect.DeepEqual(prim, prim2) {\n\t\tt.Fatalf(\"primitive mismatch, \"+\n\t\t\t\"expected: %v, got: %v\",\n\t\t\tprim, prim2)\n\t}\n}\n",
+      "length": 2152,
+      "tokens": 280,
+      "embedding": []
+    }
+  ]
+}

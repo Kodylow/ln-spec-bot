@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_htlc_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testLookupHtlcResolution(ht *lntest.HarnessTest) {",
+      "content": "func testLookupHtlcResolution(ht *lntest.HarnessTest) {\n\tconst chanAmt = btcutil.Amount(1000000)\n\n\talice := ht.Alice\n\tcarol := ht.NewNode(\"Carol\", []string{\n\t\t\"--store-final-htlc-resolutions\",\n\t})\n\tht.EnsureConnected(alice, carol)\n\n\t// Open a channel between Alice and Carol.\n\tcp := ht.OpenChannel(\n\t\talice, carol, lntest.OpenChannelParams{Amt: chanAmt},\n\t)\n\n\t// Channel should be ready for payments.\n\tconst payAmt = 100\n\n\t// Create an invoice.\n\tinvoice := &lnrpc.Invoice{\n\t\tMemo:      \"alice to carol htlc lookup\",\n\t\tRPreimage: ht.Random32Bytes(),\n\t\tValue:     payAmt,\n\t}\n\n\t// Carol adds the invoice to her database.\n\tresp := carol.RPC.AddInvoice(invoice)\n\n\t// Subscribe the invoice.\n\tstream := carol.RPC.SubscribeSingleInvoice(resp.RHash)\n\n\t// Alice pays Carol's invoice.\n\tht.CompletePaymentRequests(alice, []string{resp.PaymentRequest})\n\n\t// Carol waits until the invoice is settled.\n\tht.AssertInvoiceState(stream, lnrpc.Invoice_SETTLED)\n\n\t// Get the channel using the assert function.\n\t//\n\t// TODO(yy): make `ht.OpenChannel` return lnrpc.Channel instead of\n\t// lnrpc.ChannelPoint.\n\tchannel := ht.AssertChannelExists(carol, cp)\n\n\t// Lookup the HTLC and assert the htlc is settled offchain.\n\treq := &lnrpc.LookupHtlcResolutionRequest{\n\t\tChanId:    channel.ChanId,\n\t\tHtlcIndex: 0,\n\t}\n\n\t// Check that Alice will get an error from LookupHtlcResolution.\n\terr := alice.RPC.LookupHtlcResolutionAssertErr(req)\n\tgErr := status.Convert(err)\n\trequire.Equal(ht, codes.Unavailable, gErr.Code())\n\n\t// Check that Carol can get the final htlc info.\n\tfinalHTLC := carol.RPC.LookupHtlcResolution(req)\n\trequire.True(ht, finalHTLC.Settled, \"htlc should be settled\")\n\trequire.True(ht, finalHTLC.Offchain, \"htlc should be Offchain\")\n}\n",
+      "length": 1603,
+      "tokens": 182,
+      "embedding": []
+    }
+  ]
+}

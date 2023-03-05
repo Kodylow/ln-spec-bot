@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/autopilotrpc_default.go",
+  "package": "!autopilotrpc",
+  "sections": [
+    {
+      "slug": "func autopilotCommands() []cli.Command {",
+      "content": "func autopilotCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

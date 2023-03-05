@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/task_pipeline.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "type taskPipeline struct {",
+      "content": "type taskPipeline struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\tforced  sync.Once\n\n\tlog btclog.Logger\n\n\tqueueMtx  sync.Mutex\n\tqueueCond *sync.Cond\n\tqueue     *list.List\n\n\tnewBackupTasks chan *backupTask\n\n\tquit      chan struct{}\n\tforceQuit chan struct{}\n\tshutdown  chan struct{}\n}\n\n// newTaskPipeline initializes a new taskPipeline.",
+      "length": 290,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func newTaskPipeline(log btclog.Logger) *taskPipeline {",
+      "content": "func newTaskPipeline(log btclog.Logger) *taskPipeline {\n\trq := &taskPipeline{\n\t\tlog:            log,\n\t\tqueue:          list.New(),\n\t\tnewBackupTasks: make(chan *backupTask),\n\t\tquit:           make(chan struct{}),\n\t\tforceQuit:      make(chan struct{}),\n\t\tshutdown:       make(chan struct{}),\n\t}\n\trq.queueCond = sync.NewCond(&rq.queueMtx)\n\n\treturn rq\n}\n\n// Start spins up the taskPipeline, making it eligible to begin receiving backup\n// tasks and deliver them to the receiver of NewBackupTasks.",
+      "length": 422,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) Start() {",
+      "content": "func (q *taskPipeline) Start() {\n\tq.started.Do(func() {\n\t\tgo q.queueManager()\n\t})\n}\n\n// Stop begins a graceful shutdown of the taskPipeline. This method returns once\n// all backupTasks have been delivered via NewBackupTasks, or a ForceQuit causes\n// the delivery of pending tasks to be interrupted.",
+      "length": 258,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) Stop() {",
+      "content": "func (q *taskPipeline) Stop() {\n\tq.stopped.Do(func() {\n\t\tq.log.Debugf(\"Stopping task pipeline\")\n\n\t\tclose(q.quit)\n\t\tq.signalUntilShutdown()\n\n\t\t// Skip log if we also force quit.\n\t\tselect {\n\t\tcase <-q.forceQuit:\n\t\tdefault:\n\t\t\tq.log.Debugf(\"Task pipeline stopped successfully\")\n\t\t}\n\t})\n}\n\n// ForceQuit signals the taskPipeline to immediately exit, dropping any\n// backupTasks that have not been delivered via NewBackupTasks.",
+      "length": 373,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) ForceQuit() {",
+      "content": "func (q *taskPipeline) ForceQuit() {\n\tq.forced.Do(func() {\n\t\tq.log.Infof(\"Force quitting task pipeline\")\n\n\t\tclose(q.forceQuit)\n\t\tq.signalUntilShutdown()\n\n\t\tq.log.Infof(\"Task pipeline unclean shutdown complete\")\n\t})\n}\n\n// NewBackupTasks returns a read-only channel for enqueue backupTasks. The\n// channel will be closed after a call to Stop and all pending tasks have been\n// delivered, or if a call to ForceQuit is called before the pending entries\n// have been drained.",
+      "length": 420,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) NewBackupTasks() <-chan *backupTask {",
+      "content": "func (q *taskPipeline) NewBackupTasks() <-chan *backupTask {\n\treturn q.newBackupTasks\n}\n\n// QueueBackupTask enqueues a backupTask for reliable delivery to the consumer\n// of NewBackupTasks. If the taskPipeline is shutting down, ErrClientExiting is\n// returned. Otherwise, if QueueBackupTask returns nil it is guaranteed to be\n// delivered via NewBackupTasks unless ForceQuit is called before completion.",
+      "length": 336,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) QueueBackupTask(task *backupTask) error {",
+      "content": "func (q *taskPipeline) QueueBackupTask(task *backupTask) error {\n\tq.queueCond.L.Lock()\n\tselect {\n\n\t// Reject new tasks after quit has been signaled.\n\tcase <-q.quit:\n\t\tq.queueCond.L.Unlock()\n\t\treturn ErrClientExiting\n\n\t// Reject new tasks after force quit has been signaled.\n\tcase <-q.forceQuit:\n\t\tq.queueCond.L.Unlock()\n\t\treturn ErrClientExiting\n\n\tdefault:\n\t}\n\n\t// Queue the new task and signal the queue's condition variable to wake up\n\t// the queueManager for processing.\n\tq.queue.PushBack(task)\n\tq.queueCond.L.Unlock()\n\n\tq.queueCond.Signal()\n\n\treturn nil\n}\n\n// queueManager processes all incoming backup requests that get added via\n// QueueBackupTask. The manager will exit\n//\n// NOTE: This method MUST be run as a goroutine.",
+      "length": 634,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) queueManager() {",
+      "content": "func (q *taskPipeline) queueManager() {\n\tdefer close(q.shutdown)\n\tdefer close(q.newBackupTasks)\n\n\tfor {\n\t\tq.queueCond.L.Lock()\n\t\tfor q.queue.Front() == nil {\n\t\t\tq.queueCond.Wait()\n\n\t\t\tselect {\n\t\t\tcase <-q.quit:\n\t\t\t\t// Exit only after the queue has been fully drained.\n\t\t\t\tif q.queue.Len() == 0 {\n\t\t\t\t\tq.queueCond.L.Unlock()\n\t\t\t\t\tq.log.Debugf(\"Revoked state pipeline flushed.\")\n\t\t\t\t\treturn\n\t\t\t\t}\n\n\t\t\tcase <-q.forceQuit:\n\t\t\t\tq.queueCond.L.Unlock()\n\t\t\t\tq.log.Debugf(\"Revoked state pipeline force quit.\")\n\t\t\t\treturn\n\n\t\t\tdefault:\n\t\t\t}\n\t\t}\n\n\t\t// Pop the first element from the queue.\n\t\te := q.queue.Front()\n\t\ttask := q.queue.Remove(e).(*backupTask)\n\t\tq.queueCond.L.Unlock()\n\n\t\tselect {\n\n\t\t// Backup task submitted to dispatcher. We don't select on quit to\n\t\t// ensure that we still drain tasks while shutting down.\n\t\tcase q.newBackupTasks <- task:\n\n\t\t// Force quit, return immediately to allow the client to exit.\n\t\tcase <-q.forceQuit:\n\t\t\tq.log.Debugf(\"Revoked state pipeline force quit.\")\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// signalUntilShutdown strobes the queue's condition variable to ensure the\n// queueManager reliably unblocks to check for the exit condition.",
+      "length": 1060,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *taskPipeline) signalUntilShutdown() {",
+      "content": "func (q *taskPipeline) signalUntilShutdown() {\n\tfor {\n\t\tselect {\n\t\tcase <-time.After(time.Millisecond):\n\t\t\tq.queueCond.Signal()\n\t\tcase <-q.shutdown:\n\t\t\treturn\n\t\t}\n\t}\n}\n",
+      "length": 112,
+      "tokens": 13,
+      "embedding": []
+    }
+  ]
+}

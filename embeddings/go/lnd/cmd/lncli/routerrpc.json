@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/routerrpc.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func routerCommands() []cli.Command {",
+      "content": "func routerCommands() []cli.Command {\n\treturn []cli.Command{\n\t\tqueryMissionControlCommand,\n\t\timportMissionControlCommand,\n\t\tqueryProbCommand,\n\t\tresetMissionControlCommand,\n\t\tbuildRouteCommand,\n\t\tgetCfgCommand,\n\t\tsetCfgCommand,\n\t\tupdateChanStatusCommand,\n\t}\n}\n",
+      "length": 210,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

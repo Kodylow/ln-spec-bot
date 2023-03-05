@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/input/test_utils.go",
+  "package": "input",
+  "sections": [
+    {
+      "slug": "type MockSigner struct {",
+      "content": "type MockSigner struct {\n\tPrivkeys  []*btcec.PrivateKey\n\tNetParams *chaincfg.Params\n}\n\n// SignOutputRaw generates a signature for the passed transaction according to\n// the data within the passed SignDescriptor.",
+      "length": 181,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) SignOutputRaw(tx *wire.MsgTx,",
+      "content": "func (m *MockSigner) SignOutputRaw(tx *wire.MsgTx,\n\tsignDesc *SignDescriptor) (Signature, error) {\n\n\tpubkey := signDesc.KeyDesc.PubKey\n\tswitch {\n\tcase signDesc.SingleTweak != nil:\n\t\tpubkey = TweakPubKeyWithTweak(pubkey, signDesc.SingleTweak)\n\tcase signDesc.DoubleTweak != nil:\n\t\tpubkey = DeriveRevocationPubkey(pubkey, signDesc.DoubleTweak.PubKey())\n\t}\n\n\thash160 := btcutil.Hash160(pubkey.SerializeCompressed())\n\tprivKey := m.findKey(hash160, signDesc.SingleTweak, signDesc.DoubleTweak)\n\tif privKey == nil {\n\t\treturn nil, fmt.Errorf(\"mock signer does not have key\")\n\t}\n\n\tsig, err := txscript.RawTxInWitnessSignature(tx, signDesc.SigHashes,\n\t\tsignDesc.InputIndex, signDesc.Output.Value, signDesc.WitnessScript,\n\t\tsignDesc.HashType, privKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn ecdsa.ParseDERSignature(sig[:len(sig)-1])\n}\n\n// ComputeInputScript generates a complete InputIndex for the passed transaction\n// with the signature as defined within the passed SignDescriptor. This method\n// should be capable of generating the proper input script for both regular\n// p2wkh output and p2wkh outputs nested within a regular p2sh output.",
+      "length": 1058,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) ComputeInputScript(tx *wire.MsgTx, signDesc *SignDescriptor) (*Script, error) {",
+      "content": "func (m *MockSigner) ComputeInputScript(tx *wire.MsgTx, signDesc *SignDescriptor) (*Script, error) {\n\tscriptType, addresses, _, err := txscript.ExtractPkScriptAddrs(\n\t\tsignDesc.Output.PkScript, m.NetParams)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tswitch scriptType {\n\tcase txscript.PubKeyHashTy:\n\t\tprivKey := m.findKey(addresses[0].ScriptAddress(), signDesc.SingleTweak,\n\t\t\tsignDesc.DoubleTweak)\n\t\tif privKey == nil {\n\t\t\treturn nil, fmt.Errorf(\"mock signer does not have key for \"+\n\t\t\t\t\"address %v\", addresses[0])\n\t\t}\n\n\t\tsigScript, err := txscript.SignatureScript(\n\t\t\ttx, signDesc.InputIndex, signDesc.Output.PkScript,\n\t\t\ttxscript.SigHashAll, privKey, true,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn &Script{SigScript: sigScript}, nil\n\n\tcase txscript.WitnessV0PubKeyHashTy:\n\t\tprivKey := m.findKey(addresses[0].ScriptAddress(), signDesc.SingleTweak,\n\t\t\tsignDesc.DoubleTweak)\n\t\tif privKey == nil {\n\t\t\treturn nil, fmt.Errorf(\"mock signer does not have key for \"+\n\t\t\t\t\"address %v\", addresses[0])\n\t\t}\n\n\t\twitnessScript, err := txscript.WitnessSignature(tx, signDesc.SigHashes,\n\t\t\tsignDesc.InputIndex, signDesc.Output.Value,\n\t\t\tsignDesc.Output.PkScript, txscript.SigHashAll, privKey, true)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn &Script{Witness: witnessScript}, nil\n\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unexpected script type: %v\", scriptType)\n\t}\n}\n\n// MuSig2CreateSession creates a new MuSig2 signing session using the local\n// key identified by the key locator. The complete list of all public keys of\n// all signing parties must be provided, including the public key of the local\n// signing key. If nonces of other parties are already known, they can be\n// submitted as well to reduce the number of method calls necessary later on.",
+      "length": 1600,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) MuSig2CreateSession(MuSig2Version, keychain.KeyLocator,",
+      "content": "func (m *MockSigner) MuSig2CreateSession(MuSig2Version, keychain.KeyLocator,\n\t[]*btcec.PublicKey, *MuSig2Tweaks,\n\t[][musig2.PubNonceSize]byte) (*MuSig2SessionInfo, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2RegisterNonces registers one or more public nonces of other signing\n// participants for a session identified by its ID. This method returns true\n// once we have all nonces for all other signing participants.",
+      "length": 325,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) MuSig2RegisterNonces(MuSig2SessionID,",
+      "content": "func (m *MockSigner) MuSig2RegisterNonces(MuSig2SessionID,\n\t[][musig2.PubNonceSize]byte) (bool, error) {\n\n\treturn false, nil\n}\n\n// MuSig2Sign creates a partial signature using the local signing key\n// that was specified when the session was created. This can only be\n// called when all public nonces of all participants are known and have\n// been registered with the session. If this node isn't responsible for\n// combining all the partial signatures, then the cleanup parameter\n// should be set, indicating that the session can be removed from memory\n// once the signature was produced.",
+      "length": 517,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) MuSig2Sign(MuSig2SessionID,",
+      "content": "func (m *MockSigner) MuSig2Sign(MuSig2SessionID,\n\t[sha256.Size]byte, bool) (*musig2.PartialSignature, error) {\n\n\treturn nil, nil\n}\n\n// MuSig2CombineSig combines the given partial signature(s) with the\n// local one, if it already exists. Once a partial signature of all\n// participants is registered, the final signature will be combined and\n// returned.",
+      "length": 296,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) MuSig2CombineSig(MuSig2SessionID,",
+      "content": "func (m *MockSigner) MuSig2CombineSig(MuSig2SessionID,\n\t[]*musig2.PartialSignature) (*schnorr.Signature, bool, error) {\n\n\treturn nil, false, nil\n}\n\n// MuSig2Cleanup removes a session from memory to free up resources.",
+      "length": 156,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) MuSig2Cleanup(MuSig2SessionID) error {",
+      "content": "func (m *MockSigner) MuSig2Cleanup(MuSig2SessionID) error {\n\treturn nil\n}\n\n// findKey searches through all stored private keys and returns one\n// corresponding to the hashed pubkey if it can be found. The public key may\n// either correspond directly to the private key or to the private key with a\n// tweak applied.",
+      "length": 249,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockSigner) findKey(needleHash160 []byte, singleTweak []byte,",
+      "content": "func (m *MockSigner) findKey(needleHash160 []byte, singleTweak []byte,\n\tdoubleTweak *btcec.PrivateKey) *btcec.PrivateKey {\n\n\tfor _, privkey := range m.Privkeys {\n\t\t// First check whether public key is directly derived from private key.\n\t\thash160 := btcutil.Hash160(privkey.PubKey().SerializeCompressed())\n\t\tif bytes.Equal(hash160, needleHash160) {\n\t\t\treturn privkey\n\t\t}\n\n\t\t// Otherwise check if public key is derived from tweaked private key.\n\t\tswitch {\n\t\tcase singleTweak != nil:\n\t\t\tprivkey = TweakPrivKey(privkey, singleTweak)\n\t\tcase doubleTweak != nil:\n\t\t\tprivkey = DeriveRevocationPrivKey(privkey, doubleTweak)\n\t\tdefault:\n\t\t\tcontinue\n\t\t}\n\t\thash160 = btcutil.Hash160(privkey.PubKey().SerializeCompressed())\n\t\tif bytes.Equal(hash160, needleHash160) {\n\t\t\treturn privkey\n\t\t}\n\t}\n\treturn nil\n}\n\n// pubkeyFromHex parses a Bitcoin public key from a hex encoded string.",
+      "length": 767,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func pubkeyFromHex(keyHex string) (*btcec.PublicKey, error) {",
+      "content": "func pubkeyFromHex(keyHex string) (*btcec.PublicKey, error) {\n\tbytes, err := hex.DecodeString(keyHex)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn btcec.ParsePubKey(bytes)\n}\n\n// privkeyFromHex parses a Bitcoin private key from a hex encoded string.",
+      "length": 180,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func privkeyFromHex(keyHex string) (*btcec.PrivateKey, error) {",
+      "content": "func privkeyFromHex(keyHex string) (*btcec.PrivateKey, error) {\n\tbytes, err := hex.DecodeString(keyHex)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tkey, _ := btcec.PrivKeyFromBytes(bytes)\n\treturn key, nil\n\n}\n\n// pubkeyToHex serializes a Bitcoin public key to a hex encoded string.",
+      "length": 202,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func pubkeyToHex(key *btcec.PublicKey) string {",
+      "content": "func pubkeyToHex(key *btcec.PublicKey) string {\n\treturn hex.EncodeToString(key.SerializeCompressed())\n}\n\n// privkeyFromHex serializes a Bitcoin private key to a hex encoded string.",
+      "length": 129,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func privkeyToHex(key *btcec.PrivateKey) string {",
+      "content": "func privkeyToHex(key *btcec.PrivateKey) string {\n\treturn hex.EncodeToString(key.Serialize())\n}\n",
+      "length": 44,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

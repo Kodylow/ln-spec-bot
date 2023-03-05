@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_cursor.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "type readWriteCursor struct {",
+      "content": "type readWriteCursor struct {\n\tbucket *readWriteBucket\n\n\t// currKey holds the current key of the cursor.\n\tcurrKey []byte\n}\n",
+      "length": 88,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadWriteCursor(b *readWriteBucket) *readWriteCursor {",
+      "content": "func newReadWriteCursor(b *readWriteBucket) *readWriteCursor {\n\treturn &readWriteCursor{\n\t\tbucket: b,\n\t}\n}\n\n// First positions the cursor at the first key/value pair and returns\n// the pair.",
+      "length": 121,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) First() ([]byte, []byte) {",
+      "content": "func (c *readWriteCursor) First() ([]byte, []byte) {\n\tvar (\n\t\tkey   []byte\n\t\tvalue []byte\n\t)\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key, value FROM \" + c.bucket.table + \" WHERE \" +\n\t\t\tparentSelector(c.bucket.id) +\n\t\t\t\" ORDER BY key LIMIT 1\",\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil, nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Copy current key to prevent modification by the caller.\n\tc.currKey = make([]byte, len(key))\n\tcopy(c.currKey, key)\n\n\treturn key, value\n}\n\n// Last positions the cursor at the last key/value pair and returns the\n// pair.",
+      "length": 534,
+      "tokens": 88,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Last() ([]byte, []byte) {",
+      "content": "func (c *readWriteCursor) Last() ([]byte, []byte) {\n\tvar (\n\t\tkey   []byte\n\t\tvalue []byte\n\t)\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key, value FROM \" + c.bucket.table + \" WHERE \" +\n\t\t\tparentSelector(c.bucket.id) +\n\t\t\t\" ORDER BY key DESC LIMIT 1\",\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil, nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Copy current key to prevent modification by the caller.\n\tc.currKey = make([]byte, len(key))\n\tcopy(c.currKey, key)\n\n\treturn key, value\n}\n\n// Next moves the cursor one key/value pair forward and returns the new\n// pair.",
+      "length": 539,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Next() ([]byte, []byte) {",
+      "content": "func (c *readWriteCursor) Next() ([]byte, []byte) {\n\tvar (\n\t\tkey   []byte\n\t\tvalue []byte\n\t)\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key, value FROM \"+c.bucket.table+\" WHERE \"+\n\t\t\tparentSelector(c.bucket.id)+\n\t\t\t\" AND key>$1 ORDER BY key LIMIT 1\",\n\t\tc.currKey,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil, nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Copy current key to prevent modification by the caller.\n\tc.currKey = make([]byte, len(key))\n\tcopy(c.currKey, key)\n\n\treturn key, value\n}\n\n// Prev moves the cursor one key/value pair backward and returns the new\n// pair.",
+      "length": 552,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Prev() ([]byte, []byte) {",
+      "content": "func (c *readWriteCursor) Prev() ([]byte, []byte) {\n\tvar (\n\t\tkey   []byte\n\t\tvalue []byte\n\t)\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key, value FROM \"+c.bucket.table+\" WHERE \"+\n\t\t\tparentSelector(c.bucket.id)+\n\t\t\t\" AND key<$1 ORDER BY key DESC LIMIT 1\",\n\t\tc.currKey,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil, nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Copy current key to prevent modification by the caller.\n\tc.currKey = make([]byte, len(key))\n\tcopy(c.currKey, key)\n\n\treturn key, value\n}\n\n// Seek positions the cursor at the passed seek key.  If the key does\n// not exist, the cursor is moved to the next key after seek.  Returns\n// the new pair.",
+      "length": 632,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Seek(seek []byte) ([]byte, []byte) {",
+      "content": "func (c *readWriteCursor) Seek(seek []byte) ([]byte, []byte) {\n\t// Convert nil to empty slice, otherwise sql mapping won't be correct\n\t// and no keys are found.\n\tif seek == nil {\n\t\tseek = []byte{}\n\t}\n\n\tvar (\n\t\tkey   []byte\n\t\tvalue []byte\n\t)\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key, value FROM \"+c.bucket.table+\" WHERE \"+\n\t\t\tparentSelector(c.bucket.id)+\n\t\t\t\" AND key>=$1 ORDER BY key LIMIT 1\",\n\t\tseek,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil, nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Copy current key to prevent modification by the caller.\n\tc.currKey = make([]byte, len(key))\n\tcopy(c.currKey, key)\n\n\treturn key, value\n}\n\n// Delete removes the current key/value pair the cursor is at without\n// invalidating the cursor.  Returns ErrIncompatibleValue if attempted\n// when the cursor points to a nested bucket.",
+      "length": 784,
+      "tokens": 126,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Delete() error {",
+      "content": "func (c *readWriteCursor) Delete() error {\n\t// Get first record at or after cursor.\n\tvar key []byte\n\trow, cancel := c.bucket.tx.QueryRow(\n\t\t\"SELECT key FROM \"+c.bucket.table+\" WHERE \"+\n\t\t\tparentSelector(c.bucket.id)+\n\t\t\t\" AND key>=$1 ORDER BY key LIMIT 1\",\n\t\tc.currKey,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&key)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// Delete record.\n\tresult, err := c.bucket.tx.Exec(\n\t\t\"DELETE FROM \"+c.bucket.table+\" WHERE \"+\n\t\t\tparentSelector(c.bucket.id)+\n\t\t\t\" AND key=$1 AND value IS NOT NULL\",\n\t\tkey,\n\t)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\trows, err := result.RowsAffected()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// The key exists but nothing has been deleted. This means that the key\n\t// must have been a bucket key.\n\tif rows != 1 {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\treturn err\n}\n",
+      "length": 775,
+      "tokens": 125,
+      "embedding": []
+    }
+  ]
+}

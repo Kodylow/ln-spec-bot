@@ -1,0 +1,230 @@
+{
+  "filepath": "../implementations/go/lnd/netann/chan_status_manager_test.go",
+  "package": "netann_test",
+  "sections": [
+    {
+      "slug": "func randOutpoint(t *testing.T) wire.OutPoint {",
+      "content": "func randOutpoint(t *testing.T) wire.OutPoint {\n\tt.Helper()\n\n\tvar buf [36]byte\n\t_, err := io.ReadFull(rand.Reader, buf[:])\n\trequire.NoError(t, err, \"unable to generate random outpoint\")\n\n\top := wire.OutPoint{}\n\tcopy(op.Hash[:], buf[:32])\n\top.Index = binary.BigEndian.Uint32(buf[32:])\n\n\treturn op\n}\n\nvar shortChanIDs uint64\n\n// createChannel generates a channeldb.OpenChannel with a random chanpoint and\n// short channel id.",
+      "length": 359,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func createChannel(t *testing.T) *channeldb.OpenChannel {",
+      "content": "func createChannel(t *testing.T) *channeldb.OpenChannel {\n\tt.Helper()\n\n\tsid := atomic.AddUint64(&shortChanIDs, 1)\n\n\treturn &channeldb.OpenChannel{\n\t\tShortChannelID:  lnwire.NewShortChanIDFromInt(sid),\n\t\tChannelFlags:    lnwire.FFAnnounceChannel,\n\t\tFundingOutpoint: randOutpoint(t),\n\t}\n}\n\n// createEdgePolicies generates an edge info and two directional edge policies.\n// The remote party's public key is generated randomly, and then sorted against\n// our `pubkey` with the direction bit set appropriately in the policies. Our\n// update will be created with the disabled bit set if startEnabled is false.",
+      "length": 531,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func createEdgePolicies(t *testing.T, channel *channeldb.OpenChannel,",
+      "content": "func createEdgePolicies(t *testing.T, channel *channeldb.OpenChannel,\n\tpubkey *btcec.PublicKey, startEnabled bool) (*channeldb.ChannelEdgeInfo,\n\t*channeldb.ChannelEdgePolicy, *channeldb.ChannelEdgePolicy) {\n\n\tvar (\n\t\tpubkey1 [33]byte\n\t\tpubkey2 [33]byte\n\t\tdir1    lnwire.ChanUpdateChanFlags\n\t\tdir2    lnwire.ChanUpdateChanFlags\n\t)\n\n\t// Set pubkey1 to OUR pubkey.\n\tcopy(pubkey1[:], pubkey.SerializeCompressed())\n\n\t// Set the disabled bit appropriately on our update.\n\tif !startEnabled {\n\t\tdir1 |= lnwire.ChanUpdateDisabled\n\t}\n\n\t// Generate and set pubkey2 for THEIR pubkey.\n\tprivKey2, err := btcec.NewPrivateKey()\n\trequire.NoError(t, err, \"unable to generate key pair\")\n\tcopy(pubkey2[:], privKey2.PubKey().SerializeCompressed())\n\n\t// Set pubkey1 to the lower of the two pubkeys.\n\tif bytes.Compare(pubkey2[:], pubkey1[:]) < 0 {\n\t\tpubkey1, pubkey2 = pubkey2, pubkey1\n\t\tdir1, dir2 = dir2, dir1\n\t}\n\n\t// Now that the ordering has been established, set pubkey2's direction\n\t// bit.\n\tdir2 |= lnwire.ChanUpdateDirection\n\n\treturn &channeldb.ChannelEdgeInfo{\n\t\t\tChannelPoint:  channel.FundingOutpoint,\n\t\t\tNodeKey1Bytes: pubkey1,\n\t\t\tNodeKey2Bytes: pubkey2,\n\t\t},\n\t\t&channeldb.ChannelEdgePolicy{\n\t\t\tChannelID:    channel.ShortChanID().ToUint64(),\n\t\t\tChannelFlags: dir1,\n\t\t\tLastUpdate:   time.Now(),\n\t\t\tSigBytes:     testSigBytes,\n\t\t},\n\t\t&channeldb.ChannelEdgePolicy{\n\t\t\tChannelID:    channel.ShortChanID().ToUint64(),\n\t\t\tChannelFlags: dir2,\n\t\t\tLastUpdate:   time.Now(),\n\t\t\tSigBytes:     testSigBytes,\n\t\t}\n}\n",
+      "length": 1371,
+      "tokens": 137,
+      "embedding": []
+    },
+    {
+      "slug": "type mockGraph struct {",
+      "content": "type mockGraph struct {\n\tmu        sync.Mutex\n\tchannels  []*channeldb.OpenChannel\n\tchanInfos map[wire.OutPoint]*channeldb.ChannelEdgeInfo\n\tchanPols1 map[wire.OutPoint]*channeldb.ChannelEdgePolicy\n\tchanPols2 map[wire.OutPoint]*channeldb.ChannelEdgePolicy\n\tsidToCid  map[lnwire.ShortChannelID]wire.OutPoint\n\n\tupdates chan *lnwire.ChannelUpdate\n}\n",
+      "length": 311,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockGraph(t *testing.T, numChannels int,",
+      "content": "func newMockGraph(t *testing.T, numChannels int,\n\tstartActive, startEnabled bool, pubKey *btcec.PublicKey) *mockGraph {\n\n\tg := &mockGraph{\n\t\tchannels:  make([]*channeldb.OpenChannel, 0, numChannels),\n\t\tchanInfos: make(map[wire.OutPoint]*channeldb.ChannelEdgeInfo),\n\t\tchanPols1: make(map[wire.OutPoint]*channeldb.ChannelEdgePolicy),\n\t\tchanPols2: make(map[wire.OutPoint]*channeldb.ChannelEdgePolicy),\n\t\tsidToCid:  make(map[lnwire.ShortChannelID]wire.OutPoint),\n\t\tupdates:   make(chan *lnwire.ChannelUpdate, 2*numChannels),\n\t}\n\n\tfor i := 0; i < numChannels; i++ {\n\t\tc := createChannel(t)\n\n\t\tinfo, pol1, pol2 := createEdgePolicies(\n\t\t\tt, c, pubKey, startEnabled,\n\t\t)\n\n\t\tg.addChannel(c)\n\t\tg.addEdgePolicy(c, info, pol1, pol2)\n\t}\n\n\treturn g\n}\n",
+      "length": 664,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) FetchAllOpenChannels() ([]*channeldb.OpenChannel, error) {",
+      "content": "func (g *mockGraph) FetchAllOpenChannels() ([]*channeldb.OpenChannel, error) {\n\treturn g.chans(), nil\n}\n",
+      "length": 23,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) FetchChannelEdgesByOutpoint(",
+      "content": "func (g *mockGraph) FetchChannelEdgesByOutpoint(\n\top *wire.OutPoint) (*channeldb.ChannelEdgeInfo,\n\t*channeldb.ChannelEdgePolicy, *channeldb.ChannelEdgePolicy, error) {\n\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\tinfo, ok := g.chanInfos[*op]\n\tif !ok {\n\t\treturn nil, nil, nil, channeldb.ErrEdgeNotFound\n\t}\n\n\tpol1 := g.chanPols1[*op]\n\tpol2 := g.chanPols2[*op]\n\n\treturn info, pol1, pol2, nil\n}\n",
+      "length": 318,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) ApplyChannelUpdate(update *lnwire.ChannelUpdate,",
+      "content": "func (g *mockGraph) ApplyChannelUpdate(update *lnwire.ChannelUpdate,\n\top *wire.OutPoint, private bool) error {\n\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\toutpoint, ok := g.sidToCid[update.ShortChannelID]\n\tif !ok {\n\t\treturn fmt.Errorf(\"unknown short channel id: %v\",\n\t\t\tupdate.ShortChannelID)\n\t}\n\n\tpol1 := g.chanPols1[outpoint]\n\tpol2 := g.chanPols2[outpoint]\n\n\t// Determine which policy we should update by making the flags on the\n\t// policies and updates, and seeing which match up.\n\tvar update1 bool\n\tswitch {\n\tcase update.ChannelFlags&lnwire.ChanUpdateDirection ==\n\t\tpol1.ChannelFlags&lnwire.ChanUpdateDirection:\n\t\tupdate1 = true\n\n\tcase update.ChannelFlags&lnwire.ChanUpdateDirection ==\n\t\tpol2.ChannelFlags&lnwire.ChanUpdateDirection:\n\t\tupdate1 = false\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unable to find policy to update\")\n\t}\n\n\ttimestamp := time.Unix(int64(update.Timestamp), 0)\n\n\tpolicy := &channeldb.ChannelEdgePolicy{\n\t\tChannelID:    update.ShortChannelID.ToUint64(),\n\t\tChannelFlags: update.ChannelFlags,\n\t\tLastUpdate:   timestamp,\n\t\tSigBytes:     testSigBytes,\n\t}\n\n\tif update1 {\n\t\tg.chanPols1[outpoint] = policy\n\t} else {\n\t\tg.chanPols2[outpoint] = policy\n\t}\n\n\t// Send the update to network. This channel should be sufficiently\n\t// buffered to avoid deadlocking.\n\tg.updates <- update\n\n\treturn nil\n}\n",
+      "length": 1174,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) chans() []*channeldb.OpenChannel {",
+      "content": "func (g *mockGraph) chans() []*channeldb.OpenChannel {\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\tchannels := make([]*channeldb.OpenChannel, 0, len(g.channels))\n\tchannels = append(channels, g.channels...)\n\n\treturn channels\n}\n",
+      "length": 155,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) addChannel(channel *channeldb.OpenChannel) {",
+      "content": "func (g *mockGraph) addChannel(channel *channeldb.OpenChannel) {\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\tg.channels = append(g.channels, channel)\n}\n",
+      "length": 74,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) addEdgePolicy(c *channeldb.OpenChannel,",
+      "content": "func (g *mockGraph) addEdgePolicy(c *channeldb.OpenChannel,\n\tinfo *channeldb.ChannelEdgeInfo,\n\tpol1, pol2 *channeldb.ChannelEdgePolicy) {\n\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\tg.chanInfos[c.FundingOutpoint] = info\n\tg.chanPols1[c.FundingOutpoint] = pol1\n\tg.chanPols2[c.FundingOutpoint] = pol2\n\tg.sidToCid[c.ShortChanID()] = c.FundingOutpoint\n}\n",
+      "length": 271,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *mockGraph) removeChannel(channel *channeldb.OpenChannel) {",
+      "content": "func (g *mockGraph) removeChannel(channel *channeldb.OpenChannel) {\n\tg.mu.Lock()\n\tdefer g.mu.Unlock()\n\n\tfor i, c := range g.channels {\n\t\tif c.FundingOutpoint != channel.FundingOutpoint {\n\t\t\tcontinue\n\t\t}\n\n\t\tg.channels = append(g.channels[:i], g.channels[i+1:]...)\n\t\tdelete(g.chanInfos, c.FundingOutpoint)\n\t\tdelete(g.chanPols1, c.FundingOutpoint)\n\t\tdelete(g.chanPols2, c.FundingOutpoint)\n\t\tdelete(g.sidToCid, c.ShortChanID())\n\t\treturn\n\t}\n}\n",
+      "length": 354,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type mockSwitch struct {",
+      "content": "type mockSwitch struct {\n\tmu       sync.Mutex\n\tisActive map[lnwire.ChannelID]bool\n}\n",
+      "length": 56,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockSwitch() *mockSwitch {",
+      "content": "func newMockSwitch() *mockSwitch {\n\treturn &mockSwitch{\n\t\tisActive: make(map[lnwire.ChannelID]bool),\n\t}\n}\n",
+      "length": 67,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSwitch) HasActiveLink(chanID lnwire.ChannelID) bool {",
+      "content": "func (s *mockSwitch) HasActiveLink(chanID lnwire.ChannelID) bool {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\t// If the link is found, we will returns it's active status. In the\n\t// real switch, it returns EligibleToForward().\n\tactive, ok := s.isActive[chanID]\n\tif ok {\n\t\treturn active\n\t}\n\n\treturn false\n}\n",
+      "length": 220,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSwitch) SetStatus(chanID lnwire.ChannelID, active bool) {",
+      "content": "func (s *mockSwitch) SetStatus(chanID lnwire.ChannelID, active bool) {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\ts.isActive[chanID] = active\n}\n",
+      "length": 61,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func newManagerCfg(t *testing.T, numChannels int,",
+      "content": "func newManagerCfg(t *testing.T, numChannels int,\n\tstartEnabled bool) (*netann.ChanStatusConfig, *mockGraph, *mockSwitch) {\n\n\tt.Helper()\n\n\tprivKey, err := btcec.NewPrivateKey()\n\trequire.NoError(t, err, \"unable to generate key pair\")\n\tprivKeySigner := keychain.NewPrivKeyMessageSigner(privKey, testKeyLoc)\n\n\tgraph := newMockGraph(\n\t\tt, numChannels, startEnabled, startEnabled, privKey.PubKey(),\n\t)\n\thtlcSwitch := newMockSwitch()\n\n\tcfg := &netann.ChanStatusConfig{\n\t\tChanStatusSampleInterval: 50 * time.Millisecond,\n\t\tChanEnableTimeout:        500 * time.Millisecond,\n\t\tChanDisableTimeout:       time.Second,\n\t\tOurPubKey:                privKey.PubKey(),\n\t\tOurKeyLoc:                testKeyLoc,\n\t\tMessageSigner:            netann.NewNodeSigner(privKeySigner),\n\t\tIsChannelActive:          htlcSwitch.HasActiveLink,\n\t\tApplyChannelUpdate:       graph.ApplyChannelUpdate,\n\t\tDB:                       graph,\n\t\tGraph:                    graph,\n\t}\n\n\treturn cfg, graph, htlcSwitch\n}\n",
+      "length": 895,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "type testHarness struct {",
+      "content": "type testHarness struct {\n\tt                  *testing.T\n\tnumChannels        int\n\tgraph              *mockGraph\n\thtlcSwitch         *mockSwitch\n\tmgr                *netann.ChanStatusManager\n\tourPubKey          *btcec.PublicKey\n\tsafeDisableTimeout time.Duration\n}\n\n// newHarness returns a new testHarness for testing a ChanStatusManager. The\n// mockGraph will be populated with numChannels channels. The startActive and\n// startEnabled govern the initial state of the channels wrt the htlcswitch and\n// the network, respectively.",
+      "length": 490,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func newHarness(t *testing.T, numChannels int,",
+      "content": "func newHarness(t *testing.T, numChannels int,\n\tstartActive, startEnabled bool) testHarness {\n\n\tcfg, graph, htlcSwitch := newManagerCfg(t, numChannels, startEnabled)\n\n\tmgr, err := netann.NewChanStatusManager(cfg)\n\trequire.NoError(t, err, \"unable to create chan status manager\")\n\n\terr = mgr.Start()\n\trequire.NoError(t, err, \"unable to start chan status manager\")\n\n\th := testHarness{\n\t\tt:                  t,\n\t\tnumChannels:        numChannels,\n\t\tgraph:              graph,\n\t\thtlcSwitch:         htlcSwitch,\n\t\tmgr:                mgr,\n\t\tourPubKey:          cfg.OurPubKey,\n\t\tsafeDisableTimeout: (3 * cfg.ChanDisableTimeout) / 2, // 1.5x\n\t}\n\n\t// Initialize link status as requested.\n\tif startActive {\n\t\th.markActive(h.graph.channels)\n\t} else {\n\t\th.markInactive(h.graph.channels)\n\t}\n\n\treturn h\n}\n\n// markActive updates the active status of the passed channels within the mock\n// switch to active.",
+      "length": 812,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) markActive(channels []*channeldb.OpenChannel) {",
+      "content": "func (h *testHarness) markActive(channels []*channeldb.OpenChannel) {\n\th.t.Helper()\n\n\tfor _, channel := range channels {\n\t\tchanID := lnwire.NewChanIDFromOutPoint(&channel.FundingOutpoint)\n\t\th.htlcSwitch.SetStatus(chanID, true)\n\t}\n}\n\n// markInactive updates the active status of the passed channels within the mock\n// switch to inactive.",
+      "length": 257,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) markInactive(channels []*channeldb.OpenChannel) {",
+      "content": "func (h *testHarness) markInactive(channels []*channeldb.OpenChannel) {\n\th.t.Helper()\n\n\tfor _, channel := range channels {\n\t\tchanID := lnwire.NewChanIDFromOutPoint(&channel.FundingOutpoint)\n\t\th.htlcSwitch.SetStatus(chanID, false)\n\t}\n}\n\n// assertEnables requests enables for all of the passed channels, and asserts\n// that the errors returned from RequestEnable matches expErr.",
+      "length": 295,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertEnables(channels []*channeldb.OpenChannel, expErr error,",
+      "content": "func (h *testHarness) assertEnables(channels []*channeldb.OpenChannel, expErr error,\n\tmanual bool) {\n\n\th.t.Helper()\n\n\tfor _, channel := range channels {\n\t\th.assertEnable(channel.FundingOutpoint, expErr, manual)\n\t}\n}\n\n// assertDisables requests disables for all of the passed channels, and asserts\n// that the errors returned from RequestDisable matches expErr.",
+      "length": 265,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertDisables(channels []*channeldb.OpenChannel, expErr error,",
+      "content": "func (h *testHarness) assertDisables(channels []*channeldb.OpenChannel, expErr error,\n\tmanual bool) {\n\n\th.t.Helper()\n\n\tfor _, channel := range channels {\n\t\th.assertDisable(channel.FundingOutpoint, expErr, manual)\n\t}\n}\n\n// assertAutos requests auto state management for all of the passed channels, and\n// asserts that the errors returned from RequestAuto matches expErr.",
+      "length": 273,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertAutos(channels []*channeldb.OpenChannel,",
+      "content": "func (h *testHarness) assertAutos(channels []*channeldb.OpenChannel,\n\texpErr error) {\n\n\th.t.Helper()\n\n\tfor _, channel := range channels {\n\t\th.assertAuto(channel.FundingOutpoint, expErr)\n\t}\n}\n\n// assertEnable requests an enable for the given outpoint, and asserts that the\n// returned error matches expErr.",
+      "length": 226,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertEnable(outpoint wire.OutPoint, expErr error,",
+      "content": "func (h *testHarness) assertEnable(outpoint wire.OutPoint, expErr error,\n\tmanual bool) {\n\n\th.t.Helper()\n\n\terr := h.mgr.RequestEnable(outpoint, manual)\n\tif err != expErr {\n\t\th.t.Fatalf(\"expected enable error: %v, got %v\", expErr, err)\n\t}\n}\n\n// assertDisable requests a disable for the given outpoint, and asserts that the\n// returned error matches expErr.",
+      "length": 270,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertDisable(outpoint wire.OutPoint, expErr error,",
+      "content": "func (h *testHarness) assertDisable(outpoint wire.OutPoint, expErr error,\n\tmanual bool) {\n\n\th.t.Helper()\n\n\terr := h.mgr.RequestDisable(outpoint, manual)\n\tif err != expErr {\n\t\th.t.Fatalf(\"expected disable error: %v, got %v\", expErr, err)\n\t}\n}\n\n// assertAuto requests auto state management for the given outpoint, and asserts\n// that the returned error matches expErr.",
+      "length": 281,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertAuto(outpoint wire.OutPoint, expErr error) {",
+      "content": "func (h *testHarness) assertAuto(outpoint wire.OutPoint, expErr error) {\n\th.t.Helper()\n\n\terr := h.mgr.RequestAuto(outpoint)\n\tif err != expErr {\n\t\th.t.Fatalf(\"expected error: %v, got %v\", expErr, err)\n\t}\n}\n\n// assertNoUpdates waits for the specified duration, and asserts that no updates\n// are announced on the network.",
+      "length": 237,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertNoUpdates(duration time.Duration) {",
+      "content": "func (h *testHarness) assertNoUpdates(duration time.Duration) {\n\th.t.Helper()\n\n\th.assertUpdates(nil, false, duration)\n}\n\n// assertUpdates waits for the specified duration, asserting that an update\n// are receive on the network for each of the passed OpenChannels, and that all\n// of their disable bits are set to match expEnabled. The expEnabled parameter\n// is ignored if channels is nil.",
+      "length": 317,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *testHarness) assertUpdates(channels []*channeldb.OpenChannel,",
+      "content": "func (h *testHarness) assertUpdates(channels []*channeldb.OpenChannel,\n\texpEnabled bool, duration time.Duration) {\n\n\th.t.Helper()\n\n\t// Compute an index of the expected short channel ids for which we want\n\t// to received updates.\n\texpSids := sidsFromChans(channels)\n\n\ttimeout := time.After(duration)\n\trecvdSids := make(map[lnwire.ShortChannelID]struct{})\n\tfor {\n\t\tselect {\n\t\tcase upd := <-h.graph.updates:\n\t\t\t// Assert that the received short channel id is one that\n\t\t\t// we expect. If no updates were expected, this will\n\t\t\t// always fail on the first update received.\n\t\t\tif _, ok := expSids[upd.ShortChannelID]; !ok {\n\t\t\t\th.t.Fatalf(\"received update for unexpected \"+\n\t\t\t\t\t\"short chan id: %v\", upd.ShortChannelID)\n\t\t\t}\n\n\t\t\t// Assert that the disabled bit is set properly.\n\t\t\tenabled := upd.ChannelFlags&lnwire.ChanUpdateDisabled !=\n\t\t\t\tlnwire.ChanUpdateDisabled\n\t\t\tif expEnabled != enabled {\n\t\t\t\th.t.Fatalf(\"expected enabled: %v, actual: %v\",\n\t\t\t\t\texpEnabled, enabled)\n\t\t\t}\n\n\t\t\trecvdSids[upd.ShortChannelID] = struct{}{}\n\n\t\tcase <-timeout:\n\t\t\t// Time is up, assert that the correct number of unique\n\t\t\t// updates was received.\n\t\t\tif len(recvdSids) == len(channels) {\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\th.t.Fatalf(\"expected %d updates, got %d\",\n\t\t\t\tlen(channels), len(recvdSids))\n\t\t}\n\t}\n}\n\n// sidsFromChans returns an index contain the short channel ids of each channel\n// provided in the list of OpenChannels.",
+      "length": 1279,
+      "tokens": 172,
+      "embedding": []
+    },
+    {
+      "slug": "func sidsFromChans(",
+      "content": "func sidsFromChans(\n\tchannels []*channeldb.OpenChannel) map[lnwire.ShortChannelID]struct{} {\n\n\tsids := make(map[lnwire.ShortChannelID]struct{})\n\tfor _, channel := range channels {\n\t\tsids[channel.ShortChanID()] = struct{}{}\n\t}\n\treturn sids\n}\n",
+      "length": 213,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type stateMachineTest struct {",
+      "content": "type stateMachineTest struct {\n\tname         string\n\tstartEnabled bool\n\tstartActive  bool\n\tfn           func(testHarness)\n}\n\nvar stateMachineTests = []stateMachineTest{\n\t{\n\t\tname:         \"active and enabled is stable\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// No updates should be sent because being active and\n\t\t\t// enabled should be a stable state.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"inactive and disabled is stable\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// No updates should be sent because being inactive and\n\t\t\t// disabled should be a stable state.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"start disabled request enable\",\n\t\tstartActive:  true, // can't request enable unless active\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request enables for all channels.\n\t\t\th.assertEnables(h.graph.chans(), nil, false)\n\t\t\t// Expect to see them all enabled on the network.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), true, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n\t{\n\t\tname:         \"start enabled request disable\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request disables for all channels.\n\t\t\th.assertDisables(h.graph.chans(), nil, false)\n\t\t\t// Expect to see them all disabled on the network.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), false, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n\t{\n\t\tname:         \"request enable already enabled\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request enables for already enabled channels.\n\t\t\th.assertEnables(h.graph.chans(), nil, false)\n\t\t\t// Manager shouldn't send out any updates.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"request disabled already disabled\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request disables for already enabled channels.\n\t\t\th.assertDisables(h.graph.chans(), nil, false)\n\t\t\t// Manager shouldn't sent out any updates.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"detect and disable inactive\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Simulate disconnection and have links go inactive.\n\t\t\th.markInactive(h.graph.chans())\n\t\t\t// Should see all channels passively disabled.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), false, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n\t{\n\t\tname:         \"quick flap stays active\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Simulate disconnection and have links go inactive.\n\t\t\th.markInactive(h.graph.chans())\n\t\t\t// Allow 2 sample intervals to pass, but not long\n\t\t\t// enough for a disable to occur.\n\t\t\ttime.Sleep(100 * time.Millisecond)\n\t\t\t// Simulate reconnect by making channels active.\n\t\t\th.markActive(h.graph.chans())\n\t\t\t// Request that all channels be re-enabled.\n\t\t\th.assertEnables(h.graph.chans(), nil, false)\n\t\t\t// Pending disable should have been canceled, and\n\t\t\t// no updates sent. Channels remain enabled on the\n\t\t\t// network.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"no passive enable from becoming active\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Simulate reconnect by making channels active.\n\t\t\th.markActive(h.graph.chans())\n\t\t\t// No updates should be sent without explicit enable.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"enable inactive channel fails\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request enable of inactive channels, expect error\n\t\t\t// indicating that channel was not active.\n\t\t\th.assertEnables(\n\t\t\t\th.graph.chans(), netann.ErrEnableInactiveChan, false,\n\t\t\t)\n\t\t\t// No updates should be sent as a result of the failure.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"enable unknown channel fails\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Create channels unknown to the graph.\n\t\t\tunknownChans := []*channeldb.OpenChannel{\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t}\n\t\t\t// Request that they be enabled, which should return an\n\t\t\t// error as the graph doesn't have an edge for them.\n\t\t\th.assertEnables(\n\t\t\t\tunknownChans, channeldb.ErrEdgeNotFound, false,\n\t\t\t)\n\t\t\t// No updates should be sent as a result of the failure.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"disable unknown channel fails\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Create channels unknown to the graph.\n\t\t\tunknownChans := []*channeldb.OpenChannel{\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t}\n\t\t\t// Request that they be disabled, which should return an\n\t\t\t// error as the graph doesn't have an edge for them.\n\t\t\th.assertDisables(\n\t\t\t\tunknownChans, channeldb.ErrEdgeNotFound, false,\n\t\t\t)\n\t\t\t// No updates should be sent as a result of the failure.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"add new channels\",\n\t\tstartActive:  false,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Allow the manager to enter a steady state for the\n\t\t\t// initial channel set.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Add a new channels to the graph, but don't yet add\n\t\t\t// the edge policies. We should see no updates sent\n\t\t\t// since the manager can't access the policies.\n\t\t\tnewChans := []*channeldb.OpenChannel{\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t\tcreateChannel(h.t),\n\t\t\t}\n\t\t\tfor _, c := range newChans {\n\t\t\t\th.graph.addChannel(c)\n\t\t\t}\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Check that trying to enable the channel with unknown\n\t\t\t// edges results in a failure.\n\t\t\th.assertEnables(newChans, channeldb.ErrEdgeNotFound, false)\n\n\t\t\t// Now, insert edge policies for the channel into the\n\t\t\t// graph, starting with the channel enabled, and mark\n\t\t\t// the link active.\n\t\t\tfor _, c := range newChans {\n\t\t\t\tinfo, pol1, pol2 := createEdgePolicies(\n\t\t\t\t\th.t, c, h.ourPubKey, true,\n\t\t\t\t)\n\t\t\t\th.graph.addEdgePolicy(c, info, pol1, pol2)\n\t\t\t}\n\t\t\th.markActive(newChans)\n\n\t\t\t// We expect no updates to be sent since the channel is\n\t\t\t// enabled and active.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Finally, assert that enabling the channel doesn't\n\t\t\t// return an error now that everything is in place.\n\t\t\th.assertEnables(newChans, nil, false)\n\t\t},\n\t},\n\t{\n\t\tname:         \"remove channels then disable\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Allow the manager to enter a steady state for the\n\t\t\t// initial channel set.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Select half of the current channels to remove.\n\t\t\tchannels := h.graph.chans()\n\t\t\trmChans := channels[:len(channels)/2]\n\n\t\t\t// Mark the channel inactive and remove them from the\n\t\t\t// graph. This should trigger the manager to attempt a\n\t\t\t// mark the channel disabled, but will unable to do so\n\t\t\t// because it can't find the edge policies.\n\t\t\th.markInactive(rmChans)\n\t\t\tfor _, c := range rmChans {\n\t\t\t\th.graph.removeChannel(c)\n\t\t\t}\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Check that trying to enable the channel with unknown\n\t\t\t// edges results in a failure.\n\t\t\th.assertDisables(rmChans, channeldb.ErrEdgeNotFound, false)\n\t\t},\n\t},\n\t{\n\t\tname:         \"disable channels then remove\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Allow the manager to enter a steady state for the\n\t\t\t// initial channel set.\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\n\t\t\t// Select half of the current channels to remove.\n\t\t\tchannels := h.graph.chans()\n\t\t\trmChans := channels[:len(channels)/2]\n\n\t\t\t// Check that trying to enable the channel with unknown\n\t\t\t// edges results in a failure.\n\t\t\th.assertDisables(rmChans, nil, false)\n\n\t\t\t// Since the channels are still in the graph, we expect\n\t\t\t// these channels to be disabled on the network.\n\t\t\th.assertUpdates(rmChans, false, h.safeDisableTimeout)\n\n\t\t\t// Finally, remove  the channels from the graph and\n\t\t\t// assert no more updates are sent.\n\t\t\tfor _, c := range rmChans {\n\t\t\t\th.graph.removeChannel(c)\n\t\t\t}\n\t\t\th.assertNoUpdates(h.safeDisableTimeout)\n\t\t},\n\t},\n\t{\n\t\tname:         \"request manual enable\",\n\t\tstartActive:  true,\n\t\tstartEnabled: false,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request manual enables for all channels.\n\t\t\th.assertEnables(h.graph.chans(), nil, true)\n\n\t\t\t// Expect to see them all enabled on the network.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), true, h.safeDisableTimeout,\n\t\t\t)\n\n\t\t\t// Subsequent request disables with manual = false should succeed.\n\t\t\th.assertDisables(\n\t\t\t\th.graph.chans(), nil, false,\n\t\t\t)\n\n\t\t\t// Expect to see them all disabled on the network again.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), false, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n\t{\n\t\tname:         \"request manual disable\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request manual disables for all channels.\n\t\t\th.assertDisables(h.graph.chans(), nil, true)\n\n\t\t\t// Expect to see them all disabled on the network.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), false, h.safeDisableTimeout,\n\t\t\t)\n\n\t\t\t// Request enables with manual = false should fail.\n\t\t\th.assertEnables(\n\t\t\t\th.graph.chans(), netann.ErrEnableManuallyDisabledChan, false,\n\t\t\t)\n\n\t\t\t// Request enables with manual = true should succeed.\n\t\t\th.assertEnables(h.graph.chans(), nil, true)\n\n\t\t\t// Expect to see them all enabled on the network again.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), true, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n\t{\n\t\tname:         \"restore auto\",\n\t\tstartActive:  true,\n\t\tstartEnabled: true,\n\t\tfn: func(h testHarness) {\n\t\t\t// Request manual disables for all channels.\n\t\t\th.assertDisables(h.graph.chans(), nil, true)\n\n\t\t\t// Expect to see them all disabled on the network.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), false, h.safeDisableTimeout,\n\t\t\t)\n\n\t\t\t// Request enables with manual = false should fail.\n\t\t\th.assertEnables(\n\t\t\t\th.graph.chans(), netann.ErrEnableManuallyDisabledChan, false,\n\t\t\t)\n\n\t\t\t// Request enables with manual = false should succeed after\n\t\t\t// restoring auto state management.\n\t\t\th.assertAutos(h.graph.chans(), nil)\n\t\t\th.assertEnables(h.graph.chans(), nil, false)\n\n\t\t\t// Expect to see them all enabled on the network again.\n\t\t\th.assertUpdates(\n\t\t\t\th.graph.chans(), true, h.safeDisableTimeout,\n\t\t\t)\n\t\t},\n\t},\n}\n\n// TestChanStatusManagerStateMachine tests the possible state transitions that\n// can be taken by the ChanStatusManager.",
+      "length": 10189,
+      "tokens": 1250,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChanStatusManagerStateMachine(t *testing.T) {",
+      "content": "func TestChanStatusManagerStateMachine(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, test := range stateMachineTests {\n\t\ttc := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tconst numChannels = 10\n\t\t\th := newHarness(\n\t\t\t\tt, numChannels, tc.startActive, tc.startEnabled,\n\t\t\t)\n\t\t\tdefer h.mgr.Stop()\n\n\t\t\ttc.fn(h)\n\t\t})\n\t}\n}\n",
+      "length": 259,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

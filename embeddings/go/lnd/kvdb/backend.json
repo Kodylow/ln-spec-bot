@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/backend.go",
+  "package": "!js",
+  "sections": [
+    {
+      "slug": "func fileExists(path string) bool {",
+      "content": "func fileExists(path string) bool {\n\tif _, err := os.Stat(path); err != nil {\n\t\tif os.IsNotExist(err) {\n\t\t\treturn false\n\t\t}\n\t}\n\n\treturn true\n}\n\n// BoltBackendConfig is a struct that holds settings specific to the bolt\n// database backend.",
+      "length": 192,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "type BoltBackendConfig struct {",
+      "content": "type BoltBackendConfig struct {\n\t// DBPath is the directory path in which the database file should be\n\t// stored.\n\tDBPath string\n\n\t// DBFileName is the name of the database file.\n\tDBFileName string\n\n\t// NoFreelistSync, if true, prevents the database from syncing its\n\t// freelist to disk, resulting in improved performance at the expense of\n\t// increased startup time.\n\tNoFreelistSync bool\n\n\t// AutoCompact specifies if a Bolt based database backend should be\n\t// automatically compacted on startup (if the minimum age of the\n\t// database file is reached). This will require additional disk space\n\t// for the compacted copy of the database but will result in an overall\n\t// lower database size after the compaction.\n\tAutoCompact bool\n\n\t// AutoCompactMinAge specifies the minimum time that must have passed\n\t// since a bolt database file was last compacted for the compaction to\n\t// be considered again.\n\tAutoCompactMinAge time.Duration\n\n\t// DBTimeout specifies the timeout value to use when opening the wallet\n\t// database.\n\tDBTimeout time.Duration\n}\n\n// GetBoltBackend opens (or creates if doesn't exits) a bbolt backed database\n// and returns a kvdb.Backend wrapping it.",
+      "length": 1110,
+      "tokens": 177,
+      "embedding": []
+    },
+    {
+      "slug": "func GetBoltBackend(cfg *BoltBackendConfig) (Backend, error) {",
+      "content": "func GetBoltBackend(cfg *BoltBackendConfig) (Backend, error) {\n\tdbFilePath := filepath.Join(cfg.DBPath, cfg.DBFileName)\n\n\t// Is this a new database?\n\tif !fileExists(dbFilePath) {\n\t\tif !fileExists(cfg.DBPath) {\n\t\t\tif err := os.MkdirAll(cfg.DBPath, 0700); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t}\n\n\t\treturn Create(\n\t\t\tBoltBackendName, dbFilePath,\n\t\t\tcfg.NoFreelistSync, cfg.DBTimeout,\n\t\t)\n\t}\n\n\t// This is an existing database. We might want to compact it on startup\n\t// to free up some space.\n\tif cfg.AutoCompact {\n\t\tif err := compactAndSwap(cfg); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\treturn Open(\n\t\tBoltBackendName, dbFilePath,\n\t\tcfg.NoFreelistSync, cfg.DBTimeout,\n\t)\n}\n\n// compactAndSwap will attempt to write a new temporary DB file to disk with\n// the compacted database content, then atomically swap (via rename) the old\n// file for the new file by updating the name of the new file to the old.",
+      "length": 807,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func compactAndSwap(cfg *BoltBackendConfig) error {",
+      "content": "func compactAndSwap(cfg *BoltBackendConfig) error {\n\tsourceName := cfg.DBFileName\n\n\t// If the main DB file isn't set, then we can't proceed.\n\tif sourceName == \"\" {\n\t\treturn fmt.Errorf(\"cannot compact DB with empty name\")\n\t}\n\tsourceFilePath := filepath.Join(cfg.DBPath, sourceName)\n\ttempDestFilePath := filepath.Join(cfg.DBPath, DefaultTempDBFileName)\n\n\t// Let's find out how long ago the last compaction of the source file\n\t// occurred and possibly skip compacting it again now.\n\tlastCompactionDate, err := lastCompactionDate(sourceFilePath)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"cannot determine last compaction date of \"+\n\t\t\t\"source DB file: %v\", err)\n\t}\n\tcompactAge := time.Since(lastCompactionDate)\n\tif cfg.AutoCompactMinAge != 0 && compactAge <= cfg.AutoCompactMinAge {\n\t\tlog.Infof(\"Not compacting database file at %v, it was last \"+\n\t\t\t\"compacted at %v (%v ago), min age is set to %v\",\n\t\t\tsourceFilePath, lastCompactionDate,\n\t\t\tcompactAge.Truncate(time.Second), cfg.AutoCompactMinAge)\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"Compacting database file at %v\", sourceFilePath)\n\n\t// If the old temporary DB file still exists, then we'll delete it\n\t// before proceeding.\n\tif _, err := os.Stat(tempDestFilePath); err == nil {\n\t\tlog.Infof(\"Found old temp DB @ %v, removing before swap\",\n\t\t\ttempDestFilePath)\n\n\t\terr = os.Remove(tempDestFilePath)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to remove old temp DB file: \"+\n\t\t\t\t\"%v\", err)\n\t\t}\n\t}\n\n\t// Now that we know the staging area is clear, we'll create the new\n\t// temporary DB file and close it before we write the new DB to it.\n\ttempFile, err := os.Create(tempDestFilePath)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to create temp DB file: %v\", err)\n\t}\n\tif err := tempFile.Close(); err != nil {\n\t\treturn fmt.Errorf(\"unable to close file: %v\", err)\n\t}\n\n\t// With the file created, we'll start the compaction and remove the\n\t// temporary file all together once this method exits.\n\tdefer func() {\n\t\t// This will only succeed if the rename below fails. If the\n\t\t// compaction is successful, the file won't exist on exit\n\t\t// anymore so no need to log an error here.\n\t\t_ = os.Remove(tempDestFilePath)\n\t}()\n\tc := &compacter{\n\t\tsrcPath:   sourceFilePath,\n\t\tdstPath:   tempDestFilePath,\n\t\tdbTimeout: cfg.DBTimeout,\n\t}\n\tinitialSize, newSize, err := c.execute()\n\tif err != nil {\n\t\treturn fmt.Errorf(\"error during compact: %v\", err)\n\t}\n\n\tlog.Infof(\"DB compaction of %v successful, %d -> %d bytes (gain=%.2fx)\",\n\t\tsourceFilePath, initialSize, newSize,\n\t\tfloat64(initialSize)/float64(newSize))\n\n\t// We try to store the current timestamp in a file with the suffix\n\t// .last-compacted so we can figure out how long ago the last compaction\n\t// was. But since this shouldn't fail the compaction process itself, we\n\t// only log the error. Worst case if this file cannot be written is that\n\t// we compact on every startup.\n\terr = updateLastCompactionDate(sourceFilePath)\n\tif err != nil {\n\t\tlog.Warnf(\"Could not update last compaction timestamp in \"+\n\t\t\t\"%s%s: %v\", sourceFilePath,\n\t\t\tLastCompactionFileNameSuffix, err)\n\t}\n\n\tlog.Infof(\"Swapping old DB file from %v to %v\", tempDestFilePath,\n\t\tsourceFilePath)\n\n\t// Finally, we'll attempt to atomically rename the temporary file to\n\t// the main back up file. If this succeeds, then we'll only have a\n\t// single file on disk once this method exits.\n\treturn os.Rename(tempDestFilePath, sourceFilePath)\n}\n\n// lastCompactionDate returns the date the given database file was last\n// compacted or a zero time.Time if no compaction was recorded before. The\n// compaction date is read from a file in the same directory and with the same\n// name as the DB file, but with the suffix \".last-compacted\".",
+      "length": 3517,
+      "tokens": 530,
+      "embedding": []
+    },
+    {
+      "slug": "func lastCompactionDate(dbFile string) (time.Time, error) {",
+      "content": "func lastCompactionDate(dbFile string) (time.Time, error) {\n\tzeroTime := time.Unix(0, 0)\n\n\ttsFile := fmt.Sprintf(\"%s%s\", dbFile, LastCompactionFileNameSuffix)\n\tif !fileExists(tsFile) {\n\t\treturn zeroTime, nil\n\t}\n\n\ttsBytes, err := ioutil.ReadFile(tsFile)\n\tif err != nil {\n\t\treturn zeroTime, err\n\t}\n\n\ttsNano := byteOrder.Uint64(tsBytes)\n\treturn time.Unix(0, int64(tsNano)), nil\n}\n\n// updateLastCompactionDate stores the current time as a timestamp in a file\n// in the same directory and with the same name as the DB file, but with the\n// suffix \".last-compacted\".",
+      "length": 482,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func updateLastCompactionDate(dbFile string) error {",
+      "content": "func updateLastCompactionDate(dbFile string) error {\n\tvar tsBytes [8]byte\n\tbyteOrder.PutUint64(tsBytes[:], uint64(time.Now().UnixNano()))\n\n\ttsFile := fmt.Sprintf(\"%s%s\", dbFile, LastCompactionFileNameSuffix)\n\treturn ioutil.WriteFile(tsFile, tsBytes[:], 0600)\n}\n\n// GetTestBackend opens (or creates if doesn't exist) a bbolt or etcd\n// backed database (for testing), and returns a kvdb.Backend and a cleanup\n// func. Whether to create/open bbolt or embedded etcd database is based\n// on the TestBackend constant which is conditionally compiled with build tag.\n// The passed path is used to hold all db files, while the name is only used\n// for bbolt.",
+      "length": 584,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func GetTestBackend(path, name string) (Backend, func(), error) {",
+      "content": "func GetTestBackend(path, name string) (Backend, func(), error) {\n\tempty := func() {}\n\n\t// Note that for tests, we expect only one db backend build flag\n\t// (or none) to be set at a time and thus one of the following switch\n\t// cases should ever be true\n\tswitch {\n\tcase PostgresBackend:\n\t\tkey := filepath.Join(path, name)\n\t\tkeyHash := sha256.Sum256([]byte(key))\n\n\t\tf, err := NewPostgresFixture(\"test_\" + hex.EncodeToString(\n\t\t\tkeyHash[:]),\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, func() {}, err\n\t\t}\n\t\treturn f.DB(), func() {\n\t\t\t_ = f.DB().Close()\n\t\t}, nil\n\n\tcase EtcdBackend:\n\t\tetcdConfig, cancel, err := StartEtcdTestBackend(path, 0, 0, \"\")\n\t\tif err != nil {\n\t\t\treturn nil, empty, err\n\t\t}\n\t\tbackend, err := Open(\n\t\t\tEtcdBackendName, context.TODO(), etcdConfig,\n\t\t)\n\t\treturn backend, cancel, err\n\n\tcase SqliteBackend:\n\t\tdbPath := filepath.Join(path, name)\n\t\tkeyHash := sha256.Sum256([]byte(dbPath))\n\t\tsqliteDb, err := StartSqliteTestBackend(\n\t\t\tpath, name, \"test_\"+hex.EncodeToString(keyHash[:]),\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, empty, err\n\t\t}\n\n\t\treturn sqliteDb, func() {\n\t\t\t_ = sqliteDb.Close()\n\t\t}, nil\n\n\tdefault:\n\t\tdb, err := GetBoltBackend(&BoltBackendConfig{\n\t\t\tDBPath:         path,\n\t\t\tDBFileName:     name,\n\t\t\tNoFreelistSync: true,\n\t\t\tDBTimeout:      DefaultDBTimeout,\n\t\t})\n\t\tif err != nil {\n\t\t\treturn nil, nil, err\n\t\t}\n\t\treturn db, empty, nil\n\t}\n\n\treturn nil, nil, fmt.Errorf(\"unknown backend\")\n}\n",
+      "length": 1283,
+      "tokens": 181,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration4/client_db.go",
+  "package": "migration4",
+  "sections": [
+    {
+      "slug": "func MigrateAckedUpdates(sessionsPerTx int) func(kvdb.Backend) error {",
+      "content": "func MigrateAckedUpdates(sessionsPerTx int) func(kvdb.Backend) error {\n\treturn func(db kvdb.Backend) error {\n\t\tlog.Infof(\"Migrating the tower client db to move all Acked \" +\n\t\t\t\"Updates to the new Range Index representation.\")\n\n\t\t// Migrate the old acked-updates.\n\t\terr := migrateAckedUpdates(db, sessionsPerTx)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"migration failed: %w\", err)\n\t\t}\n\n\t\tlog.Infof(\"Migrating old session acked updates finished, now \" +\n\t\t\t\"checking the migration results...\")\n\n\t\t// Before we can safety delete the old buckets, we perform a\n\t\t// check to make sure the sessions have been migrated as\n\t\t// expected.\n\t\terr = kvdb.View(db, validateMigration, func() {})\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"validate migration failed: %w\", err)\n\t\t}\n\n\t\t// Delete old acked updates.\n\t\terr = kvdb.Update(db, deleteOldAckedUpdates, func() {})\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"failed to delete old acked \"+\n\t\t\t\t\"updates: %w\", err)\n\t\t}\n\n\t\treturn nil\n\t}\n}\n\n// migrateAckedUpdates migrates the acked updates of each session in the\n// wtclient db into the new RangeIndex form. This is done over multiple db\n// transactions in order to prevent the migration from taking up too much RAM.\n// The sessionsPerTx parameter can be used to set the maximum number of sessions\n// that should be migrated per transaction.",
+      "length": 1215,
+      "tokens": 190,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateAckedUpdates(db kvdb.Backend, sessionsPerTx int) error {",
+      "content": "func migrateAckedUpdates(db kvdb.Backend, sessionsPerTx int) error {\n\t// Get migration progress stats.\n\ttotal, migrated, err := logMigrationStats(db)\n\tif err != nil {\n\t\treturn err\n\t}\n\tlog.Infof(\"Total sessions=%d, migrated=%d\", total, migrated)\n\n\t// Exit early if the old session acked updates have already been\n\t// migrated and deleted.\n\tif total == 0 {\n\t\tlog.Info(\"Migration already finished!\")\n\t\treturn nil\n\t}\n\n\tvar (\n\t\tfinished bool\n\t\tstartKey []byte\n\t)\n\tfor {\n\t\t// Process the migration.\n\t\terr = kvdb.Update(db, func(tx kvdb.RwTx) error {\n\t\t\tstartKey, finished, err = processMigration(\n\t\t\t\ttx, startKey, sessionsPerTx,\n\t\t\t)\n\n\t\t\treturn err\n\t\t}, func() {})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif finished {\n\t\t\tbreak\n\t\t}\n\n\t\t// Each time we finished the above process, we'd read the stats\n\t\t// again to understand the current progress.\n\t\ttotal, migrated, err = logMigrationStats(db)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Calculate and log the progress if the progress is less than\n\t\t// one hundred percent.\n\t\tprogress := float64(migrated) / float64(total) * 100\n\t\tif progress >= 100 {\n\t\t\tbreak\n\t\t}\n\n\t\tlog.Infof(\"Migration progress: %.3f%%, still have: %d\",\n\t\t\tprogress, total-migrated)\n\t}\n\n\treturn nil\n}\n",
+      "length": 1088,
+      "tokens": 171,
+      "embedding": []
+    },
+    {
+      "slug": "func validateMigration(tx kvdb.RTx) error {",
+      "content": "func validateMigration(tx kvdb.RTx) error {\n\tmainSessionsBkt := tx.ReadBucket(cSessionBkt)\n\tif mainSessionsBkt == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\tchanDetailsBkt := tx.ReadBucket(cChanDetailsBkt)\n\tif chanDetailsBkt == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\treturn mainSessionsBkt.ForEach(func(sessID, _ []byte) error {\n\t\t// Get the bucket for this particular session.\n\t\tsessionBkt := mainSessionsBkt.NestedReadBucket(sessID)\n\t\tif sessionBkt == nil {\n\t\t\treturn ErrClientSessionNotFound\n\t\t}\n\n\t\t// Get the bucket where any old acked updates would be stored.\n\t\toldAcksBucket := sessionBkt.NestedReadBucket(cSessionAcks)\n\n\t\t// Get the bucket where any new acked updates would be stored.\n\t\tnewAcksBucket := sessionBkt.NestedReadBucket(\n\t\t\tcSessionAckRangeIndex,\n\t\t)\n\n\t\tswitch {\n\t\t// If both the old and new acked updates buckets are nil, then\n\t\t// we can safely skip this session.\n\t\tcase oldAcksBucket == nil && newAcksBucket == nil:\n\t\t\treturn nil\n\n\t\tcase oldAcksBucket == nil:\n\t\t\treturn fmt.Errorf(\"no old acks but do have new acks\")\n\n\t\tcase newAcksBucket == nil:\n\t\t\treturn fmt.Errorf(\"no new acks but have old acks\")\n\n\t\tdefault:\n\t\t}\n\n\t\t// Collect acked ranges for this session.\n\t\tackedRanges := make(map[uint64]*RangeIndex)\n\t\terr := newAcksBucket.ForEach(func(dbChanID, _ []byte) error {\n\t\t\trangeIndexBkt := newAcksBucket.NestedReadBucket(\n\t\t\t\tdbChanID,\n\t\t\t)\n\t\t\tif rangeIndexBkt == nil {\n\t\t\t\treturn fmt.Errorf(\"no acked updates bucket \"+\n\t\t\t\t\t\"found for channel %x\", dbChanID)\n\t\t\t}\n\n\t\t\t// Read acked ranges from new bucket.\n\t\t\tri, err := readRangeIndex(rangeIndexBkt)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tdbChanIDNum, err := readBigSize(dbChanID)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tackedRanges[dbChanIDNum] = ri\n\n\t\t\treturn nil\n\t\t})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Now we will iterate through each of the old acked updates and\n\t\t// make sure that the update appears in the new bucket.\n\t\treturn oldAcksBucket.ForEach(func(_, v []byte) error {\n\t\t\tvar backupID BackupID\n\t\t\terr := backupID.Decode(bytes.NewReader(v))\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tdbChanID, _, err := getDBChanID(\n\t\t\t\tchanDetailsBkt, backupID.ChanID,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tindex, ok := ackedRanges[dbChanID]\n\t\t\tif !ok {\n\t\t\t\treturn fmt.Errorf(\"no index found for this \" +\n\t\t\t\t\t\"channel\")\n\t\t\t}\n\n\t\t\tif !index.IsInIndex(backupID.CommitHeight) {\n\t\t\t\treturn fmt.Errorf(\"commit height not found \" +\n\t\t\t\t\t\"in index\")\n\t\t\t}\n\n\t\t\treturn nil\n\t\t})\n\t})\n}\n",
+      "length": 2321,
+      "tokens": 317,
+      "embedding": []
+    },
+    {
+      "slug": "func readRangeIndex(rangesBkt kvdb.RBucket) (*RangeIndex, error) {",
+      "content": "func readRangeIndex(rangesBkt kvdb.RBucket) (*RangeIndex, error) {\n\tranges := make(map[uint64]uint64)\n\terr := rangesBkt.ForEach(func(k, v []byte) error {\n\t\tstart, err := readBigSize(k)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tend, err := readBigSize(v)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tranges[start] = end\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn NewRangeIndex(ranges, WithSerializeUint64Fn(writeBigSize))\n}\n",
+      "length": 347,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func deleteOldAckedUpdates(tx kvdb.RwTx) error {",
+      "content": "func deleteOldAckedUpdates(tx kvdb.RwTx) error {\n\tmainSessionsBkt := tx.ReadWriteBucket(cSessionBkt)\n\tif mainSessionsBkt == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\treturn mainSessionsBkt.ForEach(func(sessID, _ []byte) error {\n\t\t// Get the bucket for this particular session.\n\t\tsessionBkt := mainSessionsBkt.NestedReadWriteBucket(\n\t\t\tsessID,\n\t\t)\n\t\tif sessionBkt == nil {\n\t\t\treturn ErrClientSessionNotFound\n\t\t}\n\n\t\t// Get the bucket where any old acked updates would be stored.\n\t\toldAcksBucket := sessionBkt.NestedReadBucket(cSessionAcks)\n\t\tif oldAcksBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Now that we have read everything that we need to from\n\t\t// the cSessionAcks sub-bucket, we can delete it.\n\t\treturn sessionBkt.DeleteNestedBucket(cSessionAcks)\n\t})\n}\n\n// processMigration uses the given transaction to perform a maximum of\n// sessionsPerTx session migrations. If startKey is non-nil, it is used to\n// determine the first session to start the migration at. The first return\n// item is the key of the last session that was migrated successfully and the\n// boolean is true if there are no more sessions left to migrate.",
+      "length": 1038,
+      "tokens": 149,
+      "embedding": []
+    },
+    {
+      "slug": "func processMigration(tx kvdb.RwTx, startKey []byte, sessionsPerTx int) ([]byte,",
+      "content": "func processMigration(tx kvdb.RwTx, startKey []byte, sessionsPerTx int) ([]byte,\n\tbool, error) {\n\n\tchanDetailsBkt := tx.ReadWriteBucket(cChanDetailsBkt)\n\tif chanDetailsBkt == nil {\n\t\treturn nil, false, ErrUninitializedDB\n\t}\n\n\t// sessionCount keeps track of the number of sessions that have been\n\t// migrated under the current db transaction.\n\tvar sessionCount int\n\n\t// migrateSessionCB is a callback function that calls migrateSession\n\t// in order to migrate a single session. Upon success, the sessionCount\n\t// is incremented and is then compared against sessionsPerTx to\n\t// determine if we should continue migrating more sessions in this db\n\t// transaction.\n\tmigrateSessionCB := func(sessionBkt kvdb.RwBucket) error {\n\t\terr := migrateSession(chanDetailsBkt, sessionBkt)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tsessionCount++\n\n\t\t// If we have migrated sessionsPerTx sessions in this tx, then\n\t\t// we return errExit in order to signal that this tx should be\n\t\t// committed and the migration should be continued in a new\n\t\t// transaction.\n\t\tif sessionCount >= sessionsPerTx {\n\t\t\treturn errExit\n\t\t}\n\n\t\treturn nil\n\t}\n\n\t// Starting at startKey, iterate over the sessions in the db and migrate\n\t// them until either all are migrated or until the errExit signal is\n\t// received.\n\tlastKey, err := sessionIterator(tx, startKey, migrateSessionCB)\n\tif err != nil && errors.Is(err, errExit) {\n\t\treturn lastKey, false, nil\n\t} else if err != nil {\n\t\treturn nil, false, err\n\t}\n\n\t// The migration is complete.\n\treturn nil, true, nil\n}\n\n// migrateSession migrates a single session's acked-updates to the new\n// RangeIndex form.",
+      "length": 1480,
+      "tokens": 231,
+      "embedding": []
+    },
+    {
+      "slug": "func migrateSession(chanDetailsBkt kvdb.RBucket,",
+      "content": "func migrateSession(chanDetailsBkt kvdb.RBucket,\n\tsessionBkt kvdb.RwBucket) error {\n\n\t// Get the existing cSessionAcks bucket. If there is no such bucket,\n\t// then there are no acked-updates to migrate for this session.\n\tsessionAcks := sessionBkt.NestedReadBucket(cSessionAcks)\n\tif sessionAcks == nil {\n\t\treturn nil\n\t}\n\n\t// If there is already a new cSessionAckedRangeIndex bucket, then this\n\t// session has already been migrated.\n\tsessionAckRangesBkt := sessionBkt.NestedReadBucket(\n\t\tcSessionAckRangeIndex,\n\t)\n\tif sessionAckRangesBkt != nil {\n\t\treturn nil\n\t}\n\n\t// Otherwise, we will iterate over each of the acked-updates, and we\n\t// will construct a new RangeIndex for each channel.\n\tm := make(map[ChannelID]*RangeIndex)\n\tif err := sessionAcks.ForEach(func(_, v []byte) error {\n\t\tvar backupID BackupID\n\t\terr := backupID.Decode(bytes.NewReader(v))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif _, ok := m[backupID.ChanID]; !ok {\n\t\t\tindex, err := NewRangeIndex(nil)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tm[backupID.ChanID] = index\n\t\t}\n\n\t\treturn m[backupID.ChanID].Add(backupID.CommitHeight, nil)\n\t}); err != nil {\n\t\treturn err\n\t}\n\n\t// Create a new sub-bucket that will be used to store the new RangeIndex\n\t// representation of the acked updates.\n\tackRangeBkt, err := sessionBkt.CreateBucket(cSessionAckRangeIndex)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Iterate over each of the new range indexes that we will add for this\n\t// session.\n\tfor chanID, rangeIndex := range m {\n\t\t// Get db chanID.\n\t\tchanDetails := chanDetailsBkt.NestedReadBucket(chanID[:])\n\t\tif chanDetails == nil {\n\t\t\treturn ErrCorruptChanDetails\n\t\t}\n\n\t\t// Create a sub-bucket for this channel using the db-assigned ID\n\t\t// for the channel.\n\t\tdbChanID := chanDetails.Get(cChanDBID)\n\t\tchanAcksBkt, err := ackRangeBkt.CreateBucket(dbChanID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Iterate over the range pairs that we need to add to the DB.\n\t\tfor k, v := range rangeIndex.GetAllRanges() {\n\t\t\tstart, err := writeBigSize(k)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tend, err := writeBigSize(v)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\terr = chanAcksBkt.Put(start, end)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// logMigrationStats reads the buckets to provide stats over current migration\n// progress. The returned values are the numbers of total records and already\n// migrated records.",
+      "length": 2234,
+      "tokens": 338,
+      "embedding": []
+    },
+    {
+      "slug": "func logMigrationStats(db kvdb.Backend) (uint64, uint64, error) {",
+      "content": "func logMigrationStats(db kvdb.Backend) (uint64, uint64, error) {\n\tvar (\n\t\terr        error\n\t\ttotal      uint64\n\t\tunmigrated uint64\n\t)\n\n\terr = kvdb.View(db, func(tx kvdb.RTx) error {\n\t\ttotal, unmigrated, err = getMigrationStats(tx)\n\n\t\treturn err\n\t}, func() {})\n\n\tlog.Debugf(\"Total sessions=%d, unmigrated=%d\", total, unmigrated)\n\n\treturn total, total - unmigrated, err\n}\n\n// getMigrationStats iterates over all sessions. It counts the total number of\n// sessions as well as the total number of unmigrated sessions.",
+      "length": 430,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func getMigrationStats(tx kvdb.RTx) (uint64, uint64, error) {",
+      "content": "func getMigrationStats(tx kvdb.RTx) (uint64, uint64, error) {\n\tvar (\n\t\ttotal      uint64\n\t\tunmigrated uint64\n\t)\n\n\t// Get sessions bucket.\n\tmainSessionsBkt := tx.ReadBucket(cSessionBkt)\n\tif mainSessionsBkt == nil {\n\t\treturn 0, 0, ErrUninitializedDB\n\t}\n\n\t// Iterate over each session ID in the bucket.\n\terr := mainSessionsBkt.ForEach(func(sessID, _ []byte) error {\n\t\t// Get the bucket for this particular session.\n\t\tsessionBkt := mainSessionsBkt.NestedReadBucket(sessID)\n\t\tif sessionBkt == nil {\n\t\t\treturn ErrClientSessionNotFound\n\t\t}\n\n\t\ttotal++\n\n\t\t// Get the cSessionAckRangeIndex bucket.\n\t\tsessionAcksBkt := sessionBkt.NestedReadBucket(cSessionAcks)\n\n\t\t// Get the cSessionAckRangeIndex bucket.\n\t\tsessionAckRangesBkt := sessionBkt.NestedReadBucket(\n\t\t\tcSessionAckRangeIndex,\n\t\t)\n\n\t\t// If both buckets do not exist, then this session is empty and\n\t\t// does not need to be migrated.\n\t\tif sessionAckRangesBkt == nil && sessionAcksBkt == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// If the sessionAckRangesBkt is not nil, then the session has\n\t\t// already been migrated.\n\t\tif sessionAckRangesBkt != nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Else the session has not yet been migrated.\n\t\tunmigrated++\n\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn 0, 0, err\n\t}\n\n\treturn total, unmigrated, nil\n}\n\n// getDBChanID returns the db-assigned channel ID for the given real channel ID.\n// It returns both the uint64 and byte representation.",
+      "length": 1279,
+      "tokens": 183,
+      "embedding": []
+    },
+    {
+      "slug": "func getDBChanID(chanDetailsBkt kvdb.RBucket, chanID ChannelID) (uint64,",
+      "content": "func getDBChanID(chanDetailsBkt kvdb.RBucket, chanID ChannelID) (uint64,\n\t[]byte, error) {\n\n\tchanDetails := chanDetailsBkt.NestedReadBucket(chanID[:])\n\tif chanDetails == nil {\n\t\treturn 0, nil, ErrChannelNotRegistered\n\t}\n\n\tidBytes := chanDetails.Get(cChanDBID)\n\tif len(idBytes) == 0 {\n\t\treturn 0, nil, fmt.Errorf(\"no db-assigned ID found for \"+\n\t\t\t\"channel ID %s\", chanID)\n\t}\n\n\tid, err := readBigSize(idBytes)\n\tif err != nil {\n\t\treturn 0, nil, err\n\t}\n\n\treturn id, idBytes, nil\n}\n\n// callback defines a type that's used by the sessionIterator.",
+      "length": 447,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "type callback func(bkt kvdb.RwBucket) error",
+      "content": "type callback func(bkt kvdb.RwBucket) error\n\n// sessionIterator is a helper function that iterates over the main sessions\n// bucket and performs the callback function on each individual session. If a\n// seeker is specified, it will move the cursor to the given position otherwise\n// it will start from the first item.",
+      "length": 269,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func sessionIterator(tx kvdb.RwTx, seeker []byte, cb callback) ([]byte, error) {",
+      "content": "func sessionIterator(tx kvdb.RwTx, seeker []byte, cb callback) ([]byte, error) {\n\t// Get sessions bucket.\n\tmainSessionsBkt := tx.ReadWriteBucket(cSessionBkt)\n\tif mainSessionsBkt == nil {\n\t\treturn nil, ErrUninitializedDB\n\t}\n\n\tc := mainSessionsBkt.ReadCursor()\n\tk, _ := c.First()\n\n\t// Move the cursor to the specified position if seeker is non-nil.\n\tif seeker != nil {\n\t\tk, _ = c.Seek(seeker)\n\t}\n\n\t// Start the iteration and exit on condition.\n\tfor k := k; k != nil; k, _ = c.Next() {\n\t\t// Get the bucket for this particular session.\n\t\tbkt := mainSessionsBkt.NestedReadWriteBucket(k)\n\t\tif bkt == nil {\n\t\t\treturn nil, ErrClientSessionNotFound\n\t\t}\n\n\t\t// Call the callback function with the session's bucket.\n\t\tif err := cb(bkt); err != nil {\n\t\t\t// return k, err\n\t\t\tlastIndex := make([]byte, len(k))\n\t\t\tcopy(lastIndex, k)\n\t\t\treturn lastIndex, err\n\t\t}\n\t}\n\n\treturn nil, nil\n}\n\n// writeBigSize will encode the given uint64 as a BigSize byte slice.",
+      "length": 824,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "func writeBigSize(i uint64) ([]byte, error) {",
+      "content": "func writeBigSize(i uint64) ([]byte, error) {\n\tvar b bytes.Buffer\n\terr := tlv.WriteVarInt(&b, i, &[8]byte{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn b.Bytes(), nil\n}\n\n// readBigSize converts the given byte slice into a uint64 and assumes that the\n// bytes slice is using BigSize encoding.",
+      "length": 239,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func readBigSize(b []byte) (uint64, error) {",
+      "content": "func readBigSize(b []byte) (uint64, error) {\n\tr := bytes.NewReader(b)\n\ti, err := tlv.ReadVarInt(r, &[8]byte{})\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\treturn i, nil\n}\n",
+      "length": 112,
+      "tokens": 21,
+      "embedding": []
+    }
+  ]
+}

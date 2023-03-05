@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlite/db.go",
+  "package": "kvdb_sqlite",
+  "sections": [
+    {
+      "slug": "func NewSqliteBackend(ctx context.Context, cfg *Config, dbPath, fileName,",
+      "content": "func NewSqliteBackend(ctx context.Context, cfg *Config, dbPath, fileName,\n\tprefix string) (walletdb.DB, error) {\n\n\t// First, we add a set of mandatory pragma options to the query.\n\tpragmaOptions := []struct {\n\t\tname  string\n\t\tvalue string\n\t}{\n\t\t{\n\t\t\tname: \"busy_timeout\",\n\t\t\tvalue: fmt.Sprintf(\n\t\t\t\t\"%d\", cfg.BusyTimeout.Milliseconds(),\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\tname:  \"foreign_keys\",\n\t\t\tvalue: \"on\",\n\t\t},\n\t\t{\n\t\t\tname:  \"journal_mode\",\n\t\t\tvalue: \"WAL\",\n\t\t},\n\t}\n\tsqliteOptions := make(url.Values)\n\tfor _, option := range pragmaOptions {\n\t\tsqliteOptions.Add(\n\t\t\tsqliteOptionPrefix,\n\t\t\tfmt.Sprintf(\"%v=%v\", option.name, option.value),\n\t\t)\n\t}\n\n\t// Then we add any user specified pragma options. Note that these can\n\t// be of the form: \"key=value\", \"key(N)\" or \"key\".\n\tfor _, option := range cfg.PragmaOptions {\n\t\tsqliteOptions.Add(sqliteOptionPrefix, option)\n\t}\n\n\t// Construct the DSN which is just the database file name, appended\n\t// with the series of pragma options as a query URL string. For more\n\t// details on the formatting here, see the modernc.org/sqlite docs:\n\t// https://pkg.go.dev/modernc.org/sqlite#Driver.Open.\n\tdsn := fmt.Sprintf(\n\t\t\"%v?%v&%v\", filepath.Join(dbPath, fileName),\n\t\tsqliteOptions.Encode(), sqliteTxLockImmediate,\n\t)\n\tsqlCfg := &sqlbase.Config{\n\t\tDriverName:      \"sqlite\",\n\t\tDsn:             dsn,\n\t\tTimeout:         cfg.Timeout,\n\t\tTableNamePrefix: prefix,\n\t}\n\n\treturn sqlbase.NewSqlBackend(ctx, sqlCfg)\n}\n",
+      "length": 1297,
+      "tokens": 161,
+      "embedding": []
+    }
+  ]
+}

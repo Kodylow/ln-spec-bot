@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/postgres/fixture.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "func getTestDsn(dbName string) string {",
+      "content": "func getTestDsn(dbName string) string {\n\treturn fmt.Sprintf(testDsnTemplate, dbName)\n}\n\nvar testPostgres *embeddedpostgres.EmbeddedPostgres\n\nconst testMaxConnections = 50\n\n// StartEmbeddedPostgres starts an embedded postgres instance. This only needs\n// to be done once, because NewFixture will create random new databases on every\n// call. It returns a stop closure that stops the database if called.",
+      "length": 352,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func StartEmbeddedPostgres() (func() error, error) {",
+      "content": "func StartEmbeddedPostgres() (func() error, error) {\n\tsqlbase.Init(testMaxConnections)\n\n\tpostgres := embeddedpostgres.NewDatabase(\n\t\tembeddedpostgres.DefaultConfig().\n\t\t\tPort(9876))\n\n\terr := postgres.Start()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\ttestPostgres = postgres\n\n\treturn testPostgres.Stop, nil\n}\n\n// NewFixture returns a new postgres test database. The database name is\n// randomly generated.",
+      "length": 332,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFixture(dbName string) (*fixture, error) {",
+      "content": "func NewFixture(dbName string) (*fixture, error) {\n\tif dbName == \"\" {\n\t\t// Create random database name.\n\t\trandBytes := make([]byte, 8)\n\t\t_, err := rand.Read(randBytes)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tdbName = \"test_\" + hex.EncodeToString(randBytes)\n\t}\n\n\t// Create database if it doesn't exist yet.\n\tdbConn, err := sql.Open(\"pgx\", getTestDsn(\"postgres\"))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer dbConn.Close()\n\n\t_, err = dbConn.ExecContext(\n\t\tcontext.Background(), \"CREATE DATABASE \"+dbName,\n\t)\n\tif err != nil && !strings.Contains(err.Error(), \"already exists\") {\n\t\treturn nil, err\n\t}\n\n\t// Open database\n\tdsn := getTestDsn(dbName)\n\tdb, err := newPostgresBackend(\n\t\tcontext.Background(),\n\t\t&Config{\n\t\t\tDsn:     dsn,\n\t\t\tTimeout: time.Minute,\n\t\t},\n\t\tprefix,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &fixture{\n\t\tDsn: dsn,\n\t\tDb:  db,\n\t}, nil\n}\n",
+      "length": 769,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "type fixture struct {",
+      "content": "type fixture struct {\n\tDsn string\n\tDb  walletdb.DB\n}\n",
+      "length": 28,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *fixture) DB() walletdb.DB {",
+      "content": "func (b *fixture) DB() walletdb.DB {\n\treturn b.Db\n}\n\n// Dump returns the raw contents of the database.",
+      "length": 62,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *fixture) Dump() (map[string]interface{}, error) {",
+      "content": "func (b *fixture) Dump() (map[string]interface{}, error) {\n\tdbConn, err := sql.Open(\"pgx\", b.Dsn)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\trows, err := dbConn.Query(\n\t\t\"SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'\",\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar tables []string\n\tfor rows.Next() {\n\t\tvar table string\n\t\terr := rows.Scan(&table)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ttables = append(tables, table)\n\t}\n\n\tresult := make(map[string]interface{})\n\n\tfor _, table := range tables {\n\t\trows, err := dbConn.Query(\"SELECT * FROM \" + table)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tcols, err := rows.Columns()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tcolCount := len(cols)\n\n\t\tvar tableRows []map[string]interface{}\n\t\tfor rows.Next() {\n\t\t\tvalues := make([]interface{}, colCount)\n\t\t\tvaluePtrs := make([]interface{}, colCount)\n\t\t\tfor i := range values {\n\t\t\t\tvaluePtrs[i] = &values[i]\n\t\t\t}\n\n\t\t\terr := rows.Scan(valuePtrs...)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\n\t\t\ttableData := make(map[string]interface{})\n\t\t\tfor i, v := range values {\n\t\t\t\t// Cast byte slices to string to keep the\n\t\t\t\t// expected database contents in test code more\n\t\t\t\t// readable.\n\t\t\t\tif ar, ok := v.([]uint8); ok {\n\t\t\t\t\tv = string(ar)\n\t\t\t\t}\n\t\t\t\ttableData[cols[i]] = v\n\t\t\t}\n\n\t\t\ttableRows = append(tableRows, tableData)\n\t\t}\n\n\t\tresult[table] = tableRows\n\t}\n\n\treturn result, nil\n}\n",
+      "length": 1262,
+      "tokens": 197,
+      "embedding": []
+    }
+  ]
+}

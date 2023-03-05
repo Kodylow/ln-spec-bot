@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/neutrino_active.go",
+  "package": "neutrinorpc",
+  "sections": [
+    {
+      "slug": "func getNeutrinoKitClient(ctx *cli.Context) (neutrinorpc.NeutrinoKitClient, func()) {",
+      "content": "func getNeutrinoKitClient(ctx *cli.Context) (neutrinorpc.NeutrinoKitClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn neutrinorpc.NewNeutrinoKitClient(conn), cleanUp\n}\n\nvar getNeutrinoStatusCommand = cli.Command{\n\tName:     \"status\",\n\tUsage:    \"Returns the status of the running neutrino instance.\",\n\tCategory: \"Neutrino\",\n\tDescription: \"Returns the status of the light client neutrino \" +\n\t\t\"instance, along with height and hash of the best block, and \" +\n\t\t\"a list of connected peers.\",\n\tAction: actionDecorator(getNeutrinoStatus),\n}\n",
+      "length": 485,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func getNeutrinoStatus(ctx *cli.Context) error {",
+      "content": "func getNeutrinoStatus(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.StatusRequest{}\n\n\tresp, err := client.Status(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar addPeerCommand = cli.Command{\n\tName:     \"addpeer\",\n\tUsage:    \"Add a peer.\",\n\tCategory: \"Neutrino\",\n\tDescription: \"Adds a new peer that has already been connected to the \" +\n\t\t\"server.\",\n\tArgsUsage: \"address\",\n\tAction:    actionDecorator(addNeutrinoPeer),\n}\n",
+      "length": 472,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func addNeutrinoPeer(ctx *cli.Context) error {",
+      "content": "func addNeutrinoPeer(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif ctx.NArg() != 1 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"addpeer\")\n\t}\n\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.AddPeerRequest{\n\t\tPeerAddrs: ctx.Args().First(),\n\t}\n\n\t// Add a peer to the neutrino server.\n\tresp, err := client.AddPeer(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar disconnectPeerCommand = cli.Command{\n\tName:     \"disconnectpeer\",\n\tUsage:    \"Disconnect a peer.\",\n\tCategory: \"Neutrino\",\n\tDescription: \"Disconnects a peer by target address. Both outbound and\" +\n\t\t\"inbound nodes will be searched for the target node. An error \" +\n\t\t\"message will be returned if the peer was not found.\",\n\tArgsUsage: \"address\",\n\tAction:    actionDecorator(disconnectNeutrinoPeer),\n}\n",
+      "length": 872,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func disconnectNeutrinoPeer(ctx *cli.Context) error {",
+      "content": "func disconnectNeutrinoPeer(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif ctx.NArg() != 1 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"disconnectpeer\")\n\t}\n\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.DisconnectPeerRequest{\n\t\tPeerAddrs: ctx.Args().First(),\n\t}\n\n\t// Disconnect a peer to the neutrino server.\n\tresp, err := client.DisconnectPeer(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar isBannedCommand = cli.Command{\n\tName:        \"isbanned\",\n\tUsage:       \"Get ban status.\",\n\tCategory:    \"Neutrino\",\n\tDescription: \"Returns true if the peer is banned, otherwise false.\",\n\tArgsUsage:   \"address\",\n\tAction:      actionDecorator(isBanned),\n}\n",
+      "length": 757,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "func isBanned(ctx *cli.Context) error {",
+      "content": "func isBanned(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif ctx.NArg() != 1 {\n\t\treturn cli.ShowCommandHelp(ctx, \"isbanned\")\n\t}\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.IsBannedRequest{\n\t\tPeerAddrs: ctx.Args().First(),\n\t}\n\n\t// Check if the peer is banned.\n\tresp, err := client.IsBanned(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar getBlockHeaderCommand = cli.Command{\n\tName:        \"getblockheader\",\n\tUsage:       \"Get a block header.\",\n\tCategory:    \"Neutrino\",\n\tDescription: \"Returns a block header with a particular block hash.\",\n\tArgsUsage:   \"hash\",\n\tAction:      actionDecorator(getBlockHeader),\n}\n",
+      "length": 723,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func getBlockHeader(ctx *cli.Context) error {",
+      "content": "func getBlockHeader(ctx *cli.Context) error {\n\tctxc := getContext()\n\targs := ctx.Args()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif !args.Present() {\n\t\treturn cli.ShowCommandHelp(ctx, \"getblockheader\")\n\t}\n\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.GetBlockHeaderRequest{\n\t\tHash: ctx.Args().First(),\n\t}\n\n\tresp, err := client.GetBlockHeader(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar getCFilterCommand = cli.Command{\n\tName:        \"getcfilter\",\n\tUsage:       \"Get a compact filter.\",\n\tCategory:    \"Neutrino\",\n\tDescription: \"Returns a compact filter of a particular block.\",\n\tArgsUsage:   \"hash\",\n\tAction:      actionDecorator(getCFilter),\n}\n",
+      "length": 708,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func getCFilter(ctx *cli.Context) error {",
+      "content": "func getCFilter(ctx *cli.Context) error {\n\tctxc := getContext()\n\targs := ctx.Args()\n\n\t// Display the command's help message if we do not have the expected\n\t// number of arguments/flags.\n\tif !args.Present() {\n\t\treturn cli.ShowCommandHelp(ctx, \"getcfilter\")\n\t}\n\n\tclient, cleanUp := getNeutrinoKitClient(ctx)\n\tdefer cleanUp()\n\n\treq := &neutrinorpc.GetCFilterRequest{Hash: args.First()}\n\n\tresp, err := client.GetCFilter(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\n// neutrinoCommands will return the set of commands to enable for neutrinorpc\n// builds.",
+      "length": 519,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func neutrinoCommands() []cli.Command {",
+      "content": "func neutrinoCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:        \"neutrino\",\n\t\t\tCategory:    \"Neutrino\",\n\t\t\tUsage:       \"Interact with a running neutrino instance.\",\n\t\t\tDescription: \"\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tgetNeutrinoStatusCommand,\n\t\t\t\taddPeerCommand,\n\t\t\t\tdisconnectPeerCommand,\n\t\t\t\tisBannedCommand,\n\t\t\t\tgetBlockHeaderCommand,\n\t\t\t\tgetCFilterCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",
+      "length": 343,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/db.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// DriverName is the string that defines the registered sql driver that\n\t// is to be used.\n\tDriverName string\n\n\t// Dsn is the database connection string that will be used to connect\n\t// to the db.\n\tDsn string\n\n\t// Timeout is the time after which a query to the db will be canceled if\n\t// it has not yet completed.\n\tTimeout time.Duration\n\n\t// Schema is the name of the schema under which the sql tables should be\n\t// created. It should be left empty for backends like sqlite that do not\n\t// support having more than one schema.\n\tSchema string\n\n\t// TableNamePrefix is the name that should be used as a table name\n\t// prefix when constructing the KV style table.\n\tTableNamePrefix string\n\n\t// SQLiteCmdReplacements define a one-to-one string mapping of sql\n\t// keywords to the strings that should replace those keywords in any\n\t// commands. Note that the sqlite keywords to be replaced are\n\t// case-sensitive.\n\tSQLiteCmdReplacements SQLiteCmdReplacements\n\n\t// WithTxLevelLock when set will ensure that there is a transaction\n\t// level lock.\n\tWithTxLevelLock bool\n}\n\n// db holds a reference to the sql db connection.",
+      "length": 1080,
+      "tokens": 186,
+      "embedding": []
+    },
+    {
+      "slug": "type db struct {",
+      "content": "type db struct {\n\t// cfg is the sql db connection config.\n\tcfg *Config\n\n\t// prefix is the table name prefix that is used to simulate namespaces.\n\t// We don't use schemas because at least sqlite does not support that.\n\tprefix string\n\n\t// ctx is the overall context for the database driver.\n\t//\n\t// TODO: This is an anti-pattern that is in place until the kvdb\n\t// interface supports a context.\n\tctx context.Context\n\n\t// db is the underlying database connection instance.\n\tdb *sql.DB\n\n\t// lock is the global write lock that ensures single writer. This is\n\t// only used if cfg.WithTxLevelLock is set.\n\tlock sync.RWMutex\n\n\t// table is the name of the table that contains the data for all\n\t// top-level buckets that have keys that cannot be mapped to a distinct\n\t// sql table.\n\ttable string\n}\n\n// Enforce db implements the walletdb.DB interface.\nvar _ walletdb.DB = (*db)(nil)\n\nvar (\n\t// dbConns is a global set of database connections.\n\tdbConns   *dbConnSet\n\tdbConnsMu sync.Mutex\n)\n\n// Init initializes the global set of database connections.",
+      "length": 986,
+      "tokens": 171,
+      "embedding": []
+    },
+    {
+      "slug": "func Init(maxConnections int) {",
+      "content": "func Init(maxConnections int) {\n\tdbConnsMu.Lock()\n\tdefer dbConnsMu.Unlock()\n\n\tif dbConns != nil {\n\t\treturn\n\t}\n\n\tdbConns = newDbConnSet(maxConnections)\n}\n\n// NewSqlBackend returns a db object initialized with the passed backend\n// config. If database connection cannot be established, then returns error.",
+      "length": 260,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSqlBackend(ctx context.Context, cfg *Config) (*db, error) {",
+      "content": "func NewSqlBackend(ctx context.Context, cfg *Config) (*db, error) {\n\tdbConnsMu.Lock()\n\tdefer dbConnsMu.Unlock()\n\n\tif dbConns == nil {\n\t\treturn nil, errors.New(\"db connection set not initialized\")\n\t}\n\n\tif cfg.TableNamePrefix == \"\" {\n\t\treturn nil, errors.New(\"empty table name prefix\")\n\t}\n\n\ttable := fmt.Sprintf(\"%s_%s\", cfg.TableNamePrefix, kvTableName)\n\n\tquery := newKVSchemaCreationCmd(\n\t\ttable, cfg.Schema, cfg.SQLiteCmdReplacements,\n\t)\n\n\tdbConn, err := dbConns.Open(cfg.DriverName, cfg.Dsn)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t_, err = dbConn.ExecContext(ctx, query)\n\tif err != nil {\n\t\t_ = dbConn.Close()\n\n\t\treturn nil, err\n\t}\n\n\treturn &db{\n\t\tcfg:    cfg,\n\t\tctx:    ctx,\n\t\tdb:     dbConn,\n\t\ttable:  table,\n\t\tprefix: cfg.TableNamePrefix,\n\t}, nil\n}\n\n// getTimeoutCtx gets a timeout context for database requests.",
+      "length": 711,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) getTimeoutCtx() (context.Context, func()) {",
+      "content": "func (db *db) getTimeoutCtx() (context.Context, func()) {\n\tif db.cfg.Timeout == time.Duration(0) {\n\t\treturn db.ctx, func() {}\n\t}\n\n\treturn context.WithTimeout(db.ctx, db.cfg.Timeout)\n}\n\n// getPrefixedTableName returns a table name for this prefix (namespace).",
+      "length": 193,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) getPrefixedTableName(table string) string {",
+      "content": "func (db *db) getPrefixedTableName(table string) string {\n\treturn fmt.Sprintf(\"%s_%s\", db.prefix, table)\n}\n\n// catchPanic executes the specified function. If a panic occurs, it is returned\n// as an error value.",
+      "length": 148,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func catchPanic(f func() error) (err error) {",
+      "content": "func catchPanic(f func() error) (err error) {\n\tdefer func() {\n\t\tif r := recover(); r != nil {\n\t\t\tlog.Criticalf(\"Caught unhandled error: %v\", r)\n\n\t\t\tswitch data := r.(type) {\n\t\t\tcase error:\n\t\t\t\terr = data\n\n\t\t\tdefault:\n\t\t\t\terr = errors.New(fmt.Sprintf(\"%v\", data))\n\t\t\t}\n\t\t}\n\t}()\n\n\terr = f()\n\n\treturn\n}\n\n// View opens a database read transaction and executes the function f with the\n// transaction passed as a parameter. After f exits, the transaction is rolled\n// back. If f errors, its error is returned, not a rollback error (if any\n// occur). The passed reset function is called before the start of the\n// transaction and can be used to reset intermediate state. As callers may\n// expect retries of the f closure (depending on the database backend used), the\n// reset function will be called before each retry respectively.",
+      "length": 753,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) View(f func(tx walletdb.ReadTx) error, reset func()) error {",
+      "content": "func (db *db) View(f func(tx walletdb.ReadTx) error, reset func()) error {\n\treturn db.executeTransaction(\n\t\tfunc(tx walletdb.ReadWriteTx) error {\n\t\t\treturn f(tx.(walletdb.ReadTx))\n\t\t},\n\t\treset, true,\n\t)\n}\n\n// Update opens a database read/write transaction and executes the function f\n// with the transaction passed as a parameter. After f exits, if f did not\n// error, the transaction is committed. Otherwise, if f did error, the\n// transaction is rolled back. If the rollback fails, the original error\n// returned by f is still returned. If the commit fails, the commit error is\n// returned. As callers may expect retries of the f closure, the reset function\n// will be called before each retry respectively.",
+      "length": 620,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Update(f func(tx walletdb.ReadWriteTx) error,",
+      "content": "func (db *db) Update(f func(tx walletdb.ReadWriteTx) error,\n\treset func()) error {\n\n\treturn db.executeTransaction(f, reset, false)\n}\n\n// executeTransaction creates a new read-only or read-write transaction and\n// executes the given function within it.",
+      "length": 185,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) executeTransaction(f func(tx walletdb.ReadWriteTx) error,",
+      "content": "func (db *db) executeTransaction(f func(tx walletdb.ReadWriteTx) error,\n\treset func(), readOnly bool) error {\n\n\treset()\n\n\ttx, err := newReadWriteTx(db, readOnly)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\terr = catchPanic(func() error { return f(tx) })\n\tif err != nil {\n\t\tif rollbackErr := tx.Rollback(); rollbackErr != nil {\n\t\t\tlog.Errorf(\"Error rolling back tx: %v\", rollbackErr)\n\t\t}\n\n\t\treturn err\n\t}\n\n\treturn tx.Commit()\n}\n\n// PrintStats returns all collected stats pretty printed into a string.",
+      "length": 397,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) PrintStats() string {",
+      "content": "func (db *db) PrintStats() string {\n\treturn \"stats not supported by SQL driver\"\n}\n\n// BeginReadWriteTx opens a database read+write transaction.",
+      "length": 104,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {",
+      "content": "func (db *db) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {\n\treturn newReadWriteTx(db, false)\n}\n\n// BeginReadTx opens a database read transaction.",
+      "length": 83,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) BeginReadTx() (walletdb.ReadTx, error) {",
+      "content": "func (db *db) BeginReadTx() (walletdb.ReadTx, error) {\n\treturn newReadWriteTx(db, true)\n}\n\n// Copy writes a copy of the database to the provided writer. This call will\n// start a read-only transaction to perform all operations.\n// This function is part of the walletdb.Db interface implementation.",
+      "length": 237,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Copy(w io.Writer) error {",
+      "content": "func (db *db) Copy(w io.Writer) error {\n\treturn errors.New(\"not implemented\")\n}\n\n// Close cleanly shuts down the database and syncs all data.\n// This function is part of the walletdb.Db interface implementation.",
+      "length": 167,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Close() error {",
+      "content": "func (db *db) Close() error {\n\tdbConnsMu.Lock()\n\tdefer dbConnsMu.Unlock()\n\n\tlog.Infof(\"Closing database %v\", db.prefix)\n\n\treturn dbConns.Close(db.cfg.Dsn)\n}\n",
+      "length": 120,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

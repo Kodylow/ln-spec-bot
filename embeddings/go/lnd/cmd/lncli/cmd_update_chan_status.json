@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/cmd_update_chan_status.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func updateChanStatus(ctx *cli.Context) error {",
+      "content": "func updateChanStatus(ctx *cli.Context) error {\n\tctxc := getContext()\n\tconn := getClientConn(ctx, false)\n\tdefer conn.Close()\n\n\tif ctx.NArg() == 0 && ctx.NumFlags() == 0 {\n\t\t_ = cli.ShowCommandHelp(ctx, \"updatechanstatus\")\n\t\treturn nil\n\t}\n\n\tchannelPoint, err := parseChannelPoint(ctx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar action routerrpc.ChanStatusAction\n\tswitch ctx.String(\"action\") {\n\tcase \"enable\":\n\t\taction = routerrpc.ChanStatusAction_ENABLE\n\tcase \"disable\":\n\t\taction = routerrpc.ChanStatusAction_DISABLE\n\tcase \"auto\":\n\t\taction = routerrpc.ChanStatusAction_AUTO\n\tdefault:\n\t\treturn errors.New(`action must be one of \"enable\", \"disable\", ` +\n\t\t\t`or \"auto\"`)\n\t}\n\treq := &routerrpc.UpdateChanStatusRequest{\n\t\tChanPoint: channelPoint,\n\t\tAction:    action,\n\t}\n\n\tclient := routerrpc.NewRouterClient(conn)\n\tresp, err := client.UpdateChanStatus(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n",
+      "length": 835,
+      "tokens": 100,
+      "embedding": []
+    }
+  ]
+}

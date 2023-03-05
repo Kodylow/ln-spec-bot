@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/wtwire_test.go",
+  "package": "wtwire_test",
+  "sections": [
+    {
+      "slug": "func randRawFeatureVector(r *rand.Rand) *lnwire.RawFeatureVector {",
+      "content": "func randRawFeatureVector(r *rand.Rand) *lnwire.RawFeatureVector {\n\tfeatureVec := lnwire.NewRawFeatureVector()\n\tfor i := 0; i < 10000; i++ {\n\t\tif r.Int31n(2) == 0 {\n\t\t\tfeatureVec.Set(lnwire.FeatureBit(i))\n\t\t}\n\t}\n\treturn featureVec\n}\n",
+      "length": 158,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func randChainHash(r *rand.Rand) chainhash.Hash {",
+      "content": "func randChainHash(r *rand.Rand) chainhash.Hash {\n\tvar hash chainhash.Hash\n\tr.Read(hash[:])\n\treturn hash\n}\n\n// TestWatchtowerWireProtocol uses the testing/quick package to create a series\n// of fuzz tests to attempt to break a primary scenario which is implemented as\n// property based testing scenario.",
+      "length": 246,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWatchtowerWireProtocol(t *testing.T) {",
+      "content": "func TestWatchtowerWireProtocol(t *testing.T) {\n\tt.Parallel()\n\n\t// mainScenario is the primary test that will programmatically be\n\t// executed for all registered wire messages. The quick-checker within\n\t// testing/quick will attempt to find an input to this function, s.t\n\t// the function returns false, if so then we've found an input that\n\t// violates our model of the system.\n\tmainScenario := func(msg wtwire.Message) bool {\n\t\t// Give a new message, we'll serialize the message into a new\n\t\t// bytes buffer.\n\t\tvar b bytes.Buffer\n\t\tif _, err := wtwire.WriteMessage(&b, msg, 0); err != nil {\n\t\t\tt.Fatalf(\"unable to write msg: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\t// Next, we'll ensure that the serialized payload (subtracting\n\t\t// the 2 bytes for the message type) is _below_ the specified\n\t\t// max payload size for this message.\n\t\tpayloadLen := uint32(b.Len()) - 2\n\t\tif payloadLen > msg.MaxPayloadLength(0) {\n\t\t\tt.Fatalf(\"msg payload constraint violated: %v > %v\",\n\t\t\t\tpayloadLen, msg.MaxPayloadLength(0))\n\t\t\treturn false\n\t\t}\n\n\t\t// Finally, we'll deserialize the message from the written\n\t\t// buffer, and finally assert that the messages are equal.\n\t\tnewMsg, err := wtwire.ReadMessage(&b, 0)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to read msg: %v\", err)\n\t\t\treturn false\n\t\t}\n\t\tif !reflect.DeepEqual(msg, newMsg) {\n\t\t\tt.Fatalf(\"messages don't match after re-encoding: %v \"+\n\t\t\t\t\"vs %v\", spew.Sdump(msg), spew.Sdump(newMsg))\n\t\t\treturn false\n\t\t}\n\n\t\treturn true\n\t}\n\n\tcustomTypeGen := map[wtwire.MessageType]func([]reflect.Value, *rand.Rand){\n\t\twtwire.MsgInit: func(v []reflect.Value, r *rand.Rand) {\n\t\t\treq := wtwire.NewInitMessage(\n\t\t\t\trandRawFeatureVector(r),\n\t\t\t\trandChainHash(r),\n\t\t\t)\n\n\t\t\tv[0] = reflect.ValueOf(*req)\n\t\t},\n\t}\n\n\t// With the above types defined, we'll now generate a slice of\n\t// scenarios to feed into quick.Check. The function scans in input\n\t// space of the target function under test, so we'll need to create a\n\t// series of wrapper functions to force it to iterate over the target\n\t// types, but re-use the mainScenario defined above.\n\ttests := []struct {\n\t\tmsgType  wtwire.MessageType\n\t\tscenario interface{}\n\t}{\n\t\t{\n\t\t\tmsgType: wtwire.MsgInit,\n\t\t\tscenario: func(m wtwire.Init) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgCreateSession,\n\t\t\tscenario: func(m wtwire.CreateSession) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgCreateSessionReply,\n\t\t\tscenario: func(m wtwire.CreateSessionReply) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgStateUpdate,\n\t\t\tscenario: func(m wtwire.StateUpdate) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgStateUpdateReply,\n\t\t\tscenario: func(m wtwire.StateUpdateReply) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgDeleteSession,\n\t\t\tscenario: func(m wtwire.DeleteSession) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgDeleteSessionReply,\n\t\t\tscenario: func(m wtwire.DeleteSessionReply) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tmsgType: wtwire.MsgError,\n\t\t\tscenario: func(m wtwire.Error) bool {\n\t\t\t\treturn mainScenario(&m)\n\t\t\t},\n\t\t},\n\t}\n\tfor _, test := range tests {\n\t\tvar config *quick.Config\n\n\t\t// If the type defined is within the custom type gen map above,\n\t\t// the we'll modify the default config to use this Value\n\t\t// function that knows how to generate the proper types.\n\t\tif valueGen, ok := customTypeGen[test.msgType]; ok {\n\t\t\tconfig = &quick.Config{\n\t\t\t\tValues: valueGen,\n\t\t\t}\n\t\t}\n\n\t\tt.Logf(\"Running fuzz tests for msgType=%v\", test.msgType)\n\t\tif err := quick.Check(test.scenario, config); err != nil {\n\t\t\tt.Fatalf(\"fuzz checks for msg=%v failed: %v\",\n\t\t\t\ttest.msgType, err)\n\t\t}\n\t}\n\n}\n",
+      "length": 3532,
+      "tokens": 475,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\trand.Seed(time.Now().Unix())\n}\n",
+      "length": 30,
+      "tokens": 2,
+      "embedding": []
+    }
+  ]
+}

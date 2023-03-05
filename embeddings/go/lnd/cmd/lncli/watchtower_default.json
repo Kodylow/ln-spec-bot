@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/watchtower_default.go",
+  "package": "!watchtowerrpc",
+  "sections": [
+    {
+      "slug": "func watchtowerCommands() []cli.Command {",
+      "content": "func watchtowerCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

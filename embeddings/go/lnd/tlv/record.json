@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/record.go",
+  "package": "tlv",
+  "sections": [
+    {
+      "slug": "type Type uint64",
+      "content": "type Type uint64\n\n// TypeMap is a map of parsed Types. The map values are byte slices. If the byte\n// slice is nil, the type was successfully parsed. Otherwise the value is byte\n// slice containing the encoded data.",
+      "length": 195,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "type TypeMap map[Type][]byte",
+      "content": "type TypeMap map[Type][]byte\n\n// Encoder is a signature for methods that can encode TLV values. An error\n// should be returned if the Encoder cannot support the underlying type of val.\n// The provided scratch buffer must be non-nil.",
+      "length": 200,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type Encoder func(w io.Writer, val interface{}, buf *[8]byte) error",
+      "content": "type Encoder func(w io.Writer, val interface{}, buf *[8]byte) error\n\n// Decoder is a signature for methods that can decode TLV values. An error\n// should be returned if the Decoder cannot support the underlying type of val.\n// The provided scratch buffer must be non-nil.",
+      "length": 200,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type Decoder func(r io.Reader, val interface{}, buf *[8]byte, l uint64) error",
+      "content": "type Decoder func(r io.Reader, val interface{}, buf *[8]byte, l uint64) error\n\n// ENOP is an encoder that doesn't modify the io.Writer and never fails.",
+      "length": 72,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func ENOP(io.Writer, interface{}, *[8]byte) error { return nil }",
+      "content": "func ENOP(io.Writer, interface{}, *[8]byte) error { return nil }\n\n// DNOP is an encoder that doesn't modify the io.Reader and never fails.",
+      "length": 72,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func DNOP(io.Reader, interface{}, *[8]byte, uint64) error { return nil }",
+      "content": "func DNOP(io.Reader, interface{}, *[8]byte, uint64) error { return nil }\n\n// SizeFunc is a function that can compute the length of a given field. Since\n// the size of the underlying field can change, this allows the size of the\n// field to be evaluated at the time of encoding.",
+      "length": 201,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "type SizeFunc func() uint64",
+      "content": "type SizeFunc func() uint64\n\n// SizeVarBytes returns a SizeFunc that can compute the length of a byte slice.",
+      "length": 79,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func SizeVarBytes(e *[]byte) SizeFunc {",
+      "content": "func SizeVarBytes(e *[]byte) SizeFunc {\n\treturn func() uint64 {\n\t\treturn uint64(len(*e))\n\t}\n}\n\n// RecorderProducer is an interface for objects that can produce a Record object\n// capable of encoding and/or decoding the RecordProducer as a Record.",
+      "length": 200,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type RecordProducer interface {",
+      "content": "type RecordProducer interface {\n\t// Record returns a Record that can be used to encode or decode the\n\t// backing object.\n\tRecord() Record\n}\n\n// Record holds the required information to encode or decode a TLV record.",
+      "length": 178,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "type Record struct {",
+      "content": "type Record struct {\n\tvalue      interface{}\n\ttyp        Type\n\tstaticSize uint64\n\tsizeFunc   SizeFunc\n\tencoder    Encoder\n\tdecoder    Decoder\n}\n\n// Size returns the size of the Record's value. If no static size is known, the\n// dynamic size will be evaluated.",
+      "length": 229,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *Record) Size() uint64 {",
+      "content": "func (f *Record) Size() uint64 {\n\tif f.sizeFunc == nil {\n\t\treturn f.staticSize\n\t}\n\n\treturn f.sizeFunc()\n}\n\n// Type returns the type of the underlying TLV record.",
+      "length": 121,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *Record) Type() Type {",
+      "content": "func (f *Record) Type() Type {\n\treturn f.typ\n}\n\n// Encode writes out the TLV record to the passed writer. This is useful when a\n// caller wants to obtain the raw encoding of a *single* TLV record, outside\n// the context of the Stream struct.",
+      "length": 205,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *Record) Encode(w io.Writer) error {",
+      "content": "func (f *Record) Encode(w io.Writer) error {\n\tvar b [8]byte\n\n\treturn f.encoder(w, f.value, &b)\n}\n\n// Decode read in the TLV record from the passed reader. This is useful when a\n// caller wants decode a *single* TLV record, outside the context of the Stream\n// struct.",
+      "length": 215,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *Record) Decode(r io.Reader, l uint64) error {",
+      "content": "func (f *Record) Decode(r io.Reader, l uint64) error {\n\tvar b [8]byte\n\treturn f.decoder(r, f.value, &b, l)\n}\n\n// MakePrimitiveRecord creates a record for common types.",
+      "length": 108,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func MakePrimitiveRecord(typ Type, val interface{}) Record {",
+      "content": "func MakePrimitiveRecord(typ Type, val interface{}) Record {\n\tvar (\n\t\tstaticSize uint64\n\t\tsizeFunc   SizeFunc\n\t\tencoder    Encoder\n\t\tdecoder    Decoder\n\t)\n\tswitch e := val.(type) {\n\tcase *uint8:\n\t\tstaticSize = 1\n\t\tencoder = EUint8\n\t\tdecoder = DUint8\n\n\tcase *uint16:\n\t\tstaticSize = 2\n\t\tencoder = EUint16\n\t\tdecoder = DUint16\n\n\tcase *uint32:\n\t\tstaticSize = 4\n\t\tencoder = EUint32\n\t\tdecoder = DUint32\n\n\tcase *uint64:\n\t\tstaticSize = 8\n\t\tencoder = EUint64\n\t\tdecoder = DUint64\n\n\tcase *[32]byte:\n\t\tstaticSize = 32\n\t\tencoder = EBytes32\n\t\tdecoder = DBytes32\n\n\tcase *[33]byte:\n\t\tstaticSize = 33\n\t\tencoder = EBytes33\n\t\tdecoder = DBytes33\n\n\tcase **btcec.PublicKey:\n\t\tstaticSize = 33\n\t\tencoder = EPubKey\n\t\tdecoder = DPubKey\n\n\tcase *[64]byte:\n\t\tstaticSize = 64\n\t\tencoder = EBytes64\n\t\tdecoder = DBytes64\n\n\tcase *[]byte:\n\t\tsizeFunc = SizeVarBytes(e)\n\t\tencoder = EVarBytes\n\t\tdecoder = DVarBytes\n\n\tdefault:\n\t\tpanic(fmt.Sprintf(\"unknown primitive type: %T\", val))\n\t}\n\n\treturn Record{\n\t\tvalue:      val,\n\t\ttyp:        typ,\n\t\tstaticSize: staticSize,\n\t\tsizeFunc:   sizeFunc,\n\t\tencoder:    encoder,\n\t\tdecoder:    decoder,\n\t}\n}\n\n// MakeStaticRecord creates a record for a field of fixed-size",
+      "length": 1038,
+      "tokens": 148,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeStaticRecord(typ Type, val interface{}, size uint64, encoder Encoder,",
+      "content": "func MakeStaticRecord(typ Type, val interface{}, size uint64, encoder Encoder,\n\tdecoder Decoder) Record {\n\n\treturn Record{\n\t\tvalue:      val,\n\t\ttyp:        typ,\n\t\tstaticSize: size,\n\t\tencoder:    encoder,\n\t\tdecoder:    decoder,\n\t}\n}\n\n// MakeDynamicRecord creates a record whose size may vary, and will be\n// determined at the time of encoding via sizeFunc.",
+      "length": 264,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeDynamicRecord(typ Type, val interface{}, sizeFunc SizeFunc,",
+      "content": "func MakeDynamicRecord(typ Type, val interface{}, sizeFunc SizeFunc,\n\tencoder Encoder, decoder Decoder) Record {\n\n\treturn Record{\n\t\tvalue:    val,\n\t\ttyp:      typ,\n\t\tsizeFunc: sizeFunc,\n\t\tencoder:  encoder,\n\t\tdecoder:  decoder,\n\t}\n}\n\n// RecordsToMap encodes a series of TLV records as raw key-value pairs in the\n// form of a map.",
+      "length": 248,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func RecordsToMap(records []Record) (map[uint64][]byte, error) {",
+      "content": "func RecordsToMap(records []Record) (map[uint64][]byte, error) {\n\ttlvMap := make(map[uint64][]byte, len(records))\n\n\tfor _, record := range records {\n\t\tvar b bytes.Buffer\n\t\tif err := record.Encode(&b); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ttlvMap[uint64(record.Type())] = b.Bytes()\n\t}\n\n\treturn tlvMap, nil\n}\n\n// StubEncoder is a factory function that makes a stub tlv.Encoder out of a raw\n// value. We can use this to make a record that can be encoded when we don't\n// actually know it's true underlying value, and only it serialization.",
+      "length": 456,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func StubEncoder(v []byte) Encoder {",
+      "content": "func StubEncoder(v []byte) Encoder {\n\treturn func(w io.Writer, val interface{}, buf *[8]byte) error {\n\t\t_, err := w.Write(v)\n\t\treturn err\n\t}\n}\n\n// MapToRecords encodes the passed TLV map as a series of regular tlv.Record\n// instances. The resulting set of records will be returned in sorted order by\n// their type.",
+      "length": 269,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func MapToRecords(tlvMap map[uint64][]byte) []Record {",
+      "content": "func MapToRecords(tlvMap map[uint64][]byte) []Record {\n\trecords := make([]Record, 0, len(tlvMap))\n\tfor k, v := range tlvMap {\n\t\t// We don't pass in a decoder here since we don't actually know\n\t\t// the type, and only expect this Record to be used for display\n\t\t// and encoding purposes.\n\t\trecord := MakeStaticRecord(\n\t\t\tType(k), nil, uint64(len(v)), StubEncoder(v), nil,\n\t\t)\n\n\t\trecords = append(records, record)\n\t}\n\n\tSortRecords(records)\n\n\treturn records\n}\n\n// SortRecords is a helper function that will sort a slice of records in place\n// according to their type.",
+      "length": 490,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func SortRecords(records []Record) {",
+      "content": "func SortRecords(records []Record) {\n\tif len(records) == 0 {\n\t\treturn\n\t}\n\n\tsort.Slice(records, func(i, j int) bool {\n\t\treturn records[i].Type() < records[j].Type()\n\t})\n}\n\n// MakeBigSizeRecord creates a tlv record using the BigSize format. The only\n// allowed values are uint64 and uint32.\n//\n// NOTE: for uint32, we would only gain space reduction if the encoded value is\n// no greater than 65535, which requires at most 3 bytes to encode.",
+      "length": 389,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeBigSizeRecord(typ Type, val interface{}) Record {",
+      "content": "func MakeBigSizeRecord(typ Type, val interface{}) Record {\n\tvar (\n\t\tstaticSize uint64\n\t\tsizeFunc   SizeFunc\n\t\tencoder    Encoder\n\t\tdecoder    Decoder\n\t)\n\tswitch val.(type) {\n\tcase *uint32:\n\t\tsizeFunc = SizeBigSize(val)\n\t\tencoder = EBigSize\n\t\tdecoder = DBigSize\n\n\tcase *uint64:\n\t\tsizeFunc = SizeBigSize(val)\n\t\tencoder = EBigSize\n\t\tdecoder = DBigSize\n\n\tdefault:\n\t\tpanic(fmt.Sprintf(\"unknown supported compact type: %T\", val))\n\t}\n\n\treturn Record{\n\t\tvalue:      val,\n\t\ttyp:        typ,\n\t\tstaticSize: staticSize,\n\t\tsizeFunc:   sizeFunc,\n\t\tencoder:    encoder,\n\t\tdecoder:    decoder,\n\t}\n}\n",
+      "length": 494,
+      "tokens": 60,
+      "embedding": []
+    }
+  ]
+}

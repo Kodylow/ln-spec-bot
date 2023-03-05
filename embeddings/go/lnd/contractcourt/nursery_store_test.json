@@ -1,0 +1,111 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/nursery_store_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type incubateTest struct {",
+      "content": "type incubateTest struct {\n\tnOutputs    int\n\tchanPoint   *wire.OutPoint\n\tcommOutput  *kidOutput\n\thtlcOutputs []babyOutput\n\terr         error\n}\n\n// incubateTests holds the test vectors used to test the state transitions of\n// outputs stored in the nursery store.\nvar incubateTests []incubateTest\n\nvar chainHash chainhash.Hash\n\n// initIncubateTests instantiates the test vectors during package init, which\n// properly captures the sign descriptors and public keys.",
+      "length": 421,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func initIncubateTests() {",
+      "content": "func initIncubateTests() {\n\tincubateTests = []incubateTest{\n\t\t{\n\t\t\tnOutputs:  0,\n\t\t\tchanPoint: &outPoints[3],\n\t\t},\n\t\t{\n\t\t\tnOutputs:   1,\n\t\t\tchanPoint:  &outPoints[0],\n\t\t\tcommOutput: &kidOutputs[0],\n\t\t},\n\t\t{\n\t\t\tnOutputs:    4,\n\t\t\tchanPoint:   &outPoints[0],\n\t\t\tcommOutput:  &kidOutputs[0],\n\t\t\thtlcOutputs: babyOutputs,\n\t\t},\n\t}\n\n}\n\n// TestNurseryStoreInit verifies basic properties of the nursery store before\n// any modifying calls are made.",
+      "length": 392,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNurseryStoreInit(t *testing.T) {",
+      "content": "func TestNurseryStoreInit(t *testing.T) {\n\tcdb, err := channeldb.MakeTestDB(t)\n\trequire.NoError(t, err, \"unable to open channel db\")\n\n\tns, err := NewNurseryStore(&chainHash, cdb)\n\trequire.NoError(t, err, \"unable to open nursery store\")\n\n\tassertNumChannels(t, ns, 0)\n\tassertNumPreschools(t, ns, 0)\n}\n\n// TestNurseryStoreIncubate tests the primary state transitions taken by outputs\n// in the nursery store. The test is designed to walk both commitment or htlc\n// outputs through the nursery store, verifying the properties of the\n// intermediate states.",
+      "length": 497,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNurseryStoreIncubate(t *testing.T) {",
+      "content": "func TestNurseryStoreIncubate(t *testing.T) {\n\tcdb, err := channeldb.MakeTestDB(t)\n\trequire.NoError(t, err, \"unable to open channel db\")\n\n\tns, err := NewNurseryStore(&chainHash, cdb)\n\trequire.NoError(t, err, \"unable to open nursery store\")\n\n\tfor i, test := range incubateTests {\n\t\t// At the beginning of each test, we do not expect to the\n\t\t// nursery store to be tracking any outputs for this channel\n\t\t// point.\n\t\tassertNumChanOutputs(t, ns, test.chanPoint, 0)\n\n\t\t// Nursery store should be completely empty.\n\t\tassertNumChannels(t, ns, 0)\n\t\tassertNumPreschools(t, ns, 0)\n\n\t\t// Begin incubating all of the outputs provided in this test\n\t\t// vector.\n\t\tvar kids []kidOutput\n\t\tif test.commOutput != nil {\n\t\t\tkids = append(kids, *test.commOutput)\n\t\t}\n\t\terr = ns.Incubate(kids, test.htlcOutputs)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to incubate outputs\"+\n\t\t\t\t\"on test #%d: %v\", i, err)\n\t\t}\n\t\t// Now that the outputs have been inserted, the nursery store\n\t\t// should see exactly that many outputs under this channel\n\t\t// point.\n\t\t// NOTE: This property should remain intact after every state\n\t\t// change until the channel has been completely removed.\n\t\tassertNumChanOutputs(t, ns, test.chanPoint, test.nOutputs)\n\n\t\t// If there were no inputs to be incubated, just check that the\n\t\t// no trace of the channel was left.\n\t\tif test.nOutputs == 0 {\n\t\t\tassertNumChannels(t, ns, 0)\n\t\t\tcontinue\n\t\t}\n\n\t\t// The test vector has a non-zero number of outputs, we will\n\t\t// expect to only see the one channel from this test case.\n\t\tassertNumChannels(t, ns, 1)\n\n\t\t// The channel should be shown as immature, since none of the\n\t\t// outputs should be graduated directly after being inserted.\n\t\t// It should also be impossible to remove the channel, if it is\n\t\t// also immature.\n\t\t// NOTE: These two tests properties should hold between every\n\t\t// state change until all outputs have been fully graduated.\n\t\tassertChannelMaturity(t, ns, test.chanPoint, false)\n\t\tassertCanRemoveChannel(t, ns, test.chanPoint, false)\n\n\t\t// Verify that the htlc outputs, if any, reside in the height\n\t\t// index at their first stage CLTV's expiry height.\n\t\tfor _, htlcOutput := range test.htlcOutputs {\n\t\t\tassertCribAtExpiryHeight(t, ns, &htlcOutput)\n\t\t}\n\n\t\t// If the commitment output was not dust, we will move it from\n\t\t// the preschool bucket to the kindergarten bucket.\n\t\tif test.commOutput != nil {\n\t\t\t// If the commitment output was not considered dust, we\n\t\t\t// should see exactly one preschool output in the\n\t\t\t// nursery store.\n\t\t\tassertNumPreschools(t, ns, 1)\n\n\t\t\t// Now, move the commitment output to the kindergarten\n\t\t\t// bucket.\n\t\t\terr = ns.PreschoolToKinder(test.commOutput, 0)\n\t\t\tif err != test.err {\n\t\t\t\tt.Fatalf(\"unable to move commitment output from \"+\n\t\t\t\t\t\"pscl to kndr: %v\", err)\n\t\t\t}\n\n\t\t\t// The total number of outputs for this channel should\n\t\t\t// not have changed, and the kindergarten output should\n\t\t\t// reside at its maturity height.\n\t\t\tassertNumChanOutputs(t, ns, test.chanPoint, test.nOutputs)\n\t\t\tassertKndrAtMaturityHeight(t, ns, test.commOutput)\n\n\t\t\t// The total number of channels should not have changed.\n\t\t\tassertNumChannels(t, ns, 1)\n\n\t\t\t// Channel maturity and removal should reflect that the\n\t\t\t// channel still has non-graduated outputs.\n\t\t\tassertChannelMaturity(t, ns, test.chanPoint, false)\n\t\t\tassertCanRemoveChannel(t, ns, test.chanPoint, false)\n\n\t\t\t// Moving the preschool output should have no effect on\n\t\t\t// the placement of crib outputs in the height index.\n\t\t\tfor _, htlcOutput := range test.htlcOutputs {\n\t\t\t\tassertCribAtExpiryHeight(t, ns, &htlcOutput)\n\t\t\t}\n\t\t}\n\n\t\t// At this point, we should see no more preschool outputs in the\n\t\t// nursery store. Either it was moved to the kindergarten\n\t\t// bucket, or never inserted.\n\t\tassertNumPreschools(t, ns, 0)\n\n\t\t// If the commitment output is not-dust, we will graduate the\n\t\t// class at its maturity height.\n\t\tif test.commOutput != nil {\n\t\t\t// Compute the commitment output's maturity height, and\n\t\t\t// move proceed to graduate that class.\n\t\t\tmaturityHeight := test.commOutput.ConfHeight() +\n\t\t\t\ttest.commOutput.BlocksToMaturity()\n\n\t\t\terr = ns.GraduateKinder(maturityHeight, test.commOutput)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to graduate kindergarten class at \"+\n\t\t\t\t\t\"height %d: %v\", maturityHeight, err)\n\t\t\t}\n\n\t\t\t// The total number of outputs for this channel should\n\t\t\t// not have changed, but the kindergarten output should\n\t\t\t// have been removed from its maturity height.\n\t\t\tassertNumChanOutputs(t, ns, test.chanPoint, test.nOutputs)\n\t\t\tassertKndrNotAtMaturityHeight(t, ns, test.commOutput)\n\n\t\t\t// The total number of channels should not have changed.\n\t\t\tassertNumChannels(t, ns, 1)\n\n\t\t\t// Moving the preschool output should have no effect on\n\t\t\t// the placement of crib outputs in the height index.\n\t\t\tfor _, htlcOutput := range test.htlcOutputs {\n\t\t\t\tassertCribAtExpiryHeight(t, ns, &htlcOutput)\n\t\t\t}\n\t\t}\n\n\t\t// If there are any htlc outputs to incubate, we will walk them\n\t\t// through their two-stage incubation process.\n\t\tif len(test.htlcOutputs) > 0 {\n\t\t\tfor i, htlcOutput := range test.htlcOutputs {\n\t\t\t\t// Begin by moving each htlc output from the\n\t\t\t\t// crib to kindergarten state.\n\t\t\t\terr = ns.CribToKinder(&htlcOutput)\n\t\t\t\tif err != nil {\n\t\t\t\t\tt.Fatalf(\"unable to move htlc output from \"+\n\t\t\t\t\t\t\"crib to kndr: %v\", err)\n\t\t\t\t}\n\t\t\t\t// Number of outputs for this channel should\n\t\t\t\t// remain unchanged.\n\t\t\t\tassertNumChanOutputs(t, ns, test.chanPoint,\n\t\t\t\t\ttest.nOutputs)\n\n\t\t\t\t// If the output hasn't moved to kndr, it should\n\t\t\t\t// be at its crib expiry height, otherwise is\n\t\t\t\t// should have been removed.\n\t\t\t\tfor j := range test.htlcOutputs {\n\t\t\t\t\tif j > i {\n\t\t\t\t\t\tassertCribAtExpiryHeight(t, ns,\n\t\t\t\t\t\t\t&test.htlcOutputs[j])\n\t\t\t\t\t\tassertKndrNotAtMaturityHeight(t,\n\t\t\t\t\t\t\tns, &test.htlcOutputs[j].kidOutput)\n\t\t\t\t\t} else {\n\t\t\t\t\t\tassertCribNotAtExpiryHeight(t, ns,\n\t\t\t\t\t\t\t&test.htlcOutputs[j])\n\t\t\t\t\t\tassertKndrAtMaturityHeight(t,\n\t\t\t\t\t\t\tns, &test.htlcOutputs[j].kidOutput)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Total number of channels in the nursery store should\n\t\t\t// be the same, no outputs should be marked as\n\t\t\t// preschool.\n\t\t\tassertNumChannels(t, ns, 1)\n\t\t\tassertNumPreschools(t, ns, 0)\n\n\t\t\t// Channel should also not be mature, as it we should\n\t\t\t// still have outputs in kindergarten.\n\t\t\tassertChannelMaturity(t, ns, test.chanPoint, false)\n\t\t\tassertCanRemoveChannel(t, ns, test.chanPoint, false)\n\n\t\t\t// Now, graduate each htlc kindergarten output,\n\t\t\t// asserting the invariant number of outputs being\n\t\t\t// tracked in this channel\n\t\t\tfor _, htlcOutput := range test.htlcOutputs {\n\t\t\t\tmaturityHeight := htlcOutput.ConfHeight() +\n\t\t\t\t\thtlcOutput.BlocksToMaturity()\n\n\t\t\t\terr = ns.GraduateKinder(maturityHeight,\n\t\t\t\t\t&htlcOutput.kidOutput)\n\t\t\t\tif err != nil {\n\t\t\t\t\tt.Fatalf(\"unable to graduate htlc output \"+\n\t\t\t\t\t\t\"from kndr to grad: %v\", err)\n\t\t\t\t}\n\t\t\t\tassertNumChanOutputs(t, ns, test.chanPoint,\n\t\t\t\t\ttest.nOutputs)\n\t\t\t}\n\t\t}\n\n\t\t// All outputs have been advanced through the nursery store, but\n\t\t// no attempt has been made to clean up this channel. We expect\n\t\t// to see the same channel remaining, and no kindergarten\n\t\t// outputs.\n\t\tassertNumChannels(t, ns, 1)\n\t\tassertNumPreschools(t, ns, 0)\n\n\t\t// Since all outputs have now been graduated, the nursery store\n\t\t// should recognize that the channel is mature, and attempting\n\t\t// to remove it should succeed.\n\t\tassertChannelMaturity(t, ns, test.chanPoint, true)\n\t\tassertCanRemoveChannel(t, ns, test.chanPoint, true)\n\n\t\t// Now that the channel has been removed, the nursery store\n\t\t// should be no channels in the nursery store, and no outputs\n\t\t// being tracked for this channel point.\n\t\tassertNumChannels(t, ns, 0)\n\t\tassertNumChanOutputs(t, ns, test.chanPoint, 0)\n\n\t\t// If we had a commitment output, ensure it was removed from the\n\t\t// height index.\n\t\tif test.commOutput != nil {\n\t\t\tassertKndrNotAtMaturityHeight(t, ns, test.commOutput)\n\t\t}\n\n\t\t// Check that all htlc outputs are no longer stored in their\n\t\t// crib or kindergarten height buckets.\n\t\tfor _, htlcOutput := range test.htlcOutputs {\n\t\t\tassertCribNotAtExpiryHeight(t, ns, &htlcOutput)\n\t\t\tassertKndrNotAtMaturityHeight(t, ns, &htlcOutput.kidOutput)\n\t\t}\n\n\t\t// Lastly, there should be no lingering preschool outputs.\n\t\tassertNumPreschools(t, ns, 0)\n\t}\n}\n\n// TestNurseryStoreGraduate verifies that the nursery store properly removes\n// populated entries from the height index as it is purged, and that the last\n// purged height is set appropriately.",
+      "length": 8151,
+      "tokens": 1140,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNurseryStoreGraduate(t *testing.T) {",
+      "content": "func TestNurseryStoreGraduate(t *testing.T) {\n\tcdb, err := channeldb.MakeTestDB(t)\n\trequire.NoError(t, err, \"unable to open channel db\")\n\n\tns, err := NewNurseryStore(&chainHash, cdb)\n\trequire.NoError(t, err, \"unable to open nursery store\")\n\n\tkid := &kidOutputs[3]\n\n\t// Compute the height at which this output will be inserted in the\n\t// height index.\n\tmaturityHeight := kid.ConfHeight() + kid.BlocksToMaturity()\n\n\t// First, add a commitment output to the nursery store, which is\n\t// initially inserted in the preschool bucket.\n\terr = ns.Incubate([]kidOutput{*kid}, nil)\n\trequire.NoError(t, err, \"unable to incubate commitment output\")\n\n\t// Then, move the commitment output to the kindergarten bucket, such\n\t// that it resides in the height index at its maturity height.\n\terr = ns.PreschoolToKinder(kid, 0)\n\trequire.NoError(t, err, \"unable to move pscl output to kndr\")\n\n\t// Now, iteratively purge all height below the target maturity height,\n\t// checking that each class is now empty, and that the last purged\n\t// height is set correctly.\n\tfor i := 0; i < int(maturityHeight); i++ {\n\t\tassertHeightIsPurged(t, ns, uint32(i))\n\t}\n\n\t// Check that the commitment output currently exists at its maturity\n\t// height.\n\tassertKndrAtMaturityHeight(t, ns, kid)\n\n\terr = ns.GraduateKinder(maturityHeight, kid)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to graduate kindergarten outputs at height=%d: \"+\n\t\t\t\"%v\", maturityHeight, err)\n\t}\n\n\tassertHeightIsPurged(t, ns, maturityHeight)\n}\n\n// assertNumChanOutputs checks that the channel bucket has the expected number\n// of outputs.",
+      "length": 1469,
+      "tokens": 210,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNumChanOutputs(t *testing.T, ns NurseryStorer,",
+      "content": "func assertNumChanOutputs(t *testing.T, ns NurseryStorer,\n\tchanPoint *wire.OutPoint, expectedNum int) {\n\n\tvar count int\n\terr := ns.ForChanOutputs(chanPoint, func([]byte, []byte) error {\n\t\tcount++\n\t\treturn nil\n\t}, func() {\n\t\tcount = 0\n\t})\n\n\tif count == 0 && err == ErrContractNotFound {\n\t\treturn\n\t} else if err != nil {\n\t\tt.Fatalf(\"unable to count num outputs for channel %v: %v\",\n\t\t\tchanPoint, err)\n\t}\n\n\tif count != expectedNum {\n\t\tt.Fatalf(\"nursery store should have %d outputs, found %d\",\n\t\t\texpectedNum, count)\n\t}\n}\n\n// assertNumPreschools loads all preschool outputs and verifies their count\n// matches the expected number.",
+      "length": 545,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNumPreschools(t *testing.T, ns NurseryStorer, expected int) {",
+      "content": "func assertNumPreschools(t *testing.T, ns NurseryStorer, expected int) {\n\tpsclOutputs, err := ns.FetchPreschools()\n\trequire.NoError(t, err, \"unable to retrieve preschool outputs\")\n\n\tif len(psclOutputs) != expected {\n\t\tt.Fatalf(\"expected number of pscl outputs to be %d, got %v\",\n\t\t\texpected, len(psclOutputs))\n\t}\n}\n\n// assertNumChannels checks that the nursery has a given number of active\n// channels.",
+      "length": 319,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNumChannels(t *testing.T, ns NurseryStorer, expected int) {",
+      "content": "func assertNumChannels(t *testing.T, ns NurseryStorer, expected int) {\n\tchannels, err := ns.ListChannels()\n\tif err != nil {\n\t\tt.Fatalf(\"unable to fetch channels from nursery store: %v\",\n\t\t\terr)\n\t}\n\n\tif len(channels) != expected {\n\t\tt.Fatalf(\"expected number of active channels to be %d, got %d\",\n\t\t\texpected, len(channels))\n\t}\n}\n\n// assertHeightIsPurged checks that the finalized transaction, kindergarten, and\n// htlc outputs at a particular height are all nil.",
+      "length": 378,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func assertHeightIsPurged(t *testing.T, ns NurseryStorer,",
+      "content": "func assertHeightIsPurged(t *testing.T, ns NurseryStorer,\n\theight uint32) {\n\n\tkndrOutputs, cribOutputs, err := ns.FetchClass(height)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve class at height=%d: %v\",\n\t\t\theight, err)\n\t}\n\n\tif kndrOutputs != nil {\n\t\tt.Fatalf(\"height=%d not purged, kndr outputs should be nil\", height)\n\t}\n\n\tif cribOutputs != nil {\n\t\tt.Fatalf(\"height=%d not purged, crib outputs should be nil\", height)\n\t}\n}\n\n// assertCribAtExpiryHeight loads the class at the given height, and verifies\n// that the given htlc output is one of the crib outputs.",
+      "length": 487,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func assertCribAtExpiryHeight(t *testing.T, ns NurseryStorer,",
+      "content": "func assertCribAtExpiryHeight(t *testing.T, ns NurseryStorer,\n\thtlcOutput *babyOutput) {\n\n\texpiryHeight := htlcOutput.expiry\n\t_, cribOutputs, err := ns.FetchClass(expiryHeight)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve class at height=%d: %v\",\n\t\t\texpiryHeight, err)\n\t}\n\n\tfor _, crib := range cribOutputs {\n\t\tif reflect.DeepEqual(&crib, htlcOutput) {\n\t\t\treturn\n\t\t}\n\t}\n\n\tt.Fatalf(\"could not find crib output %v at height %d\",\n\t\thtlcOutput.OutPoint(), expiryHeight)\n}\n\n// assertCribNotAtExpiryHeight loads the class at the given height, and verifies\n// that the given htlc output is not one of the crib outputs.",
+      "length": 532,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func assertCribNotAtExpiryHeight(t *testing.T, ns NurseryStorer,",
+      "content": "func assertCribNotAtExpiryHeight(t *testing.T, ns NurseryStorer,\n\thtlcOutput *babyOutput) {\n\n\texpiryHeight := htlcOutput.expiry\n\t_, cribOutputs, err := ns.FetchClass(expiryHeight)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve class at height %d: %v\",\n\t\t\texpiryHeight, err)\n\t}\n\n\tfor _, crib := range cribOutputs {\n\t\tif reflect.DeepEqual(&crib, htlcOutput) {\n\t\t\tt.Fatalf(\"found find crib output %v at height %d\",\n\t\t\t\thtlcOutput.OutPoint(), expiryHeight)\n\t\t}\n\t}\n}\n\n// assertKndrAtMaturityHeight loads the class at the provided height and\n// verifies that the provided kid output is one of the kindergarten outputs\n// returned.",
+      "length": 541,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func assertKndrAtMaturityHeight(t *testing.T, ns NurseryStorer,",
+      "content": "func assertKndrAtMaturityHeight(t *testing.T, ns NurseryStorer,\n\tkndrOutput *kidOutput) {\n\n\tmaturityHeight := kndrOutput.ConfHeight() +\n\t\tkndrOutput.BlocksToMaturity()\n\tkndrOutputs, _, err := ns.FetchClass(maturityHeight)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve class at height %d: %v\",\n\t\t\tmaturityHeight, err)\n\t}\n\n\tfor _, kndr := range kndrOutputs {\n\t\tif reflect.DeepEqual(&kndr, kndrOutput) {\n\t\t\treturn\n\t\t}\n\t}\n\n\tt.Fatalf(\"could not find kndr output %v at height %d\",\n\t\tkndrOutput.OutPoint(), maturityHeight)\n}\n\n// assertKndrNotAtMaturityHeight loads the class at the provided height and\n// verifies that the provided kid output is not one of the kindergarten outputs\n// returned.",
+      "length": 603,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func assertKndrNotAtMaturityHeight(t *testing.T, ns NurseryStorer,",
+      "content": "func assertKndrNotAtMaturityHeight(t *testing.T, ns NurseryStorer,\n\tkndrOutput *kidOutput) {\n\n\tmaturityHeight := kndrOutput.ConfHeight() +\n\t\tkndrOutput.BlocksToMaturity()\n\n\tkndrOutputs, _, err := ns.FetchClass(maturityHeight)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve class at height %d: %v\",\n\t\t\tmaturityHeight, err)\n\t}\n\n\tfor _, kndr := range kndrOutputs {\n\t\tif reflect.DeepEqual(&kndr, kndrOutput) {\n\t\t\tt.Fatalf(\"found find kndr output %v at height %d\",\n\t\t\t\tkndrOutput.OutPoint(), maturityHeight)\n\t\t}\n\t}\n}\n\n// assertChannelMaturity queries the nursery store for the maturity of the given\n// channel, failing if the result does not match the expectedMaturity.",
+      "length": 578,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func assertChannelMaturity(t *testing.T, ns NurseryStorer,",
+      "content": "func assertChannelMaturity(t *testing.T, ns NurseryStorer,\n\tchanPoint *wire.OutPoint, expectedMaturity bool) {\n\n\tisMature, err := ns.IsMatureChannel(chanPoint)\n\trequire.NoError(t, err, \"unable to fetch channel maturity\")\n\n\tif isMature != expectedMaturity {\n\t\tt.Fatalf(\"expected channel maturity: %v, actual: %v\",\n\t\t\texpectedMaturity, isMature)\n\t}\n}\n\n// assertCanRemoveChannel tries to remove a channel from the nursery store,\n// failing if the result does match expected canRemove.",
+      "length": 410,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func assertCanRemoveChannel(t *testing.T, ns NurseryStorer,",
+      "content": "func assertCanRemoveChannel(t *testing.T, ns NurseryStorer,\n\tchanPoint *wire.OutPoint, canRemove bool) {\n\n\terr := ns.RemoveChannel(chanPoint)\n\tif canRemove && err != nil {\n\t\tt.Fatalf(\"expected nil when removing active channel, got: %v\",\n\t\t\terr)\n\t} else if !canRemove && err != ErrImmatureChannel {\n\t\tt.Fatalf(\"expected ErrImmatureChannel when removing \"+\n\t\t\t\"active channel: %v\", err)\n\t}\n}\n",
+      "length": 319,
+      "tokens": 44,
+      "embedding": []
+    }
+  ]
+}

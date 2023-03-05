@@ -1,0 +1,174 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/sync_manager.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "type newSyncer struct {",
+      "content": "type newSyncer struct {\n\t// peer is the newly connected peer.\n\tpeer lnpeer.Peer\n\n\t// doneChan serves as a signal to the caller that the SyncManager's\n\t// internal state correctly reflects the stale active syncer.\n\tdoneChan chan struct{}\n}\n\n// staleSyncer is an internal message we'll use within the SyncManager to signal\n// that a peer has disconnected and its GossipSyncer should be removed.",
+      "length": 359,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "type staleSyncer struct {",
+      "content": "type staleSyncer struct {\n\t// peer is the peer that has disconnected.\n\tpeer route.Vertex\n\n\t// doneChan serves as a signal to the caller that the SyncManager's\n\t// internal state correctly reflects the stale active syncer. This is\n\t// needed to ensure we always create a new syncer for a flappy peer\n\t// after they disconnect if they happened to be an active syncer.\n\tdoneChan chan struct{}\n}\n\n// SyncManagerCfg contains all of the dependencies required for the SyncManager\n// to carry out its duties.",
+      "length": 463,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "type SyncManagerCfg struct {",
+      "content": "type SyncManagerCfg struct {\n\t// ChainHash is a hash that indicates the specific network of the active\n\t// chain.\n\tChainHash chainhash.Hash\n\n\t// ChanSeries is an interface that provides access to a time series view\n\t// of the current known channel graph. Each GossipSyncer enabled peer\n\t// will utilize this in order to create and respond to channel graph\n\t// time series queries.\n\tChanSeries ChannelGraphTimeSeries\n\n\t// NumActiveSyncers is the number of peers for which we should have\n\t// active syncers with. After reaching NumActiveSyncers, any future\n\t// gossip syncers will be passive.\n\tNumActiveSyncers int\n\n\t// RotateTicker is a ticker responsible for notifying the SyncManager\n\t// when it should rotate its active syncers. A single active syncer with\n\t// a chansSynced state will be exchanged for a passive syncer in order\n\t// to ensure we don't keep syncing with the same peers.\n\tRotateTicker ticker.Ticker\n\n\t// HistoricalSyncTicker is a ticker responsible for notifying the\n\t// SyncManager when it should attempt a historical sync with a gossip\n\t// sync peer.\n\tHistoricalSyncTicker ticker.Ticker\n\n\t// IgnoreHistoricalFilters will prevent syncers from replying with\n\t// historical data when the remote peer sets a gossip_timestamp_range.\n\t// This prevents ranges with old start times from causing us to dump the\n\t// graph on connect.\n\tIgnoreHistoricalFilters bool\n\n\t// BestHeight returns the latest height known of the chain.\n\tBestHeight func() uint32\n\n\t// PinnedSyncers is a set of peers that will always transition to\n\t// ActiveSync upon connection. These peers will never transition to\n\t// PassiveSync.\n\tPinnedSyncers PinnedSyncers\n}\n\n// SyncManager is a subsystem of the gossiper that manages the gossip syncers\n// for peers currently connected. When a new peer is connected, the manager will\n// create its accompanying gossip syncer and determine whether it should have an\n// ActiveSync or PassiveSync sync type based on how many other gossip syncers\n// are currently active. Any ActiveSync gossip syncers are started in a\n// round-robin manner to ensure we're not syncing with multiple peers at the\n// same time. The first GossipSyncer registered with the SyncManager will\n// attempt a historical sync to ensure we have as much of the public channel\n// graph as possible.",
+      "length": 2208,
+      "tokens": 350,
+      "embedding": []
+    },
+    {
+      "slug": "type SyncManager struct {",
+      "content": "type SyncManager struct {\n\t// initialHistoricalSyncCompleted serves as a barrier when initializing\n\t// new active GossipSyncers. If 0, the initial historical sync has not\n\t// completed, so we'll defer initializing any active GossipSyncers. If\n\t// 1, then we can transition the GossipSyncer immediately. We set up\n\t// this barrier to ensure we have most of the graph before attempting to\n\t// accept new updates at tip.\n\t//\n\t// NOTE: This must be used atomically.\n\tinitialHistoricalSyncCompleted int32\n\n\tstart sync.Once\n\tstop  sync.Once\n\n\tcfg SyncManagerCfg\n\n\t// newSyncers is a channel we'll use to process requests to create\n\t// GossipSyncers for newly connected peers.\n\tnewSyncers chan *newSyncer\n\n\t// staleSyncers is a channel we'll use to process requests to tear down\n\t// GossipSyncers for disconnected peers.\n\tstaleSyncers chan *staleSyncer\n\n\t// syncersMu guards the read and write access to the activeSyncers and\n\t// inactiveSyncers maps below.\n\tsyncersMu sync.Mutex\n\n\t// activeSyncers is the set of all syncers for which we are currently\n\t// receiving graph updates from. The number of possible active syncers\n\t// is bounded by NumActiveSyncers.\n\tactiveSyncers map[route.Vertex]*GossipSyncer\n\n\t// inactiveSyncers is the set of all syncers for which we are not\n\t// currently receiving new graph updates from.\n\tinactiveSyncers map[route.Vertex]*GossipSyncer\n\n\t// pinnedActiveSyncers is the set of all syncers which are pinned into\n\t// an active sync. Pinned peers performan an initial historical sync on\n\t// each connection and will continue to receive graph updates for the\n\t// duration of the connection.\n\tpinnedActiveSyncers map[route.Vertex]*GossipSyncer\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// newSyncManager constructs a new SyncManager backed by the given config.",
+      "length": 1711,
+      "tokens": 251,
+      "embedding": []
+    },
+    {
+      "slug": "func newSyncManager(cfg *SyncManagerCfg) *SyncManager {",
+      "content": "func newSyncManager(cfg *SyncManagerCfg) *SyncManager {\n\treturn &SyncManager{\n\t\tcfg:          *cfg,\n\t\tnewSyncers:   make(chan *newSyncer),\n\t\tstaleSyncers: make(chan *staleSyncer),\n\t\tactiveSyncers: make(\n\t\t\tmap[route.Vertex]*GossipSyncer, cfg.NumActiveSyncers,\n\t\t),\n\t\tinactiveSyncers: make(map[route.Vertex]*GossipSyncer),\n\t\tpinnedActiveSyncers: make(\n\t\t\tmap[route.Vertex]*GossipSyncer, len(cfg.PinnedSyncers),\n\t\t),\n\t\tquit: make(chan struct{}),\n\t}\n}\n\n// Start starts the SyncManager in order to properly carry out its duties.",
+      "length": 453,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) Start() {",
+      "content": "func (m *SyncManager) Start() {\n\tm.start.Do(func() {\n\t\tm.wg.Add(1)\n\t\tgo m.syncerHandler()\n\t})\n}\n\n// Stop stops the SyncManager from performing its duties.",
+      "length": 116,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) Stop() {",
+      "content": "func (m *SyncManager) Stop() {\n\tm.stop.Do(func() {\n\t\tlog.Debugf(\"SyncManager is stopping\")\n\t\tdefer log.Debugf(\"SyncManager stopped\")\n\n\t\tclose(m.quit)\n\t\tm.wg.Wait()\n\n\t\tfor _, syncer := range m.inactiveSyncers {\n\t\t\tsyncer.Stop()\n\t\t}\n\t\tfor _, syncer := range m.activeSyncers {\n\t\t\tsyncer.Stop()\n\t\t}\n\t})\n}\n\n// syncerHandler is the SyncManager's main event loop responsible for:\n//\n// 1. Creating and tearing down GossipSyncers for connected/disconnected peers.\n\n// 2. Finding new peers to receive graph updates from to ensure we don't only\n//    receive them from the same set of peers.\n\n//  3. Finding new peers to force a historical sync with to ensure we have as\n//     much of the public network as possible.\n//\n// NOTE: This must be run as a goroutine.",
+      "length": 695,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) syncerHandler() {",
+      "content": "func (m *SyncManager) syncerHandler() {\n\tdefer m.wg.Done()\n\n\tm.cfg.RotateTicker.Resume()\n\tdefer m.cfg.RotateTicker.Stop()\n\n\tdefer m.cfg.HistoricalSyncTicker.Stop()\n\n\tvar (\n\t\t// initialHistoricalSyncer is the syncer we are currently\n\t\t// performing an initial historical sync with.\n\t\tinitialHistoricalSyncer *GossipSyncer\n\n\t\t// initialHistoricalSyncSignal is a signal that will fire once\n\t\t// the initial historical sync has been completed. This is\n\t\t// crucial to ensure that another historical sync isn't\n\t\t// attempted just because the initialHistoricalSyncer was\n\t\t// disconnected.\n\t\tinitialHistoricalSyncSignal chan struct{}\n\t)\n\n\tsetInitialHistoricalSyncer := func(s *GossipSyncer) {\n\t\tinitialHistoricalSyncer = s\n\t\tinitialHistoricalSyncSignal = s.ResetSyncedSignal()\n\n\t\t// Restart the timer for our new historical sync peer. This will\n\t\t// ensure that all initial syncers receive an equivalent\n\t\t// duration before attempting the next sync. Without doing so we\n\t\t// might attempt two historical sync back to back if a peer\n\t\t// disconnects just before the ticker fires.\n\t\tm.cfg.HistoricalSyncTicker.Pause()\n\t\tm.cfg.HistoricalSyncTicker.Resume()\n\t}\n\n\tfor {\n\t\tselect {\n\t\t// A new peer has been connected, so we'll create its\n\t\t// accompanying GossipSyncer.\n\t\tcase newSyncer := <-m.newSyncers:\n\t\t\t// If we already have a syncer, then we'll exit early as\n\t\t\t// we don't want to override it.\n\t\t\tif _, ok := m.GossipSyncer(newSyncer.peer.PubKey()); ok {\n\t\t\t\tclose(newSyncer.doneChan)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\ts := m.createGossipSyncer(newSyncer.peer)\n\n\t\t\tisPinnedSyncer := m.isPinnedSyncer(s)\n\n\t\t\t// attemptHistoricalSync determines whether we should\n\t\t\t// attempt an initial historical sync when a new peer\n\t\t\t// connects.\n\t\t\tattemptHistoricalSync := false\n\n\t\t\tm.syncersMu.Lock()\n\t\t\tswitch {\n\t\t\t// For pinned syncers, we will immediately transition\n\t\t\t// the peer into an active (pinned) sync state.\n\t\t\tcase isPinnedSyncer:\n\t\t\t\tattemptHistoricalSync = true\n\t\t\t\ts.setSyncType(PinnedSync)\n\t\t\t\ts.setSyncState(syncerIdle)\n\t\t\t\tm.pinnedActiveSyncers[s.cfg.peerPub] = s\n\n\t\t\t// Regardless of whether the initial historical sync\n\t\t\t// has completed, we'll re-trigger a historical sync if\n\t\t\t// we no longer have any syncers. This might be\n\t\t\t// necessary if we lost all our peers at one point, and\n\t\t\t// now we finally have one again.\n\t\t\tcase len(m.activeSyncers) == 0 &&\n\t\t\t\tlen(m.inactiveSyncers) == 0:\n\n\t\t\t\tattemptHistoricalSync =\n\t\t\t\t\tm.cfg.NumActiveSyncers > 0\n\t\t\t\tfallthrough\n\n\t\t\t// If we've exceeded our total number of active syncers,\n\t\t\t// we'll initialize this GossipSyncer as passive.\n\t\t\tcase len(m.activeSyncers) >= m.cfg.NumActiveSyncers:\n\t\t\t\tfallthrough\n\n\t\t\t// If the initial historical sync has yet to complete,\n\t\t\t// then we'll declare it as passive and attempt to\n\t\t\t// transition it when the initial historical sync\n\t\t\t// completes.\n\t\t\tcase !m.IsGraphSynced():\n\t\t\t\ts.setSyncType(PassiveSync)\n\t\t\t\tm.inactiveSyncers[s.cfg.peerPub] = s\n\n\t\t\t// The initial historical sync has completed, so we can\n\t\t\t// immediately start the GossipSyncer as active.\n\t\t\tdefault:\n\t\t\t\ts.setSyncType(ActiveSync)\n\t\t\t\tm.activeSyncers[s.cfg.peerPub] = s\n\t\t\t}\n\t\t\tm.syncersMu.Unlock()\n\n\t\t\ts.Start()\n\n\t\t\t// Once we create the GossipSyncer, we'll signal to the\n\t\t\t// caller that they can proceed since the SyncManager's\n\t\t\t// internal state has been updated.\n\t\t\tclose(newSyncer.doneChan)\n\n\t\t\t// We'll force a historical sync with the first peer we\n\t\t\t// connect to, to ensure we get as much of the graph as\n\t\t\t// possible.\n\t\t\tif !attemptHistoricalSync {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tlog.Debugf(\"Attempting initial historical sync with \"+\n\t\t\t\t\"GossipSyncer(%x)\", s.cfg.peerPub)\n\n\t\t\tif err := s.historicalSync(); err != nil {\n\t\t\t\tlog.Errorf(\"Unable to attempt initial \"+\n\t\t\t\t\t\"historical sync with \"+\n\t\t\t\t\t\"GossipSyncer(%x): %v\", s.cfg.peerPub,\n\t\t\t\t\terr)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Once the historical sync has started, we'll get a\n\t\t\t// keep track of the corresponding syncer to properly\n\t\t\t// handle disconnects. We'll also use a signal to know\n\t\t\t// when the historical sync completed.\n\t\t\tif !isPinnedSyncer {\n\t\t\t\tsetInitialHistoricalSyncer(s)\n\t\t\t}\n\n\t\t// An existing peer has disconnected, so we'll tear down its\n\t\t// corresponding GossipSyncer.\n\t\tcase staleSyncer := <-m.staleSyncers:\n\t\t\t// Once the corresponding GossipSyncer has been stopped\n\t\t\t// and removed, we'll signal to the caller that they can\n\t\t\t// proceed since the SyncManager's internal state has\n\t\t\t// been updated.\n\t\t\tm.removeGossipSyncer(staleSyncer.peer)\n\t\t\tclose(staleSyncer.doneChan)\n\n\t\t\t// If we don't have an initialHistoricalSyncer, or we do\n\t\t\t// but it is not the peer being disconnected, then we\n\t\t\t// have nothing left to do and can proceed.\n\t\t\tswitch {\n\t\t\tcase initialHistoricalSyncer == nil:\n\t\t\t\tfallthrough\n\t\t\tcase staleSyncer.peer != initialHistoricalSyncer.cfg.peerPub:\n\t\t\t\tfallthrough\n\t\t\tcase m.cfg.NumActiveSyncers == 0:\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Otherwise, our initialHistoricalSyncer corresponds to\n\t\t\t// the peer being disconnected, so we'll have to find a\n\t\t\t// replacement.\n\t\t\tlog.Debug(\"Finding replacement for initial \" +\n\t\t\t\t\"historical sync\")\n\n\t\t\ts := m.forceHistoricalSync()\n\t\t\tif s == nil {\n\t\t\t\tlog.Debug(\"No eligible replacement found \" +\n\t\t\t\t\t\"for initial historical sync\")\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tlog.Debugf(\"Replaced initial historical \"+\n\t\t\t\t\"GossipSyncer(%v) with GossipSyncer(%x)\",\n\t\t\t\tstaleSyncer.peer, s.cfg.peerPub)\n\n\t\t\tsetInitialHistoricalSyncer(s)\n\n\t\t// Our initial historical sync signal has completed, so we'll\n\t\t// nil all of the relevant fields as they're no longer needed.\n\t\tcase <-initialHistoricalSyncSignal:\n\t\t\tinitialHistoricalSyncer = nil\n\t\t\tinitialHistoricalSyncSignal = nil\n\n\t\t\tlog.Debug(\"Initial historical sync completed\")\n\n\t\t\t// With the initial historical sync complete, we can\n\t\t\t// begin receiving new graph updates at tip. We'll\n\t\t\t// determine whether we can have any more active\n\t\t\t// GossipSyncers. If we do, we'll randomly select some\n\t\t\t// that are currently passive to transition.\n\t\t\tm.syncersMu.Lock()\n\t\t\tnumActiveLeft := m.cfg.NumActiveSyncers - len(m.activeSyncers)\n\t\t\tif numActiveLeft <= 0 {\n\t\t\t\tm.syncersMu.Unlock()\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// We may not even have enough inactive syncers to be\n\t\t\t// transitted. In that case, we will transit all the\n\t\t\t// inactive syncers.\n\t\t\tif len(m.inactiveSyncers) < numActiveLeft {\n\t\t\t\tnumActiveLeft = len(m.inactiveSyncers)\n\t\t\t}\n\n\t\t\tlog.Debugf(\"Attempting to transition %v passive \"+\n\t\t\t\t\"GossipSyncers to active\", numActiveLeft)\n\n\t\t\tfor i := 0; i < numActiveLeft; i++ {\n\t\t\t\tchooseRandomSyncer(\n\t\t\t\t\tm.inactiveSyncers, m.transitionPassiveSyncer,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\tm.syncersMu.Unlock()\n\n\t\t// Our RotateTicker has ticked, so we'll attempt to rotate a\n\t\t// single active syncer with a passive one.\n\t\tcase <-m.cfg.RotateTicker.Ticks():\n\t\t\tm.rotateActiveSyncerCandidate()\n\n\t\t// Our HistoricalSyncTicker has ticked, so we'll randomly select\n\t\t// a peer and force a historical sync with them.\n\t\tcase <-m.cfg.HistoricalSyncTicker.Ticks():\n\t\t\t// To be extra cautious, gate the forceHistoricalSync\n\t\t\t// call such that it can only execute if we are\n\t\t\t// configured to have a non-zero number of sync peers.\n\t\t\t// This way even if the historical sync ticker manages\n\t\t\t// to tick we can be sure that a historical sync won't\n\t\t\t// accidentally begin.\n\t\t\tif m.cfg.NumActiveSyncers == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// If we don't have a syncer available we have nothing\n\t\t\t// to do.\n\t\t\ts := m.forceHistoricalSync()\n\t\t\tif s == nil {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// If we've already completed a historical sync, we'll\n\t\t\t// skip setting the initial historical syncer.\n\t\t\tif m.IsGraphSynced() {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Otherwise, we'll track the peer we've performed a\n\t\t\t// historical sync with in order to handle the case\n\t\t\t// where our previous historical sync peer did not\n\t\t\t// respond to our queries and we haven't ingested as\n\t\t\t// much of the graph as we should.\n\t\t\tsetInitialHistoricalSyncer(s)\n\n\t\tcase <-m.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// isPinnedSyncer returns true if the passed GossipSyncer is one of our pinned\n// sync peers.",
+      "length": 7751,
+      "tokens": 1033,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) isPinnedSyncer(s *GossipSyncer) bool {",
+      "content": "func (m *SyncManager) isPinnedSyncer(s *GossipSyncer) bool {\n\t_, isPinnedSyncer := m.cfg.PinnedSyncers[s.cfg.peerPub]\n\treturn isPinnedSyncer\n}\n\n// createGossipSyncer creates the GossipSyncer for a newly connected peer.",
+      "length": 153,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) createGossipSyncer(peer lnpeer.Peer) *GossipSyncer {",
+      "content": "func (m *SyncManager) createGossipSyncer(peer lnpeer.Peer) *GossipSyncer {\n\tnodeID := route.Vertex(peer.PubKey())\n\tlog.Infof(\"Creating new GossipSyncer for peer=%x\", nodeID[:])\n\n\tencoding := lnwire.EncodingSortedPlain\n\ts := newGossipSyncer(gossipSyncerCfg{\n\t\tchainHash:     m.cfg.ChainHash,\n\t\tpeerPub:       nodeID,\n\t\tchannelSeries: m.cfg.ChanSeries,\n\t\tencodingType:  encoding,\n\t\tchunkSize:     encodingTypeToChunkSize[encoding],\n\t\tbatchSize:     requestBatchSize,\n\t\tsendToPeer: func(msgs ...lnwire.Message) error {\n\t\t\treturn peer.SendMessageLazy(false, msgs...)\n\t\t},\n\t\tsendToPeerSync: func(msgs ...lnwire.Message) error {\n\t\t\treturn peer.SendMessageLazy(true, msgs...)\n\t\t},\n\t\tignoreHistoricalFilters:   m.cfg.IgnoreHistoricalFilters,\n\t\tmaxUndelayedQueryReplies:  DefaultMaxUndelayedQueryReplies,\n\t\tdelayedQueryReplyInterval: DefaultDelayedQueryReplyInterval,\n\t\tbestHeight:                m.cfg.BestHeight,\n\t\tmarkGraphSynced:           m.markGraphSynced,\n\t\tmaxQueryChanRangeReplies:  maxQueryChanRangeReplies,\n\t})\n\n\t// Gossip syncers are initialized by default in a PassiveSync type\n\t// and chansSynced state so that they can reply to any peer queries or\n\t// handle any sync transitions.\n\ts.setSyncState(chansSynced)\n\ts.setSyncType(PassiveSync)\n\n\tlog.Debugf(\"Created new GossipSyncer[state=%s type=%s] for peer=%v\",\n\t\ts.syncState(), s.SyncType(), peer)\n\n\treturn s\n}\n\n// removeGossipSyncer removes all internal references to the disconnected peer's\n// GossipSyncer and stops it. In the event of an active GossipSyncer being\n// disconnected, a passive GossipSyncer, if any, will take its place.",
+      "length": 1477,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) removeGossipSyncer(peer route.Vertex) {",
+      "content": "func (m *SyncManager) removeGossipSyncer(peer route.Vertex) {\n\tm.syncersMu.Lock()\n\tdefer m.syncersMu.Unlock()\n\n\ts, ok := m.gossipSyncer(peer)\n\tif !ok {\n\t\treturn\n\t}\n\n\tlog.Infof(\"Removing GossipSyncer for peer=%v\", peer)\n\n\t// We'll stop the GossipSyncer for the disconnected peer in a goroutine\n\t// to prevent blocking the SyncManager.\n\tgo s.Stop()\n\n\t// If it's a non-active syncer, then we can just exit now.\n\tif _, ok := m.inactiveSyncers[peer]; ok {\n\t\tdelete(m.inactiveSyncers, peer)\n\t\treturn\n\t}\n\n\t// If it's a pinned syncer, then we can just exit as this doesn't\n\t// affect our active syncer count.\n\tif _, ok := m.pinnedActiveSyncers[peer]; ok {\n\t\tdelete(m.pinnedActiveSyncers, peer)\n\t\treturn\n\t}\n\n\t// Otherwise, we'll need find a new one to replace it, if any.\n\tdelete(m.activeSyncers, peer)\n\tnewActiveSyncer := chooseRandomSyncer(\n\t\tm.inactiveSyncers, m.transitionPassiveSyncer,\n\t)\n\tif newActiveSyncer == nil {\n\t\treturn\n\t}\n\n\tlog.Debugf(\"Replaced active GossipSyncer(%x) with GossipSyncer(%x)\",\n\t\tpeer, newActiveSyncer.cfg.peerPub)\n}\n\n// rotateActiveSyncerCandidate rotates a single active syncer. In order to\n// achieve this, the active syncer must be in a chansSynced state in order to\n// process the sync transition.",
+      "length": 1117,
+      "tokens": 157,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) rotateActiveSyncerCandidate() {",
+      "content": "func (m *SyncManager) rotateActiveSyncerCandidate() {\n\tm.syncersMu.Lock()\n\tdefer m.syncersMu.Unlock()\n\n\t// If we couldn't find an eligible active syncer to rotate, we can\n\t// return early.\n\tactiveSyncer := chooseRandomSyncer(m.activeSyncers, nil)\n\tif activeSyncer == nil {\n\t\tlog.Debug(\"No eligible active syncer to rotate\")\n\t\treturn\n\t}\n\n\t// Similarly, if we don't have a candidate to rotate with, we can return\n\t// early as well.\n\tcandidate := chooseRandomSyncer(m.inactiveSyncers, nil)\n\tif candidate == nil {\n\t\tlog.Debug(\"No eligible candidate to rotate active syncer\")\n\t\treturn\n\t}\n\n\t// Otherwise, we'll attempt to transition each syncer to their\n\t// respective new sync type.\n\tlog.Debugf(\"Rotating active GossipSyncer(%x) with GossipSyncer(%x)\",\n\t\tactiveSyncer.cfg.peerPub, candidate.cfg.peerPub)\n\n\tif err := m.transitionActiveSyncer(activeSyncer); err != nil {\n\t\tlog.Errorf(\"Unable to transition active GossipSyncer(%x): %v\",\n\t\t\tactiveSyncer.cfg.peerPub, err)\n\t\treturn\n\t}\n\n\tif err := m.transitionPassiveSyncer(candidate); err != nil {\n\t\tlog.Errorf(\"Unable to transition passive GossipSyncer(%x): %v\",\n\t\t\tactiveSyncer.cfg.peerPub, err)\n\t\treturn\n\t}\n}\n\n// transitionActiveSyncer transitions an active syncer to a passive one.\n//\n// NOTE: This must be called with the syncersMu lock held.",
+      "length": 1194,
+      "tokens": 153,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) transitionActiveSyncer(s *GossipSyncer) error {",
+      "content": "func (m *SyncManager) transitionActiveSyncer(s *GossipSyncer) error {\n\tlog.Debugf(\"Transitioning active GossipSyncer(%x) to passive\",\n\t\ts.cfg.peerPub)\n\n\tif err := s.ProcessSyncTransition(PassiveSync); err != nil {\n\t\treturn err\n\t}\n\n\tdelete(m.activeSyncers, s.cfg.peerPub)\n\tm.inactiveSyncers[s.cfg.peerPub] = s\n\n\treturn nil\n}\n\n// transitionPassiveSyncer transitions a passive syncer to an active one.\n//\n// NOTE: This must be called with the syncersMu lock held.",
+      "length": 375,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) transitionPassiveSyncer(s *GossipSyncer) error {",
+      "content": "func (m *SyncManager) transitionPassiveSyncer(s *GossipSyncer) error {\n\tlog.Debugf(\"Transitioning passive GossipSyncer(%x) to active\",\n\t\ts.cfg.peerPub)\n\n\tif err := s.ProcessSyncTransition(ActiveSync); err != nil {\n\t\treturn err\n\t}\n\n\tdelete(m.inactiveSyncers, s.cfg.peerPub)\n\tm.activeSyncers[s.cfg.peerPub] = s\n\n\treturn nil\n}\n\n// forceHistoricalSync chooses a syncer with a remote peer at random and forces\n// a historical sync with it.",
+      "length": 349,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) forceHistoricalSync() *GossipSyncer {",
+      "content": "func (m *SyncManager) forceHistoricalSync() *GossipSyncer {\n\tm.syncersMu.Lock()\n\tdefer m.syncersMu.Unlock()\n\n\t// We'll sample from both sets of active and inactive syncers in the\n\t// event that we don't have any inactive syncers.\n\treturn chooseRandomSyncer(m.gossipSyncers(), func(s *GossipSyncer) error {\n\t\treturn s.historicalSync()\n\t})\n}\n\n// chooseRandomSyncer iterates through the set of syncers given and returns the\n// first one which was able to successfully perform the action enclosed in the\n// function closure.\n//\n// NOTE: It's possible for a nil value to be returned if there are no eligible\n// candidate syncers.",
+      "length": 549,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func chooseRandomSyncer(syncers map[route.Vertex]*GossipSyncer,",
+      "content": "func chooseRandomSyncer(syncers map[route.Vertex]*GossipSyncer,\n\taction func(*GossipSyncer) error) *GossipSyncer {\n\n\tfor _, s := range syncers {\n\t\t// Only syncers in a chansSynced state are viable for sync\n\t\t// transitions, so skip any that aren't.\n\t\tif s.syncState() != chansSynced {\n\t\t\tcontinue\n\t\t}\n\n\t\tif action != nil {\n\t\t\tif err := action(s); err != nil {\n\t\t\t\tlog.Debugf(\"Skipping eligible candidate \"+\n\t\t\t\t\t\"GossipSyncer(%x): %v\", s.cfg.peerPub,\n\t\t\t\t\terr)\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\n\t\treturn s\n\t}\n\n\treturn nil\n}\n\n// InitSyncState is called by outside sub-systems when a connection is\n// established to a new peer that understands how to perform channel range\n// queries. We'll allocate a new GossipSyncer for it, and start any goroutines\n// needed to handle new queries. The first GossipSyncer registered with the\n// SyncManager will attempt a historical sync to ensure we have as much of the\n// public channel graph as possible.\n//\n// TODO(wilmer): Only mark as ActiveSync if this isn't a channel peer.",
+      "length": 909,
+      "tokens": 150,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) InitSyncState(peer lnpeer.Peer) error {",
+      "content": "func (m *SyncManager) InitSyncState(peer lnpeer.Peer) error {\n\tdone := make(chan struct{})\n\n\tselect {\n\tcase m.newSyncers <- &newSyncer{\n\t\tpeer:     peer,\n\t\tdoneChan: done,\n\t}:\n\tcase <-m.quit:\n\t\treturn ErrSyncManagerExiting\n\t}\n\n\tselect {\n\tcase <-done:\n\t\treturn nil\n\tcase <-m.quit:\n\t\treturn ErrSyncManagerExiting\n\t}\n}\n\n// PruneSyncState is called by outside sub-systems once a peer that we were\n// previously connected to has been disconnected. In this case we can stop the\n// existing GossipSyncer assigned to the peer and free up resources.",
+      "length": 457,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) PruneSyncState(peer route.Vertex) {",
+      "content": "func (m *SyncManager) PruneSyncState(peer route.Vertex) {\n\tdone := make(chan struct{})\n\n\t// We avoid returning an error when the SyncManager is stopped since the\n\t// GossipSyncer will be stopped then anyway.\n\tselect {\n\tcase m.staleSyncers <- &staleSyncer{\n\t\tpeer:     peer,\n\t\tdoneChan: done,\n\t}:\n\tcase <-m.quit:\n\t\treturn\n\t}\n\n\tselect {\n\tcase <-done:\n\tcase <-m.quit:\n\t}\n}\n\n// GossipSyncer returns the associated gossip syncer of a peer. The boolean\n// returned signals whether there exists a gossip syncer for the peer.",
+      "length": 439,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) GossipSyncer(peer route.Vertex) (*GossipSyncer, bool) {",
+      "content": "func (m *SyncManager) GossipSyncer(peer route.Vertex) (*GossipSyncer, bool) {\n\tm.syncersMu.Lock()\n\tdefer m.syncersMu.Unlock()\n\treturn m.gossipSyncer(peer)\n}\n\n// gossipSyncer returns the associated gossip syncer of a peer. The boolean\n// returned signals whether there exists a gossip syncer for the peer.",
+      "length": 220,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) gossipSyncer(peer route.Vertex) (*GossipSyncer, bool) {",
+      "content": "func (m *SyncManager) gossipSyncer(peer route.Vertex) (*GossipSyncer, bool) {\n\tsyncer, ok := m.inactiveSyncers[peer]\n\tif ok {\n\t\treturn syncer, true\n\t}\n\tsyncer, ok = m.activeSyncers[peer]\n\tif ok {\n\t\treturn syncer, true\n\t}\n\tsyncer, ok = m.pinnedActiveSyncers[peer]\n\tif ok {\n\t\treturn syncer, true\n\t}\n\treturn nil, false\n}\n\n// GossipSyncers returns all of the currently initialized gossip syncers.",
+      "length": 299,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) GossipSyncers() map[route.Vertex]*GossipSyncer {",
+      "content": "func (m *SyncManager) GossipSyncers() map[route.Vertex]*GossipSyncer {\n\tm.syncersMu.Lock()\n\tdefer m.syncersMu.Unlock()\n\treturn m.gossipSyncers()\n}\n\n// gossipSyncers returns all of the currently initialized gossip syncers.",
+      "length": 145,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) gossipSyncers() map[route.Vertex]*GossipSyncer {",
+      "content": "func (m *SyncManager) gossipSyncers() map[route.Vertex]*GossipSyncer {\n\tnumSyncers := len(m.inactiveSyncers) + len(m.activeSyncers)\n\tsyncers := make(map[route.Vertex]*GossipSyncer, numSyncers)\n\n\tfor _, syncer := range m.inactiveSyncers {\n\t\tsyncers[syncer.cfg.peerPub] = syncer\n\t}\n\tfor _, syncer := range m.activeSyncers {\n\t\tsyncers[syncer.cfg.peerPub] = syncer\n\t}\n\n\treturn syncers\n}\n\n// markGraphSynced allows us to report that the initial historical sync has\n// completed.",
+      "length": 388,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) markGraphSynced() {",
+      "content": "func (m *SyncManager) markGraphSynced() {\n\tatomic.StoreInt32(&m.initialHistoricalSyncCompleted, 1)\n}\n\n// IsGraphSynced determines whether we've completed our initial historical sync.\n// The initial historical sync is done to ensure we've ingested as much of the\n// public graph as possible.",
+      "length": 243,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncManager) IsGraphSynced() bool {",
+      "content": "func (m *SyncManager) IsGraphSynced() bool {\n\treturn atomic.LoadInt32(&m.initialHistoricalSyncCompleted) == 1\n}\n",
+      "length": 65,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

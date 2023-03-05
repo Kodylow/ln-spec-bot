@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/autopilotrpc_active.go",
+  "package": "autopilotrpc",
+  "sections": [
+    {
+      "slug": "func getAutopilotClient(ctx *cli.Context) (autopilotrpc.AutopilotClient, func()) {",
+      "content": "func getAutopilotClient(ctx *cli.Context) (autopilotrpc.AutopilotClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn autopilotrpc.NewAutopilotClient(conn), cleanUp\n}\n\nvar getStatusCommand = cli.Command{\n\tName:        \"status\",\n\tUsage:       \"Get the active status of autopilot.\",\n\tDescription: \"\",\n\tAction:      actionDecorator(getStatus),\n}\n",
+      "length": 294,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func getStatus(ctx *cli.Context) error {",
+      "content": "func getStatus(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getAutopilotClient(ctx)\n\tdefer cleanUp()\n\n\treq := &autopilotrpc.StatusRequest{}\n\n\tresp, err := client.Status(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar enableCommand = cli.Command{\n\tName:        \"enable\",\n\tUsage:       \"Enable the autopilot.\",\n\tDescription: \"\",\n\tAction:      actionDecorator(enable),\n}\n\nvar disableCommand = cli.Command{\n\tName:        \"disable\",\n\tUsage:       \"Disable the active autopilot.\",\n\tDescription: \"\",\n\tAction:      actionDecorator(disable),\n}\n",
+      "length": 526,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func enable(ctx *cli.Context) error {",
+      "content": "func enable(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getAutopilotClient(ctx)\n\tdefer cleanUp()\n\n\t// We will enable the autopilot.\n\treq := &autopilotrpc.ModifyStatusRequest{\n\t\tEnable: true,\n\t}\n\n\tresp, err := client.ModifyStatus(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n",
+      "length": 278,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func disable(ctx *cli.Context) error {",
+      "content": "func disable(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getAutopilotClient(ctx)\n\tdefer cleanUp()\n\n\t// We will disable the autopilot.\n\treq := &autopilotrpc.ModifyStatusRequest{\n\t\tEnable: false,\n\t}\n\n\tresp, err := client.ModifyStatus(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar queryScoresCommand = cli.Command{\n\tName:        \"query\",\n\tUsage:       \"Query the autopilot heuristics for nodes' scores.\",\n\tArgsUsage:   \"[flags] <pubkey> <pubkey> <pubkey> ...\",\n\tDescription: \"\",\n\tAction:      actionDecorator(queryScores),\n\tFlags: []cli.Flag{\n\t\tcli.BoolFlag{\n\t\t\tName: \"ignorelocalstate, i\",\n\t\t\tUsage: \"Ignore local channel state when calculating \" +\n\t\t\t\t\"scores.\",\n\t\t},\n\t},\n}\n",
+      "length": 665,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func queryScores(ctx *cli.Context) error {",
+      "content": "func queryScores(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getAutopilotClient(ctx)\n\tdefer cleanUp()\n\n\targs := ctx.Args()\n\tvar pubs []string\n\n\t// Keep reading pubkeys as long as there are arguments.\nloop:\n\tfor {\n\t\tswitch {\n\t\tcase args.Present():\n\t\t\tpubs = append(pubs, args.First())\n\t\t\targs = args.Tail()\n\t\tdefault:\n\t\t\tbreak loop\n\t\t}\n\t}\n\n\treq := &autopilotrpc.QueryScoresRequest{\n\t\tPubkeys:          pubs,\n\t\tIgnoreLocalState: ctx.Bool(\"ignorelocalstate\"),\n\t}\n\n\tresp, err := client.QueryScores(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\n// autopilotCommands will return the set of commands to enable for autopilotrpc\n// builds.",
+      "length": 612,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func autopilotCommands() []cli.Command {",
+      "content": "func autopilotCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:        \"autopilot\",\n\t\t\tCategory:    \"Autopilot\",\n\t\t\tUsage:       \"Interact with a running autopilot.\",\n\t\t\tDescription: \"\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tgetStatusCommand,\n\t\t\t\tenableCommand,\n\t\t\t\tdisableCommand,\n\t\t\t\tqueryScoresCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",
+      "length": 276,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/kvdb_no_postgres.go",
+  "package": "!kvdb_postgres",
+  "sections": [
+    {
+      "slug": "func NewPostgresFixture(dbName string) (postgres.Fixture, error) {",
+      "content": "func NewPostgresFixture(dbName string) (postgres.Fixture, error) {\n\treturn nil, errors.New(\"postgres backend not available\")\n}\n",
+      "length": 58,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func StartEmbeddedPostgres() (func() error, error) {",
+      "content": "func StartEmbeddedPostgres() (func() error, error) {\n\treturn nil, errors.New(\"postgres backend not available\")\n}\n",
+      "length": 58,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

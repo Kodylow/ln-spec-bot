@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/htlc_outgoing_contest_resolver.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type htlcOutgoingContestResolver struct {",
+      "content": "type htlcOutgoingContestResolver struct {\n\t// htlcTimeoutResolver is the inner solver that this resolver may turn\n\t// into. This only happens if the HTLC expires on-chain.\n\t*htlcTimeoutResolver\n}\n\n// newOutgoingContestResolver instantiates a new outgoing contested htlc\n// resolver.",
+      "length": 234,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func newOutgoingContestResolver(res lnwallet.OutgoingHtlcResolution,",
+      "content": "func newOutgoingContestResolver(res lnwallet.OutgoingHtlcResolution,\n\tbroadcastHeight uint32, htlc channeldb.HTLC,\n\tresCfg ResolverConfig) *htlcOutgoingContestResolver {\n\n\ttimeout := newTimeoutResolver(\n\t\tres, broadcastHeight, htlc, resCfg,\n\t)\n\n\treturn &htlcOutgoingContestResolver{\n\t\thtlcTimeoutResolver: timeout,\n\t}\n}\n\n// Resolve commences the resolution of this contract. As this contract hasn't\n// yet timed out, we'll wait for one of two things to happen\n//\n//  1. The HTLC expires. In this case, we'll sweep the funds and send a clean\n//     up cancel message to outside sub-systems.\n//\n//  2. The remote party sweeps this HTLC on-chain, in which case we'll add the\n//     pre-image to our global cache, then send a clean up settle message\n//     backwards.\n//\n// When either of these two things happens, we'll create a new resolver which\n// is able to handle the final resolution of the contract. We're only the pivot\n// point.",
+      "length": 841,
+      "tokens": 134,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcOutgoingContestResolver) Resolve() (ContractResolver, error) {",
+      "content": "func (h *htlcOutgoingContestResolver) Resolve() (ContractResolver, error) {\n\t// If we're already full resolved, then we don't have anything further\n\t// to do.\n\tif h.resolved {\n\t\treturn nil, nil\n\t}\n\n\t// Otherwise, we'll watch for two external signals to decide if we'll\n\t// morph into another resolver, or fully resolve the contract.\n\t//\n\t// The output we'll be watching for is the *direct* spend from the HTLC\n\t// output. If this isn't our commitment transaction, it'll be right on\n\t// the resolution. Otherwise, we fetch this pointer from the input of\n\t// the time out transaction.\n\toutPointToWatch, scriptToWatch, err := h.chainDetailsToWatch()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// First, we'll register for a spend notification for this output. If\n\t// the remote party sweeps with the pre-image, we'll be notified.\n\tspendNtfn, err := h.Notifier.RegisterSpendNtfn(\n\t\toutPointToWatch, scriptToWatch, h.broadcastHeight,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// We'll quickly check to see if the output has already been spent.\n\tselect {\n\t// If the output has already been spent, then we can stop early and\n\t// sweep the pre-image from the output.\n\tcase commitSpend, ok := <-spendNtfn.Spend:\n\t\tif !ok {\n\t\t\treturn nil, errResolverShuttingDown\n\t\t}\n\n\t\t// TODO(roasbeef): Checkpoint?\n\t\treturn h.claimCleanUp(commitSpend)\n\n\t// If it hasn't, then we'll watch for both the expiration, and the\n\t// sweeping out this output.\n\tdefault:\n\t}\n\n\t// If we reach this point, then we can't fully act yet, so we'll await\n\t// either of our signals triggering: the HTLC expires, or we learn of\n\t// the preimage.\n\tblockEpochs, err := h.Notifier.RegisterBlockEpochNtfn(nil)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer blockEpochs.Cancel()\n\n\tfor {\n\t\tselect {\n\n\t\t// A new block has arrived, we'll check to see if this leads to\n\t\t// HTLC expiration.\n\t\tcase newBlock, ok := <-blockEpochs.Epochs:\n\t\t\tif !ok {\n\t\t\t\treturn nil, errResolverShuttingDown\n\t\t\t}\n\n\t\t\t// If the current height is >= expiry, then a timeout\n\t\t\t// path spend will be valid to be included in the next\n\t\t\t// block, and we can immediately return the resolver.\n\t\t\t//\n\t\t\t// NOTE: when broadcasting this transaction, btcd will\n\t\t\t// check the timelock in `CheckTransactionStandard`,\n\t\t\t// which requires `expiry < currentHeight+1`. If the\n\t\t\t// check doesn't pass, error `transaction is not\n\t\t\t// finalized` will be returned and the broadcast will\n\t\t\t// fail.\n\t\t\tnewHeight := uint32(newBlock.Height)\n\t\t\tif newHeight >= h.htlcResolution.Expiry {\n\t\t\t\tlog.Infof(\"%T(%v): HTLC has expired \"+\n\t\t\t\t\t\"(height=%v, expiry=%v), transforming \"+\n\t\t\t\t\t\"into timeout resolver\", h,\n\t\t\t\t\th.htlcResolution.ClaimOutpoint,\n\t\t\t\t\tnewHeight, h.htlcResolution.Expiry)\n\t\t\t\treturn h.htlcTimeoutResolver, nil\n\t\t\t}\n\n\t\t// The output has been spent! This means the preimage has been\n\t\t// revealed on-chain.\n\t\tcase commitSpend, ok := <-spendNtfn.Spend:\n\t\t\tif !ok {\n\t\t\t\treturn nil, errResolverShuttingDown\n\t\t\t}\n\n\t\t\t// The only way this output can be spent by the remote\n\t\t\t// party is by revealing the preimage. So we'll perform\n\t\t\t// our duties to clean up the contract once it has been\n\t\t\t// claimed.\n\t\t\treturn h.claimCleanUp(commitSpend)\n\n\t\tcase <-h.quit:\n\t\t\treturn nil, fmt.Errorf(\"resolver canceled\")\n\t\t}\n\t}\n}\n\n// report returns a report on the resolution state of the contract.",
+      "length": 3120,
+      "tokens": 482,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcOutgoingContestResolver) report() *ContractReport {",
+      "content": "func (h *htlcOutgoingContestResolver) report() *ContractReport {\n\t// No locking needed as these values are read-only.\n\n\tfinalAmt := h.htlc.Amt.ToSatoshis()\n\tif h.htlcResolution.SignedTimeoutTx != nil {\n\t\tfinalAmt = btcutil.Amount(\n\t\t\th.htlcResolution.SignedTimeoutTx.TxOut[0].Value,\n\t\t)\n\t}\n\n\treturn &ContractReport{\n\t\tOutpoint:       h.htlcResolution.ClaimOutpoint,\n\t\tType:           ReportOutputOutgoingHtlc,\n\t\tAmount:         finalAmt,\n\t\tMaturityHeight: h.htlcResolution.Expiry,\n\t\tLimboBalance:   finalAmt,\n\t\tStage:          1,\n\t}\n}\n\n// Stop signals the resolver to cancel any current resolution processes, and\n// suspend.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 589,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcOutgoingContestResolver) Stop() {",
+      "content": "func (h *htlcOutgoingContestResolver) Stop() {\n\tclose(h.quit)\n}\n\n// IsResolved returns true if the stored state in the resolve is fully\n// resolved. In this case the target output can be forgotten.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 196,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcOutgoingContestResolver) IsResolved() bool {",
+      "content": "func (h *htlcOutgoingContestResolver) IsResolved() bool {\n\treturn h.resolved\n}\n\n// Encode writes an encoded version of the ContractResolver into the passed\n// Writer.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 154,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcOutgoingContestResolver) Encode(w io.Writer) error {",
+      "content": "func (h *htlcOutgoingContestResolver) Encode(w io.Writer) error {\n\treturn h.htlcTimeoutResolver.Encode(w)\n}\n\n// newOutgoingContestResolverFromReader attempts to decode an encoded ContractResolver\n// from the passed Reader instance, returning an active ContractResolver\n// instance.",
+      "length": 210,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func newOutgoingContestResolverFromReader(r io.Reader, resCfg ResolverConfig) (",
+      "content": "func newOutgoingContestResolverFromReader(r io.Reader, resCfg ResolverConfig) (\n\t*htlcOutgoingContestResolver, error) {\n\n\th := &htlcOutgoingContestResolver{}\n\ttimeoutResolver, err := newTimeoutResolverFromReader(r, resCfg)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\th.htlcTimeoutResolver = timeoutResolver\n\treturn h, nil\n}\n\n// A compile time assertion to ensure htlcOutgoingContestResolver meets the\n// ContractResolver interface.\nvar _ htlcContractResolver = (*htlcOutgoingContestResolver)(nil)\n",
+      "length": 398,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

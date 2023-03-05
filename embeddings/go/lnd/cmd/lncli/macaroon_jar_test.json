@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/macaroon_jar_test.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func TestMacaroonJarEncrypted(t *testing.T) {",
+      "content": "func TestMacaroonJarEncrypted(t *testing.T) {\n\t// Create a new macaroon entry from the dummy macaroon and encrypt it\n\t// with the test password.\n\tnewEntry := &macaroonEntry{\n\t\tName: \"encryptedMac\",\n\t}\n\terr := newEntry.storeMacaroon(toMacaroon(t, dummyMac), testPassword)\n\trequire.NoError(t, err)\n\n\t// Now decrypt it again and make sure we get the same content back.\n\tmac, err := newEntry.loadMacaroon(pwCallback)\n\trequire.NoError(t, err)\n\tmacBytes, err := mac.MarshalBinary()\n\trequire.NoError(t, err)\n\trequire.Equal(t, dummyMac, macBytes)\n\n\t// The encrypted data of the entry we just created shouldn't be the\n\t// same as our test entry because of the salt snacl uses.\n\trequire.NotEqual(t, encryptedEntry.Data, newEntry.Data)\n\n\t// Decrypt the hard coded test entry and make sure the decrypted content\n\t// matches our created entry.\n\tmac, err = encryptedEntry.loadMacaroon(pwCallback)\n\trequire.NoError(t, err)\n\tmacBytes, err = mac.MarshalBinary()\n\trequire.NoError(t, err)\n\trequire.Equal(t, dummyMac, macBytes)\n}\n\n// TestMacaroonJarPlaintext tests that a macaroon can be stored and retrieved\n// as plaintext as well.",
+      "length": 1038,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMacaroonJarPlaintext(t *testing.T) {",
+      "content": "func TestMacaroonJarPlaintext(t *testing.T) {\n\t// Create a new macaroon entry from the dummy macaroon and encrypt it\n\t// with the test password.\n\tnewEntry := &macaroonEntry{\n\t\tName: \"plaintextMac\",\n\t}\n\terr := newEntry.storeMacaroon(toMacaroon(t, dummyMac), nil)\n\trequire.NoError(t, err)\n\n\t// Now decrypt it again and make sure we get the same content back.\n\tmac, err := newEntry.loadMacaroon(noPwCallback)\n\trequire.NoError(t, err)\n\tmacBytes, err := mac.MarshalBinary()\n\trequire.NoError(t, err)\n\trequire.Equal(t, dummyMac, macBytes)\n\trequire.Equal(t, plaintextEntry.Data, newEntry.Data)\n\n\t// Load the hard coded plaintext test entry and make sure the loaded\n\t// content matches our created entry.\n\tmac, err = plaintextEntry.loadMacaroon(noPwCallback)\n\trequire.NoError(t, err)\n\tmacBytes, err = mac.MarshalBinary()\n\trequire.NoError(t, err)\n\trequire.Equal(t, dummyMac, macBytes)\n}\n",
+      "length": 807,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func toMacaroon(t *testing.T, macData []byte) *macaroon.Macaroon {",
+      "content": "func toMacaroon(t *testing.T, macData []byte) *macaroon.Macaroon {\n\tmac := &macaroon.Macaroon{}\n\terr := mac.UnmarshalBinary(macData)\n\trequire.NoError(t, err)\n\n\treturn mac\n}\n",
+      "length": 100,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

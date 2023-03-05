@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/service.go",
+  "package": "macaroons",
+  "sections": [
+    {
+      "slug": "type MacaroonValidator interface {",
+      "content": "type MacaroonValidator interface {\n\t// ValidateMacaroon extracts the macaroon from the context's gRPC\n\t// metadata, checks its signature, makes sure all specified permissions\n\t// for the called method are contained within and finally ensures all\n\t// caveat conditions are met. A non-nil error is returned if any of the\n\t// checks fail.\n\tValidateMacaroon(ctx context.Context,\n\t\trequiredPermissions []bakery.Op, fullMethod string) error\n}\n\n// ExtendedRootKeyStore is an interface augments the existing\n// macaroons.RootKeyStorage interface by adding a number of additional utility\n// methods such as encrypting and decrypting the root key given a password.",
+      "length": 608,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "type ExtendedRootKeyStore interface {",
+      "content": "type ExtendedRootKeyStore interface {\n\tbakery.RootKeyStore\n\n\t// Close closes the RKS and zeros out any in-memory encryption keys.\n\tClose() error\n\n\t// CreateUnlock calls the underlying root key store's CreateUnlock and\n\t// returns the result.\n\tCreateUnlock(password *[]byte) error\n\n\t// ListMacaroonIDs returns all the root key ID values except the value\n\t// of encryptedKeyID.\n\tListMacaroonIDs(ctxt context.Context) ([][]byte, error)\n\n\t// DeleteMacaroonID removes one specific root key ID. If the root key\n\t// ID is found and deleted, it will be returned.\n\tDeleteMacaroonID(ctxt context.Context, rootKeyID []byte) ([]byte, error)\n\n\t// ChangePassword calls the underlying root key store's ChangePassword\n\t// and returns the result.\n\tChangePassword(oldPw, newPw []byte) error\n\n\t// GenerateNewRootKey calls the underlying root key store's\n\t// GenerateNewRootKey and returns the result.\n\tGenerateNewRootKey() error\n\n\t// SetRootKey calls the underlying root key store's SetRootKey and\n\t// returns the result.\n\tSetRootKey(rootKey []byte) error\n}\n\n// Service encapsulates bakery.Bakery and adds a Close() method that zeroes the\n// root key service encryption keys, as well as utility methods to validate a\n// macaroon against the bakery and gRPC middleware for macaroon-based auth.",
+      "length": 1203,
+      "tokens": 168,
+      "embedding": []
+    },
+    {
+      "slug": "type Service struct {",
+      "content": "type Service struct {\n\tbakery.Bakery\n\n\trks bakery.RootKeyStore\n\n\t// ExternalValidators is a map between an absolute gRPC URIs and the\n\t// corresponding external macaroon validator to be used for that URI.\n\t// If no external validator for an URI is specified, the service will\n\t// use the internal validator.\n\tExternalValidators map[string]MacaroonValidator\n\n\t// StatelessInit denotes if the service was initialized in the stateless\n\t// mode where no macaroon files should be created on disk.\n\tStatelessInit bool\n}\n\n// NewService returns a service backed by the macaroon DB backend. The `checks`\n// argument can be any of the `Checker` type functions defined in this package,\n// or a custom checker if desired. This constructor prevents double-registration\n// of checkers to prevent panics, so listing the same checker more than once is\n// not harmful. Default checkers, such as those for `allow`, `time-before`,\n// `declared`, and `error` caveats are registered automatically and don't need\n// to be added.",
+      "length": 963,
+      "tokens": 150,
+      "embedding": []
+    },
+    {
+      "slug": "func NewService(keyStore bakery.RootKeyStore, location string,",
+      "content": "func NewService(keyStore bakery.RootKeyStore, location string,\n\tstatelessInit bool, checks ...Checker) (*Service, error) {\n\n\tmacaroonParams := bakery.BakeryParams{\n\t\tLocation:     location,\n\t\tRootKeyStore: keyStore,\n\t\t// No third-party caveat support for now.\n\t\t// TODO(aakselrod): Add third-party caveat support.\n\t\tLocator: nil,\n\t\tKey:     nil,\n\t}\n\n\tsvc := bakery.New(macaroonParams)\n\n\t// Register all custom caveat checkers with the bakery's checker.\n\t// TODO(aakselrod): Add more checks as required.\n\tchecker := svc.Checker.FirstPartyCaveatChecker.(*checkers.Checker)\n\tfor _, check := range checks {\n\t\tcond, fun := check()\n\t\tif !isRegistered(checker, cond) {\n\t\t\tchecker.Register(cond, \"std\", fun)\n\t\t}\n\t}\n\n\treturn &Service{\n\t\tBakery:             *svc,\n\t\trks:                keyStore,\n\t\tExternalValidators: make(map[string]MacaroonValidator),\n\t\tStatelessInit:      statelessInit,\n\t}, nil\n}\n\n// isRegistered checks to see if the required checker has already been\n// registered in order to avoid a panic caused by double registration.",
+      "length": 938,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func isRegistered(c *checkers.Checker, name string) bool {",
+      "content": "func isRegistered(c *checkers.Checker, name string) bool {\n\tif c == nil {\n\t\treturn false\n\t}\n\n\tfor _, info := range c.Info() {\n\t\tif info.Name == name &&\n\t\t\tinfo.Prefix == \"\" &&\n\t\t\tinfo.Namespace == \"std\" {\n\t\t\treturn true\n\t\t}\n\t}\n\n\treturn false\n}\n\n// RegisterExternalValidator registers a custom, external macaroon validator for\n// the specified absolute gRPC URI. That validator is then fully responsible to\n// make sure any macaroon passed for a request to that URI is valid and\n// satisfies all conditions.",
+      "length": 429,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) RegisterExternalValidator(fullMethod string,",
+      "content": "func (svc *Service) RegisterExternalValidator(fullMethod string,\n\tvalidator MacaroonValidator) error {\n\n\tif validator == nil {\n\t\treturn fmt.Errorf(\"validator cannot be nil\")\n\t}\n\n\t_, ok := svc.ExternalValidators[fullMethod]\n\tif ok {\n\t\treturn fmt.Errorf(\"external validator for method %s already \"+\n\t\t\t\"registered\", fullMethod)\n\t}\n\n\tsvc.ExternalValidators[fullMethod] = validator\n\treturn nil\n}\n\n// ValidateMacaroon validates the capabilities of a given request given a\n// bakery service, context, and uri. Within the passed context.Context, we\n// expect a macaroon to be encoded as request metadata using the key\n// \"macaroon\".",
+      "length": 541,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) ValidateMacaroon(ctx context.Context,",
+      "content": "func (svc *Service) ValidateMacaroon(ctx context.Context,\n\trequiredPermissions []bakery.Op, fullMethod string) error {\n\n\t// Get macaroon bytes from context and unmarshal into macaroon.\n\tmacHex, err := RawMacaroonFromContext(ctx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// With the macaroon obtained, we'll now decode the hex-string encoding.\n\tmacBytes, err := hex.DecodeString(macHex)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn svc.CheckMacAuth(\n\t\tctx, macBytes, requiredPermissions, fullMethod,\n\t)\n}\n\n// CheckMacAuth checks that the macaroon is not disobeying any caveats and is\n// authorized to perform the operation the user wants to perform.",
+      "length": 561,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) CheckMacAuth(ctx context.Context, macBytes []byte,",
+      "content": "func (svc *Service) CheckMacAuth(ctx context.Context, macBytes []byte,\n\trequiredPermissions []bakery.Op, fullMethod string) error {\n\n\t// With the macaroon obtained, we'll now unmarshal it from binary into\n\t// its concrete struct representation.\n\tmac := &macaroon.Macaroon{}\n\terr := mac.UnmarshalBinary(macBytes)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Check the method being called against the permitted operation, the\n\t// expiration time and IP address and return the result.\n\tauthChecker := svc.Checker.Auth(macaroon.Slice{mac})\n\t_, err = authChecker.Allow(ctx, requiredPermissions...)\n\n\t// If the macaroon contains broad permissions and checks out, we're\n\t// done.\n\tif err == nil {\n\t\treturn nil\n\t}\n\n\t// To also allow the special permission of \"uri:<FullMethod>\" to be a\n\t// valid permission, we need to check it manually in case there is no\n\t// broader scope permission defined.\n\t_, err = authChecker.Allow(ctx, bakery.Op{\n\t\tEntity: PermissionEntityCustomURI,\n\t\tAction: fullMethod,\n\t})\n\treturn err\n}\n\n// Close closes the database that underlies the RootKeyStore and zeroes the\n// encryption keys.",
+      "length": 994,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) Close() error {",
+      "content": "func (svc *Service) Close() error {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.Close()\n\t}\n\n\treturn nil\n}\n\n// CreateUnlock calls the underlying root key store's CreateUnlock and returns\n// the result.",
+      "length": 185,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) CreateUnlock(password *[]byte) error {",
+      "content": "func (svc *Service) CreateUnlock(password *[]byte) error {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.CreateUnlock(password)\n\t}\n\n\treturn nil\n}\n\n// NewMacaroon wraps around the function Oven.NewMacaroon with the defaults,\n//   - version is always bakery.LatestVersion;\n//   - caveats is always nil.\n//\n// In addition, it takes a rootKeyID parameter, and puts it into the context.\n// The context is passed through Oven.NewMacaroon(), in which calls the function\n// RootKey(), that reads the context for rootKeyID.",
+      "length": 469,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) NewMacaroon(",
+      "content": "func (svc *Service) NewMacaroon(\n\tctx context.Context, rootKeyID []byte,\n\tops ...bakery.Op) (*bakery.Macaroon, error) {\n\n\t// Check rootKeyID is not called with nil or empty bytes. We want the\n\t// caller to be aware the value of root key ID used, so we won't replace\n\t// it with the DefaultRootKeyID if not specified.\n\tif len(rootKeyID) == 0 {\n\t\treturn nil, ErrMissingRootKeyID\n\t}\n\n\t// // Pass the root key ID to context.\n\tctx = ContextWithRootKeyID(ctx, rootKeyID)\n\n\treturn svc.Oven.NewMacaroon(ctx, bakery.LatestVersion, nil, ops...)\n}\n\n// ListMacaroonIDs returns all the root key ID values except the value of\n// encryptedKeyID.",
+      "length": 580,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) ListMacaroonIDs(ctxt context.Context) ([][]byte, error) {",
+      "content": "func (svc *Service) ListMacaroonIDs(ctxt context.Context) ([][]byte, error) {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.ListMacaroonIDs(ctxt)\n\t}\n\n\treturn nil, nil\n}\n\n// DeleteMacaroonID removes one specific root key ID. If the root key ID is\n// found and deleted, it will be returned.",
+      "length": 229,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) DeleteMacaroonID(ctxt context.Context,",
+      "content": "func (svc *Service) DeleteMacaroonID(ctxt context.Context,\n\trootKeyID []byte) ([]byte, error) {\n\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.DeleteMacaroonID(ctxt, rootKeyID)\n\t}\n\n\treturn nil, nil\n}\n\n// GenerateNewRootKey calls the underlying root key store's GenerateNewRootKey\n// and returns the result.",
+      "length": 264,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) GenerateNewRootKey() error {",
+      "content": "func (svc *Service) GenerateNewRootKey() error {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.GenerateNewRootKey()\n\t}\n\n\treturn nil\n}\n\n// SetRootKey calls the underlying root key store's SetRootKey and returns the\n// result.",
+      "length": 194,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) SetRootKey(rootKey []byte) error {",
+      "content": "func (svc *Service) SetRootKey(rootKey []byte) error {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.SetRootKey(rootKey)\n\t}\n\n\treturn nil\n}\n\n// ChangePassword calls the underlying root key store's ChangePassword and\n// returns the result.",
+      "length": 201,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (svc *Service) ChangePassword(oldPw, newPw []byte) error {",
+      "content": "func (svc *Service) ChangePassword(oldPw, newPw []byte) error {\n\tif boltRKS, ok := svc.rks.(ExtendedRootKeyStore); ok {\n\t\treturn boltRKS.ChangePassword(oldPw, newPw)\n\t}\n\n\treturn nil\n}\n\n// RawMacaroonFromContext is a helper function that extracts a raw macaroon\n// from the given incoming gRPC request context.",
+      "length": 237,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func RawMacaroonFromContext(ctx context.Context) (string, error) {",
+      "content": "func RawMacaroonFromContext(ctx context.Context) (string, error) {\n\t// Get macaroon bytes from context and unmarshal into macaroon.\n\tmd, ok := metadata.FromIncomingContext(ctx)\n\tif !ok {\n\t\treturn \"\", fmt.Errorf(\"unable to get metadata from context\")\n\t}\n\tif len(md[\"macaroon\"]) != 1 {\n\t\treturn \"\", fmt.Errorf(\"expected 1 macaroon, got %d\",\n\t\t\tlen(md[\"macaroon\"]))\n\t}\n\n\treturn md[\"macaroon\"][0], nil\n}\n\n// SafeCopyMacaroon creates a copy of a macaroon that is safe to be used and\n// modified. This is necessary because the macaroon library's own Clone() method\n// is unsafe for certain edge cases, resulting in both the cloned and the\n// original macaroons to be modified.",
+      "length": 587,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func SafeCopyMacaroon(mac *macaroon.Macaroon) (*macaroon.Macaroon, error) {",
+      "content": "func SafeCopyMacaroon(mac *macaroon.Macaroon) (*macaroon.Macaroon, error) {\n\tmacBytes, err := mac.MarshalBinary()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tnewMac := &macaroon.Macaroon{}\n\tif err := newMac.UnmarshalBinary(macBytes); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn newMac, nil\n}\n",
+      "length": 199,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

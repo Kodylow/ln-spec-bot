@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/htlc_lease_resolver.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type htlcLeaseResolver struct {",
+      "content": "type htlcLeaseResolver struct {\n\t// channelInitiator denotes whether the party responsible for resolving\n\t// the contract initiated the channel.\n\tchannelInitiator bool\n\n\t// leaseExpiry denotes the additional waiting period the contract must\n\t// hold until it can be resolved. This waiting period is known as the\n\t// expiration of a script-enforced leased channel and only applies to\n\t// the channel initiator.\n\t//\n\t// NOTE: This value should only be set when the contract belongs to a\n\t// leased channel.\n\tleaseExpiry uint32\n}\n\n// hasCLTV denotes whether the resolver must wait for an additional CLTV to\n// expire before resolving the contract.",
+      "length": 597,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcLeaseResolver) hasCLTV() bool {",
+      "content": "func (h *htlcLeaseResolver) hasCLTV() bool {\n\treturn h.channelInitiator && h.leaseExpiry > 0\n}\n\n// deriveWaitHeight computes the height the resolver needs to wait until it can\n// sweep the input.",
+      "length": 146,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcLeaseResolver) deriveWaitHeight(csvDelay uint32,",
+      "content": "func (h *htlcLeaseResolver) deriveWaitHeight(csvDelay uint32,\n\tcommitSpend *chainntnfs.SpendDetail) uint32 {\n\n\twaitHeight := uint32(commitSpend.SpendingHeight) + csvDelay - 1\n\tif h.hasCLTV() {\n\t\twaitHeight = uint32(math.Max(\n\t\t\tfloat64(waitHeight), float64(h.leaseExpiry),\n\t\t))\n\t}\n\n\treturn waitHeight\n}\n\n// makeSweepInput constructs the type of input (either just csv or csv+ctlv) to\n// send to the sweeper so the output can ultimately be swept.",
+      "length": 370,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcLeaseResolver) makeSweepInput(op *wire.OutPoint,",
+      "content": "func (h *htlcLeaseResolver) makeSweepInput(op *wire.OutPoint,\n\twType, cltvWtype input.StandardWitnessType,\n\tsignDesc *input.SignDescriptor,\n\tcsvDelay, broadcastHeight uint32, payHash [32]byte) *input.BaseInput {\n\n\tif h.hasCLTV() {\n\t\tlog.Infof(\"%T(%x): CSV and CLTV locks expired, offering \"+\n\t\t\t\"second-layer output to sweeper: %v\", h, payHash, op)\n\n\t\treturn input.NewCsvInputWithCltv(\n\t\t\top, cltvWtype, signDesc,\n\t\t\tbroadcastHeight, csvDelay,\n\t\t\th.leaseExpiry,\n\t\t)\n\t}\n\n\tlog.Infof(\"%T(%x): CSV lock expired, offering second-layer output to \"+\n\t\t\"sweeper: %v\", h, payHash, op)\n\n\treturn input.NewCsvInput(op, wType, signDesc, broadcastHeight, csvDelay)\n}\n\n// SupplementState allows the user of a ContractResolver to supplement it with\n// state required for the proper resolution of a contract.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 757,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *htlcLeaseResolver) SupplementState(state *channeldb.OpenChannel) {",
+      "content": "func (h *htlcLeaseResolver) SupplementState(state *channeldb.OpenChannel) {\n\tif state.ChanType.HasLeaseExpiration() {\n\t\th.leaseExpiry = state.ThawHeight\n\t}\n\th.channelInitiator = state.IsInitiator\n}\n",
+      "length": 117,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

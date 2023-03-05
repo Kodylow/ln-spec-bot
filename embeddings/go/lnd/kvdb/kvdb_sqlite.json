@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/kvdb_sqlite.go",
+  "package": "kvdb_sqlite",
+  "sections": [
+    {
+      "slug": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {",
+      "content": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {\n\tif !fileExists(path) {\n\t\terr := os.Mkdir(path, 0700)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tsqlbase.Init(testMaxConnections)\n\treturn sqlite.NewSqliteBackend(\n\t\tcontext.Background(), &sqlite.Config{\n\t\t\tTimeout:     time.Second * 30,\n\t\t\tBusyTimeout: time.Second * 5,\n\t\t}, path, name, table,\n\t)\n}\n",
+      "length": 287,
+      "tokens": 36,
+      "embedding": []
+    }
+  ]
+}

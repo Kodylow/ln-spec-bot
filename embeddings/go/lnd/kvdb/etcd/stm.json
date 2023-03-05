@@ -1,0 +1,391 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/stm.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type CommitStats struct {",
+      "content": "type CommitStats struct {\n\tRset    int\n\tWset    int\n\tRetries int\n}\n\n// KV stores a key/value pair.",
+      "length": 67,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type KV struct {",
+      "content": "type KV struct {\n\tkey string\n\tval string\n}\n\n// STM is an interface for software transactional memory.\n// All calls that return error will do so only if STM is manually handled and\n// abort the apply closure otherwise. In both case the returned error is a\n// DatabaseError.",
+      "length": 248,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "type STM interface {",
+      "content": "type STM interface {\n\t// Get returns the value for a key and inserts the key in the txn's read\n\t// set. Returns nil if there's no matching key, or the key is empty.\n\tGet(key string) ([]byte, error)\n\n\t// Put adds a value for a key to the txn's write set.\n\tPut(key, val string)\n\n\t// Del adds a delete operation for the key to the txn's write set.\n\tDel(key string)\n\n\t// First returns the first k/v that begins with prefix or nil if there's\n\t// no such k/v pair. If the key is found it is inserted to the txn's\n\t// read set. Returns nil if there's no match.\n\tFirst(prefix string) (*KV, error)\n\n\t// Last returns the last k/v that begins with prefix or nil if there's\n\t// no such k/v pair. If the key is found it is inserted to the txn's\n\t// read set. Returns nil if there's no match.\n\tLast(prefix string) (*KV, error)\n\n\t// Prev returns the previous k/v before key that begins with prefix or\n\t// nil if there's no such k/v. If the key is found it is inserted to the\n\t// read set. Returns nil if there's no match.\n\tPrev(prefix, key string) (*KV, error)\n\n\t// Next returns the next k/v after key that begins with prefix or nil\n\t// if there's no such k/v. If the key is found it is inserted to the\n\t// txn's read set. Returns nil if there's no match.\n\tNext(prefix, key string) (*KV, error)\n\n\t// Seek will return k/v at key beginning with prefix. If the key doesn't\n\t// exists Seek will return the next k/v after key beginning with prefix.\n\t// If a matching k/v is found it is inserted to the txn's read set. Returns\n\t// nil if there's no match.\n\tSeek(prefix, key string) (*KV, error)\n\n\t// OnCommit calls the passed callback func upon commit.\n\tOnCommit(func())\n\n\t// Commit attempts to apply the txn's changes to the server.\n\t// Commit may return CommitError if transaction is outdated and needs retry.\n\tCommit() error\n\n\t// Rollback entries the read and write sets such that a subsequent commit\n\t// won't alter the database.\n\tRollback()\n\n\t// Prefetch prefetches the passed keys and prefixes. For prefixes it'll\n\t// fetch the whole range.\n\tPrefetch(keys []string, prefix []string)\n\n\t// FetchRangePaginatedRaw will fetch the range with the passed prefix up\n\t// to the passed limit per page.\n\tFetchRangePaginatedRaw(prefix string, limit int64,\n\t\tcb func(kv KV) error) error\n}\n\n// CommitError is used to check if there was an error\n// due to stale data in the transaction.",
+      "length": 2277,
+      "tokens": 416,
+      "embedding": []
+    },
+    {
+      "slug": "type CommitError struct{}",
+      "content": "type CommitError struct{}\n\n// Error returns a static string for CommitError for\n// debugging/logging purposes.",
+      "length": 82,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (e CommitError) Error() string {",
+      "content": "func (e CommitError) Error() string {\n\treturn \"commit failed\"\n}\n\n// DatabaseError is used to wrap errors that are not\n// related to stale data in the transaction.",
+      "length": 120,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type DatabaseError struct {",
+      "content": "type DatabaseError struct {\n\tmsg string\n\terr error\n}\n\n// Unwrap returns the wrapped error in a DatabaseError.",
+      "length": 77,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *DatabaseError) Unwrap() error {",
+      "content": "func (e *DatabaseError) Unwrap() error {\n\treturn e.err\n}\n\n// Error simply converts DatabaseError to a string that\n// includes both the message and the wrapped error.",
+      "length": 120,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (e DatabaseError) Error() string {",
+      "content": "func (e DatabaseError) Error() string {\n\treturn fmt.Sprintf(\"etcd error: %v - %v\", e.msg, e.err)\n}\n\n// stmGet is the result of a read operation, a value and the mod revision of the\n// key/value.",
+      "length": 150,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type stmGet struct {",
+      "content": "type stmGet struct {\n\tKV\n\trev int64\n}\n\n// Less implements less operator for btree.BTree.",
+      "length": 63,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *stmGet) Less(than btree.Item) bool {",
+      "content": "func (c *stmGet) Less(than btree.Item) bool {\n\treturn c.key < than.(*stmGet).key\n}\n\n// readSet stores all reads done in an STM.",
+      "length": 78,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type readSet struct {",
+      "content": "type readSet struct {\n\t// tree stores the items in the read set.\n\ttree *btree.BTree\n\n\t// fullRanges stores full range prefixes.\n\tfullRanges map[string]struct{}\n}\n\n// stmPut stores a value and an operation (put/delete).",
+      "length": 189,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "type stmPut struct {",
+      "content": "type stmPut struct {\n\tval string\n\top  v3.Op\n}\n\n// writeSet stroes all writes done in an STM.",
+      "length": 67,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "type writeSet map[string]stmPut",
+      "content": "type writeSet map[string]stmPut\n\n// stm implements repeatable-read software transactional memory\n// over etcd.",
+      "length": 76,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "type stm struct {",
+      "content": "type stm struct {\n\t// client is an etcd client handling all RPC communications\n\t// to the etcd instance/cluster.\n\tclient *v3.Client\n\n\t// manual is set to true for manual transactions which don't\n\t// execute in the STM run loop.\n\tmanual bool\n\n\t// txQueue is lightweight contention manager, which is used to detect\n\t// transaction conflicts and reduce retries.\n\ttxQueue *commitQueue\n\n\t// options stores optional settings passed by the user.\n\toptions *STMOptions\n\n\t// rset holds read key values and revisions.\n\trset *readSet\n\n\t// wset holds overwritten keys and their values.\n\twset writeSet\n\n\t// getOpts are the opts used for gets.\n\tgetOpts []v3.OpOption\n\n\t// revision stores the snapshot revision after first read.\n\trevision int64\n\n\t// onCommit gets called upon commit.\n\tonCommit func()\n\n\t// callCount tracks the number of times we called into etcd.\n\tcallCount int\n}\n\n// STMOptions can be used to pass optional settings\n// when an STM is created.",
+      "length": 891,
+      "tokens": 145,
+      "embedding": []
+    },
+    {
+      "slug": "type STMOptions struct {",
+      "content": "type STMOptions struct {\n\t// ctx holds an externally provided abort context.\n\tctx                 context.Context\n\tcommitStatsCallback func(bool, CommitStats)\n}\n\n// STMOptionFunc is a function that updates the passed STMOptions.",
+      "length": 198,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type STMOptionFunc func(*STMOptions)",
+      "content": "type STMOptionFunc func(*STMOptions)\n\n// WithAbortContext specifies the context for permanently\n// aborting the transaction.",
+      "length": 85,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func WithAbortContext(ctx context.Context) STMOptionFunc {",
+      "content": "func WithAbortContext(ctx context.Context) STMOptionFunc {\n\treturn func(so *STMOptions) {\n\t\tso.ctx = ctx\n\t}\n}\n",
+      "length": 47,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func WithCommitStatsCallback(cb func(bool, CommitStats)) STMOptionFunc {",
+      "content": "func WithCommitStatsCallback(cb func(bool, CommitStats)) STMOptionFunc {\n\treturn func(so *STMOptions) {\n\t\tso.commitStatsCallback = cb\n\t}\n}\n\n// RunSTM runs the apply function by creating an STM using serializable snapshot\n// isolation, passing it to the apply and handling commit errors and retries.",
+      "length": 219,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func RunSTM(cli *v3.Client, apply func(STM) error, txQueue *commitQueue,",
+      "content": "func RunSTM(cli *v3.Client, apply func(STM) error, txQueue *commitQueue,\n\tso ...STMOptionFunc) (int, error) {\n\n\tstm := makeSTM(cli, false, txQueue, so...)\n\terr := runSTM(stm, apply)\n\n\treturn stm.callCount, err\n}\n\n// NewSTM creates a new STM instance, using serializable snapshot isolation.",
+      "length": 208,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSTM(cli *v3.Client, txQueue *commitQueue, so ...STMOptionFunc) STM {",
+      "content": "func NewSTM(cli *v3.Client, txQueue *commitQueue, so ...STMOptionFunc) STM {\n\treturn makeSTM(cli, true, txQueue, so...)\n}\n\n// makeSTM is the actual constructor of the stm. It first apply all passed\n// options then creates the stm object and resets it before returning.",
+      "length": 187,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func makeSTM(cli *v3.Client, manual bool, txQueue *commitQueue,",
+      "content": "func makeSTM(cli *v3.Client, manual bool, txQueue *commitQueue,\n\tso ...STMOptionFunc) *stm {\n\n\topts := &STMOptions{\n\t\tctx: cli.Ctx(),\n\t}\n\n\t// Apply all functional options.\n\tfor _, fo := range so {\n\t\tfo(opts)\n\t}\n\n\ts := &stm{\n\t\tclient:  cli,\n\t\tmanual:  manual,\n\t\ttxQueue: txQueue,\n\t\toptions: opts,\n\t\trset:    newReadSet(),\n\t}\n\n\t// Reset read and write set.\n\ts.rollback(true)\n\n\treturn s\n}\n\n// runSTM implements the run loop of the STM, running the apply func, catching\n// errors and handling commit. The loop will quit on every error except\n// CommitError which is used to indicate a necessary retry.",
+      "length": 506,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func runSTM(s *stm, apply func(STM) error) error {",
+      "content": "func runSTM(s *stm, apply func(STM) error) error {\n\tvar (\n\t\tretries    int\n\t\tstats      CommitStats\n\t\texecuteErr error\n\t)\n\n\tdone := make(chan struct{})\n\n\texecute := func() {\n\t\tdefer close(done)\n\n\t\tfor {\n\t\t\tselect {\n\t\t\t// Check if the STM is aborted and break the retry loop\n\t\t\t// if it is.\n\t\t\tcase <-s.options.ctx.Done():\n\t\t\t\texecuteErr = fmt.Errorf(\"aborted\")\n\t\t\t\treturn\n\n\t\t\tdefault:\n\t\t\t}\n\n\t\t\tstats, executeErr = s.commit()\n\n\t\t\t// Re-apply only upon commit error (meaning the\n\t\t\t// keys were changed).\n\t\t\tif _, ok := executeErr.(CommitError); !ok {\n\t\t\t\t// Anything that's not a CommitError\n\t\t\t\t// aborts the transaction.\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\t// Rollback the write set before trying to re-apply.\n\t\t\t// Upon commit we retrieved the latest version of all\n\t\t\t// previously fetched keys and ranges so we don't need\n\t\t\t// to rollback the read set.\n\t\t\ts.rollback(false)\n\t\t\tretries++\n\n\t\t\t// Re-apply the transaction closure.\n\t\t\tif executeErr = apply(s); executeErr != nil {\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}\n\n\t// Run the tx closure to construct the read and write sets.\n\t// Also we expect that if there are no conflicting transactions\n\t// in the queue, then we only run apply once.\n\tif preApplyErr := apply(s); preApplyErr != nil {\n\t\treturn preApplyErr\n\t}\n\n\t// Make a copy of the read/write set keys here. The reason why we need\n\t// to do this is because subsequent applies may change (shrink) these\n\t// sets and so when we decrease reference counts in the commit queue in\n\t// done(...) we'd potentially miss removing references which would\n\t// result in queueing up transactions and contending DB access.\n\t// Copying these strings is cheap due to Go's immutable string which is\n\t// always a reference.\n\trkeys := make([]string, s.rset.tree.Len())\n\twkeys := make([]string, len(s.wset))\n\n\ti := 0\n\ts.rset.tree.Ascend(func(item btree.Item) bool {\n\t\trkeys[i] = item.(*stmGet).key\n\t\ti++\n\n\t\treturn true\n\t})\n\n\ti = 0\n\tfor key := range s.wset {\n\t\twkeys[i] = key\n\t\ti++\n\t}\n\n\t// Queue up the transaction for execution.\n\ts.txQueue.Add(execute, rkeys, wkeys)\n\n\t// Wait for the transaction to execute, or break if aborted.\n\tselect {\n\tcase <-done:\n\tcase <-s.options.ctx.Done():\n\t\treturn context.Canceled\n\t}\n\n\tif s.options.commitStatsCallback != nil {\n\t\tstats.Retries = retries\n\t\ts.options.commitStatsCallback(executeErr == nil, stats)\n\t}\n\n\treturn executeErr\n}\n",
+      "length": 2179,
+      "tokens": 339,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadSet() *readSet {",
+      "content": "func newReadSet() *readSet {\n\treturn &readSet{\n\t\ttree:       btree.New(5),\n\t\tfullRanges: make(map[string]struct{}),\n\t}\n}\n\n// add inserts key/values to to read set.",
+      "length": 128,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) add(responses []*pb.ResponseOp) {",
+      "content": "func (rs *readSet) add(responses []*pb.ResponseOp) {\n\tfor _, resp := range responses {\n\t\tgetResp := resp.GetResponseRange()\n\t\tfor _, kv := range getResp.Kvs {\n\t\t\trs.addItem(\n\t\t\t\tstring(kv.Key), string(kv.Value), kv.ModRevision,\n\t\t\t)\n\t\t}\n\t}\n}\n\n// addFullRange adds all full ranges to the read set.",
+      "length": 233,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) addFullRange(prefixes []string, responses []*pb.ResponseOp) {",
+      "content": "func (rs *readSet) addFullRange(prefixes []string, responses []*pb.ResponseOp) {\n\tfor i, resp := range responses {\n\t\tgetResp := resp.GetResponseRange()\n\t\tfor _, kv := range getResp.Kvs {\n\t\t\trs.addItem(\n\t\t\t\tstring(kv.Key), string(kv.Value), kv.ModRevision,\n\t\t\t)\n\t\t}\n\n\t\trs.fullRanges[prefixes[i]] = struct{}{}\n\t}\n}\n\n// presetItem presets a key to zero revision if not already present in the read\n// set.",
+      "length": 307,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) presetItem(key string) {",
+      "content": "func (rs *readSet) presetItem(key string) {\n\titem := &stmGet{\n\t\tKV: KV{\n\t\t\tkey: key,\n\t\t},\n\t\trev: 0,\n\t}\n\n\tif !rs.tree.Has(item) {\n\t\trs.tree.ReplaceOrInsert(item)\n\t}\n}\n\n// addItem adds a single new key/value to the read set (if not already present).",
+      "length": 191,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) addItem(key, val string, modRevision int64) {",
+      "content": "func (rs *readSet) addItem(key, val string, modRevision int64) {\n\titem := &stmGet{\n\t\tKV: KV{\n\t\t\tkey: key,\n\t\t\tval: val,\n\t\t},\n\t\trev: modRevision,\n\t}\n\n\trs.tree.ReplaceOrInsert(item)\n}\n\n// hasFullRange checks if the read set has a full range prefetched.",
+      "length": 173,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) hasFullRange(prefix string) bool {",
+      "content": "func (rs *readSet) hasFullRange(prefix string) bool {\n\t_, ok := rs.fullRanges[prefix]\n\treturn ok\n}\n\n// next returns the pre-fetched next value of the prefix. If matchKey is true,\n// it'll simply return the key/value that matches the passed key.",
+      "length": 185,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) next(prefix, key string, matchKey bool) (*stmGet, bool) {",
+      "content": "func (rs *readSet) next(prefix, key string, matchKey bool) (*stmGet, bool) {\n\tpivot := &stmGet{\n\t\tKV: KV{\n\t\t\tkey: key,\n\t\t},\n\t}\n\n\tvar result *stmGet\n\trs.tree.AscendGreaterOrEqual(\n\t\tpivot,\n\t\tfunc(item btree.Item) bool {\n\t\t\tnext := item.(*stmGet)\n\t\t\tif (!matchKey && next.key == key) || next.rev == 0 {\n\t\t\t\treturn true\n\t\t\t}\n\n\t\t\tif strings.HasPrefix(next.key, prefix) {\n\t\t\t\tresult = next\n\t\t\t}\n\n\t\t\treturn false\n\t\t},\n\t)\n\n\treturn result, result != nil\n}\n\n// prev returns the pre-fetched prev key/value of the prefix from key.",
+      "length": 416,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) prev(prefix, key string) (*stmGet, bool) {",
+      "content": "func (rs *readSet) prev(prefix, key string) (*stmGet, bool) {\n\tpivot := &stmGet{\n\t\tKV: KV{\n\t\t\tkey: key,\n\t\t},\n\t}\n\n\tvar result *stmGet\n\n\trs.tree.DescendLessOrEqual(\n\t\tpivot, func(item btree.Item) bool {\n\t\t\tprev := item.(*stmGet)\n\t\t\tif prev.key == key || prev.rev == 0 {\n\t\t\t\treturn true\n\t\t\t}\n\n\t\t\tif strings.HasPrefix(prev.key, prefix) {\n\t\t\t\tresult = prev\n\t\t\t}\n\n\t\t\treturn false\n\t\t},\n\t)\n\n\treturn result, result != nil\n}\n\n// last returns the last key/value of the passed range (if prefetched).",
+      "length": 399,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) last(prefix string) (*stmGet, bool) {",
+      "content": "func (rs *readSet) last(prefix string) (*stmGet, bool) {\n\t// We create an artificial key here that is just one step away from the\n\t// prefix. This way when we try to get the first item with our prefix\n\t// before this newly crafted key we'll make sure it's the last element\n\t// of our range.\n\tkey := []byte(prefix)\n\tkey[len(key)-1] += 1\n\n\treturn rs.prev(prefix, string(key))\n}\n\n// clear completely clears the readset.",
+      "length": 349,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) clear() {",
+      "content": "func (rs *readSet) clear() {\n\trs.tree.Clear(false)\n\trs.fullRanges = make(map[string]struct{})\n}\n\n// getItem returns the matching key/value from the readset.",
+      "length": 123,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) getItem(key string) (*stmGet, bool) {",
+      "content": "func (rs *readSet) getItem(key string) (*stmGet, bool) {\n\tpivot := &stmGet{\n\t\tKV: KV{\n\t\t\tkey: key,\n\t\t},\n\t\trev: 0,\n\t}\n\titem := rs.tree.Get(pivot)\n\tif item != nil {\n\t\treturn item.(*stmGet), true\n\t}\n\n\t// It's possible that although this key isn't in the read set, we\n\t// fetched a full range the key is prefixed with. In this case we'll\n\t// insert the key with zero revision.\n\tfor prefix := range rs.fullRanges {\n\t\tif strings.HasPrefix(key, prefix) {\n\t\t\trs.tree.ReplaceOrInsert(pivot)\n\t\t\treturn pivot, true\n\t\t}\n\t}\n\n\treturn nil, false\n}\n\n// prefetchSet is a helper to create an op slice of all OpGet's that represent\n// fetched keys appended with a slice of all OpGet's representing all prefetched\n// full ranges.",
+      "length": 626,
+      "tokens": 108,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) prefetchSet() []v3.Op {",
+      "content": "func (rs *readSet) prefetchSet() []v3.Op {\n\tops := make([]v3.Op, 0, rs.tree.Len())\n\n\trs.tree.Ascend(func(item btree.Item) bool {\n\t\tkey := item.(*stmGet).key\n\t\tfor prefix := range rs.fullRanges {\n\t\t\t// Do not add the key if it has been prefetched in a\n\t\t\t// full range.\n\t\t\tif strings.HasPrefix(key, prefix) {\n\t\t\t\treturn true\n\t\t\t}\n\t\t}\n\n\t\tops = append(ops, v3.OpGet(key))\n\t\treturn true\n\t})\n\n\tfor prefix := range rs.fullRanges {\n\t\tops = append(ops, v3.OpGet(prefix, v3.WithPrefix()))\n\t}\n\n\treturn ops\n}\n\n// getFullRanges returns all prefixes that we prefetched.",
+      "length": 490,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) getFullRanges() []string {",
+      "content": "func (rs *readSet) getFullRanges() []string {\n\tprefixes := make([]string, 0, len(rs.fullRanges))\n\n\tfor prefix := range rs.fullRanges {\n\t\tprefixes = append(prefixes, prefix)\n\t}\n\n\treturn prefixes\n}\n\n// cmps returns a compare list which will serve as a precondition testing that\n// the values in the read set didn't change.",
+      "length": 264,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *readSet) cmps() []v3.Cmp {",
+      "content": "func (rs *readSet) cmps() []v3.Cmp {\n\tcmps := make([]v3.Cmp, 0, rs.tree.Len())\n\n\trs.tree.Ascend(func(item btree.Item) bool {\n\t\tget := item.(*stmGet)\n\t\tcmps = append(\n\t\t\tcmps, v3.Compare(v3.ModRevision(get.key), \"=\", get.rev),\n\t\t)\n\n\t\treturn true\n\t})\n\n\treturn cmps\n}\n\n// cmps returns a cmp list testing no writes have happened past rev.",
+      "length": 283,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (ws writeSet) cmps(rev int64) []v3.Cmp {",
+      "content": "func (ws writeSet) cmps(rev int64) []v3.Cmp {\n\tcmps := make([]v3.Cmp, 0, len(ws))\n\tfor key := range ws {\n\t\tcmps = append(cmps, v3.Compare(v3.ModRevision(key), \"<\", rev))\n\t}\n\n\treturn cmps\n}\n\n// puts is the list of ops for all pending writes.",
+      "length": 186,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (ws writeSet) puts() []v3.Op {",
+      "content": "func (ws writeSet) puts() []v3.Op {\n\tputs := make([]v3.Op, 0, len(ws))\n\tfor _, v := range ws {\n\t\tputs = append(puts, v.op)\n\t}\n\n\treturn puts\n}\n\n// FetchRangePaginatedRaw will fetch the range with the passed prefix up to the\n// passed limit per page.",
+      "length": 203,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) FetchRangePaginatedRaw(prefix string, limit int64,",
+      "content": "func (s *stm) FetchRangePaginatedRaw(prefix string, limit int64,\n\tcb func(kv KV) error) error {\n\n\ts.callCount++\n\n\topts := []v3.OpOption{\n\t\tv3.WithSort(v3.SortByKey, v3.SortAscend),\n\t\tv3.WithRange(v3.GetPrefixRangeEnd(prefix)),\n\t\tv3.WithLimit(limit),\n\t}\n\n\tkey := prefix\n\tfor {\n\t\tresp, err := s.client.Get(\n\t\t\ts.options.ctx, key, append(opts, s.getOpts...)...,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn DatabaseError{\n\t\t\t\tmsg: \"stm.fetch() failed\",\n\t\t\t\terr: err,\n\t\t\t}\n\t\t}\n\n\t\t// Fill the read set with key/values returned.\n\t\tfor _, kv := range resp.Kvs {\n\t\t\terr := cb(KV{string(kv.Key), string(kv.Value)})\n\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\t// We've reached the range end.\n\t\tif !resp.More {\n\t\t\tbreak\n\t\t}\n\n\t\t// Continue from the page end + \"\\x00\".\n\t\tkey = string(resp.Kvs[len(resp.Kvs)-1].Key) + \"\\x00\"\n\t}\n\n\treturn nil\n}\n\n// fetch is a helper to fetch key/value given options. If a value is returned\n// then fetch will try to fix the STM's snapshot revision (if not already set).\n// We'll also cache the returned key/value in the read set.",
+      "length": 927,
+      "tokens": 140,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) fetch(key string, opts ...v3.OpOption) ([]KV, error) {",
+      "content": "func (s *stm) fetch(key string, opts ...v3.OpOption) ([]KV, error) {\n\ts.callCount++\n\tresp, err := s.client.Get(\n\t\ts.options.ctx, key, append(opts, s.getOpts...)...,\n\t)\n\tif err != nil {\n\t\treturn nil, DatabaseError{\n\t\t\tmsg: \"stm.fetch() failed\",\n\t\t\terr: err,\n\t\t}\n\t}\n\n\t// Set revision and serializable options upon first fetch\n\t// for any subsequent fetches.\n\tif s.getOpts == nil {\n\t\ts.revision = resp.Header.Revision\n\t\ts.getOpts = []v3.OpOption{\n\t\t\tv3.WithRev(s.revision),\n\t\t\tv3.WithSerializable(),\n\t\t}\n\t}\n\n\tif len(resp.Kvs) == 0 {\n\t\t// Add assertion to the read set which will extend our commit\n\t\t// constraint such that the commit will fail if the key is\n\t\t// present in the database.\n\t\ts.rset.addItem(key, \"\", 0)\n\t}\n\n\tvar result []KV\n\n\t// Fill the read set with key/values returned.\n\tfor _, kv := range resp.Kvs {\n\t\tkey := string(kv.Key)\n\t\tval := string(kv.Value)\n\n\t\t// Add to read set.\n\t\ts.rset.addItem(key, val, kv.ModRevision)\n\n\t\tresult = append(result, KV{key, val})\n\t}\n\n\treturn result, nil\n}\n\n// Get returns the value for key. If there's no such\n// key/value in the database or the passed key is empty\n// Get will return nil.",
+      "length": 1016,
+      "tokens": 161,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Get(key string) ([]byte, error) {",
+      "content": "func (s *stm) Get(key string) ([]byte, error) {\n\tif key == \"\" {\n\t\treturn nil, nil\n\t}\n\n\t// Return freshly written value if present.\n\tif put, ok := s.wset[key]; ok {\n\t\tif put.op.IsDelete() {\n\t\t\treturn nil, nil\n\t\t}\n\n\t\treturn []byte(put.val), nil\n\t}\n\n\t// Return value if alread in read set.\n\tif getValue, ok := s.rset.getItem(key); ok {\n\t\t// Return the value if the rset contains an existing key.\n\t\tif getValue.rev != 0 {\n\t\t\treturn []byte(getValue.val), nil\n\t\t} else {\n\t\t\treturn nil, nil\n\t\t}\n\t}\n\n\t// Fetch and return value.\n\tkvs, err := s.fetch(key)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif len(kvs) > 0 {\n\t\treturn []byte(kvs[0].val), nil\n\t}\n\n\t// Return empty result if key not in DB.\n\treturn nil, nil\n}\n\n// First returns the first key/value matching prefix. If there's no key starting\n// with prefix, Last will return nil.",
+      "length": 735,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) First(prefix string) (*KV, error) {",
+      "content": "func (s *stm) First(prefix string) (*KV, error) {\n\treturn s.next(prefix, prefix, true)\n}\n\n// Last returns the last key/value with prefix. If there's no key starting with\n// prefix, Last will return nil.",
+      "length": 148,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Last(prefix string) (*KV, error) {",
+      "content": "func (s *stm) Last(prefix string) (*KV, error) {\n\tvar (\n\t\tkv    KV\n\t\tfound bool\n\t)\n\n\tif s.rset.hasFullRange(prefix) {\n\t\tif item, ok := s.rset.last(prefix); ok {\n\t\t\tkv = item.KV\n\t\t\tfound = true\n\t\t}\n\t} else {\n\t\t// As we don't know the full range, fetch the last\n\t\t// key/value with this prefix first.\n\t\tresp, err := s.fetch(prefix, v3.WithLastKey()...)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tif len(resp) > 0 {\n\t\t\tkv = resp[0]\n\t\t\tfound = true\n\t\t}\n\t}\n\n\t// Now make sure there's nothing in the write set\n\t// that is a better match, meaning it has the same\n\t// prefix but is greater or equal than the current\n\t// best candidate. Note that this is not efficient\n\t// when the write set is large!\n\tfor k, put := range s.wset {\n\t\tif put.op.IsDelete() {\n\t\t\tcontinue\n\t\t}\n\n\t\tif strings.HasPrefix(k, prefix) && k >= kv.key {\n\t\t\tkv.key = k\n\t\t\tkv.val = put.val\n\t\t\tfound = true\n\t\t}\n\t}\n\n\tif found {\n\t\treturn &kv, nil\n\t}\n\n\treturn nil, nil\n}\n\n// Prev returns the prior key/value before key (with prefix). If there's no such\n// key Prev will return nil.",
+      "length": 940,
+      "tokens": 180,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Prev(prefix, startKey string) (*KV, error) {",
+      "content": "func (s *stm) Prev(prefix, startKey string) (*KV, error) {\n\tvar kv, result KV\n\n\tfetchKey := startKey\n\tmatchFound := false\n\n\tfor {\n\t\tif s.rset.hasFullRange(prefix) {\n\t\t\tif item, ok := s.rset.prev(prefix, fetchKey); ok {\n\t\t\t\tkv = item.KV\n\t\t\t} else {\n\t\t\t\tbreak\n\t\t\t}\n\t\t} else {\n\n\t\t\t// Ask etcd to retrieve one key that is a\n\t\t\t// match in descending order from the passed key.\n\t\t\topts := []v3.OpOption{\n\t\t\t\tv3.WithRange(fetchKey),\n\t\t\t\tv3.WithSort(v3.SortByKey, v3.SortDescend),\n\t\t\t\tv3.WithLimit(1),\n\t\t\t}\n\n\t\t\tkvs, err := s.fetch(prefix, opts...)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\n\t\t\tif len(kvs) == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\tkv = kvs[0]\n\t\t}\n\n\t\t// WithRange and WithPrefix can't be used\n\t\t// together, so check prefix here. If the\n\t\t// returned key no longer has the prefix,\n\t\t// then break out.\n\t\tif !strings.HasPrefix(kv.key, prefix) {\n\t\t\tbreak\n\t\t}\n\n\t\t// Fetch the prior key if this is deleted.\n\t\tif put, ok := s.wset[kv.key]; ok && put.op.IsDelete() {\n\t\t\tfetchKey = kv.key\n\t\t\tcontinue\n\t\t}\n\n\t\tresult = kv\n\t\tmatchFound = true\n\n\t\tbreak\n\t}\n\n\t// Closure holding all checks to find a possibly\n\t// better match.\n\tmatches := func(key string) bool {\n\t\tif !strings.HasPrefix(key, prefix) {\n\t\t\treturn false\n\t\t}\n\n\t\tif !matchFound {\n\t\t\treturn key < startKey\n\t\t}\n\n\t\t// matchFound == true\n\t\treturn result.key <= key && key < startKey\n\t}\n\n\t// Now go trough the write set and check\n\t// if there's an even better match.\n\tfor k, put := range s.wset {\n\t\tif !put.op.IsDelete() && matches(k) {\n\t\t\tresult.key = k\n\t\t\tresult.val = put.val\n\t\t\tmatchFound = true\n\t\t}\n\t}\n\n\tif !matchFound {\n\t\treturn nil, nil\n\t}\n\n\treturn &result, nil\n}\n\n// Next returns the next key/value after key (with prefix). If there's no such\n// key Next will return nil.",
+      "length": 1572,
+      "tokens": 266,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Next(prefix string, key string) (*KV, error) {",
+      "content": "func (s *stm) Next(prefix string, key string) (*KV, error) {\n\treturn s.next(prefix, key, false)\n}\n\n// Seek \"seeks\" to the key (with prefix). If the key doesn't exists it'll get\n// the next key with the same prefix. If no key fills this criteria, Seek will\n// return nil.",
+      "length": 204,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Seek(prefix, key string) (*KV, error) {",
+      "content": "func (s *stm) Seek(prefix, key string) (*KV, error) {\n\treturn s.next(prefix, key, true)\n}\n\n// next will try to retrieve the next match that has prefix and starts with the\n// passed startKey. If includeStartKey is set to true, it'll return the value\n// of startKey (essentially implementing seek).",
+      "length": 237,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) next(prefix, startKey string, includeStartKey bool) (*KV, error) {",
+      "content": "func (s *stm) next(prefix, startKey string, includeStartKey bool) (*KV, error) {\n\tvar kv, result KV\n\n\tfetchKey := startKey\n\tfirstFetch := true\n\tmatchFound := false\n\n\tfor {\n\t\tif s.rset.hasFullRange(prefix) {\n\t\t\tmatchKey := includeStartKey && firstFetch\n\t\t\tfirstFetch = false\n\t\t\tif item, ok := s.rset.next(\n\t\t\t\tprefix, fetchKey, matchKey,\n\t\t\t); ok {\n\t\t\t\tkv = item.KV\n\t\t\t} else {\n\t\t\t\tbreak\n\t\t\t}\n\t\t} else {\n\t\t\t// Ask etcd to retrieve one key that is a\n\t\t\t// match in ascending order from the passed key.\n\t\t\topts := []v3.OpOption{\n\t\t\t\tv3.WithFromKey(),\n\t\t\t\tv3.WithSort(v3.SortByKey, v3.SortAscend),\n\t\t\t\tv3.WithLimit(1),\n\t\t\t}\n\n\t\t\t// By default we include the start key too\n\t\t\t// if it is a full match.\n\t\t\tif includeStartKey && firstFetch {\n\t\t\t\tfirstFetch = false\n\t\t\t} else {\n\t\t\t\t// If we'd like to retrieve the first key\n\t\t\t\t// after the start key.\n\t\t\t\tfetchKey += \"\\x00\"\n\t\t\t}\n\n\t\t\tkvs, err := s.fetch(fetchKey, opts...)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\n\t\t\tif len(kvs) == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\tkv = kvs[0]\n\n\t\t\t// WithRange and WithPrefix can't be used\n\t\t\t// together, so check prefix here. If the\n\t\t\t// returned key no longer has the prefix,\n\t\t\t// then break the fetch loop.\n\t\t\tif !strings.HasPrefix(kv.key, prefix) {\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\n\t\t// Move on to fetch starting with the next\n\t\t// key if this one is marked deleted.\n\t\tif put, ok := s.wset[kv.key]; ok && put.op.IsDelete() {\n\t\t\tfetchKey = kv.key\n\t\t\tcontinue\n\t\t}\n\n\t\tresult = kv\n\t\tmatchFound = true\n\n\t\tbreak\n\t}\n\n\t// Closure holding all checks to find a possibly\n\t// better match.\n\tmatches := func(k string) bool {\n\t\tif !strings.HasPrefix(k, prefix) {\n\t\t\treturn false\n\t\t}\n\n\t\tif includeStartKey && !matchFound {\n\t\t\treturn startKey <= k\n\t\t}\n\n\t\tif !includeStartKey && !matchFound {\n\t\t\treturn startKey < k\n\t\t}\n\n\t\tif includeStartKey && matchFound {\n\t\t\treturn startKey <= k && k <= result.key\n\t\t}\n\n\t\t// !includeStartKey && matchFound.\n\t\treturn startKey < k && k <= result.key\n\t}\n\n\t// Now go trough the write set and check\n\t// if there's an even better match.\n\tfor k, put := range s.wset {\n\t\tif !put.op.IsDelete() && matches(k) {\n\t\t\tresult.key = k\n\t\t\tresult.val = put.val\n\t\t\tmatchFound = true\n\t\t}\n\t}\n\n\tif !matchFound {\n\t\treturn nil, nil\n\t}\n\n\treturn &result, nil\n}\n\n// Put sets the value of the passed key. The actual put will happen upon commit.",
+      "length": 2107,
+      "tokens": 357,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Put(key, val string) {",
+      "content": "func (s *stm) Put(key, val string) {\n\ts.wset[key] = stmPut{\n\t\tval: val,\n\t\top:  v3.OpPut(key, val),\n\t}\n}\n\n// Del marks a key as deleted. The actual delete will happen upon commit.",
+      "length": 135,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Del(key string) {",
+      "content": "func (s *stm) Del(key string) {\n\ts.wset[key] = stmPut{\n\t\tval: \"\",\n\t\top:  v3.OpDelete(key),\n\t}\n}\n\n// OnCommit sets the callback that is called upon committing the STM\n// transaction.",
+      "length": 142,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) OnCommit(cb func()) {",
+      "content": "func (s *stm) OnCommit(cb func()) {\n\ts.onCommit = cb\n}\n\n// Prefetch will prefetch the passed keys and prefixes in one transaction.\n// Keys and prefixes that we already have will be skipped.",
+      "length": 149,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Prefetch(keys []string, prefixes []string) {",
+      "content": "func (s *stm) Prefetch(keys []string, prefixes []string) {\n\tfetchKeys := make([]string, 0, len(keys))\n\tfor _, key := range keys {\n\t\tif _, ok := s.rset.getItem(key); !ok {\n\t\t\tfetchKeys = append(fetchKeys, key)\n\t\t}\n\t}\n\n\tfetchPrefixes := make([]string, 0, len(prefixes))\n\tfor _, prefix := range prefixes {\n\t\tif s.rset.hasFullRange(prefix) {\n\t\t\tcontinue\n\t\t}\n\t\tfetchPrefixes = append(fetchPrefixes, prefix)\n\t}\n\n\tif len(fetchKeys) == 0 && len(fetchPrefixes) == 0 {\n\t\treturn\n\t}\n\n\tprefixOpts := append(\n\t\t[]v3.OpOption{v3.WithPrefix()}, s.getOpts...,\n\t)\n\n\ttxn := s.client.Txn(s.options.ctx)\n\tops := make([]v3.Op, 0, len(fetchKeys)+len(fetchPrefixes))\n\n\tfor _, key := range fetchKeys {\n\t\tops = append(ops, v3.OpGet(key, s.getOpts...))\n\t}\n\tfor _, key := range fetchPrefixes {\n\t\tops = append(ops, v3.OpGet(key, prefixOpts...))\n\t}\n\n\ttxn.Then(ops...)\n\ttxnresp, err := txn.Commit()\n\ts.callCount++\n\n\tif err != nil {\n\t\treturn\n\t}\n\n\t// Set revision and serializable options upon first fetch for any\n\t// subsequent fetches.\n\tif s.getOpts == nil {\n\t\ts.revision = txnresp.Header.Revision\n\t\ts.getOpts = []v3.OpOption{\n\t\t\tv3.WithRev(s.revision),\n\t\t\tv3.WithSerializable(),\n\t\t}\n\t}\n\n\t// Preset keys to \"not-present\" (revision set to zero).\n\tfor _, key := range fetchKeys {\n\t\ts.rset.presetItem(key)\n\t}\n\n\t// Set prefetched keys.\n\ts.rset.add(txnresp.Responses[:len(fetchKeys)])\n\n\t// Set prefetched ranges.\n\ts.rset.addFullRange(fetchPrefixes, txnresp.Responses[len(fetchKeys):])\n}\n\n// commit builds the final transaction and tries to execute it. If commit fails\n// because the keys have changed return a CommitError, otherwise return a\n// DatabaseError.",
+      "length": 1499,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) commit() (CommitStats, error) {",
+      "content": "func (s *stm) commit() (CommitStats, error) {\n\trset := s.rset.cmps()\n\twset := s.wset.cmps(s.revision + 1)\n\n\tstats := CommitStats{\n\t\tRset: len(rset),\n\t\tWset: len(wset),\n\t}\n\n\t// Create the compare set.\n\tcmps := append(rset, wset...)\n\t// Create a transaction with the optional abort context.\n\ttxn := s.client.Txn(s.options.ctx)\n\n\t// If the compare set holds, try executing the puts.\n\ttxn = txn.If(cmps...)\n\ttxn = txn.Then(s.wset.puts()...)\n\n\t// Prefetch keys and ranges in case of conflict to save as many\n\t// round-trips as possible.\n\ttxn = txn.Else(s.rset.prefetchSet()...)\n\n\ts.callCount++\n\ttxnresp, err := txn.Commit()\n\tif err != nil {\n\t\treturn stats, DatabaseError{\n\t\t\tmsg: \"stm.Commit() failed\",\n\t\t\terr: err,\n\t\t}\n\t}\n\n\t// Call the commit callback if the transaction was successful.\n\tif txnresp.Succeeded {\n\t\tif s.onCommit != nil {\n\t\t\ts.onCommit()\n\t\t}\n\n\t\treturn stats, nil\n\t}\n\n\t// Determine where our fetched full ranges begin in the response.\n\tprefixes := s.rset.getFullRanges()\n\tfirstPrefixResp := len(txnresp.Responses) - len(prefixes)\n\n\t// Clear reload and preload it with the prefetched keys and ranges.\n\ts.rset.clear()\n\ts.rset.add(txnresp.Responses[:firstPrefixResp])\n\ts.rset.addFullRange(prefixes, txnresp.Responses[firstPrefixResp:])\n\n\t// Set our revision boundary.\n\ts.revision = txnresp.Header.Revision\n\ts.getOpts = []v3.OpOption{\n\t\tv3.WithRev(s.revision),\n\t\tv3.WithSerializable(),\n\t}\n\n\t// Return CommitError indicating that the transaction can be retried.\n\treturn stats, CommitError{}\n}\n\n// Commit simply calls commit and the commit stats callback if set.",
+      "length": 1460,
+      "tokens": 192,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Commit() error {",
+      "content": "func (s *stm) Commit() error {\n\tstats, err := s.commit()\n\n\tif s.options.commitStatsCallback != nil {\n\t\ts.options.commitStatsCallback(err == nil, stats)\n\t}\n\n\treturn err\n}\n\n// Rollback resets the STM. This is useful for uncommitted transaction rollback\n// and also used in the STM main loop to reset state if commit fails.",
+      "length": 279,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) Rollback() {",
+      "content": "func (s *stm) Rollback() {\n\ts.rollback(true)\n}\n\n// rollback will reset the read and write sets. If clearReadSet is false we'll\n// only reset the the write set.",
+      "length": 128,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *stm) rollback(clearReadSet bool) {",
+      "content": "func (s *stm) rollback(clearReadSet bool) {\n\tif clearReadSet {\n\t\ts.rset.clear()\n\t\ts.revision = math.MaxInt64 - 1\n\t\ts.getOpts = nil\n\t}\n\n\ts.wset = make(map[string]stmPut)\n}\n",
+      "length": 119,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

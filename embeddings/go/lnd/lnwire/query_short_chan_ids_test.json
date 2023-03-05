@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/query_short_chan_ids_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type unsortedSidTest struct {",
+      "content": "type unsortedSidTest struct {\n\tname    string\n\tencType ShortChanIDEncoding\n\tsids    []ShortChannelID\n}\n\nvar (\n\tunsortedSids = []ShortChannelID{\n\t\tNewShortChanIDFromInt(4),\n\t\tNewShortChanIDFromInt(3),\n\t}\n\n\tduplicateSids = []ShortChannelID{\n\t\tNewShortChanIDFromInt(3),\n\t\tNewShortChanIDFromInt(3),\n\t}\n\n\tunsortedSidTests = []unsortedSidTest{\n\t\t{\n\t\t\tname:    \"plain unsorted\",\n\t\t\tencType: EncodingSortedPlain,\n\t\t\tsids:    unsortedSids,\n\t\t},\n\t\t{\n\t\t\tname:    \"plain duplicate\",\n\t\t\tencType: EncodingSortedPlain,\n\t\t\tsids:    duplicateSids,\n\t\t},\n\t\t{\n\t\t\tname:    \"zlib unsorted\",\n\t\t\tencType: EncodingSortedZlib,\n\t\t\tsids:    unsortedSids,\n\t\t},\n\t\t{\n\t\t\tname:    \"zlib duplicate\",\n\t\t\tencType: EncodingSortedZlib,\n\t\t\tsids:    duplicateSids,\n\t\t},\n\t}\n)\n\n// TestQueryShortChanIDsUnsorted tests that decoding a QueryShortChanID request\n// that contains duplicate or unsorted ids returns an ErrUnsortedSIDs failure.",
+      "length": 823,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func TestQueryShortChanIDsUnsorted(t *testing.T) {",
+      "content": "func TestQueryShortChanIDsUnsorted(t *testing.T) {\n\tfor _, test := range unsortedSidTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\treq := &QueryShortChanIDs{\n\t\t\t\tEncodingType: test.encType,\n\t\t\t\tShortChanIDs: test.sids,\n\t\t\t\tnoSort:       true,\n\t\t\t}\n\n\t\t\tvar b bytes.Buffer\n\t\t\terr := req.Encode(&b, 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to encode req: %v\", err)\n\t\t\t}\n\n\t\t\tvar req2 QueryShortChanIDs\n\t\t\terr = req2.Decode(bytes.NewReader(b.Bytes()), 0)\n\t\t\tif _, ok := err.(ErrUnsortedSIDs); !ok {\n\t\t\t\tt.Fatalf(\"expected ErrUnsortedSIDs, got: %T\",\n\t\t\t\t\terr)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestQueryShortChanIDsZero ensures that decoding of a list of short chan ids\n// still works as expected when the first element of the list is zero.",
+      "length": 663,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func TestQueryShortChanIDsZero(t *testing.T) {",
+      "content": "func TestQueryShortChanIDsZero(t *testing.T) {\n\ttestCases := []struct {\n\t\tname     string\n\t\tencoding ShortChanIDEncoding\n\t}{\n\t\t{\n\t\t\tname:     \"plain\",\n\t\t\tencoding: EncodingSortedPlain,\n\t\t}, {\n\t\t\tname:     \"zlib\",\n\t\t\tencoding: EncodingSortedZlib,\n\t\t},\n\t}\n\n\ttestSids := []ShortChannelID{\n\t\tNewShortChanIDFromInt(0),\n\t\tNewShortChanIDFromInt(10),\n\t}\n\n\tfor _, test := range testCases {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\treq := &QueryShortChanIDs{\n\t\t\t\tEncodingType: test.encoding,\n\t\t\t\tShortChanIDs: testSids,\n\t\t\t\tnoSort:       true,\n\t\t\t}\n\n\t\t\tvar b bytes.Buffer\n\t\t\terr := req.Encode(&b, 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to encode req: %v\", err)\n\t\t\t}\n\n\t\t\tvar req2 QueryShortChanIDs\n\t\t\terr = req2.Decode(bytes.NewReader(b.Bytes()), 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unexpected decoding error: %v\", err)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 757,
+      "tokens": 92,
+      "embedding": []
+    }
+  ]
+}

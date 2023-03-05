@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/postgres/fixture_interface.go",
+  "package": "postgres",
+  "sections": [
+    {
+      "slug": "type Fixture interface {",
+      "content": "type Fixture interface {\n\tDB() walletdb.DB\n\tDump() (map[string]interface{}, error)\n}\n",
+      "length": 57,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

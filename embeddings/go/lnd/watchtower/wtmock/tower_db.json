@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtmock/tower_db.go",
+  "package": "wtmock",
+  "sections": [
+    {
+      "slug": "type TowerDB struct {",
+      "content": "type TowerDB struct {\n\tmu        sync.Mutex\n\tlastEpoch *chainntnfs.BlockEpoch\n\tsessions  map[wtdb.SessionID]*wtdb.SessionInfo\n\tblobs     map[blob.BreachHint]map[wtdb.SessionID]*wtdb.SessionStateUpdate\n}\n\n// NewTowerDB initializes a fresh mock TowerDB.",
+      "length": 223,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTowerDB() *TowerDB {",
+      "content": "func NewTowerDB() *TowerDB {\n\treturn &TowerDB{\n\t\tsessions: make(map[wtdb.SessionID]*wtdb.SessionInfo),\n\t\tblobs:    make(map[blob.BreachHint]map[wtdb.SessionID]*wtdb.SessionStateUpdate),\n\t}\n}\n\n// InsertStateUpdate stores an update sent by the client after validating that\n// the update is well-formed in the context of other updates sent for the same\n// session. This include verifying that the sequence number is incremented\n// properly and the last applied values echoed by the client are sane.",
+      "length": 457,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) InsertStateUpdate(update *wtdb.SessionStateUpdate) (uint16, error) {",
+      "content": "func (db *TowerDB) InsertStateUpdate(update *wtdb.SessionStateUpdate) (uint16, error) {\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\tinfo, ok := db.sessions[update.ID]\n\tif !ok {\n\t\treturn 0, wtdb.ErrSessionNotFound\n\t}\n\n\t// Assert that the blob is the correct size for the session's blob type.\n\tif len(update.EncryptedBlob) != blob.Size(info.Policy.BlobType) {\n\t\treturn 0, wtdb.ErrInvalidBlobSize\n\t}\n\n\terr := info.AcceptUpdateSequence(update.SeqNum, update.LastApplied)\n\tif err != nil {\n\t\treturn info.LastApplied, err\n\t}\n\n\tsessionsToUpdates, ok := db.blobs[update.Hint]\n\tif !ok {\n\t\tsessionsToUpdates = make(map[wtdb.SessionID]*wtdb.SessionStateUpdate)\n\t\tdb.blobs[update.Hint] = sessionsToUpdates\n\t}\n\tsessionsToUpdates[update.ID] = update\n\n\treturn info.LastApplied, nil\n}\n\n// GetSessionInfo retrieves the session for the passed session id. An error is\n// returned if the session could not be found.",
+      "length": 771,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) GetSessionInfo(id *wtdb.SessionID) (*wtdb.SessionInfo, error) {",
+      "content": "func (db *TowerDB) GetSessionInfo(id *wtdb.SessionID) (*wtdb.SessionInfo, error) {\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\tif info, ok := db.sessions[*id]; ok {\n\t\treturn info, nil\n\t}\n\n\treturn nil, wtdb.ErrSessionNotFound\n}\n\n// InsertSessionInfo records a negotiated session in the tower database. An\n// error is returned if the session already exists.",
+      "length": 255,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) InsertSessionInfo(info *wtdb.SessionInfo) error {",
+      "content": "func (db *TowerDB) InsertSessionInfo(info *wtdb.SessionInfo) error {\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\tdbInfo, ok := db.sessions[info.ID]\n\tif ok && dbInfo.LastApplied > 0 {\n\t\treturn wtdb.ErrSessionAlreadyExists\n\t}\n\n\t// Perform a quick sanity check on the session policy before accepting.\n\tif err := info.Policy.Validate(); err != nil {\n\t\treturn err\n\t}\n\n\tdb.sessions[info.ID] = info\n\n\treturn nil\n}\n\n// DeleteSession removes all data associated with a particular session id from\n// the tower's database.",
+      "length": 417,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) DeleteSession(target wtdb.SessionID) error {",
+      "content": "func (db *TowerDB) DeleteSession(target wtdb.SessionID) error {\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\t// Fail if the session doesn't exit.\n\tif _, ok := db.sessions[target]; !ok {\n\t\treturn wtdb.ErrSessionNotFound\n\t}\n\n\t// Remove the target session.\n\tdelete(db.sessions, target)\n\n\t// Remove the state updates for any blobs stored under the target\n\t// session identifier.\n\tfor hint, sessionUpdates := range db.blobs {\n\t\tdelete(sessionUpdates, target)\n\n\t\t// If this was the last state update, we can also remove the\n\t\t// hint that would map to an empty set.\n\t\tif len(sessionUpdates) == 0 {\n\t\t\tdelete(db.blobs, hint)\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// QueryMatches searches against all known state updates for any that match the\n// passed breachHints. More than one Match will be returned for a given hint if\n// they exist in the database.",
+      "length": 732,
+      "tokens": 119,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) QueryMatches(",
+      "content": "func (db *TowerDB) QueryMatches(\n\tbreachHints []blob.BreachHint) ([]wtdb.Match, error) {\n\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\tvar matches []wtdb.Match\n\tfor _, hint := range breachHints {\n\t\tsessionsToUpdates, ok := db.blobs[hint]\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\n\t\tfor id, update := range sessionsToUpdates {\n\t\t\tinfo, ok := db.sessions[id]\n\t\t\tif !ok {\n\t\t\t\tpanic(\"session not found\")\n\t\t\t}\n\n\t\t\tmatch := wtdb.Match{\n\t\t\t\tID:            id,\n\t\t\t\tSeqNum:        update.SeqNum,\n\t\t\t\tHint:          hint,\n\t\t\t\tEncryptedBlob: update.EncryptedBlob,\n\t\t\t\tSessionInfo:   info,\n\t\t\t}\n\t\t\tmatches = append(matches, match)\n\t\t}\n\t}\n\n\treturn matches, nil\n}\n\n// SetLookoutTip stores the provided epoch as the latest lookout tip epoch in\n// the tower database.",
+      "length": 664,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) SetLookoutTip(epoch *chainntnfs.BlockEpoch) error {",
+      "content": "func (db *TowerDB) SetLookoutTip(epoch *chainntnfs.BlockEpoch) error {\n\tdb.lastEpoch = epoch\n\treturn nil\n}\n\n// GetLookoutTip retrieves the current lookout tip block epoch from the tower\n// database.",
+      "length": 122,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *TowerDB) GetLookoutTip() (*chainntnfs.BlockEpoch, error) {",
+      "content": "func (db *TowerDB) GetLookoutTip() (*chainntnfs.BlockEpoch, error) {\n\tdb.mu.Lock()\n\tdefer db.mu.Unlock()\n\n\treturn db.lastEpoch, nil\n}\n",
+      "length": 60,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

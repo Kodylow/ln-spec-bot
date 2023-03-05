@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/rpcperms/middleware_handler.go",
+  "package": "rpcperms",
+  "sections": [
+    {
+      "slug": "type MiddlewareHandler struct {",
+      "content": "type MiddlewareHandler struct {\n\t// lastMsgID is the ID of the last intercept message that was forwarded\n\t// to the middleware.\n\t//\n\t// NOTE: Must be used atomically!\n\tlastMsgID uint64\n\n\tmiddlewareName string\n\n\treadOnly bool\n\n\tcustomCaveatName string\n\n\treceive func() (*lnrpc.RPCMiddlewareResponse, error)\n\n\tsend func(request *lnrpc.RPCMiddlewareRequest) error\n\n\tinterceptRequests chan *interceptRequest\n\n\ttimeout time.Duration\n\n\t// params are our current chain params.\n\tparams *chaincfg.Params\n\n\t// done is closed when the rpc client terminates.\n\tdone chan struct{}\n\n\t// quit is closed when lnd is shutting down.\n\tquit chan struct{}\n\n\twg sync.WaitGroup\n}\n\n// NewMiddlewareHandler creates a new handler for the middleware with the given\n// name and custom caveat name.",
+      "length": 703,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMiddlewareHandler(name, customCaveatName string, readOnly bool,",
+      "content": "func NewMiddlewareHandler(name, customCaveatName string, readOnly bool,\n\treceive func() (*lnrpc.RPCMiddlewareResponse, error),\n\tsend func(request *lnrpc.RPCMiddlewareRequest) error,\n\ttimeout time.Duration, params *chaincfg.Params,\n\tquit chan struct{}) *MiddlewareHandler {\n\n\t// We explicitly want to log this as a warning since intercepting any\n\t// gRPC messages can also be used for malicious purposes and the user\n\t// should be made aware of the risks.\n\tlog.Warnf(\"A new gRPC middleware with the name '%s' was registered \"+\n\t\t\" with custom_macaroon_caveat='%s', read_only=%v. Make sure \"+\n\t\t\"you trust the middleware author since that code will be able \"+\n\t\t\"to intercept and possibly modify any gRPC messages sent/\"+\n\t\t\"received to/from a client that has a macaroon with that \"+\n\t\t\"custom caveat.\", name, customCaveatName, readOnly)\n\n\treturn &MiddlewareHandler{\n\t\tmiddlewareName:    name,\n\t\tcustomCaveatName:  customCaveatName,\n\t\treadOnly:          readOnly,\n\t\treceive:           receive,\n\t\tsend:              send,\n\t\tinterceptRequests: make(chan *interceptRequest),\n\t\ttimeout:           timeout,\n\t\tparams:            params,\n\t\tdone:              make(chan struct{}),\n\t\tquit:              quit,\n\t}\n}\n\n// intercept handles the full interception lifecycle of a single middleware\n// event (stream authentication, request interception or response interception).\n// The lifecycle consists of sending a message to the middleware, receiving a\n// feedback on it and sending the feedback to the appropriate channel. All steps\n// are guarded by the configured timeout to make sure a middleware cannot slow\n// down requests too much.",
+      "length": 1519,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *MiddlewareHandler) intercept(requestID uint64,",
+      "content": "func (h *MiddlewareHandler) intercept(requestID uint64,\n\treq *InterceptionRequest) (*interceptResponse, error) {\n\n\trespChan := make(chan *interceptResponse, 1)\n\n\tnewRequest := &interceptRequest{\n\t\trequestID: requestID,\n\t\trequest:   req,\n\t\tresponse:  respChan,\n\t}\n\n\t// timeout is the time after which intercept requests expire.\n\ttimeout := time.After(h.timeout)\n\n\t// Send the request to the interceptRequests channel for the main\n\t// goroutine to be picked up.\n\tselect {\n\tcase h.interceptRequests <- newRequest:\n\n\tcase <-timeout:\n\t\tlog.Errorf(\"MiddlewareHandler returned error - reached \"+\n\t\t\t\"timeout of %v for request interception\", h.timeout)\n\n\t\treturn nil, ErrTimeoutReached\n\n\tcase <-h.done:\n\t\treturn nil, errClientQuit\n\n\tcase <-h.quit:\n\t\treturn nil, ErrShuttingDown\n\t}\n\n\t// Receive the response and return it. If no response has been received\n\t// in AcceptorTimeout, then return false.\n\tselect {\n\tcase resp := <-respChan:\n\t\treturn resp, nil\n\n\tcase <-timeout:\n\t\tlog.Errorf(\"MiddlewareHandler returned error - reached \"+\n\t\t\t\"timeout of %v for response interception\", h.timeout)\n\t\treturn nil, ErrTimeoutReached\n\n\tcase <-h.done:\n\t\treturn nil, errClientQuit\n\n\tcase <-h.quit:\n\t\treturn nil, ErrShuttingDown\n\t}\n}\n\n// Run is the main loop for the middleware handler. This function will block\n// until it receives the signal that lnd is shutting down, or the rpc stream is\n// cancelled by the client.",
+      "length": 1286,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *MiddlewareHandler) Run() error {",
+      "content": "func (h *MiddlewareHandler) Run() error {\n\t// Wait for our goroutines to exit before we return.\n\tdefer h.wg.Wait()\n\tdefer log.Debugf(\"Exiting middleware run loop for %s\", h.middlewareName)\n\n\t// Create a channel that responses from middlewares are sent into.\n\tresponses := make(chan *lnrpc.RPCMiddlewareResponse)\n\n\t// errChan is used by the receive loop to signal any errors that occur\n\t// during reading from the stream. This is primarily used to shutdown\n\t// the send loop in the case of an RPC client disconnecting.\n\terrChan := make(chan error, 1)\n\n\t// Start a goroutine to receive responses from the interceptor. We\n\t// expect the receive function to block, so it must be run in a\n\t// goroutine (otherwise we could not send more than one intercept\n\t// request to the client).\n\th.wg.Add(1)\n\tgo func() {\n\t\tdefer h.wg.Done()\n\n\t\th.receiveResponses(errChan, responses)\n\t}()\n\n\treturn h.sendInterceptRequests(errChan, responses)\n}\n\n// receiveResponses receives responses for our intercept requests and dispatches\n// them into the responses channel provided, sending any errors that occur into\n// the error channel provided.",
+      "length": 1049,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *MiddlewareHandler) receiveResponses(errChan chan error,",
+      "content": "func (h *MiddlewareHandler) receiveResponses(errChan chan error,\n\tresponses chan *lnrpc.RPCMiddlewareResponse) {\n\n\tfor {\n\t\tresp, err := h.receive()\n\t\tif err != nil {\n\t\t\terrChan <- err\n\t\t\treturn\n\t\t}\n\n\t\tselect {\n\t\tcase responses <- resp:\n\n\t\tcase <-h.done:\n\t\t\treturn\n\n\t\tcase <-h.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// sendInterceptRequests handles intercept requests sent to us by our Accept()\n// function, dispatching them to our acceptor stream and coordinating return of\n// responses to their callers.",
+      "length": 403,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *MiddlewareHandler) sendInterceptRequests(errChan chan error,",
+      "content": "func (h *MiddlewareHandler) sendInterceptRequests(errChan chan error,\n\tresponses chan *lnrpc.RPCMiddlewareResponse) error {\n\n\t// Close the done channel to indicate that the interceptor is no longer\n\t// listening and any in-progress requests should be terminated.\n\tdefer close(h.done)\n\n\tinterceptRequests := make(map[uint64]*interceptRequest)\n\n\tfor {\n\t\tselect {\n\t\t// Consume requests passed to us from our Accept() function and\n\t\t// send them into our stream.\n\t\tcase newRequest := <-h.interceptRequests:\n\t\t\tmsgID := atomic.AddUint64(&h.lastMsgID, 1)\n\n\t\t\treq := newRequest.request\n\t\t\tinterceptRequests[msgID] = newRequest\n\n\t\t\tinterceptReq, err := req.ToRPC(\n\t\t\t\tnewRequest.requestID, msgID,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tif err := h.send(interceptReq); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t// Process newly received responses from our interceptor,\n\t\t// looking the original request up in our map of requests and\n\t\t// dispatching the response.\n\t\tcase resp := <-responses:\n\t\t\trequestInfo, ok := interceptRequests[resp.RefMsgId]\n\t\t\tif !ok {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tresponse := &interceptResponse{}\n\t\t\tswitch msg := resp.GetMiddlewareMessage().(type) {\n\t\t\tcase *lnrpc.RPCMiddlewareResponse_Feedback:\n\t\t\t\tt := msg.Feedback\n\t\t\t\tif t.Error != \"\" {\n\t\t\t\t\tresponse.err = fmt.Errorf(\"%s\", t.Error)\n\t\t\t\t\tbreak\n\t\t\t\t}\n\n\t\t\t\t// If there's nothing to replace, we're done,\n\t\t\t\t// this request was just accepted.\n\t\t\t\tif !t.ReplaceResponse {\n\t\t\t\t\tbreak\n\t\t\t\t}\n\n\t\t\t\t// We are replacing the response, the question\n\t\t\t\t// now just is: was it an error or a proper\n\t\t\t\t// proto message?\n\t\t\t\tresponse.replace = true\n\t\t\t\tif requestInfo.request.IsError {\n\t\t\t\t\tresponse.replacement = errors.New(\n\t\t\t\t\t\tstring(t.ReplacementSerialized),\n\t\t\t\t\t)\n\n\t\t\t\t\tbreak\n\t\t\t\t}\n\n\t\t\t\t// Not an error but a proper proto message that\n\t\t\t\t// needs to be replaced. For that we need to\n\t\t\t\t// parse it from the raw bytes into the full RPC\n\t\t\t\t// message.\n\t\t\t\tprotoMsg, err := parseProto(\n\t\t\t\t\trequestInfo.request.ProtoTypeName,\n\t\t\t\t\tt.ReplacementSerialized,\n\t\t\t\t)\n\n\t\t\t\tif err != nil {\n\t\t\t\t\tresponse.err = err\n\n\t\t\t\t\tbreak\n\t\t\t\t}\n\n\t\t\t\tresponse.replacement = protoMsg\n\n\t\t\tdefault:\n\t\t\t\treturn fmt.Errorf(\"unknown middleware \"+\n\t\t\t\t\t\"message: %v\", msg)\n\t\t\t}\n\n\t\t\tselect {\n\t\t\tcase requestInfo.response <- response:\n\t\t\tcase <-h.quit:\n\t\t\t}\n\n\t\t\tdelete(interceptRequests, resp.RefMsgId)\n\n\t\t// If we failed to receive from our middleware, we exit.\n\t\tcase err := <-errChan:\n\t\t\tlog.Errorf(\"Received an error: %v, shutting down\", err)\n\t\t\treturn err\n\n\t\t// Exit if we are shutting down.\n\t\tcase <-h.quit:\n\t\t\treturn ErrShuttingDown\n\t\t}\n\t}\n}\n\n// InterceptType defines the different types of intercept messages a middleware\n// can receive.",
+      "length": 2499,
+      "tokens": 333,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptType uint8",
+      "content": "type InterceptType uint8\n\nconst (\n\t// TypeStreamAuth is the type of intercept message that is sent when a\n\t// client or streaming RPC is initialized. A message with this type will\n\t// be sent out during stream initialization so a middleware can\n\t// accept/deny the whole stream instead of only single messages on the\n\t// stream.\n\tTypeStreamAuth InterceptType = 1\n\n\t// TypeRequest is the type of intercept message that is sent when an RPC\n\t// request message is sent to lnd. For client-streaming RPCs a new\n\t// message of this type is sent for each individual RPC request sent to\n\t// the stream. Middleware has the option to modify a request message\n\t// before it is delivered to lnd.\n\tTypeRequest InterceptType = 2\n\n\t// TypeResponse is the type of intercept message that is sent when an\n\t// RPC response message is sent from lnd to a client. For\n\t// server-streaming RPCs a new message of this type is sent for each\n\t// individual RPC response sent to the stream. Middleware has the option\n\t// to modify a response message before it is sent out to the client.\n\tTypeResponse InterceptType = 3\n)\n\n// InterceptionRequest is a struct holding all information that is sent to a\n// middleware whenever there is something to intercept (auth, request,\n// response).",
+      "length": 1205,
+      "tokens": 214,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptionRequest struct {",
+      "content": "type InterceptionRequest struct {\n\t// Type is the type of the interception message.\n\tType InterceptType\n\n\t// StreamRPC is set to true if the invoked RPC method is client or\n\t// server streaming.\n\tStreamRPC bool\n\n\t// Macaroon holds the macaroon that the client sent to lnd.\n\tMacaroon *macaroon.Macaroon\n\n\t// RawMacaroon holds the raw binary serialized macaroon that the client\n\t// sent to lnd.\n\tRawMacaroon []byte\n\n\t// CustomCaveatName is the name of the custom caveat that the middleware\n\t// was intercepting for.\n\tCustomCaveatName string\n\n\t// CustomCaveatCondition is the condition of the custom caveat that the\n\t// middleware was intercepting for. This can be empty for custom caveats\n\t// that only have a name (marker caveats).\n\tCustomCaveatCondition string\n\n\t// FullURI is the full RPC method URI that was invoked.\n\tFullURI string\n\n\t// ProtoSerialized is the full request or response object in the\n\t// protobuf binary serialization format.\n\tProtoSerialized []byte\n\n\t// ProtoTypeName is the fully qualified name of the protobuf type of the\n\t// request or response message that is serialized in the field above.\n\tProtoTypeName string\n\n\t// IsError indicates that the message contained within this request is\n\t// an error. Will only ever be true for response messages.\n\tIsError bool\n}\n\n// NewMessageInterceptionRequest creates a new interception request for either\n// a request or response message.",
+      "length": 1324,
+      "tokens": 209,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMessageInterceptionRequest(ctx context.Context,",
+      "content": "func NewMessageInterceptionRequest(ctx context.Context,\n\tauthType InterceptType, isStream bool, fullMethod string,\n\tm interface{}) (*InterceptionRequest, error) {\n\n\tmac, rawMacaroon, err := macaroonFromContext(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treq := &InterceptionRequest{\n\t\tType:        authType,\n\t\tStreamRPC:   isStream,\n\t\tMacaroon:    mac,\n\t\tRawMacaroon: rawMacaroon,\n\t\tFullURI:     fullMethod,\n\t}\n\n\t// The message is either a proto message or an error, we don't support\n\t// any other types being intercepted.\n\tswitch t := m.(type) {\n\tcase proto.Message:\n\t\treq.ProtoSerialized, err = proto.Marshal(t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"cannot marshal proto msg: %v\",\n\t\t\t\terr)\n\t\t}\n\t\treq.ProtoTypeName = string(proto.MessageName(t))\n\n\tcase error:\n\t\treq.ProtoSerialized = []byte(t.Error())\n\t\treq.ProtoTypeName = \"error\"\n\t\treq.IsError = true\n\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unsupported type for interception \"+\n\t\t\t\"request: %v\", m)\n\t}\n\n\treturn req, nil\n}\n\n// NewStreamAuthInterceptionRequest creates a new interception request for a\n// stream authentication message.",
+      "length": 994,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func NewStreamAuthInterceptionRequest(ctx context.Context,",
+      "content": "func NewStreamAuthInterceptionRequest(ctx context.Context,\n\tfullMethod string) (*InterceptionRequest, error) {\n\n\tmac, rawMacaroon, err := macaroonFromContext(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &InterceptionRequest{\n\t\tType:        TypeStreamAuth,\n\t\tStreamRPC:   true,\n\t\tMacaroon:    mac,\n\t\tRawMacaroon: rawMacaroon,\n\t\tFullURI:     fullMethod,\n\t}, nil\n}\n\n// macaroonFromContext tries to extract the macaroon from the incoming context.\n// If there is no macaroon, a nil error is returned since some RPCs might not\n// require a macaroon. But in case there is something in the macaroon header\n// field that cannot be parsed, a non-nil error is returned.",
+      "length": 587,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func macaroonFromContext(ctx context.Context) (*macaroon.Macaroon, []byte,",
+      "content": "func macaroonFromContext(ctx context.Context) (*macaroon.Macaroon, []byte,\n\terror) {\n\n\tmacHex, err := macaroons.RawMacaroonFromContext(ctx)\n\tif err != nil {\n\t\t// If there is no macaroon, we continue anyway as it might be an\n\t\t// RPC that doesn't require a macaroon.\n\t\treturn nil, nil, nil\n\t}\n\n\tmacBytes, err := hex.DecodeString(macHex)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tmac := &macaroon.Macaroon{}\n\tif err := mac.UnmarshalBinary(macBytes); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\treturn mac, macBytes, nil\n}\n\n// ToRPC converts the interception request to its RPC counterpart.",
+      "length": 490,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptionRequest) ToRPC(requestID,",
+      "content": "func (r *InterceptionRequest) ToRPC(requestID,\n\tmsgID uint64) (*lnrpc.RPCMiddlewareRequest, error) {\n\n\trpcRequest := &lnrpc.RPCMiddlewareRequest{\n\t\tRequestId:             requestID,\n\t\tMsgId:                 msgID,\n\t\tRawMacaroon:           r.RawMacaroon,\n\t\tCustomCaveatCondition: r.CustomCaveatCondition,\n\t}\n\n\tswitch r.Type {\n\tcase TypeStreamAuth:\n\t\trpcRequest.InterceptType = &lnrpc.RPCMiddlewareRequest_StreamAuth{\n\t\t\tStreamAuth: &lnrpc.StreamAuth{\n\t\t\t\tMethodFullUri: r.FullURI,\n\t\t\t},\n\t\t}\n\n\tcase TypeRequest:\n\t\trpcRequest.InterceptType = &lnrpc.RPCMiddlewareRequest_Request{\n\t\t\tRequest: &lnrpc.RPCMessage{\n\t\t\t\tMethodFullUri: r.FullURI,\n\t\t\t\tStreamRpc:     r.StreamRPC,\n\t\t\t\tTypeName:      r.ProtoTypeName,\n\t\t\t\tSerialized:    r.ProtoSerialized,\n\t\t\t},\n\t\t}\n\n\tcase TypeResponse:\n\t\trpcRequest.InterceptType = &lnrpc.RPCMiddlewareRequest_Response{\n\t\t\tResponse: &lnrpc.RPCMessage{\n\t\t\t\tMethodFullUri: r.FullURI,\n\t\t\t\tStreamRpc:     r.StreamRPC,\n\t\t\t\tTypeName:      r.ProtoTypeName,\n\t\t\t\tSerialized:    r.ProtoSerialized,\n\t\t\t\tIsError:       r.IsError,\n\t\t\t},\n\t\t}\n\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unknown intercept type %v\", r.Type)\n\t}\n\n\treturn rpcRequest, nil\n}\n\n// interceptRequest is a struct that keeps track of an interception request sent\n// out to a middleware and the response that is eventually sent back by the\n// middleware.",
+      "length": 1230,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "type interceptRequest struct {",
+      "content": "type interceptRequest struct {\n\trequestID uint64\n\trequest   *InterceptionRequest\n\tresponse  chan *interceptResponse\n}\n\n// interceptResponse is the response a middleware sends back for each\n// intercepted message.",
+      "length": 175,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type interceptResponse struct {",
+      "content": "type interceptResponse struct {\n\terr         error\n\treplace     bool\n\treplacement interface{}\n}\n\n// parseProto parses a proto serialized message of the given type into its\n// native version.",
+      "length": 152,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func parseProto(typeName string, serialized []byte) (proto.Message, error) {",
+      "content": "func parseProto(typeName string, serialized []byte) (proto.Message, error) {\n\tmessageType, err := protoregistry.GlobalTypes.FindMessageByName(\n\t\tprotoreflect.FullName(typeName),\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tmsg := messageType.New()\n\terr = proto.Unmarshal(serialized, msg.Interface())\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msg.Interface(), nil\n}\n\n// replaceProtoMsg replaces the given target message with the content of the\n// replacement message.",
+      "length": 375,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func replaceProtoMsg(target interface{}, replacement interface{}) error {",
+      "content": "func replaceProtoMsg(target interface{}, replacement interface{}) error {\n\ttargetMsg, ok := target.(proto.Message)\n\tif !ok {\n\t\treturn fmt.Errorf(\"target is not a proto message: %v\", target)\n\t}\n\n\treplacementMsg, ok := replacement.(proto.Message)\n\tif !ok {\n\t\treturn fmt.Errorf(\"replacement is not a proto message: %v\",\n\t\t\treplacement)\n\t}\n\n\tif targetMsg.ProtoReflect().Type() !=\n\t\treplacementMsg.ProtoReflect().Type() {\n\n\t\treturn fmt.Errorf(\"replacement message is of wrong type\")\n\t}\n\n\treplacementBytes, err := proto.Marshal(replacementMsg)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"error marshaling replacement: %v\", err)\n\t}\n\terr = proto.Unmarshal(replacementBytes, targetMsg)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"error unmarshaling replacement: %v\", err)\n\t}\n\n\treturn nil\n}\n",
+      "length": 667,
+      "tokens": 82,
+      "embedding": []
+    }
+  ]
+}

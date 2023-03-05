@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/arg_parse_test.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func TestParseTime(t *testing.T) {",
+      "content": "func TestParseTime(t *testing.T) {\n\tfor _, test := range partTimeTests {\n\t\tactual, err := parseTime(test.in, now)\n\t\tif test.errExpected == (err == nil) {\n\t\t\tt.Fatalf(\"unexpected error for %s:\\n%v\\n\", test.in, err)\n\t\t}\n\t\tif actual != test.expected {\n\t\t\tt.Fatalf(\n\t\t\t\t\"for %s actual and expected do not match:\\n%d\\n%d\\n\",\n\t\t\t\ttest.in,\n\t\t\t\tactual,\n\t\t\t\ttest.expected,\n\t\t\t)\n\t\t}\n\t}\n}\n\nvar stripPrefixTests = []struct {\n\tin       string\n\texpected string\n}{\n\t{\n\t\t\"lightning:ln123\",\n\t\t\"ln123\",\n\t},\n\t{\n\t\t\"lightning: ln123\",\n\t\t\"ln123\",\n\t},\n\t{\n\t\t\"ln123\",\n\t\t\"ln123\",\n\t},\n}\n",
+      "length": 492,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func TestStripPrefix(t *testing.T) {",
+      "content": "func TestStripPrefix(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, test := range stripPrefixTests {\n\t\tactual := stripPrefix(test.in)\n\t\trequire.Equal(t, test.expected, actual)\n\t}\n}\n",
+      "length": 129,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

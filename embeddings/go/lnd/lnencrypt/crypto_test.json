@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnencrypt/crypto_test.go",
+  "package": "lnencrypt",
+  "sections": [
+    {
+      "slug": "func TestEncryptDecryptPayload(t *testing.T) {",
+      "content": "func TestEncryptDecryptPayload(t *testing.T) {\n\tt.Parallel()\n\n\tpayloadCases := []struct {\n\t\t// plaintext is the string that we'll be encrypting.\n\t\tplaintext []byte\n\n\t\t// mutator allows a test case to modify the ciphertext before\n\t\t// we attempt to decrypt it.\n\t\tmutator func(*[]byte)\n\n\t\t// valid indicates if this test should pass or fail.\n\t\tvalid bool\n\t}{\n\t\t// Proper payload, should decrypt.\n\t\t{\n\t\t\tplaintext: []byte(\"payload test plain text\"),\n\t\t\tmutator:   nil,\n\t\t\tvalid:     true,\n\t\t},\n\n\t\t// Mutator modifies cipher text, shouldn't decrypt.\n\t\t{\n\t\t\tplaintext: []byte(\"payload test plain text\"),\n\t\t\tmutator: func(p *[]byte) {\n\t\t\t\t// Flip a byte in the payload to render it invalid.\n\t\t\t\t(*p)[0] ^= 1\n\t\t\t},\n\t\t\tvalid: false,\n\t\t},\n\n\t\t// Cipher text is too small, shouldn't decrypt.\n\t\t{\n\t\t\tplaintext: []byte(\"payload test plain text\"),\n\t\t\tmutator: func(p *[]byte) {\n\t\t\t\t// Modify the cipher text to be zero length.\n\t\t\t\t*p = []byte{}\n\t\t\t},\n\t\t\tvalid: false,\n\t\t},\n\t}\n\n\tkeyRing := &MockKeyRing{}\n\n\tfor i, payloadCase := range payloadCases {\n\t\tvar cipherBuffer bytes.Buffer\n\t\tencrypter, err := KeyRingEncrypter(keyRing)\n\t\trequire.NoError(t, err)\n\n\t\t// First, we'll encrypt the passed payload with our scheme.\n\t\terr = encrypter.EncryptPayloadToWriter(\n\t\t\tpayloadCase.plaintext, &cipherBuffer,\n\t\t)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable encrypt paylaod: %v\", err)\n\t\t}\n\n\t\t// If we have a mutator, then we'll wrong the mutator over the\n\t\t// cipher text, then reset the main buffer and re-write the new\n\t\t// cipher text.\n\t\tif payloadCase.mutator != nil {\n\t\t\tcipherText := cipherBuffer.Bytes()\n\n\t\t\tpayloadCase.mutator(&cipherText)\n\n\t\t\tcipherBuffer.Reset()\n\t\t\tcipherBuffer.Write(cipherText)\n\t\t}\n\n\t\tplaintext, err := encrypter.DecryptPayloadFromReader(\n\t\t\t&cipherBuffer,\n\t\t)\n\n\t\tswitch {\n\t\t// If this was meant to be a valid decryption, but we failed,\n\t\t// then we'll return an error.\n\t\tcase err != nil && payloadCase.valid:\n\t\t\tt.Fatalf(\"unable to decrypt valid payload case %v\", i)\n\n\t\t// If this was meant to be an invalid decryption, and we didn't\n\t\t// fail, then we'll return an error.\n\t\tcase err == nil && !payloadCase.valid:\n\t\t\tt.Fatalf(\"payload was invalid yet was able to decrypt\")\n\t\t}\n\n\t\t// Only if this case was mean to be valid will we ensure the\n\t\t// resulting decrypted plaintext matches the original input.\n\t\tif payloadCase.valid &&\n\t\t\t!bytes.Equal(plaintext, payloadCase.plaintext) {\n\t\t\tt.Fatalf(\"#%v: expected %v, got %v: \", i,\n\t\t\t\tpayloadCase.plaintext, plaintext)\n\t\t}\n\t}\n}\n\n// TestInvalidKeyGeneration tests that key generation fails when deriving the\n// key fails.",
+      "length": 2423,
+      "tokens": 349,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvalidKeyGeneration(t *testing.T) {",
+      "content": "func TestInvalidKeyGeneration(t *testing.T) {\n\tt.Parallel()\n\n\t_, err := KeyRingEncrypter(&MockKeyRing{true})\n\tif err == nil {\n\t\tt.Fatal(\"expected error due to fail key gen\")\n\t}\n}\n",
+      "length": 126,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

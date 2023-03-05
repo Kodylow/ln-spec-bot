@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/tower_db_test.go",
+  "package": "wtdb_test",
+  "sections": [
+    {
+      "slug": "type dbInit func(*testing.T) watchtower.DB",
+      "content": "type dbInit func(*testing.T) watchtower.DB\n\n// towerDBHarness holds the resources required to execute the tower db tests.",
+      "length": 77,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type towerDBHarness struct {",
+      "content": "type towerDBHarness struct {\n\tt  *testing.T\n\tdb watchtower.DB\n}\n\n// newTowerDBHarness initializes a fresh test harness for testing watchtower.DB\n// implementations.",
+      "length": 130,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func newTowerDBHarness(t *testing.T, init dbInit) *towerDBHarness {",
+      "content": "func newTowerDBHarness(t *testing.T, init dbInit) *towerDBHarness {\n\tdb := init(t)\n\n\th := &towerDBHarness{\n\t\tt:  t,\n\t\tdb: db,\n\t}\n\n\treturn h\n}\n\n// insertSession attempts to isnert the passed session and asserts that the\n// error returned matches expErr.",
+      "length": 173,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) insertSession(s *wtdb.SessionInfo, expErr error) {",
+      "content": "func (h *towerDBHarness) insertSession(s *wtdb.SessionInfo, expErr error) {\n\th.t.Helper()\n\n\terr := h.db.InsertSessionInfo(s)\n\trequire.ErrorIs(h.t, err, expErr)\n}\n\n// getSession retrieves the session identified by id, asserting that the call\n// returns expErr. If successful, the found session is returned.",
+      "length": 222,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) getSession(id *wtdb.SessionID,",
+      "content": "func (h *towerDBHarness) getSession(id *wtdb.SessionID,\n\texpErr error) *wtdb.SessionInfo {\n\n\th.t.Helper()\n\n\tsession, err := h.db.GetSessionInfo(id)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn session\n}\n\n// insertUpdate attempts to insert the passed state update and asserts that the\n// error returned matches expErr. If successful, the session's last applied\n// value is returned.",
+      "length": 312,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) insertUpdate(s *wtdb.SessionStateUpdate,",
+      "content": "func (h *towerDBHarness) insertUpdate(s *wtdb.SessionStateUpdate,\n\texpErr error) uint16 {\n\n\th.t.Helper()\n\n\tlastApplied, err := h.db.InsertStateUpdate(s)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn lastApplied\n}\n\n// deleteSession attempts to delete the session identified by id and asserts\n// that the error returned from DeleteSession matches the expected error.",
+      "length": 285,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) deleteSession(id wtdb.SessionID, expErr error) {",
+      "content": "func (h *towerDBHarness) deleteSession(id wtdb.SessionID, expErr error) {\n\th.t.Helper()\n\n\terr := h.db.DeleteSession(id)\n\trequire.ErrorIs(h.t, err, expErr)\n}\n\n// queryMatches queries that database for the passed breach hint, returning all\n// matches found.",
+      "length": 174,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) queryMatches(hint blob.BreachHint) []wtdb.Match {",
+      "content": "func (h *towerDBHarness) queryMatches(hint blob.BreachHint) []wtdb.Match {\n\th.t.Helper()\n\n\tmatches, err := h.db.QueryMatches([]blob.BreachHint{hint})\n\trequire.NoError(h.t, err)\n\n\treturn matches\n}\n\n// hasUpdate queries the database for the passed breach hint, asserting that\n// only one match is present and that the hints indeed match. If successful, the\n// match is returned.",
+      "length": 291,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *towerDBHarness) hasUpdate(hint blob.BreachHint) wtdb.Match {",
+      "content": "func (h *towerDBHarness) hasUpdate(hint blob.BreachHint) wtdb.Match {\n\th.t.Helper()\n\n\tmatches := h.queryMatches(hint)\n\trequire.Len(h.t, matches, 1)\n\n\tmatch := matches[0]\n\trequire.Equal(h.t, hint, match.Hint)\n\n\treturn match\n}\n\n// testInsertSession asserts that a session can only be inserted if a session\n// with the same session id does not already exist.",
+      "length": 273,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func testInsertSession(h *towerDBHarness) {",
+      "content": "func testInsertSession(h *towerDBHarness) {\n\tvar id wtdb.SessionID\n\th.getSession(&id, wtdb.ErrSessionNotFound)\n\n\tsession := &wtdb.SessionInfo{\n\t\tID: id,\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType: blob.TypeAltruistCommit,\n\t\t\t},\n\t\t\tMaxUpdates: 100,\n\t\t},\n\t\tRewardAddress: []byte{0x01, 0x02, 0x03},\n\t}\n\n\t// Try to insert the session, which should fail since the policy doesn't\n\t// meet the current sanity checks.\n\th.insertSession(session, wtpolicy.ErrSweepFeeRateTooLow)\n\n\t// Now assign a sane sweep fee rate to the policy, inserting should\n\t// succeed.\n\tsession.Policy.SweepFeeRate = wtpolicy.DefaultSweepFeeRate\n\th.insertSession(session, nil)\n\n\tsession2 := h.getSession(&id, nil)\n\trequire.Equal(h.t, session, session2)\n\n\th.insertSession(session, nil)\n\n\t// Insert a state update to fully commit the session parameters.\n\tupdate := &wtdb.SessionStateUpdate{\n\t\tID:            id,\n\t\tSeqNum:        1,\n\t\tEncryptedBlob: testBlob,\n\t}\n\th.insertUpdate(update, nil)\n\n\t// Trying to insert a new session under the same ID should fail.\n\th.insertSession(session, wtdb.ErrSessionAlreadyExists)\n}\n\n// testMultipleMatches asserts that if multiple sessions insert state updates\n// with the same breach hint that all will be returned from QueryMatches.",
+      "length": 1175,
+      "tokens": 137,
+      "embedding": []
+    },
+    {
+      "slug": "func testMultipleMatches(h *towerDBHarness) {",
+      "content": "func testMultipleMatches(h *towerDBHarness) {\n\tconst numUpdates = 3\n\n\t// Create a new session and send updates with all the same hint.\n\tvar hint blob.BreachHint\n\tfor i := 0; i < numUpdates; i++ {\n\t\tid := *id(i)\n\t\tsession := &wtdb.SessionInfo{\n\t\t\tID: id,\n\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t\t},\n\t\t\t\tMaxUpdates: 3,\n\t\t\t},\n\t\t\tRewardAddress: []byte{},\n\t\t}\n\t\th.insertSession(session, nil)\n\n\t\tupdate := &wtdb.SessionStateUpdate{\n\t\t\tID:            id,\n\t\t\tSeqNum:        1,\n\t\t\tHint:          hint, // Use same hint to cause multiple matches\n\t\t\tEncryptedBlob: testBlob,\n\t\t}\n\t\th.insertUpdate(update, nil)\n\t}\n\n\t// Query the db for matches on the chosen hint.\n\tmatches := h.queryMatches(hint)\n\trequire.Len(h.t, matches, numUpdates)\n\n\t// Assert that the hints are what we asked for, and compute the set of\n\t// sessions returned.\n\tsessions := make(map[wtdb.SessionID]struct{})\n\tfor _, match := range matches {\n\t\trequire.Equal(h.t, hint, match.Hint)\n\t\tsessions[match.ID] = struct{}{}\n\t}\n\n\t// Assert that the sessions returned match the session ids of the\n\t// sessions we initially created.\n\tfor i := 0; i < numUpdates; i++ {\n\t\t_, ok := sessions[*id(i)]\n\t\trequire.Truef(h.t, ok, \"match for session %v not found\", *id(i))\n\t}\n}\n\n// testLookoutTip asserts that the database properly stores and returns the\n// lookout tip block epochs. It also asserts that the epoch returned is nil when\n// no tip has ever been set.",
+      "length": 1420,
+      "tokens": 202,
+      "embedding": []
+    },
+    {
+      "slug": "func testLookoutTip(h *towerDBHarness) {",
+      "content": "func testLookoutTip(h *towerDBHarness) {\n\t// Retrieve lookout tip on fresh db.\n\tepoch, err := h.db.GetLookoutTip()\n\trequire.NoError(h.t, err)\n\n\t// Assert that the epoch is nil.\n\trequire.Nil(h.t, epoch)\n\n\t// Create a closure that inserts an epoch, retrieves it, and asserts\n\t// that the returned epoch matches what was inserted.\n\tsetAndCheck := func(i int) {\n\t\texpEpoch := epochFromInt(1)\n\t\terr = h.db.SetLookoutTip(expEpoch)\n\t\trequire.NoError(h.t, err)\n\n\t\tepoch, err = h.db.GetLookoutTip()\n\t\trequire.NoError(h.t, err)\n\n\t\trequire.Equal(h.t, expEpoch, epoch)\n\t}\n\n\t// Set and assert the lookout tip.\n\tfor i := 0; i < 5; i++ {\n\t\tsetAndCheck(i)\n\t}\n}\n\n// testDeleteSession asserts the behavior of a tower database when deleting\n// session data. The test asserts that the only proper the target session is\n// remmoved, and that only updates for a particular session are pruned.",
+      "length": 801,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func testDeleteSession(h *towerDBHarness) {",
+      "content": "func testDeleteSession(h *towerDBHarness) {\n\t// First, create a session so that the database is not empty.\n\tid0 := id(0)\n\tsession0 := &wtdb.SessionInfo{\n\t\tID: *id0,\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t}\n\th.insertSession(session0, nil)\n\n\t// Now, attempt to delete a session which does not exist, that is also\n\t// different from the first one created.\n\tid1 := id(1)\n\th.deleteSession(*id1, wtdb.ErrSessionNotFound)\n\n\t// The first session should still be present.\n\th.getSession(id0, nil)\n\n\t// Now insert a second session under a different id.\n\tsession1 := &wtdb.SessionInfo{\n\t\tID: *id1,\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t}\n\th.insertSession(session1, nil)\n\n\t// Create and insert updates for both sessions that have the same hint.\n\tvar hint blob.BreachHint\n\tupdate0 := &wtdb.SessionStateUpdate{\n\t\tID:            *id0,\n\t\tHint:          hint,\n\t\tSeqNum:        1,\n\t\tEncryptedBlob: testBlob,\n\t}\n\tupdate1 := &wtdb.SessionStateUpdate{\n\t\tID:            *id1,\n\t\tHint:          hint,\n\t\tSeqNum:        1,\n\t\tEncryptedBlob: testBlob,\n\t}\n\n\t// Insert both updates should succeed.\n\th.insertUpdate(update0, nil)\n\th.insertUpdate(update1, nil)\n\n\t// Remove the new session, which should succeed.\n\th.deleteSession(*id1, nil)\n\n\t// The first session should still be present.\n\th.getSession(id0, nil)\n\n\t// The second session should be removed.\n\th.getSession(id1, wtdb.ErrSessionNotFound)\n\n\t// Assert that only one update is still present.\n\tmatches := h.queryMatches(hint)\n\trequire.Len(h.t, matches, 1)\n\n\t// Assert that the update belongs to the first session.\n\trequire.Equal(h.t, *id0, matches[0].ID)\n\n\t// Finally, remove the first session added.\n\th.deleteSession(*id0, nil)\n\n\t// The session should no longer be present.\n\th.getSession(id0, wtdb.ErrSessionNotFound)\n\n\t// No matches should exist for this hint.\n\tmatches = h.queryMatches(hint)\n\trequire.Zero(h.t, len(matches))\n}\n",
+      "length": 2064,
+      "tokens": 245,
+      "embedding": []
+    },
+    {
+      "slug": "type stateUpdateTest struct {",
+      "content": "type stateUpdateTest struct {\n\tsession    *wtdb.SessionInfo\n\tsessionErr error\n\tupdates    []*wtdb.SessionStateUpdate\n\tupdateErrs []error\n}\n",
+      "length": 104,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func runStateUpdateTest(test stateUpdateTest) func(*towerDBHarness) {",
+      "content": "func runStateUpdateTest(test stateUpdateTest) func(*towerDBHarness) {\n\treturn func(h *towerDBHarness) {\n\t\t// We may need to modify the initial session as we process\n\t\t// updates to discern the expected state of the session. We'll\n\t\t// create a copy of the test session if necessary to prevent\n\t\t// mutations from impacting other tests.\n\t\tvar expSession *wtdb.SessionInfo\n\n\t\t// Create the session if the tests requests one.\n\t\tif test.session != nil {\n\t\t\t// Copy the initial session and insert it into the\n\t\t\t// database.\n\t\t\togSession := *test.session\n\t\t\texpErr := test.sessionErr\n\t\t\th.insertSession(&ogSession, expErr)\n\n\t\t\tif expErr != nil {\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\t// Copy the initial state of the accepted session.\n\t\t\texpSession = &wtdb.SessionInfo{}\n\t\t\t*expSession = *test.session\n\t\t}\n\n\t\trequire.Lenf(h.t, test.updates, len(test.updateErrs),\n\t\t\t\"malformed test case, num updates should match num \"+\n\t\t\t\t\"errors\")\n\n\t\t// Send any updates provided in the test.\n\t\tfor i, update := range test.updates {\n\t\t\texpErr := test.updateErrs[i]\n\t\t\th.insertUpdate(update, expErr)\n\n\t\t\tif expErr != nil {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Don't perform the following checks and modifications\n\t\t\t// if we don't have an expected session to compare\n\t\t\t// against.\n\t\t\tif expSession == nil {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Update the session's last applied and client last\n\t\t\t// applied.\n\t\t\texpSession.LastApplied = update.SeqNum\n\t\t\texpSession.ClientLastApplied = update.LastApplied\n\n\t\t\tmatch := h.hasUpdate(update.Hint)\n\t\t\trequire.Equal(h.t, expSession, match.SessionInfo)\n\t\t}\n\t}\n}\n\nvar stateUpdateNoSession = stateUpdateTest{\n\tsession: nil,\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t},\n\tupdateErrs: []error{\n\t\twtdb.ErrSessionNotFound,\n\t},\n}\n\nvar stateUpdateExhaustSession = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t\tupdateFromInt(id(0), 2, 0),\n\t\tupdateFromInt(id(0), 3, 0),\n\t\tupdateFromInt(id(0), 4, 0),\n\t},\n\tupdateErrs: []error{\n\t\tnil, nil, nil, wtdb.ErrSessionConsumed,\n\t},\n}\n\nvar stateUpdateSeqNumEqualLastApplied = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t\tupdateFromInt(id(0), 2, 1),\n\t\tupdateFromInt(id(0), 3, 2),\n\t\tupdateFromInt(id(0), 3, 3),\n\t},\n\tupdateErrs: []error{\n\t\tnil, nil, nil, wtdb.ErrSeqNumAlreadyApplied,\n\t},\n}\n\nvar stateUpdateSeqNumLTLastApplied = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t\tupdateFromInt(id(0), 2, 1),\n\t\tupdateFromInt(id(0), 1, 2),\n\t},\n\tupdateErrs: []error{\n\t\tnil, nil, wtdb.ErrSeqNumAlreadyApplied,\n\t},\n}\n\nvar stateUpdateSeqNumZeroInvalid = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 0, 0),\n\t},\n\tupdateErrs: []error{\n\t\twtdb.ErrSeqNumAlreadyApplied,\n\t},\n}\n\nvar stateUpdateSkipSeqNum = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 2, 0),\n\t},\n\tupdateErrs: []error{\n\t\twtdb.ErrUpdateOutOfOrder,\n\t},\n}\n\nvar stateUpdateRevertSeqNum = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t\tupdateFromInt(id(0), 2, 0),\n\t\tupdateFromInt(id(0), 1, 0),\n\t},\n\tupdateErrs: []error{\n\t\tnil, nil, wtdb.ErrUpdateOutOfOrder,\n\t},\n}\n\nvar stateUpdateRevertLastApplied = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\tupdateFromInt(id(0), 1, 0),\n\t\tupdateFromInt(id(0), 2, 1),\n\t\tupdateFromInt(id(0), 3, 2),\n\t\tupdateFromInt(id(0), 4, 1),\n\t},\n\tupdateErrs: []error{\n\t\tnil, nil, nil, wtdb.ErrLastAppliedReversion,\n\t},\n}\n\nvar stateUpdateInvalidBlobSize = stateUpdateTest{\n\tsession: &wtdb.SessionInfo{\n\t\tID: *id(0),\n\t\tPolicy: wtpolicy.Policy{\n\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\t\tSweepFeeRate: wtpolicy.DefaultSweepFeeRate,\n\t\t\t},\n\t\t\tMaxUpdates: 3,\n\t\t},\n\t\tRewardAddress: []byte{},\n\t},\n\tupdates: []*wtdb.SessionStateUpdate{\n\t\t{\n\t\t\tID:            *id(0),\n\t\t\tSeqNum:        1,\n\t\t\tLastApplied:   0,\n\t\t\tEncryptedBlob: []byte{0x01, 0x02, 0x03}, // too $hort\n\t\t},\n\t},\n\tupdateErrs: []error{\n\t\twtdb.ErrInvalidBlobSize,\n\t},\n}\n",
+      "length": 5453,
+      "tokens": 551,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTowerDB(t *testing.T) {",
+      "content": "func TestTowerDB(t *testing.T) {\n\tdbCfg := &kvdb.BoltConfig{DBTimeout: kvdb.DefaultDBTimeout}\n\tdbs := []struct {\n\t\tname string\n\t\tinit dbInit\n\t}{\n\t\t{\n\t\t\tname: \"fresh boltdb\",\n\t\t\tinit: func(t *testing.T) watchtower.DB {\n\t\t\t\tpath := t.TempDir()\n\n\t\t\t\tbdb, err := wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, path, \"watchtower.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err := wtdb.OpenTowerDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tt.Cleanup(func() {\n\t\t\t\t\tdb.Close()\n\t\t\t\t})\n\n\t\t\t\treturn db\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"reopened boltdb\",\n\t\t\tinit: func(t *testing.T) watchtower.DB {\n\t\t\t\tpath := t.TempDir()\n\n\t\t\t\tbdb, err := wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, path, \"watchtower.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err := wtdb.OpenTowerDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\t\t\t\tdb.Close()\n\n\t\t\t\t// Open the db again, ensuring we test a\n\t\t\t\t// different path during open and that all\n\t\t\t\t// buckets remain initialized.\n\t\t\t\tbdb, err = wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, path, \"watchtower.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err = wtdb.OpenTowerDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tt.Cleanup(func() {\n\t\t\t\t\tdb.Close()\n\t\t\t\t})\n\n\t\t\t\treturn db\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"mock\",\n\t\t\tinit: func(t *testing.T) watchtower.DB {\n\t\t\t\treturn wtmock.NewTowerDB()\n\t\t\t},\n\t\t},\n\t}\n\n\ttests := []struct {\n\t\tname string\n\t\trun  func(*towerDBHarness)\n\t}{\n\t\t{\n\t\t\tname: \"create session\",\n\t\t\trun:  testInsertSession,\n\t\t},\n\t\t{\n\t\t\tname: \"delete session\",\n\t\t\trun:  testDeleteSession,\n\t\t},\n\t\t{\n\t\t\tname: \"state update no session\",\n\t\t\trun:  runStateUpdateTest(stateUpdateNoSession),\n\t\t},\n\t\t{\n\t\t\tname: \"state update exhaust session\",\n\t\t\trun:  runStateUpdateTest(stateUpdateExhaustSession),\n\t\t},\n\t\t{\n\t\t\tname: \"state update seqnum equal last applied\",\n\t\t\trun: runStateUpdateTest(\n\t\t\t\tstateUpdateSeqNumEqualLastApplied,\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\tname: \"state update seqnum less than last applied\",\n\t\t\trun: runStateUpdateTest(\n\t\t\t\tstateUpdateSeqNumLTLastApplied,\n\t\t\t),\n\t\t},\n\t\t{\n\t\t\tname: \"state update seqnum zero invalid\",\n\t\t\trun:  runStateUpdateTest(stateUpdateSeqNumZeroInvalid),\n\t\t},\n\t\t{\n\t\t\tname: \"state update skip seqnum\",\n\t\t\trun:  runStateUpdateTest(stateUpdateSkipSeqNum),\n\t\t},\n\t\t{\n\t\t\tname: \"state update revert seqnum\",\n\t\t\trun:  runStateUpdateTest(stateUpdateRevertSeqNum),\n\t\t},\n\t\t{\n\t\t\tname: \"state update revert last applied\",\n\t\t\trun:  runStateUpdateTest(stateUpdateRevertLastApplied),\n\t\t},\n\t\t{\n\t\t\tname: \"invalid blob size\",\n\t\t\trun:  runStateUpdateTest(stateUpdateInvalidBlobSize),\n\t\t},\n\t\t{\n\t\t\tname: \"multiple breach matches\",\n\t\t\trun:  testMultipleMatches,\n\t\t},\n\t\t{\n\t\t\tname: \"lookout tip\",\n\t\t\trun:  testLookoutTip,\n\t\t},\n\t}\n\n\tfor _, database := range dbs {\n\t\tdb := database\n\t\tt.Run(db.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tfor _, test := range tests {\n\t\t\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t\t\th := newTowerDBHarness(t, db.init)\n\n\t\t\t\t\ttest.run(h)\n\t\t\t\t})\n\t\t\t}\n\t\t})\n\t}\n}\n\n// id creates a session id from an integer.",
+      "length": 2747,
+      "tokens": 311,
+      "embedding": []
+    },
+    {
+      "slug": "func id(i int) *wtdb.SessionID {",
+      "content": "func id(i int) *wtdb.SessionID {\n\tvar id wtdb.SessionID\n\tbinary.BigEndian.PutUint32(id[:4], uint32(i))\n\treturn &id\n}\n\n// updateFromInt creates a unique update for a given (session, seqnum) pair. The\n// lastApplied argument can be used to construct updates simulating different\n// levels of synchronicity between client and db.",
+      "length": 286,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func updateFromInt(id *wtdb.SessionID, i int,",
+      "content": "func updateFromInt(id *wtdb.SessionID, i int,\n\tlastApplied uint16) *wtdb.SessionStateUpdate {\n\n\t// Ensure the hint is unique.\n\tvar hint blob.BreachHint\n\tcopy(hint[:4], id[:4])\n\tbinary.BigEndian.PutUint16(hint[4:6], uint16(i))\n\n\tblobSize := blob.Size(blob.TypeAltruistCommit)\n\n\treturn &wtdb.SessionStateUpdate{\n\t\tID:            *id,\n\t\tHint:          hint,\n\t\tSeqNum:        uint16(i),\n\t\tLastApplied:   lastApplied,\n\t\tEncryptedBlob: bytes.Repeat([]byte{byte(i)}, blobSize),\n\t}\n}\n\n// epochFromInt creates a block epoch from an integer.",
+      "length": 467,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func epochFromInt(i int) *chainntnfs.BlockEpoch {",
+      "content": "func epochFromInt(i int) *chainntnfs.BlockEpoch {\n\tvar hash chainhash.Hash\n\tbinary.BigEndian.PutUint32(hash[:4], uint32(i))\n\n\treturn &chainntnfs.BlockEpoch{\n\t\tHash:   &hash,\n\t\tHeight: int32(i),\n\t}\n}\n",
+      "length": 141,
+      "tokens": 13,
+      "embedding": []
+    }
+  ]
+}

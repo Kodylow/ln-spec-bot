@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/hop/forwarding_info.go",
+  "package": "hop",
+  "sections": [
+    {
+      "slug": "type ForwardingInfo struct {",
+      "content": "type ForwardingInfo struct {\n\t// Network is the target blockchain network that the HTLC will travel\n\t// over next.\n\tNetwork Network\n\n\t// NextHop is the channel ID of the next hop. The received HTLC should\n\t// be forwarded to this particular channel in order to continue the\n\t// end-to-end route.\n\tNextHop lnwire.ShortChannelID\n\n\t// AmountToForward is the amount of milli-satoshis that the receiving\n\t// node should forward to the next hop.\n\tAmountToForward lnwire.MilliSatoshi\n\n\t// OutgoingCTLV is the specified value of the CTLV timelock to be used\n\t// in the outgoing HTLC.\n\tOutgoingCTLV uint32\n}\n",
+      "length": 553,
+      "tokens": 89,
+      "embedding": []
+    }
+  ]
+}

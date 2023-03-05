@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/state_update_reply.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type StateUpdateCode = ErrorCode",
+      "content": "type StateUpdateCode = ErrorCode\n\nconst (\n\t// StateUpdateCodeClientBehind signals that the client's sequence number\n\t// is behind what the watchtower expects based on its LastApplied. This\n\t// error should cause the client to record the LastApplied field in the\n\t// response, and initiate another attempt with the proper sequence\n\t// number.\n\t//\n\t// NOTE: Repeated occurrences of this could be interpreted as an attempt\n\t// to siphon state updates from the client. If the client believes it\n\t// is not violating the protocol, this could be grounds to blacklist\n\t// this tower from future session negotiation.\n\tStateUpdateCodeClientBehind StateUpdateCode = 70\n\n\t// StateUpdateCodeMaxUpdatesExceeded signals that the client tried to\n\t// send a sequence number beyond the negotiated MaxUpdates of the\n\t// session.\n\tStateUpdateCodeMaxUpdatesExceeded StateUpdateCode = 71\n\n\t// StateUpdateCodeSeqNumOutOfOrder signals the client sent an update\n\t// that does not follow the required incremental monotonicity required\n\t// by the tower.\n\tStateUpdateCodeSeqNumOutOfOrder StateUpdateCode = 72\n)\n\n// StateUpdateReply is a message sent from watchtower to client in response to a\n// StateUpdate message, and signals either an acceptance or rejection of the\n// proposed state update.",
+      "length": 1208,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "type StateUpdateReply struct {",
+      "content": "type StateUpdateReply struct {\n\t// Code will be non-zero if the watchtower rejected the state update.\n\tCode StateUpdateCode\n\n\t// LastApplied returns the sequence number of the last accepted update\n\t// known to the watchtower. If the update was successful, this value\n\t// should be the sequence number of the last update sent.\n\tLastApplied uint16\n}\n\n// A compile time check to ensure StateUpdateReply implements the wtwire.Message\n// interface.\nvar _ Message = (*StateUpdateReply)(nil)\n\n// Decode deserializes a serialized StateUpdateReply message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 627,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *StateUpdateReply) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (t *StateUpdateReply) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&t.Code,\n\t\t&t.LastApplied,\n\t)\n}\n\n// Encode serializes the target StateUpdateReply into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 221,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *StateUpdateReply) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (t *StateUpdateReply) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tt.Code,\n\t\tt.LastApplied,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 186,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *StateUpdateReply) MsgType() MessageType {",
+      "content": "func (t *StateUpdateReply) MsgType() MessageType {\n\treturn MsgStateUpdateReply\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a\n// StateUpdateReply complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 222,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *StateUpdateReply) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (t *StateUpdateReply) MaxPayloadLength(uint32) uint32 {\n\treturn 4\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

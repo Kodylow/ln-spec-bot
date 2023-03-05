@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/message_store_test.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "func createTestMessageStore(t *testing.T) *MessageStore {",
+      "content": "func createTestMessageStore(t *testing.T) *MessageStore {\n\tt.Helper()\n\n\tdb, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\tt.Fatalf(\"unable to open db: %v\", err)\n\t}\n\n\tt.Cleanup(func() {\n\t\tdb.Close()\n\t})\n\n\tstore, err := NewMessageStore(db)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to initialize message store: %v\", err)\n\t}\n\n\treturn store\n}\n",
+      "length": 265,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func randPubKey(t *testing.T) *btcec.PublicKey {",
+      "content": "func randPubKey(t *testing.T) *btcec.PublicKey {\n\tpriv, err := btcec.NewPrivateKey()\n\trequire.NoError(t, err, \"unable to create private key\")\n\n\treturn priv.PubKey()\n}\n",
+      "length": 113,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func randCompressedPubKey(t *testing.T) [33]byte {",
+      "content": "func randCompressedPubKey(t *testing.T) [33]byte {\n\tt.Helper()\n\n\tpubKey := randPubKey(t)\n\n\tvar compressedPubKey [33]byte\n\tcopy(compressedPubKey[:], pubKey.SerializeCompressed())\n\n\treturn compressedPubKey\n}\n",
+      "length": 146,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func randAnnounceSignatures() *lnwire.AnnounceSignatures {",
+      "content": "func randAnnounceSignatures() *lnwire.AnnounceSignatures {\n\treturn &lnwire.AnnounceSignatures{\n\t\tShortChannelID:  lnwire.NewShortChanIDFromInt(rand.Uint64()),\n\t\tExtraOpaqueData: make([]byte, 0),\n\t}\n}\n",
+      "length": 136,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func randChannelUpdate() *lnwire.ChannelUpdate {",
+      "content": "func randChannelUpdate() *lnwire.ChannelUpdate {\n\treturn &lnwire.ChannelUpdate{\n\t\tShortChannelID:  lnwire.NewShortChanIDFromInt(rand.Uint64()),\n\t\tExtraOpaqueData: make([]byte, 0),\n\t}\n}\n\n// TestMessageStoreMessages ensures that messages can be properly queried from\n// the store.",
+      "length": 222,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMessageStoreMessages(t *testing.T) {",
+      "content": "func TestMessageStoreMessages(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll start by creating our test message store.\n\tmsgStore := createTestMessageStore(t)\n\n\t// We'll then create some test messages for two test peers, and none for\n\t// an additional test peer.\n\tchannelUpdate1 := randChannelUpdate()\n\tannounceSignatures1 := randAnnounceSignatures()\n\tpeer1 := randCompressedPubKey(t)\n\tif err := msgStore.AddMessage(channelUpdate1, peer1); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\tif err := msgStore.AddMessage(announceSignatures1, peer1); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\texpectedPeerMsgs1 := map[uint64]lnwire.MessageType{\n\t\tchannelUpdate1.ShortChannelID.ToUint64():      channelUpdate1.MsgType(),\n\t\tannounceSignatures1.ShortChannelID.ToUint64(): announceSignatures1.MsgType(),\n\t}\n\n\tchannelUpdate2 := randChannelUpdate()\n\tpeer2 := randCompressedPubKey(t)\n\tif err := msgStore.AddMessage(channelUpdate2, peer2); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\texpectedPeerMsgs2 := map[uint64]lnwire.MessageType{\n\t\tchannelUpdate2.ShortChannelID.ToUint64(): channelUpdate2.MsgType(),\n\t}\n\n\tpeer3 := randCompressedPubKey(t)\n\texpectedPeerMsgs3 := map[uint64]lnwire.MessageType{}\n\n\t// assertPeerMsgs is a helper closure that we'll use to ensure we\n\t// retrieve the correct set of messages for a given peer.\n\tassertPeerMsgs := func(peerMsgs []lnwire.Message,\n\t\texpected map[uint64]lnwire.MessageType) {\n\n\t\tt.Helper()\n\n\t\tif len(peerMsgs) != len(expected) {\n\t\t\tt.Fatalf(\"expected %d pending messages, got %d\",\n\t\t\t\tlen(expected), len(peerMsgs))\n\t\t}\n\t\tfor _, msg := range peerMsgs {\n\t\t\tvar shortChanID uint64\n\t\t\tswitch msg := msg.(type) {\n\t\t\tcase *lnwire.AnnounceSignatures:\n\t\t\t\tshortChanID = msg.ShortChannelID.ToUint64()\n\t\t\tcase *lnwire.ChannelUpdate:\n\t\t\t\tshortChanID = msg.ShortChannelID.ToUint64()\n\t\t\tdefault:\n\t\t\t\tt.Fatalf(\"found unexpected message type %T\", msg)\n\t\t\t}\n\n\t\t\tmsgType, ok := expected[shortChanID]\n\t\t\tif !ok {\n\t\t\t\tt.Fatalf(\"retrieved message with unexpected ID \"+\n\t\t\t\t\t\"%d from store\", shortChanID)\n\t\t\t}\n\t\t\tif msgType != msg.MsgType() {\n\t\t\t\tt.Fatalf(\"expected message of type %v, got %v\",\n\t\t\t\t\tmsg.MsgType(), msgType)\n\t\t\t}\n\t\t}\n\t}\n\n\t// Then, we'll query the store for the set of messages for each peer and\n\t// ensure it matches what we expect.\n\tpeers := [][33]byte{peer1, peer2, peer3}\n\texpectedPeerMsgs := []map[uint64]lnwire.MessageType{\n\t\texpectedPeerMsgs1, expectedPeerMsgs2, expectedPeerMsgs3,\n\t}\n\tfor i, peer := range peers {\n\t\tpeerMsgs, err := msgStore.MessagesForPeer(peer)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to retrieve messages: %v\", err)\n\t\t}\n\t\tassertPeerMsgs(peerMsgs, expectedPeerMsgs[i])\n\t}\n\n\t// Finally, we'll query the store for all of its messages of every peer.\n\t// Again, each peer should have a set of messages that match what we\n\t// expect.\n\t//\n\t// We'll construct the expected response. Only the first two peers will\n\t// have messages.\n\ttotalPeerMsgs := make(map[[33]byte]map[uint64]lnwire.MessageType, 2)\n\tfor i := 0; i < 2; i++ {\n\t\ttotalPeerMsgs[peers[i]] = expectedPeerMsgs[i]\n\t}\n\n\tmsgs, err := msgStore.Messages()\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve all peers with pending messages: \"+\n\t\t\t\"%v\", err)\n\t}\n\tif len(msgs) != len(totalPeerMsgs) {\n\t\tt.Fatalf(\"expected %d peers with messages, got %d\",\n\t\t\tlen(totalPeerMsgs), len(msgs))\n\t}\n\tfor peer, peerMsgs := range msgs {\n\t\texpected, ok := totalPeerMsgs[peer]\n\t\tif !ok {\n\t\t\tt.Fatalf(\"expected to find pending messages for peer %x\",\n\t\t\t\tpeer)\n\t\t}\n\n\t\tassertPeerMsgs(peerMsgs, expected)\n\t}\n\n\tpeerPubKeys, err := msgStore.Peers()\n\tif err != nil {\n\t\tt.Fatalf(\"unable to retrieve all peers with pending messages: \"+\n\t\t\t\"%v\", err)\n\t}\n\tif len(peerPubKeys) != len(totalPeerMsgs) {\n\t\tt.Fatalf(\"expected %d peers with messages, got %d\",\n\t\t\tlen(totalPeerMsgs), len(peerPubKeys))\n\t}\n\tfor peerPubKey := range peerPubKeys {\n\t\tif _, ok := totalPeerMsgs[peerPubKey]; !ok {\n\t\t\tt.Fatalf(\"expected to find peer %x\", peerPubKey)\n\t\t}\n\t}\n}\n\n// TestMessageStoreUnsupportedMessage ensures that we are not able to add a\n// message which is unsupported, and if a message is found to be unsupported by\n// the current version of the store, that it is properly filtered out from the\n// response.",
+      "length": 4036,
+      "tokens": 515,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMessageStoreUnsupportedMessage(t *testing.T) {",
+      "content": "func TestMessageStoreUnsupportedMessage(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll start by creating our test message store.\n\tmsgStore := createTestMessageStore(t)\n\n\t// Create a message that is known to not be supported by the store.\n\tpeer := randCompressedPubKey(t)\n\tunsupportedMsg := &lnwire.Error{}\n\n\t// Attempting to add it to the store should result in\n\t// ErrUnsupportedMessage.\n\terr := msgStore.AddMessage(unsupportedMsg, peer)\n\tif err != ErrUnsupportedMessage {\n\t\tt.Fatalf(\"expected ErrUnsupportedMessage, got %v\", err)\n\t}\n\n\t// We'll now pretend that the message is actually supported in a future\n\t// version of the store, so it's able to be added successfully. To\n\t// replicate this, we'll add the message manually rather than through\n\t// the existing AddMessage method.\n\tmsgKey := peer[:]\n\tvar rawMsg bytes.Buffer\n\tif _, err := lnwire.WriteMessage(&rawMsg, unsupportedMsg, 0); err != nil {\n\t\tt.Fatalf(\"unable to serialize message: %v\", err)\n\t}\n\terr = kvdb.Update(msgStore.db, func(tx kvdb.RwTx) error {\n\t\tmessageStore := tx.ReadWriteBucket(messageStoreBucket)\n\t\treturn messageStore.Put(msgKey, rawMsg.Bytes())\n\t}, func() {})\n\trequire.NoError(t, err, \"unable to add unsupported message to store\")\n\n\t// Finally, we'll check that the store can properly filter out messages\n\t// that are currently unknown to it. We'll make sure this is done for\n\t// both Messages and MessagesForPeer.\n\ttotalMsgs, err := msgStore.Messages()\n\trequire.NoError(t, err, \"unable to retrieve messages\")\n\tif len(totalMsgs) != 0 {\n\t\tt.Fatalf(\"expected to filter out unsupported message\")\n\t}\n\tpeerMsgs, err := msgStore.MessagesForPeer(peer)\n\trequire.NoError(t, err, \"unable to retrieve peer messages\")\n\tif len(peerMsgs) != 0 {\n\t\tt.Fatalf(\"expected to filter out unsupported message\")\n\t}\n}\n\n// TestMessageStoreDeleteMessage ensures that we can properly delete messages\n// from the store.",
+      "length": 1760,
+      "tokens": 242,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMessageStoreDeleteMessage(t *testing.T) {",
+      "content": "func TestMessageStoreDeleteMessage(t *testing.T) {\n\tt.Parallel()\n\n\tmsgStore := createTestMessageStore(t)\n\n\t// assertMsg is a helper closure we'll use to ensure a message\n\t// does/doesn't exist within the store.\n\tassertMsg := func(msg lnwire.Message, peer [33]byte, exists bool) {\n\t\tt.Helper()\n\n\t\tstoreMsgs, err := msgStore.MessagesForPeer(peer)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to retrieve messages: %v\", err)\n\t\t}\n\n\t\tfound := false\n\t\tfor _, storeMsg := range storeMsgs {\n\t\t\tif reflect.DeepEqual(msg, storeMsg) {\n\t\t\t\tfound = true\n\t\t\t}\n\t\t}\n\n\t\tif found != exists {\n\t\t\tstr := \"find\"\n\t\t\tif !exists {\n\t\t\t\tstr = \"not find\"\n\t\t\t}\n\t\t\tt.Fatalf(\"expected to %v message %v\", str,\n\t\t\t\tspew.Sdump(msg))\n\t\t}\n\t}\n\n\t// An AnnounceSignatures message should exist within the store after\n\t// adding it, and should no longer exists after deleting it.\n\tpeer := randCompressedPubKey(t)\n\tannSig := randAnnounceSignatures()\n\tif err := msgStore.AddMessage(annSig, peer); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\tassertMsg(annSig, peer, true)\n\tif err := msgStore.DeleteMessage(annSig, peer); err != nil {\n\t\tt.Fatalf(\"unable to delete message: %v\", err)\n\t}\n\tassertMsg(annSig, peer, false)\n\n\t// The store allows overwriting ChannelUpdates, since there can be\n\t// multiple versions, so we'll test things slightly different.\n\t//\n\t// The ChannelUpdate message should exist within the store after adding\n\t// it.\n\tchanUpdate := randChannelUpdate()\n\tif err := msgStore.AddMessage(chanUpdate, peer); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\tassertMsg(chanUpdate, peer, true)\n\n\t// Now, we'll create a new version for the same ChannelUpdate message.\n\t// Adding this one to the store will overwrite the previous one, so only\n\t// the new one should exist.\n\tnewChanUpdate := randChannelUpdate()\n\tnewChanUpdate.ShortChannelID = chanUpdate.ShortChannelID\n\tnewChanUpdate.Timestamp = chanUpdate.Timestamp + 1\n\tif err := msgStore.AddMessage(newChanUpdate, peer); err != nil {\n\t\tt.Fatalf(\"unable to add message: %v\", err)\n\t}\n\tassertMsg(chanUpdate, peer, false)\n\tassertMsg(newChanUpdate, peer, true)\n\n\t// Deleting the older message should act as a NOP and should NOT delete\n\t// the newer version as the older no longer exists.\n\tif err := msgStore.DeleteMessage(chanUpdate, peer); err != nil {\n\t\tt.Fatalf(\"unable to delete message: %v\", err)\n\t}\n\tassertMsg(chanUpdate, peer, false)\n\tassertMsg(newChanUpdate, peer, true)\n\n\t// The newer version should no longer exist within the store after\n\t// deleting it.\n\tif err := msgStore.DeleteMessage(newChanUpdate, peer); err != nil {\n\t\tt.Fatalf(\"unable to delete message: %v\", err)\n\t}\n\tassertMsg(newChanUpdate, peer, false)\n}\n",
+      "length": 2529,
+      "tokens": 358,
+      "embedding": []
+    }
+  ]
+}

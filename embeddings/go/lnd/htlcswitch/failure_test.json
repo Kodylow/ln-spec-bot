@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/failure_test.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "func TestLongFailureMessage(t *testing.T) {",
+      "content": "func TestLongFailureMessage(t *testing.T) {\n\tt.Parallel()\n\n\tvar testData struct {\n\t\tSessionKey string\n\t\tPath       []string\n\t\tReason     string\n\t}\n\n\t// Use long 1024-byte test vector from BOLT 04.\n\ttestDataBytes, err := os.ReadFile(\"testdata/long_failure_msg.json\")\n\trequire.NoError(t, err)\n\trequire.NoError(t, json.Unmarshal(testDataBytes, &testData))\n\n\tsessionKeyBytes, _ := hex.DecodeString(testData.SessionKey)\n\n\treason, _ := hex.DecodeString(testData.Reason)\n\n\tsphinxPath := make([]*btcec.PublicKey, len(testData.Path))\n\tfor i, sKey := range testData.Path {\n\t\tbKey, err := hex.DecodeString(sKey)\n\t\trequire.NoError(t, err)\n\n\t\tkey, err := btcec.ParsePubKey(bKey)\n\t\trequire.NoError(t, err)\n\n\t\tsphinxPath[i] = key\n\t}\n\n\tsessionKey, _ := btcec.PrivKeyFromBytes(sessionKeyBytes)\n\n\tcircuit := &sphinx.Circuit{\n\t\tSessionKey:  sessionKey,\n\t\tPaymentPath: sphinxPath,\n\t}\n\n\terrorDecryptor := &SphinxErrorDecrypter{\n\t\tOnionErrorDecrypter: sphinx.NewOnionErrorDecrypter(circuit),\n\t}\n\n\t// Assert that the failure message can still be extracted.\n\tfailure, err := errorDecryptor.DecryptError(reason)\n\trequire.NoError(t, err)\n\n\tincorrectDetails, ok := failure.msg.(*lnwire.FailIncorrectDetails)\n\trequire.True(t, ok)\n\n\tvar value varBytesRecordProducer\n\n\textraData := incorrectDetails.ExtraOpaqueData()\n\ttypeMap, err := extraData.ExtractRecords(&value)\n\trequire.NoError(t, err)\n\trequire.Len(t, typeMap, 1)\n\n\texpectedValue := make([]byte, 300)\n\tfor i := range expectedValue {\n\t\texpectedValue[i] = 128\n\t}\n\n\trequire.Equal(t, expectedValue, value.data)\n}\n",
+      "length": 1431,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "type varBytesRecordProducer struct {",
+      "content": "type varBytesRecordProducer struct {\n\tdata []byte\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (v *varBytesRecordProducer) Record() tlv.Record {",
+      "content": "func (v *varBytesRecordProducer) Record() tlv.Record {\n\treturn tlv.MakePrimitiveRecord(34001, &v.data)\n}\n",
+      "length": 48,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

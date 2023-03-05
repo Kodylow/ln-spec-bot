@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/hodl/mask_dev.go",
+  "package": "dev",
+  "sections": [
+    {
+      "slug": "func MaskFromFlags(flags ...Flag) Mask {",
+      "content": "func MaskFromFlags(flags ...Flag) Mask {\n\tvar mask Mask\n\tfor _, flag := range flags {\n\t\tmask |= Mask(flag)\n\t}\n\n\treturn mask\n}\n\n// Active returns true if the bit corresponding to the flag is set within the\n// mask.",
+      "length": 163,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m Mask) Active(flag Flag) bool {",
+      "content": "func (m Mask) Active(flag Flag) bool {\n\treturn (Flag(m) & flag) > 0\n}\n\n// String returns a human-readable description of all active Flags.",
+      "length": 96,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m Mask) String() string {",
+      "content": "func (m Mask) String() string {\n\tif m == MaskNone {\n\t\treturn \"hodl.Mask(NONE)\"\n\t}\n\n\tvar activeFlags []string\n\tfor i := uint(0); i < 32; i++ {\n\t\tflag := Flag(1 << i)\n\t\tif m.Active(flag) {\n\t\t\tactiveFlags = append(activeFlags, flag.String())\n\t\t}\n\t}\n\n\treturn fmt.Sprintf(\"hodl.Mask(%s)\", strings.Join(activeFlags, \"|\"))\n}\n",
+      "length": 272,
+      "tokens": 39,
+      "embedding": []
+    }
+  ]
+}

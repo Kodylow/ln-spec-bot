@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/walletrpc_default.go",
+  "package": "!walletrpc",
+  "sections": [
+    {
+      "slug": "func walletCommands() []cli.Command {",
+      "content": "func walletCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

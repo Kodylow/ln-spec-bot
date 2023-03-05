@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/lookout/justice_descriptor.go",
+  "package": "lookout",
+  "sections": [
+    {
+      "slug": "type JusticeDescriptor struct {",
+      "content": "type JusticeDescriptor struct {\n\t// BreachedCommitTx is the commitment transaction that caused the breach\n\t// to be detected.\n\tBreachedCommitTx *wire.MsgTx\n\n\t// SessionInfo contains the contract with the watchtower client and\n\t// the prenegotiated terms they agreed to.\n\tSessionInfo *wtdb.SessionInfo\n\n\t// JusticeKit contains the decrypted blob and information required to\n\t// construct the transaction scripts and witnesses.\n\tJusticeKit *blob.JusticeKit\n}\n\n// breachedInput contains the required information to construct and spend\n// breached outputs on a commitment transaction.",
+      "length": 534,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "type breachedInput struct {",
+      "content": "type breachedInput struct {\n\ttxOut    *wire.TxOut\n\toutPoint wire.OutPoint\n\twitness  [][]byte\n\tsequence uint32\n}\n\n// commitToLocalInput extracts the information required to spend the commit\n// to-local output.",
+      "length": 173,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *JusticeDescriptor) commitToLocalInput() (*breachedInput, error) {",
+      "content": "func (p *JusticeDescriptor) commitToLocalInput() (*breachedInput, error) {\n\t// Retrieve the to-local witness script from the justice kit.\n\ttoLocalScript, err := p.JusticeKit.CommitToLocalWitnessScript()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Compute the witness script hash, which will be used to locate the\n\t// input on the breaching commitment transaction.\n\ttoLocalWitnessHash, err := input.WitnessScriptHash(toLocalScript)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Locate the to-local output on the breaching commitment transaction.\n\ttoLocalIndex, toLocalTxOut, err := findTxOutByPkScript(\n\t\tp.BreachedCommitTx, toLocalWitnessHash,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Construct the to-local outpoint that will be spent in the justice\n\t// transaction.\n\ttoLocalOutPoint := wire.OutPoint{\n\t\tHash:  p.BreachedCommitTx.TxHash(),\n\t\tIndex: toLocalIndex,\n\t}\n\n\t// Retrieve to-local witness stack, which primarily includes a signature\n\t// under the revocation pubkey.\n\twitnessStack, err := p.JusticeKit.CommitToLocalRevokeWitnessStack()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &breachedInput{\n\t\ttxOut:    toLocalTxOut,\n\t\toutPoint: toLocalOutPoint,\n\t\twitness:  buildWitness(witnessStack, toLocalScript),\n\t}, nil\n}\n\n// commitToRemoteInput extracts the information required to spend the commit\n// to-remote output.",
+      "length": 1208,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *JusticeDescriptor) commitToRemoteInput() (*breachedInput, error) {",
+      "content": "func (p *JusticeDescriptor) commitToRemoteInput() (*breachedInput, error) {\n\t// Retrieve the to-remote witness script from the justice kit.\n\ttoRemoteScript, err := p.JusticeKit.CommitToRemoteWitnessScript()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar (\n\t\ttoRemoteScriptHash []byte\n\t\ttoRemoteSequence   uint32\n\t)\n\tif p.JusticeKit.BlobType.IsAnchorChannel() {\n\t\ttoRemoteScriptHash, err = input.WitnessScriptHash(\n\t\t\ttoRemoteScript,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\ttoRemoteSequence = 1\n\t} else {\n\t\t// Since the to-remote witness script should just be a regular p2wkh\n\t\t// output, we'll parse it to retrieve the public key.\n\t\ttoRemotePubKey, err := btcec.ParsePubKey(toRemoteScript)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Compute the witness script hash from the to-remote pubkey, which will\n\t\t// be used to locate the input on the breach commitment transaction.\n\t\ttoRemoteScriptHash, err = input.CommitScriptUnencumbered(\n\t\t\ttoRemotePubKey,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// Locate the to-remote output on the breaching commitment transaction.\n\ttoRemoteIndex, toRemoteTxOut, err := findTxOutByPkScript(\n\t\tp.BreachedCommitTx, toRemoteScriptHash,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Construct the to-remote outpoint which will be spent in the justice\n\t// transaction.\n\ttoRemoteOutPoint := wire.OutPoint{\n\t\tHash:  p.BreachedCommitTx.TxHash(),\n\t\tIndex: toRemoteIndex,\n\t}\n\n\t// Retrieve the to-remote witness stack, which is just a signature under\n\t// the to-remote pubkey.\n\twitnessStack, err := p.JusticeKit.CommitToRemoteWitnessStack()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &breachedInput{\n\t\ttxOut:    toRemoteTxOut,\n\t\toutPoint: toRemoteOutPoint,\n\t\twitness:  buildWitness(witnessStack, toRemoteScript),\n\t\tsequence: toRemoteSequence,\n\t}, nil\n}\n\n// assembleJusticeTxn accepts the breached inputs recovered from state update\n// and attempts to construct the justice transaction that sweeps the victims\n// funds to their wallet and claims the watchtower's reward.",
+      "length": 1869,
+      "tokens": 253,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *JusticeDescriptor) assembleJusticeTxn(txWeight int64,",
+      "content": "func (p *JusticeDescriptor) assembleJusticeTxn(txWeight int64,\n\tinputs ...*breachedInput) (*wire.MsgTx, error) {\n\n\tjusticeTxn := wire.NewMsgTx(2)\n\n\t// First, construct add the breached inputs to our justice transaction\n\t// and compute the total amount that will be swept.\n\tvar totalAmt btcutil.Amount\n\tfor _, inp := range inputs {\n\t\ttotalAmt += btcutil.Amount(inp.txOut.Value)\n\t\tjusticeTxn.AddTxIn(&wire.TxIn{\n\t\t\tPreviousOutPoint: inp.outPoint,\n\t\t\tSequence:         inp.sequence,\n\t\t})\n\t}\n\n\t// Using the session's policy, compute the outputs that should be added\n\t// to the justice transaction. In the case of an altruist sweep, there\n\t// will be a single output paying back to the victim. Otherwise for a\n\t// reward sweep, there will be two outputs, one of which pays back to\n\t// the victim while the other gives a cut to the tower.\n\toutputs, err := p.SessionInfo.Policy.ComputeJusticeTxOuts(\n\t\ttotalAmt, txWeight, p.JusticeKit.SweepAddress[:],\n\t\tp.SessionInfo.RewardAddress,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Attach the computed txouts to the justice transaction.\n\tjusticeTxn.TxOut = outputs\n\n\t// Apply a BIP69 sort to the resulting transaction.\n\ttxsort.InPlaceSort(justiceTxn)\n\n\tbtx := btcutil.NewTx(justiceTxn)\n\tif err := blockchain.CheckTransactionSanity(btx); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Since the transaction inputs could have been reordered as a result of the\n\t// BIP69 sort, create an index mapping each prevout to it's new index.\n\tinputIndex := make(map[wire.OutPoint]int)\n\tfor i, txIn := range justiceTxn.TxIn {\n\t\tinputIndex[txIn.PreviousOutPoint] = i\n\t}\n\n\t// Attach each of the provided witnesses to the transaction.\n\tprevOutFetcher, err := prevOutFetcher(inputs)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"error creating previous output \"+\n\t\t\t\"fetcher: %v\", err)\n\t}\n\tfor _, inp := range inputs {\n\t\t// Lookup the input's new post-sort position.\n\t\ti := inputIndex[inp.outPoint]\n\t\tjusticeTxn.TxIn[i].Witness = inp.witness\n\n\t\t// Validate the reconstructed witnesses to ensure they are\n\t\t// valid for the breached inputs.\n\t\tvm, err := txscript.NewEngine(\n\t\t\tinp.txOut.PkScript, justiceTxn, i,\n\t\t\ttxscript.StandardVerifyFlags,\n\t\t\tnil, nil, inp.txOut.Value, prevOutFetcher,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tif err := vm.Execute(); err != nil {\n\t\t\tlog.Debugf(\"Failed to validate justice transaction: %s\",\n\t\t\t\tspew.Sdump(justiceTxn))\n\t\t\treturn nil, fmt.Errorf(\"error validating TX: %v\", err)\n\t\t}\n\t}\n\n\treturn justiceTxn, nil\n}\n\n// CreateJusticeTxn computes the justice transaction that sweeps a breaching\n// commitment transaction. The justice transaction is constructed by assembling\n// the witnesses using data provided by the client in a prior state update.\n//\n// NOTE: An older version of ToLocalPenaltyWitnessSize underestimated the size\n// of the witness by one byte, which could cause the signature(s) to break if\n// the tower is reconstructing with the newer constant because the output values\n// might differ. This method retains that original behavior to not invalidate\n// historical signatures.",
+      "length": 2896,
+      "tokens": 413,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *JusticeDescriptor) CreateJusticeTxn() (*wire.MsgTx, error) {",
+      "content": "func (p *JusticeDescriptor) CreateJusticeTxn() (*wire.MsgTx, error) {\n\tvar (\n\t\tsweepInputs    = make([]*breachedInput, 0, 2)\n\t\tweightEstimate input.TxWeightEstimator\n\t)\n\n\t// Add the sweep address's contribution, depending on whether it is a\n\t// p2wkh or p2wsh output.\n\tswitch len(p.JusticeKit.SweepAddress) {\n\tcase input.P2WPKHSize:\n\t\tweightEstimate.AddP2WKHOutput()\n\n\tcase input.P2WSHSize:\n\t\tweightEstimate.AddP2WSHOutput()\n\n\tdefault:\n\t\treturn nil, ErrUnknownSweepAddrType\n\t}\n\n\t// Add our reward address to the weight estimate if the policy's blob\n\t// type specifies a reward output.\n\tif p.SessionInfo.Policy.BlobType.Has(blob.FlagReward) {\n\t\tweightEstimate.AddP2WKHOutput()\n\t}\n\n\t// Assemble the breached to-local output from the justice descriptor and\n\t// add it to our weight estimate.\n\ttoLocalInput, err := p.commitToLocalInput()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// An older ToLocalPenaltyWitnessSize constant used to underestimate the\n\t// size by one byte. The diferrence in weight can cause different output\n\t// values on the sweep transaction, so we mimic the original bug to\n\t// avoid invalidating signatures by older clients. For anchor channels\n\t// we correct this and use the correct witness size.\n\tif p.JusticeKit.BlobType.IsAnchorChannel() {\n\t\tweightEstimate.AddWitnessInput(input.ToLocalPenaltyWitnessSize)\n\t} else {\n\t\tweightEstimate.AddWitnessInput(input.ToLocalPenaltyWitnessSize - 1)\n\t}\n\n\tsweepInputs = append(sweepInputs, toLocalInput)\n\n\tlog.Debugf(\"Found to local witness output=%#v, stack=%v\",\n\t\ttoLocalInput.txOut, toLocalInput.witness)\n\n\t// If the justice kit specifies that we have to sweep the to-remote\n\t// output, we'll also try to assemble the output and add it to weight\n\t// estimate if successful.\n\tif p.JusticeKit.HasCommitToRemoteOutput() {\n\t\ttoRemoteInput, err := p.commitToRemoteInput()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tsweepInputs = append(sweepInputs, toRemoteInput)\n\n\t\tlog.Debugf(\"Found to remote witness output=%#v, stack=%v\",\n\t\t\ttoRemoteInput.txOut, toRemoteInput.witness)\n\n\t\tif p.JusticeKit.BlobType.IsAnchorChannel() {\n\t\t\tweightEstimate.AddWitnessInput(input.ToRemoteConfirmedWitnessSize)\n\t\t} else {\n\t\t\tweightEstimate.AddWitnessInput(input.P2WKHWitnessSize)\n\t\t}\n\t}\n\n\t// TODO(conner): sweep htlc outputs\n\n\ttxWeight := int64(weightEstimate.Weight())\n\n\treturn p.assembleJusticeTxn(txWeight, sweepInputs...)\n}\n\n// findTxOutByPkScript searches the given transaction for an output whose\n// pkscript matches the query. If one is found, the TxOut is returned along with\n// the index.\n//\n// NOTE: The search stops after the first match is found.",
+      "length": 2445,
+      "tokens": 295,
+      "embedding": []
+    },
+    {
+      "slug": "func findTxOutByPkScript(txn *wire.MsgTx,",
+      "content": "func findTxOutByPkScript(txn *wire.MsgTx,\n\tpkScript []byte) (uint32, *wire.TxOut, error) {\n\n\tfound, index := input.FindScriptOutputIndex(txn, pkScript)\n\tif !found {\n\t\treturn 0, nil, ErrOutputNotFound\n\t}\n\n\treturn index, txn.TxOut[index], nil\n}\n\n// buildWitness appends the witness script to a given witness stack.",
+      "length": 260,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func buildWitness(witnessStack [][]byte, witnessScript []byte) [][]byte {",
+      "content": "func buildWitness(witnessStack [][]byte, witnessScript []byte) [][]byte {\n\twitness := make([][]byte, len(witnessStack)+1)\n\tlastIdx := copy(witness, witnessStack)\n\twitness[lastIdx] = witnessScript\n\n\treturn witness\n}\n\n// prevOutFetcher returns a txscript.MultiPrevOutFetcher for the given set\n// of inputs.",
+      "length": 222,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func prevOutFetcher(inputs []*breachedInput) (*txscript.MultiPrevOutFetcher,",
+      "content": "func prevOutFetcher(inputs []*breachedInput) (*txscript.MultiPrevOutFetcher,\n\terror) {\n\n\tfetcher := txscript.NewMultiPrevOutFetcher(nil)\n\tfor _, inp := range inputs {\n\t\tif inp.txOut == nil {\n\t\t\treturn nil, fmt.Errorf(\"missing input utxo information\")\n\t\t}\n\n\t\tfetcher.AddPrevOut(inp.outPoint, inp.txOut)\n\t}\n\n\treturn fetcher, nil\n}\n",
+      "length": 239,
+      "tokens": 31,
+      "embedding": []
+    }
+  ]
+}

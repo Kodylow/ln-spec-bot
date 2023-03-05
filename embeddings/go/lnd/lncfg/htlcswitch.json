@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/htlcswitch.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Htlcswitch struct {",
+      "content": "type Htlcswitch struct {\n\tMailboxDeliveryTimeout time.Duration `long:\"mailboxdeliverytimeout\" description:\"The timeout value when delivering HTLCs to a channel link. Setting this value too small will result in local payment failures if large number of payments are sent over a short period.\"`\n}\n\n// Validate checks the values configured for htlcswitch.",
+      "length": 324,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *Htlcswitch) Validate() error {",
+      "content": "func (h *Htlcswitch) Validate() error {\n\tif h.MailboxDeliveryTimeout <= 0 {\n\t\treturn fmt.Errorf(\"mailboxdeliverytimeout must be positive\")\n\t}\n\n\tif h.MailboxDeliveryTimeout > MaxMailboxDeliveryTimeout {\n\t\treturn fmt.Errorf(\"mailboxdeliverytimeout: %v exceeds \"+\n\t\t\t\"maximum: %v\", h.MailboxDeliveryTimeout,\n\t\t\tMaxMailboxDeliveryTimeout)\n\t}\n\n\treturn nil\n}\n",
+      "length": 301,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

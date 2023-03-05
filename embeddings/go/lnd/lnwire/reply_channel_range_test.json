@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/reply_channel_range_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestReplyChannelRangeUnsorted(t *testing.T) {",
+      "content": "func TestReplyChannelRangeUnsorted(t *testing.T) {\n\tfor _, test := range unsortedSidTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\treq := &ReplyChannelRange{\n\t\t\t\tEncodingType: test.encType,\n\t\t\t\tShortChanIDs: test.sids,\n\t\t\t\tnoSort:       true,\n\t\t\t}\n\n\t\t\tvar b bytes.Buffer\n\t\t\terr := req.Encode(&b, 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to encode req: %v\", err)\n\t\t\t}\n\n\t\t\tvar req2 ReplyChannelRange\n\t\t\terr = req2.Decode(bytes.NewReader(b.Bytes()), 0)\n\t\t\tif _, ok := err.(ErrUnsortedSIDs); !ok {\n\t\t\t\tt.Fatalf(\"expected ErrUnsortedSIDs, got: %v\",\n\t\t\t\t\terr)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestReplyChannelRangeEmpty tests encoding and decoding a ReplyChannelRange\n// that doesn't contain any channel results.",
+      "length": 636,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func TestReplyChannelRangeEmpty(t *testing.T) {",
+      "content": "func TestReplyChannelRangeEmpty(t *testing.T) {\n\tt.Parallel()\n\n\temptyChannelsTests := []struct {\n\t\tname       string\n\t\tencType    ShortChanIDEncoding\n\t\tencodedHex string\n\t}{\n\t\t{\n\t\t\tname:    \"empty plain encoding\",\n\t\t\tencType: EncodingSortedPlain,\n\t\t\tencodedHex: \"000000000000000000000000000000000000000\" +\n\t\t\t\t\"00000000000000000000000000000000100000002\" +\n\t\t\t\t\"01000100\",\n\t\t},\n\t\t{\n\t\t\tname:    \"empty zlib encoding\",\n\t\t\tencType: EncodingSortedZlib,\n\t\t\tencodedHex: \"00000000000000000000000000000000000000\" +\n\t\t\t\t\"0000000000000000000000000000000001000000\" +\n\t\t\t\t\"0201000101\",\n\t\t},\n\t}\n\n\tfor _, test := range emptyChannelsTests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\treq := ReplyChannelRange{\n\t\t\t\tFirstBlockHeight: 1,\n\t\t\t\tNumBlocks:        2,\n\t\t\t\tComplete:         1,\n\t\t\t\tEncodingType:     test.encType,\n\t\t\t\tShortChanIDs:     nil,\n\t\t\t\tExtraData:        make([]byte, 0),\n\t\t\t}\n\n\t\t\t// First decode the hex string in the test case into a\n\t\t\t// new ReplyChannelRange message. It should be\n\t\t\t// identical to the one created above.\n\t\t\tvar req2 ReplyChannelRange\n\t\t\tb, _ := hex.DecodeString(test.encodedHex)\n\t\t\terr := req2.Decode(bytes.NewReader(b), 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to decode req: %v\", err)\n\t\t\t}\n\t\t\tif !reflect.DeepEqual(req, req2) {\n\t\t\t\tt.Fatalf(\"requests don't match: expected %v got %v\",\n\t\t\t\t\tspew.Sdump(req), spew.Sdump(req2))\n\t\t\t}\n\n\t\t\t// Next, we go in the reverse direction: encode the\n\t\t\t// request created above, and assert that it matches\n\t\t\t// the raw byte encoding.\n\t\t\tvar b2 bytes.Buffer\n\t\t\terr = req.Encode(&b2, 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"unable to encode req: %v\", err)\n\t\t\t}\n\t\t\tif !bytes.Equal(b, b2.Bytes()) {\n\t\t\t\tt.Fatalf(\"encoded requests don't match: expected %x got %x\",\n\t\t\t\t\tb, b2.Bytes())\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 1658,
+      "tokens": 196,
+      "embedding": []
+    }
+  ]
+}

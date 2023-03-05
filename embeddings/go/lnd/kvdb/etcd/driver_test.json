@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/driver_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestOpenCreateFailure(t *testing.T) {",
+      "content": "func TestOpenCreateFailure(t *testing.T) {\n\tt.Parallel()\n\n\tdb, err := walletdb.Open(dbType)\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Open(dbType, \"wrong\")\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Create(dbType)\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n\n\tdb, err = walletdb.Create(dbType, \"wrong\")\n\trequire.Error(t, err)\n\trequire.Nil(t, db)\n}\n",
+      "length": 329,
+      "tokens": 36,
+      "embedding": []
+    }
+  ]
+}

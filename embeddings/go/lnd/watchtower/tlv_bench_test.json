@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/tlv_bench_test.go",
+  "package": "watchtower_test",
+  "sections": [
+    {
+      "slug": "type CreateSessionTLV struct {",
+      "content": "type CreateSessionTLV struct {\n\tBlobType     blob.Type\n\tMaxUpdates   uint16\n\tRewardBase   uint32\n\tRewardRate   uint32\n\tSweepFeeRate chainfee.SatPerKWeight\n\n\ttlvStream *tlv.Stream\n}\n\n// EBlobType is an encoder for blob.Type.",
+      "length": 183,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func EBlobType(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func EBlobType(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif t, ok := val.(*blob.Type); ok {\n\t\treturn tlv.EUint16T(w, uint16(*t), buf)\n\t}\n\treturn tlv.NewTypeForEncodingErr(val, \"blob.Type\")\n}\n\n// EBlobType is an decoder for blob.Type.",
+      "length": 171,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func DBlobType(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func DBlobType(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tif typ, ok := val.(*blob.Type); ok {\n\t\tvar t uint16\n\t\terr := tlv.DUint16(r, &t, buf, l)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\t*typ = blob.Type(t)\n\t\treturn nil\n\t}\n\treturn tlv.NewTypeForDecodingErr(val, \"blob.Type\", l, 2)\n}\n\n// ESatPerKW is an encoder for lnwallet.SatPerKWeight.",
+      "length": 266,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func ESatPerKW(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func ESatPerKW(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif v, ok := val.(*chainfee.SatPerKWeight); ok {\n\t\tv64 := uint64(*v)\n\t\treturn tlv.EUint64(w, &v64, buf)\n\t}\n\treturn tlv.NewTypeForEncodingErr(val, \"chainfee.SatPerKWeight\")\n}\n\n// DSatPerKW is an decoder for lnwallet.SatPerKWeight.",
+      "length": 222,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func DSatPerKW(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func DSatPerKW(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tif v, ok := val.(*chainfee.SatPerKWeight); ok {\n\t\tvar sat uint64\n\t\terr := tlv.DUint64(r, &sat, buf, l)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\t*v = chainfee.SatPerKWeight(sat)\n\t\treturn nil\n\t}\n\treturn tlv.NewTypeForDecodingErr(val, \"chainfee.SatPerKWeight\", l, 8)\n}\n\n// NewCreateSessionTLV initializes a new CreateSessionTLV message.",
+      "length": 319,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func NewCreateSessionTLV() *CreateSessionTLV {",
+      "content": "func NewCreateSessionTLV() *CreateSessionTLV {\n\tm := &CreateSessionTLV{}\n\tm.tlvStream = tlv.MustNewStream(\n\t\ttlv.MakeStaticRecord(0, &m.BlobType, 2, EBlobType, DBlobType),\n\t\ttlv.MakePrimitiveRecord(1, &m.MaxUpdates),\n\t\ttlv.MakePrimitiveRecord(2, &m.RewardBase),\n\t\ttlv.MakePrimitiveRecord(3, &m.RewardRate),\n\t\ttlv.MakeStaticRecord(4, &m.SweepFeeRate, 8, ESatPerKW, DSatPerKW),\n\t)\n\n\treturn m\n}\n\n// Encode writes the CreateSessionTLV to the passed io.Writer.",
+      "length": 396,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CreateSessionTLV) Encode(w io.Writer) error {",
+      "content": "func (c *CreateSessionTLV) Encode(w io.Writer) error {\n\treturn c.tlvStream.Encode(w)\n}\n\n// Decode reads the CreateSessionTLV from the passed io.Reader.",
+      "length": 93,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CreateSessionTLV) Decode(r io.Reader) error {",
+      "content": "func (c *CreateSessionTLV) Decode(r io.Reader) error {\n\treturn c.tlvStream.Decode(r)\n}\n\n// BenchmarkEncodeCreateSession benchmarks encoding of the non-TLV\n// CreateSession.",
+      "length": 113,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkEncodeCreateSession(t *testing.B) {",
+      "content": "func BenchmarkEncodeCreateSession(t *testing.B) {\n\tm := &wtwire.CreateSession{}\n\n\tt.ReportAllocs()\n\tt.ResetTimer()\n\n\tvar err error\n\tfor i := 0; i < t.N; i++ {\n\t\terr = m.Encode(ioutil.Discard, 0)\n\t}\n\trequire.NoError(t, err)\n}\n\n// BenchmarkEncodeCreateSessionTLV benchmarks encoding of the TLV CreateSession.",
+      "length": 244,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkEncodeCreateSessionTLV(t *testing.B) {",
+      "content": "func BenchmarkEncodeCreateSessionTLV(t *testing.B) {\n\tm := NewCreateSessionTLV()\n\n\tt.ReportAllocs()\n\tt.ResetTimer()\n\n\tvar err error\n\tfor i := 0; i < t.N; i++ {\n\t\terr = m.Encode(ioutil.Discard)\n\t}\n\trequire.NoError(t, err)\n}\n\n// BenchmarkDecodeCreateSession benchmarks encoding of the non-TLV\n// CreateSession.",
+      "length": 242,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDecodeCreateSession(t *testing.B) {",
+      "content": "func BenchmarkDecodeCreateSession(t *testing.B) {\n\tm := &wtwire.CreateSession{}\n\n\tvar b bytes.Buffer\n\terr := m.Encode(&b, 0)\n\trequire.NoError(t, err)\n\n\tr := bytes.NewReader(b.Bytes())\n\n\tt.ReportAllocs()\n\tt.ResetTimer()\n\n\tfor i := 0; i < t.N; i++ {\n\t\tr.Seek(0, 0)\n\t\terr = m.Decode(r, 0)\n\t}\n\trequire.NoError(t, err)\n}\n\n// BenchmarkDecodeCreateSessionTLV benchmarks decoding of the TLV CreateSession.",
+      "length": 329,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkDecodeCreateSessionTLV(t *testing.B) {",
+      "content": "func BenchmarkDecodeCreateSessionTLV(t *testing.B) {\n\tm := NewCreateSessionTLV()\n\n\tvar b bytes.Buffer\n\terr := m.Encode(&b)\n\trequire.NoError(t, err)\n\n\tr := bytes.NewReader(b.Bytes())\n\n\tt.ReportAllocs()\n\tt.ResetTimer()\n\n\tfor i := 0; i < t.N; i++ {\n\t\tr.Seek(0, 0)\n\t\terr = m.Decode(r)\n\t}\n\trequire.NoError(t, err)\n}\n",
+      "length": 241,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

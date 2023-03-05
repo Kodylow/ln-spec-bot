@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/peersrpc_default.go",
+  "package": "!peersrpc",
+  "sections": [
+    {
+      "slug": "func peersCommands() []cli.Command {",
+      "content": "func peersCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

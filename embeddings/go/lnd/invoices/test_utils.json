@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/test_utils.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type mockChainNotifier struct {",
+      "content": "type mockChainNotifier struct {\n\tchainntnfs.ChainNotifier\n\n\tblockChan chan *chainntnfs.BlockEpoch\n}\n",
+      "length": 64,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockNotifier() *mockChainNotifier {",
+      "content": "func newMockNotifier() *mockChainNotifier {\n\treturn &mockChainNotifier{\n\t\tblockChan: make(chan *chainntnfs.BlockEpoch),\n\t}\n}\n\n// RegisterBlockEpochNtfn mocks a block epoch notification, using the mock's\n// block channel to deliver blocks to the client.",
+      "length": 202,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (",
+      "content": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (\n\t*chainntnfs.BlockEpochEvent, error) {\n\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tEpochs: m.blockChan,\n\t\tCancel: func() {},\n\t}, nil\n}\n\nconst (\n\ttestCurrentHeight = int32(1)\n)\n\nvar (\n\ttestTimeout = 5 * time.Second\n\n\ttestTime = time.Date(2018, time.February, 2, 14, 0, 0, 0, time.UTC)\n\n\ttestInvoicePreimage = lntypes.Preimage{1}\n\n\ttestPrivKeyBytes, _ = hex.DecodeString(\n\t\t\"e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2d\" +\n\t\t\t\"b734\",\n\t)\n\n\ttestPrivKey, _ = btcec.PrivKeyFromBytes(testPrivKeyBytes)\n\n\ttestInvoiceDescription = \"coffee\"\n\n\ttestInvoiceAmount = lnwire.MilliSatoshi(100000)\n\n\ttestNetParams = &chaincfg.MainNetParams\n\n\ttestMessageSigner = zpay32.MessageSigner{\n\t\tSignCompact: func(msg []byte) ([]byte, error) {\n\t\t\thash := chainhash.HashB(msg)\n\t\t\tsig, err := ecdsa.SignCompact(testPrivKey, hash, true)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, fmt.Errorf(\"can't sign the \"+\n\t\t\t\t\t\"message: %v\", err)\n\t\t\t}\n\n\t\t\treturn sig, nil\n\t\t},\n\t}\n\n\ttestFeatures = lnwire.NewFeatureVector(\n\t\tnil, lnwire.Features,\n\t)\n)\n",
+      "length": 964,
+      "tokens": 105,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestInvoice(t *testing.T, preimage lntypes.Preimage,",
+      "content": "func newTestInvoice(t *testing.T, preimage lntypes.Preimage,\n\ttimestamp time.Time, expiry time.Duration) *Invoice {\n\n\tt.Helper()\n\n\tif expiry == 0 {\n\t\texpiry = time.Hour\n\t}\n\n\tvar payAddr [32]byte\n\tif _, err := rand.Read(payAddr[:]); err != nil {\n\t\tt.Fatalf(\"unable to generate payment addr: %v\", err)\n\t}\n\n\trawInvoice, err := zpay32.NewInvoice(\n\t\ttestNetParams,\n\t\tpreimage.Hash(),\n\t\ttimestamp,\n\t\tzpay32.Amount(testInvoiceAmount),\n\t\tzpay32.Description(testInvoiceDescription),\n\t\tzpay32.Expiry(expiry),\n\t\tzpay32.PaymentAddr(payAddr),\n\t)\n\trequire.NoError(t, err, \"Error while creating new invoice\")\n\n\tpaymentRequest, err := rawInvoice.Encode(testMessageSigner)\n\n\trequire.NoError(t, err, \"Error while encoding payment request\")\n\n\treturn &Invoice{\n\t\tTerms: ContractTerm{\n\t\t\tPaymentPreimage: &preimage,\n\t\t\tPaymentAddr:     payAddr,\n\t\t\tValue:           testInvoiceAmount,\n\t\t\tExpiry:          expiry,\n\t\t\tFeatures:        testFeatures,\n\t\t},\n\t\tPaymentRequest: []byte(paymentRequest),\n\t\tCreationDate:   timestamp,\n\t}\n}\n\n// invoiceExpiryTestData simply holds generated expired and pending invoices.",
+      "length": 982,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "type invoiceExpiryTestData struct {",
+      "content": "type invoiceExpiryTestData struct {\n\texpiredInvoices map[lntypes.Hash]*Invoice\n\tpendingInvoices map[lntypes.Hash]*Invoice\n}\n\n// generateInvoiceExpiryTestData generates the specified number of fake expired\n// and pending invoices anchored to the passed now timestamp.",
+      "length": 225,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func generateInvoiceExpiryTestData(",
+      "content": "func generateInvoiceExpiryTestData(\n\tt *testing.T, now time.Time,\n\toffset, numExpired, numPending int) invoiceExpiryTestData {\n\n\tt.Helper()\n\n\tvar testData invoiceExpiryTestData\n\n\ttestData.expiredInvoices = make(map[lntypes.Hash]*Invoice)\n\ttestData.pendingInvoices = make(map[lntypes.Hash]*Invoice)\n\n\texpiredCreationDate := now.Add(-24 * time.Hour)\n\n\tfor i := 1; i <= numExpired; i++ {\n\t\tvar preimage lntypes.Preimage\n\t\tbinary.BigEndian.PutUint32(preimage[:4], uint32(offset+i))\n\t\tduration := (i + offset) % 24\n\t\texpiry := time.Duration(duration) * time.Hour\n\t\tinvoice := newTestInvoice(\n\t\t\tt, preimage, expiredCreationDate, expiry,\n\t\t)\n\t\ttestData.expiredInvoices[preimage.Hash()] = invoice\n\t}\n\n\tfor i := 1; i <= numPending; i++ {\n\t\tvar preimage lntypes.Preimage\n\t\tbinary.BigEndian.PutUint32(preimage[4:], uint32(offset+i))\n\t\tduration := (i + offset) % 24\n\t\texpiry := time.Duration(duration) * time.Hour\n\t\tinvoice := newTestInvoice(t, preimage, now, expiry)\n\t\ttestData.pendingInvoices[preimage.Hash()] = invoice\n\t}\n\n\treturn testData\n}\n",
+      "length": 964,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "type hodlExpiryTest struct {",
+      "content": "type hodlExpiryTest struct {\n\thash         lntypes.Hash\n\tstate        ContractState\n\tstateLock    sync.Mutex\n\tmockNotifier *mockChainNotifier\n\tmockClock    *clock.TestClock\n\tcancelChan   chan lntypes.Hash\n\twatcher      *InvoiceExpiryWatcher\n}\n",
+      "length": 206,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *hodlExpiryTest) setState(state ContractState) {",
+      "content": "func (h *hodlExpiryTest) setState(state ContractState) {\n\th.stateLock.Lock()\n\tdefer h.stateLock.Unlock()\n\n\th.state = state\n}\n",
+      "length": 63,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *hodlExpiryTest) announceBlock(t *testing.T, height uint32) {",
+      "content": "func (h *hodlExpiryTest) announceBlock(t *testing.T, height uint32) {\n\tt.Helper()\n\n\tselect {\n\tcase h.mockNotifier.blockChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: int32(height),\n\t}:\n\n\tcase <-time.After(testTimeout):\n\t\tt.Fatalf(\"block %v not consumed\", height)\n\t}\n}\n",
+      "length": 182,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *hodlExpiryTest) assertCanceled(t *testing.T, expected lntypes.Hash) {",
+      "content": "func (h *hodlExpiryTest) assertCanceled(t *testing.T, expected lntypes.Hash) {\n\tt.Helper()\n\n\tselect {\n\tcase actual := <-h.cancelChan:\n\t\trequire.Equal(t, expected, actual)\n\n\tcase <-time.After(testTimeout):\n\t\tt.Fatalf(\"invoice: %v not canceled\", h.hash)\n\t}\n}\n\n// setupHodlExpiry creates a hodl invoice in our expiry watcher and runs an\n// arbitrary update function which advances the invoices's state.",
+      "length": 308,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func setupHodlExpiry(t *testing.T, creationDate time.Time,",
+      "content": "func setupHodlExpiry(t *testing.T, creationDate time.Time,\n\texpiry time.Duration, heightDelta uint32,\n\tstartState ContractState,\n\tstartHtlcs []*InvoiceHTLC) *hodlExpiryTest {\n\n\tt.Helper()\n\n\tmockNotifier := newMockNotifier()\n\tmockClock := clock.NewTestClock(testTime)\n\n\ttest := &hodlExpiryTest{\n\t\tstate: startState,\n\t\twatcher: NewInvoiceExpiryWatcher(\n\t\t\tmockClock, heightDelta, uint32(testCurrentHeight), nil,\n\t\t\tmockNotifier,\n\t\t),\n\t\tcancelChan:   make(chan lntypes.Hash),\n\t\tmockNotifier: mockNotifier,\n\t\tmockClock:    mockClock,\n\t}\n\n\t// Use an unbuffered channel to block on cancel calls so that the test\n\t// does not exit before we've processed all the invoices we expect.\n\tcancelImpl := func(paymentHash lntypes.Hash, force bool) error {\n\t\ttest.stateLock.Lock()\n\t\tcurrentState := test.state\n\t\ttest.stateLock.Unlock()\n\n\t\tif currentState != ContractOpen && !force {\n\t\t\treturn nil\n\t\t}\n\n\t\tselect {\n\t\tcase test.cancelChan <- paymentHash:\n\t\tcase <-time.After(testTimeout):\n\t\t}\n\n\t\treturn nil\n\t}\n\n\trequire.NoError(t, test.watcher.Start(cancelImpl))\n\n\t// We set preimage and hash so that we can use our existing test\n\t// helpers. In practice we would only have the hash, but this does not\n\t// affect what we're testing at all.\n\tpreimage := lntypes.Preimage{1}\n\ttest.hash = preimage.Hash()\n\n\tinvoice := newTestInvoice(t, preimage, creationDate, expiry)\n\tinvoice.State = startState\n\tinvoice.HodlInvoice = true\n\tinvoice.Htlcs = make(map[CircuitKey]*InvoiceHTLC)\n\n\t// If we have any htlcs, add them with unique circult keys.\n\tfor i, htlc := range startHtlcs {\n\t\tkey := CircuitKey{\n\t\t\tHtlcID: uint64(i),\n\t\t}\n\n\t\tinvoice.Htlcs[key] = htlc\n\t}\n\n\t// Create an expiry entry for our invoice in its starting state. This\n\t// mimics adding invoices to the watcher on start.\n\tentry := makeInvoiceExpiry(test.hash, invoice)\n\ttest.watcher.AddInvoices(entry)\n\n\treturn test\n}\n",
+      "length": 1723,
+      "tokens": 216,
+      "embedding": []
+    }
+  ]
+}

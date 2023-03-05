@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/no_sql.go",
+  "package": "!kvdb_postgres",
+  "sections": [
+    {
+      "slug": "func Init(maxConnections int) {}",
+      "content": "func Init(maxConnections int) {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

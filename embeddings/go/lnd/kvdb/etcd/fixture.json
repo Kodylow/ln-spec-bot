@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/fixture.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type EtcdTestFixture struct {",
+      "content": "type EtcdTestFixture struct {\n\tt      *testing.T\n\tcli    *clientv3.Client\n\tconfig *Config\n}\n\n// NewTestEtcdInstance creates an embedded etcd instance for testing, listening\n// on random open ports. Returns the connection config and a cleanup func that\n// will stop the etcd instance.",
+      "length": 246,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTestEtcdInstance(t *testing.T, path string) (*Config, func()) {",
+      "content": "func NewTestEtcdInstance(t *testing.T, path string) (*Config, func()) {\n\tt.Helper()\n\n\tconfig, cleanup, err := NewEmbeddedEtcdInstance(path, 0, 0, \"\")\n\tif err != nil {\n\t\tt.Fatalf(\"error while staring embedded etcd instance: %v\", err)\n\t}\n\n\treturn config, cleanup\n}\n\n// NewEtcdTestFixture creates a new etcd-test fixture. This is helper\n// object to facilitate etcd tests and ensure pre- and post-conditions.",
+      "length": 322,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func NewEtcdTestFixture(t *testing.T) *EtcdTestFixture {",
+      "content": "func NewEtcdTestFixture(t *testing.T) *EtcdTestFixture {\n\ttmpDir := t.TempDir()\n\n\tconfig, etcdCleanup := NewTestEtcdInstance(t, tmpDir)\n\tt.Cleanup(etcdCleanup)\n\n\tcli, err := clientv3.New(clientv3.Config{\n\t\tEndpoints: []string{config.Host},\n\t\tUsername:  config.User,\n\t\tPassword:  config.Pass,\n\t})\n\tif err != nil {\n\t\tt.Fatalf(\"unable to create etcd test fixture: %v\", err)\n\t}\n\n\t// Apply the default namespace (since that's what we use in tests).\n\tcli.KV = namespace.NewKV(cli.KV, defaultNamespace)\n\tcli.Watcher = namespace.NewWatcher(cli.Watcher, defaultNamespace)\n\tcli.Lease = namespace.NewLease(cli.Lease, defaultNamespace)\n\n\treturn &EtcdTestFixture{\n\t\tt:      t,\n\t\tcli:    cli,\n\t\tconfig: config,\n\t}\n}\n",
+      "length": 620,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *EtcdTestFixture) NewBackend(singleWriter bool) walletdb.DB {",
+      "content": "func (f *EtcdTestFixture) NewBackend(singleWriter bool) walletdb.DB {\n\tcfg := f.BackendConfig()\n\tif singleWriter {\n\t\tcfg.SingleWriter = true\n\t}\n\n\tdb, err := newEtcdBackend(context.TODO(), cfg)\n\trequire.NoError(f.t, err)\n\n\treturn db\n}\n\n// Put puts a string key/value into the test etcd database.",
+      "length": 213,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *EtcdTestFixture) Put(key, value string) {",
+      "content": "func (f *EtcdTestFixture) Put(key, value string) {\n\tctx, cancel := context.WithTimeout(context.TODO(), testEtcdTimeout)\n\tdefer cancel()\n\n\t_, err := f.cli.Put(ctx, key, value)\n\tif err != nil {\n\t\tf.t.Fatalf(\"etcd test fixture failed to put: %v\", err)\n\t}\n}\n\n// Get queries a key and returns the stored value from the test etcd database.",
+      "length": 273,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *EtcdTestFixture) Get(key string) string {",
+      "content": "func (f *EtcdTestFixture) Get(key string) string {\n\tctx, cancel := context.WithTimeout(context.TODO(), testEtcdTimeout)\n\tdefer cancel()\n\n\tresp, err := f.cli.Get(ctx, key)\n\tif err != nil {\n\t\tf.t.Fatalf(\"etcd test fixture failed to get: %v\", err)\n\t}\n\n\tif len(resp.Kvs) > 0 {\n\t\treturn string(resp.Kvs[0].Value)\n\t}\n\n\treturn \"\"\n}\n\n// Dump scans and returns all key/values from the test etcd database.",
+      "length": 329,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *EtcdTestFixture) Dump() map[string]string {",
+      "content": "func (f *EtcdTestFixture) Dump() map[string]string {\n\tctx, cancel := context.WithTimeout(context.TODO(), testEtcdTimeout)\n\tdefer cancel()\n\n\tresp, err := f.cli.Get(ctx, \"\\x00\", clientv3.WithFromKey())\n\tif err != nil {\n\t\tf.t.Fatalf(\"etcd test fixture failed to get: %v\", err)\n\t}\n\n\tresult := make(map[string]string)\n\tfor _, kv := range resp.Kvs {\n\t\tresult[string(kv.Key)] = string(kv.Value)\n\t}\n\n\treturn result\n}\n\n// BackendConfig returns the backend config for connecting to the embedded\n// etcd instance.",
+      "length": 432,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *EtcdTestFixture) BackendConfig() Config {",
+      "content": "func (f *EtcdTestFixture) BackendConfig() Config {\n\treturn *f.config\n}\n",
+      "length": 18,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

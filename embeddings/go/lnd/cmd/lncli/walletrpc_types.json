@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/walletrpc_types.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "type PendingSweep struct {",
+      "content": "type PendingSweep struct {\n\tOutPoint             OutPoint `json:\"outpoint\"`\n\tWitnessType          string   `json:\"witness_type\"`\n\tAmountSat            uint32   `json:\"amount_sat\"`\n\tSatPerVByte          uint32   `json:\"sat_per_vbyte\"`\n\tBroadcastAttempts    uint32   `json:\"broadcast_attempts\"`\n\tNextBroadcastHeight  uint32   `json:\"next_broadcast_height\"`\n\tRequestedSatPerVByte uint32   `json:\"requested_sat_per_vbyte\"`\n\tRequestedConfTarget  uint32   `json:\"requested_conf_target\"`\n\tForce                bool     `json:\"force\"`\n}\n\n// NewPendingSweepFromProto converts the walletrpc.PendingSweep proto type into\n// its corresponding CLI-friendly type.",
+      "length": 610,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPendingSweepFromProto(pendingSweep *walletrpc.PendingSweep) *PendingSweep {",
+      "content": "func NewPendingSweepFromProto(pendingSweep *walletrpc.PendingSweep) *PendingSweep {\n\treturn &PendingSweep{\n\t\tOutPoint:             NewOutPointFromProto(pendingSweep.Outpoint),\n\t\tWitnessType:          pendingSweep.WitnessType.String(),\n\t\tAmountSat:            pendingSweep.AmountSat,\n\t\tSatPerVByte:          uint32(pendingSweep.SatPerVbyte),\n\t\tBroadcastAttempts:    pendingSweep.BroadcastAttempts,\n\t\tNextBroadcastHeight:  pendingSweep.NextBroadcastHeight,\n\t\tRequestedSatPerVByte: uint32(pendingSweep.RequestedSatPerVbyte),\n\t\tRequestedConfTarget:  pendingSweep.RequestedConfTarget,\n\t\tForce:                pendingSweep.Force,\n\t}\n}\n",
+      "length": 533,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

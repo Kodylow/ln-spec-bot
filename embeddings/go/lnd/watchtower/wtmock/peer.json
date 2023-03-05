@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtmock/peer.go",
+  "package": "wtmock",
+  "sections": [
+    {
+      "slug": "type MockPeer struct {",
+      "content": "type MockPeer struct {\n\tremotePub  *btcec.PublicKey\n\tremoteAddr net.Addr\n\tlocalPub   *btcec.PublicKey\n\tlocalAddr  net.Addr\n\n\tIncomingMsgs chan []byte\n\tOutgoingMsgs chan []byte\n\n\twriteDeadline <-chan time.Time\n\treadDeadline  <-chan time.Time\n\n\tRemoteQuit chan struct{}\n\tQuit       chan struct{}\n}\n\n// NewMockPeer returns a fresh MockPeer.",
+      "length": 299,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMockPeer(lpk, rpk *btcec.PublicKey, addr net.Addr,",
+      "content": "func NewMockPeer(lpk, rpk *btcec.PublicKey, addr net.Addr,\n\tbufferSize int) *MockPeer {\n\n\treturn &MockPeer{\n\t\tremotePub:  rpk,\n\t\tremoteAddr: addr,\n\t\tlocalAddr: &net.TCPAddr{\n\t\t\tIP:   net.IP{0x32, 0x31, 0x30, 0x29},\n\t\t\tPort: 36723,\n\t\t},\n\t\tlocalPub:     lpk,\n\t\tIncomingMsgs: make(chan []byte, bufferSize),\n\t\tOutgoingMsgs: make(chan []byte, bufferSize),\n\t\tQuit:         make(chan struct{}),\n\t}\n}\n\n// NewMockConn establishes a bidirectional connection between two MockPeers.",
+      "length": 395,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMockConn(localPk, remotePk *btcec.PublicKey,",
+      "content": "func NewMockConn(localPk, remotePk *btcec.PublicKey,\n\tlocalAddr, remoteAddr net.Addr,\n\tbufferSize int) (*MockPeer, *MockPeer) {\n\n\tlocalPeer := &MockPeer{\n\t\tremotePub:    remotePk,\n\t\tremoteAddr:   remoteAddr,\n\t\tlocalPub:     localPk,\n\t\tlocalAddr:    localAddr,\n\t\tIncomingMsgs: make(chan []byte, bufferSize),\n\t\tOutgoingMsgs: make(chan []byte, bufferSize),\n\t\tQuit:         make(chan struct{}),\n\t}\n\n\tremotePeer := &MockPeer{\n\t\tremotePub:    localPk,\n\t\tremoteAddr:   localAddr,\n\t\tlocalPub:     remotePk,\n\t\tlocalAddr:    remoteAddr,\n\t\tIncomingMsgs: localPeer.OutgoingMsgs,\n\t\tOutgoingMsgs: localPeer.IncomingMsgs,\n\t\tQuit:         make(chan struct{}),\n\t}\n\n\tlocalPeer.RemoteQuit = remotePeer.Quit\n\tremotePeer.RemoteQuit = localPeer.Quit\n\n\treturn localPeer, remotePeer\n}\n\n// Write sends the raw bytes as the next full message read to the remote peer.\n// The write will fail if either party closes the connection or the write\n// deadline expires. The passed bytes slice is copied before sending, thus the\n// bytes may be reused once the method returns.",
+      "length": 956,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) Write(b []byte) (n int, err error) {",
+      "content": "func (p *MockPeer) Write(b []byte) (n int, err error) {\n\tbb := make([]byte, len(b))\n\tcopy(bb, b)\n\n\tselect {\n\tcase p.OutgoingMsgs <- bb:\n\t\treturn len(b), nil\n\tcase <-p.writeDeadline:\n\t\treturn 0, fmt.Errorf(\"write timeout expired\")\n\tcase <-p.RemoteQuit:\n\t\treturn 0, fmt.Errorf(\"remote closed connected\")\n\tcase <-p.Quit:\n\t\treturn 0, fmt.Errorf(\"connection closed\")\n\t}\n}\n\n// Close tearsdown the connection, and fails any pending reads or writes.",
+      "length": 370,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) Close() error {",
+      "content": "func (p *MockPeer) Close() error {\n\tselect {\n\tcase <-p.Quit:\n\t\treturn fmt.Errorf(\"connection already closed\")\n\tdefault:\n\t\tclose(p.Quit)\n\t\treturn nil\n\t}\n}\n\n// ReadNextMessage returns the raw bytes of the next full message read from the\n// remote peer. The read will fail if either party closes the connection or the\n// read deadline expires.",
+      "length": 294,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) ReadNextMessage() ([]byte, error) {",
+      "content": "func (p *MockPeer) ReadNextMessage() ([]byte, error) {\n\tselect {\n\tcase b := <-p.IncomingMsgs:\n\t\treturn b, nil\n\tcase <-p.readDeadline:\n\t\treturn nil, fmt.Errorf(\"read timeout expired\")\n\tcase <-p.RemoteQuit:\n\t\treturn nil, fmt.Errorf(\"remote closed connected\")\n\tcase <-p.Quit:\n\t\treturn nil, fmt.Errorf(\"connection closed\")\n\t}\n}\n\n// SetWriteDeadline initializes a timer that will cause any pending writes to\n// fail at time t. If t is zero, the deadline is infinite.",
+      "length": 393,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) SetWriteDeadline(t time.Time) error {",
+      "content": "func (p *MockPeer) SetWriteDeadline(t time.Time) error {\n\tif t.IsZero() {\n\t\tp.writeDeadline = nil\n\t\treturn nil\n\t}\n\n\tduration := time.Until(t)\n\tp.writeDeadline = time.After(duration)\n\n\treturn nil\n}\n\n// SetReadDeadline initializes a timer that will cause any pending reads to fail\n// at time t. If t is zero, the deadline is infinite.",
+      "length": 263,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) SetReadDeadline(t time.Time) error {",
+      "content": "func (p *MockPeer) SetReadDeadline(t time.Time) error {\n\tif t.IsZero() {\n\t\tp.readDeadline = nil\n\t\treturn nil\n\t}\n\n\tduration := time.Until(t)\n\tp.readDeadline = time.After(duration)\n\n\treturn nil\n}\n\n// RemotePub returns the public key of the remote peer.",
+      "length": 183,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) RemotePub() *btcec.PublicKey {",
+      "content": "func (p *MockPeer) RemotePub() *btcec.PublicKey {\n\treturn p.remotePub\n}\n\n// RemoteAddr returns the net address of the remote peer.",
+      "length": 77,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) RemoteAddr() net.Addr {",
+      "content": "func (p *MockPeer) RemoteAddr() net.Addr {\n\treturn p.remoteAddr\n}\n\n// LocalAddr returns the local net address of the peer.",
+      "length": 76,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) LocalAddr() net.Addr {",
+      "content": "func (p *MockPeer) LocalAddr() net.Addr {\n\treturn p.localAddr\n}\n\n// Read is not implemented.",
+      "length": 47,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) Read(dst []byte) (int, error) {",
+      "content": "func (p *MockPeer) Read(dst []byte) (int, error) {\n\tpanic(\"not implemented\")\n}\n\n// SetDeadline is not implemented.",
+      "length": 60,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *MockPeer) SetDeadline(t time.Time) error {",
+      "content": "func (p *MockPeer) SetDeadline(t time.Time) error {\n\tpanic(\"not implemented\")\n}\n\n// Compile-time constraint ensuring the MockPeer implements the wserver.Peer\n// interface.\nvar _ wtserver.Peer = (*MockPeer)(nil)\n\n// Compile-time constraint ensuring the MockPeer implements the net.Conn\n// interface.\nvar _ net.Conn = (*MockPeer)(nil)\n",
+      "length": 271,
+      "tokens": 35,
+      "embedding": []
+    }
+  ]
+}

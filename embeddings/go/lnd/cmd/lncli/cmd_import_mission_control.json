@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/cmd_import_mission_control.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func importMissionControl(ctx *cli.Context) error {",
+      "content": "func importMissionControl(ctx *cli.Context) error {\n\tconn := getClientConn(ctx, false)\n\tdefer conn.Close()\n\n\tif ctx.NArg() != 4 {\n\t\treturn fmt.Errorf(\"please provide args: %v\", argsStr)\n\t}\n\n\targs := ctx.Args()\n\n\tsourceNode, err := route.NewVertexFromStr(args[0])\n\tif err != nil {\n\t\treturn fmt.Errorf(\"please provide valid source node: %v\", err)\n\t}\n\n\tdestNode, err := route.NewVertexFromStr(args[1])\n\tif err != nil {\n\t\treturn fmt.Errorf(\"please provide valid dest node: %v\", err)\n\t}\n\n\tts, err := strconv.ParseInt(args[2], 10, 64)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"please provide unix timestamp \"+\n\t\t\t\"in seconds: %v\", err)\n\t}\n\n\tif ts <= 0 {\n\t\treturn errors.New(\"please provide positive timestamp\")\n\t}\n\n\tamt, err := strconv.ParseInt(args[3], 10, 64)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"please provide amount in msat: %v\", err)\n\t}\n\n\tif amt <= 0 {\n\t\treturn errors.New(\"amount must be >0\")\n\t}\n\n\tclient := routerrpc.NewRouterClient(conn)\n\n\timportResult := &routerrpc.PairHistory{\n\t\tNodeFrom: sourceNode[:],\n\t\tNodeTo:   destNode[:],\n\t\tHistory:  &routerrpc.PairData{},\n\t}\n\n\tif ctx.IsSet(\"failure\") {\n\t\timportResult.History.FailAmtMsat = amt\n\t\timportResult.History.FailTime = ts\n\t} else {\n\t\timportResult.History.SuccessAmtMsat = amt\n\t\timportResult.History.SuccessTime = ts\n\t}\n\n\treq := &routerrpc.XImportMissionControlRequest{\n\t\tPairs: []*routerrpc.PairHistory{\n\t\t\timportResult,\n\t\t},\n\t\tForce: ctx.IsSet(\"force\"),\n\t}\n\n\trpcCtx := context.Background()\n\t_, err = client.XImportMissionControl(rpcCtx, req)\n\treturn err\n}\n",
+      "length": 1394,
+      "tokens": 174,
+      "embedding": []
+    }
+  ]
+}

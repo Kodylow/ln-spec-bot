@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/readwrite_tx_test.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func testTxManualCommit(t *testing.T, db walletdb.DB) {",
+      "content": "func testTxManualCommit(t *testing.T, db walletdb.DB) {\n\ttx, err := db.BeginReadWriteTx()\n\trequire.NoError(t, err)\n\trequire.NotNil(t, tx)\n\n\tcommitted := false\n\n\ttx.OnCommit(func() {\n\t\tcommitted = true\n\t})\n\n\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\trequire.NoError(t, err)\n\trequire.NotNil(t, apple)\n\trequire.NoError(t, apple.Put([]byte(\"testKey\"), []byte(\"testVal\")))\n\n\tbanana, err := tx.CreateTopLevelBucket([]byte(\"banana\"))\n\trequire.NoError(t, err)\n\trequire.NotNil(t, banana)\n\trequire.NoError(t, banana.Put([]byte(\"testKey\"), []byte(\"testVal\")))\n\trequire.NoError(t, tx.DeleteTopLevelBucket([]byte(\"banana\")))\n\n\trequire.NoError(t, tx.Commit())\n\trequire.True(t, committed)\n}\n",
+      "length": 610,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func testTxRollback(t *testing.T, db walletdb.DB) {",
+      "content": "func testTxRollback(t *testing.T, db walletdb.DB) {\n\ttx, err := db.BeginReadWriteTx()\n\trequire.Nil(t, err)\n\trequire.NotNil(t, tx)\n\n\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\trequire.Nil(t, err)\n\trequire.NotNil(t, apple)\n\n\trequire.NoError(t, apple.Put([]byte(\"testKey\"), []byte(\"testVal\")))\n\n\trequire.NoError(t, tx.Rollback())\n\trequire.Error(t, walletdb.ErrTxClosed, tx.Commit())\n}\n",
+      "length": 330,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

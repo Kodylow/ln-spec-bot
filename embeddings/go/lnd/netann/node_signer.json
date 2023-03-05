@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/netann/node_signer.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type NodeSigner struct {",
+      "content": "type NodeSigner struct {\n\tkeySigner keychain.SingleKeyMessageSigner\n}\n\n// NewNodeSigner creates a new instance of the NodeSigner backed by the target\n// private key.",
+      "length": 136,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func NewNodeSigner(keySigner keychain.SingleKeyMessageSigner) *NodeSigner {",
+      "content": "func NewNodeSigner(keySigner keychain.SingleKeyMessageSigner) *NodeSigner {\n\treturn &NodeSigner{\n\t\tkeySigner: keySigner,\n\t}\n}\n\n// SignMessage signs a double-sha256 digest of the passed msg under the\n// resident node's private key described in the key locator. If the target key\n// locator is _not_ the node's private key, then an error will be returned.",
+      "length": 270,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NodeSigner) SignMessage(keyLoc keychain.KeyLocator,",
+      "content": "func (n *NodeSigner) SignMessage(keyLoc keychain.KeyLocator,\n\tmsg []byte, doubleHash bool) (*ecdsa.Signature, error) {\n\n\t// If this isn't our identity public key, then we'll exit early with an\n\t// error as we can't sign with this key.\n\tif keyLoc != n.keySigner.KeyLocator() {\n\t\treturn nil, fmt.Errorf(\"unknown public key locator\")\n\t}\n\n\t// Otherwise, we'll sign the double-sha256 of the target message.\n\tsig, err := n.keySigner.SignMessage(msg, doubleHash)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"can't sign the message: %v\", err)\n\t}\n\n\treturn sig, nil\n}\n\n// SignMessageCompact signs a single or double sha256 digest of the msg\n// parameter under the resident node's private key. The returned signature is a\n// pubkey-recoverable signature.",
+      "length": 661,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *NodeSigner) SignMessageCompact(msg []byte, doubleHash bool) ([]byte,",
+      "content": "func (n *NodeSigner) SignMessageCompact(msg []byte, doubleHash bool) ([]byte,\n\terror) {\n\n\treturn n.keySigner.SignMessageCompact(msg, doubleHash)\n}\n\n// A compile time check to ensure that NodeSigner implements the MessageSigner\n// interface.\nvar _ lnwallet.MessageSigner = (*NodeSigner)(nil)\n",
+      "length": 205,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

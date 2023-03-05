@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/record/custom_records.go",
+  "package": "record",
+  "sections": [
+    {
+      "slug": "type CustomSet map[uint64][]byte",
+      "content": "type CustomSet map[uint64][]byte\n\n// Validate checks that all custom records are in the custom type range.",
+      "length": 72,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (c CustomSet) Validate() error {",
+      "content": "func (c CustomSet) Validate() error {\n\tfor key := range c {\n\t\tif key < CustomTypeStart {\n\t\t\treturn fmt.Errorf(\"no custom records with types \"+\n\t\t\t\t\"below %v allowed\", CustomTypeStart)\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 159,
+      "tokens": 27,
+      "embedding": []
+    }
+  ]
+}

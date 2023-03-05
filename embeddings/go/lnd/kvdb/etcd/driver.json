@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/driver.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func parseArgs(funcName string, args ...interface{}) (context.Context,",
+      "content": "func parseArgs(funcName string, args ...interface{}) (context.Context,\n\t*Config, error) {\n\n\tif len(args) != 2 {\n\t\treturn nil, nil, fmt.Errorf(\"invalid number of arguments to \"+\n\t\t\t\"%s.%s -- expected: context.Context, etcd.Config\",\n\t\t\tdbType, funcName,\n\t\t)\n\t}\n\n\tctx, ok := args[0].(context.Context)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"argument 0 to %s.%s is invalid \"+\n\t\t\t\"-- expected: context.Context\",\n\t\t\tdbType, funcName,\n\t\t)\n\t}\n\n\tconfig, ok := args[1].(*Config)\n\tif !ok {\n\t\treturn nil, nil, fmt.Errorf(\"argument 1 to %s.%s is invalid -- \"+\n\t\t\t\"expected: etcd.Config\",\n\t\t\tdbType, funcName,\n\t\t)\n\t}\n\n\treturn ctx, config, nil\n}\n\n// createDBDriver is the callback provided during driver registration that\n// creates, initializes, and opens a database for use.",
+      "length": 662,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func createDBDriver(args ...interface{}) (walletdb.DB, error) {",
+      "content": "func createDBDriver(args ...interface{}) (walletdb.DB, error) {\n\tctx, config, err := parseArgs(\"Create\", args...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn newEtcdBackend(ctx, *config)\n}\n\n// openDBDriver is the callback provided during driver registration that opens\n// an existing database for use.",
+      "length": 231,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func openDBDriver(args ...interface{}) (walletdb.DB, error) {",
+      "content": "func openDBDriver(args ...interface{}) (walletdb.DB, error) {\n\tctx, config, err := parseArgs(\"Open\", args...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn newEtcdBackend(ctx, *config)\n}\n",
+      "length": 119,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Register the driver.\n\tdriver := walletdb.Driver{\n\t\tDbType: dbType,\n\t\tCreate: createDBDriver,\n\t\tOpen:   openDBDriver,\n\t}\n\tif err := walletdb.RegisterDriver(driver); err != nil {\n\t\tpanic(fmt.Sprintf(\"Failed to regiser database driver '%s': %v\",\n\t\t\tdbType, err))\n\t}\n}\n",
+      "length": 258,
+      "tokens": 33,
+      "embedding": []
+    }
+  ]
+}

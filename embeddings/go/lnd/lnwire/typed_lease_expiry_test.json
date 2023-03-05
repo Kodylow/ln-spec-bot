@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/typed_lease_expiry_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestLeaseExpiryEncodeDecode(t *testing.T) {",
+      "content": "func TestLeaseExpiryEncodeDecode(t *testing.T) {\n\tt.Parallel()\n\n\tleaseExpiry := LeaseExpiry(1337)\n\n\tvar extraData ExtraOpaqueData\n\trequire.NoError(t, extraData.PackRecords(&leaseExpiry))\n\n\tvar leaseExpiry2 LeaseExpiry\n\ttlvs, err := extraData.ExtractRecords(&leaseExpiry2)\n\trequire.NoError(t, err)\n\n\trequire.Contains(t, tlvs, LeaseExpiryRecordType)\n\trequire.Equal(t, leaseExpiry, leaseExpiry2)\n}\n",
+      "length": 332,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

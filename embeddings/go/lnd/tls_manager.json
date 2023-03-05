@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/tls_manager.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "type TLSManagerCfg struct {",
+      "content": "type TLSManagerCfg struct {\n\tTLSCertPath        string\n\tTLSKeyPath         string\n\tTLSEncryptKey      bool\n\tTLSExtraIPs        []string\n\tTLSExtraDomains    []string\n\tTLSAutoRefresh     bool\n\tTLSDisableAutofill bool\n\tTLSCertDuration    time.Duration\n\n\tLetsEncryptDir    string\n\tLetsEncryptDomain string\n\tLetsEncryptListen string\n\n\tDisableRestTLS bool\n}\n\n// TLSManager generates/renews a TLS cert/key pair when needed. When required,\n// it encrypts the TLS key. It also returns the certificate configuration\n// options needed for gRPC and REST.",
+      "length": 496,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "type TLSManager struct {",
+      "content": "type TLSManager struct {\n\tcfg *TLSManagerCfg\n\n\t// tlsReloader is able to reload the certificate with the\n\t// GetCertificate function. In getConfig, tlsCfg.GetCertificate is\n\t// pointed towards t.tlsReloader.GetCertificateFunc(). When\n\t// TLSReloader's AttemptReload is called, the cert that tlsReloader\n\t// holds is changed, in turn changing the cert data\n\t// tlsCfg.GetCertificate will return.\n\ttlsReloader *cert.TLSReloader\n\n\t// These options are only used if we're currently using an ephemeral\n\t// TLS certificate, used when we're encrypting the TLS key.\n\tephemeralKey      []byte\n\tephemeralCert     []byte\n\tephemeralCertPath string\n}\n\n// NewTLSManager returns a reference to a new TLSManager.",
+      "length": 654,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTLSManager(cfg *TLSManagerCfg) *TLSManager {",
+      "content": "func NewTLSManager(cfg *TLSManagerCfg) *TLSManager {\n\treturn &TLSManager{\n\t\tcfg: cfg,\n\t}\n}\n\n// getConfig returns a TLS configuration for the gRPC server and credentials\n// and a proxy destination for the REST reverse proxy.",
+      "length": 164,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) getConfig() ([]grpc.ServerOption, []grpc.DialOption,",
+      "content": "func (t *TLSManager) getConfig() ([]grpc.ServerOption, []grpc.DialOption,\n\tfunc(net.Addr) (net.Listener, error), error) {\n\n\tvar (\n\t\tkeyBytes, certBytes []byte\n\t\terr                 error\n\t)\n\tif t.ephemeralKey != nil {\n\t\tkeyBytes = t.ephemeralKey\n\t\tcertBytes = t.ephemeralCert\n\t} else {\n\t\tcertBytes, keyBytes, err = cert.GetCertBytesFromPath(\n\t\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\t}\n\n\tcertData, _, err := cert.LoadCertFromBytes(certBytes, keyBytes)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\n\tif t.tlsReloader == nil {\n\t\ttlsr, err := cert.NewTLSReloader(certBytes, keyBytes)\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\t\tt.tlsReloader = tlsr\n\t}\n\n\ttlsCfg := cert.TLSConfFromCert(certData)\n\ttlsCfg.GetCertificate = t.tlsReloader.GetCertificateFunc()\n\n\t// If we're using the ephemeral certificate, we need to use the\n\t// ephemeral cert path.\n\tcertPath := t.cfg.TLSCertPath\n\tif t.ephemeralCertPath != \"\" {\n\t\tcertPath = t.ephemeralCertPath\n\t}\n\n\t// Now that we know that we have a certificate, let's generate the\n\t// required config options.\n\trestCreds, err := credentials.NewClientTLSFromFile(\n\t\tcertPath, \"\",\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\n\tserverCreds := credentials.NewTLS(tlsCfg)\n\tserverOpts := []grpc.ServerOption{grpc.Creds(serverCreds)}\n\n\t// For our REST dial options, we'll still use TLS, but also increase\n\t// the max message size that we'll decode to allow clients to hit\n\t// endpoints which return more data such as the DescribeGraph call.\n\t// We set this to 200MiB atm. Should be the same value as maxMsgRecvSize\n\t// in cmd/lncli/main.go.\n\trestDialOpts := []grpc.DialOption{\n\t\tgrpc.WithTransportCredentials(restCreds),\n\t\tgrpc.WithDefaultCallOptions(\n\t\t\tgrpc.MaxCallRecvMsgSize(lnrpc.MaxGrpcMsgSize),\n\t\t),\n\t}\n\n\t// Return a function closure that can be used to listen on a given\n\t// address with the current TLS config.\n\trestListen := func(addr net.Addr) (net.Listener, error) {\n\t\t// For restListen we will call ListenOnAddress if TLS is\n\t\t// disabled.\n\t\tif t.cfg.DisableRestTLS {\n\t\t\treturn lncfg.ListenOnAddress(addr)\n\t\t}\n\n\t\treturn lncfg.TLSListenOnAddress(addr, tlsCfg)\n\t}\n\n\treturn serverOpts, restDialOpts, restListen, nil\n}\n\n// generateOrRenewCert generates a new TLS certificate if we're not using one\n// yet or renews it if it's outdated.",
+      "length": 2185,
+      "tokens": 302,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) generateOrRenewCert() (*tls.Config, func(), error) {",
+      "content": "func (t *TLSManager) generateOrRenewCert() (*tls.Config, func(), error) {\n\t// Generete a TLS pair if we don't have one yet.\n\tvar emptyKeyRing keychain.SecretKeyRing\n\terr := t.generateCertPair(emptyKeyRing)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tcertData, parsedCert, err := cert.LoadCert(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\t// Check to see if the certificate needs to be renewed. If it does, we\n\t// return the newly generated certificate data instead.\n\treloadedCertData, err := t.maintainCert(parsedCert)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tif reloadedCertData != nil {\n\t\tcertData = *reloadedCertData\n\t}\n\n\ttlsCfg := cert.TLSConfFromCert(certData)\n\tcleanUp := t.setUpLetsEncrypt(&certData, tlsCfg)\n\n\treturn tlsCfg, cleanUp, nil\n}\n\n// generateCertPair creates and writes a TLS pair to disk if the pair\n// doesn't exist yet. If the TLSEncryptKey setting is on, and a plaintext key\n// is already written to disk, this function overwrites the plaintext key with\n// the encrypted form.",
+      "length": 938,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) generateCertPair(keyRing keychain.SecretKeyRing) error {",
+      "content": "func (t *TLSManager) generateCertPair(keyRing keychain.SecretKeyRing) error {\n\t// Ensure we create TLS key and certificate if they don't exist.\n\tif lnrpc.FileExists(t.cfg.TLSCertPath) ||\n\t\tlnrpc.FileExists(t.cfg.TLSKeyPath) {\n\n\t\t// Handle discrepencies related to the TLSEncryptKey setting.\n\t\treturn t.ensureEncryption(keyRing)\n\t}\n\n\trpcsLog.Infof(\"Generating TLS certificates...\")\n\tcertBytes, keyBytes, err := cert.GenCertPair(\n\t\t\"lnd autogenerated cert\", t.cfg.TLSExtraIPs,\n\t\tt.cfg.TLSExtraDomains, t.cfg.TLSDisableAutofill,\n\t\tt.cfg.TLSCertDuration,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif t.cfg.TLSEncryptKey {\n\t\tvar b bytes.Buffer\n\t\te, err := lnencrypt.KeyRingEncrypter(keyRing)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to create \"+\n\t\t\t\t\"encrypt key %v\", err)\n\t\t}\n\n\t\terr = e.EncryptPayloadToWriter(\n\t\t\tkeyBytes, &b,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tkeyBytes = b.Bytes()\n\t}\n\n\terr = cert.WriteCertPair(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath, certBytes, keyBytes,\n\t)\n\n\trpcsLog.Infof(\"Done generating TLS certificates\")\n\n\treturn err\n}\n\n// ensureEncryption takes a look at a couple of things:\n// 1) If the TLS key is in plaintext, but TLSEncryptKey is set, we need to\n// encrypt the file and rewrite it to disk.\n// 2) On the flip side, if TLSEncryptKey is not set, but the key on disk\n// is encrypted, we need to error out and warn the user.",
+      "length": 1229,
+      "tokens": 173,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) ensureEncryption(keyRing keychain.SecretKeyRing) error {",
+      "content": "func (t *TLSManager) ensureEncryption(keyRing keychain.SecretKeyRing) error {\n\t_, keyBytes, err := cert.GetCertBytesFromPath(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif t.cfg.TLSEncryptKey && bytes.HasPrefix(keyBytes, privateKeyPrefix) {\n\t\tvar b bytes.Buffer\n\t\te, err := lnencrypt.KeyRingEncrypter(keyRing)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to generate encrypt key %w\",\n\t\t\t\terr)\n\t\t}\n\n\t\terr = e.EncryptPayloadToWriter(keyBytes, &b)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\terr = ioutil.WriteFile(\n\t\t\tt.cfg.TLSKeyPath, b.Bytes(), modifyFilePermissions,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// If the private key is encrypted but the user didn't pass\n\t// --tlsencryptkey we error out. This is because the wallet is not\n\t// unlocked yet and we don't have access to the keys yet for decryption.\n\tif !t.cfg.TLSEncryptKey && !bytes.HasPrefix(keyBytes,\n\t\tprivateKeyPrefix) {\n\n\t\tltndLog.Errorf(\"The TLS private key is encrypted on disk.\")\n\n\t\treturn errors.New(\"the TLS key is encrypted but the \" +\n\t\t\t\"--tlsencryptkey flag is not passed. Please either \" +\n\t\t\t\"restart lnd with the --tlsencryptkey flag or delete \" +\n\t\t\t\"the TLS files for regeneration\")\n\t}\n\n\treturn nil\n}\n\n// decryptTLSKeyBytes decrypts the TLS key.",
+      "length": 1139,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func decryptTLSKeyBytes(keyRing keychain.SecretKeyRing,",
+      "content": "func decryptTLSKeyBytes(keyRing keychain.SecretKeyRing,\n\tencryptedData []byte) ([]byte, error) {\n\n\treader := bytes.NewReader(encryptedData)\n\tencrypter, err := lnencrypt.KeyRingEncrypter(keyRing)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tplaintext, err := encrypter.DecryptPayloadFromReader(\n\t\treader,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn plaintext, nil\n}\n\n// maintainCert checks if the certificate IP and domains matches the config,\n// and renews the certificate if either this data is outdated or the\n// certificate is expired.",
+      "length": 463,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) maintainCert(",
+      "content": "func (t *TLSManager) maintainCert(\n\tparsedCert *x509.Certificate) (*tls.Certificate, error) {\n\n\t// We check whether the certificate we have on disk match the IPs and\n\t// domains specified by the config. If the extra IPs or domains have\n\t// changed from when the certificate was created, we will refresh the\n\t// certificate if auto refresh is active.\n\trefresh := false\n\tvar err error\n\tif t.cfg.TLSAutoRefresh {\n\t\trefresh, err = cert.IsOutdated(\n\t\t\tparsedCert, t.cfg.TLSExtraIPs,\n\t\t\tt.cfg.TLSExtraDomains, t.cfg.TLSDisableAutofill,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// If the certificate expired or it was outdated, delete it and the TLS\n\t// key and generate a new pair.\n\tif !time.Now().After(parsedCert.NotAfter) && !refresh {\n\t\treturn nil, nil\n\t}\n\n\tltndLog.Info(\"TLS certificate is expired or outdated, \" +\n\t\t\"generating a new one\")\n\n\terr = os.Remove(t.cfg.TLSCertPath)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\terr = os.Remove(t.cfg.TLSKeyPath)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\trpcsLog.Infof(\"Renewing TLS certificates...\")\n\tcertBytes, keyBytes, err := cert.GenCertPair(\n\t\t\"lnd autogenerated cert\", t.cfg.TLSExtraIPs,\n\t\tt.cfg.TLSExtraDomains, t.cfg.TLSDisableAutofill,\n\t\tt.cfg.TLSCertDuration,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\terr = cert.WriteCertPair(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath, certBytes, keyBytes,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\trpcsLog.Infof(\"Done renewing TLS certificates\")\n\n\t// Reload the certificate data.\n\treloadedCertData, _, err := cert.LoadCert(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t)\n\n\treturn &reloadedCertData, err\n}\n\n// setUpLetsEncrypt automatically generates a Let's Encrypt certificate if the\n// option is set.",
+      "length": 1587,
+      "tokens": 222,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) setUpLetsEncrypt(certData *tls.Certificate,",
+      "content": "func (t *TLSManager) setUpLetsEncrypt(certData *tls.Certificate,\n\ttlsCfg *tls.Config) func() {\n\n\t// If Let's Encrypt is enabled, instantiate autocert to request/renew\n\t// the certificates.\n\tcleanUp := func() {}\n\tif t.cfg.LetsEncryptDomain == \"\" {\n\t\treturn cleanUp\n\t}\n\n\tltndLog.Infof(\"Using Let's Encrypt certificate for domain %v\",\n\t\tt.cfg.LetsEncryptDomain)\n\n\tmanager := autocert.Manager{\n\t\tCache:  autocert.DirCache(t.cfg.LetsEncryptDir),\n\t\tPrompt: autocert.AcceptTOS,\n\t\tHostPolicy: autocert.HostWhitelist(\n\t\t\tt.cfg.LetsEncryptDomain,\n\t\t),\n\t}\n\n\tsrv := &http.Server{\n\t\tAddr:              t.cfg.LetsEncryptListen,\n\t\tHandler:           manager.HTTPHandler(nil),\n\t\tReadHeaderTimeout: letsEncryptTimeout,\n\t}\n\tshutdownCompleted := make(chan struct{})\n\tcleanUp = func() {\n\t\terr := srv.Shutdown(context.Background())\n\t\tif err != nil {\n\t\t\tltndLog.Errorf(\"Autocert listener shutdown \"+\n\t\t\t\t\" error: %v\", err)\n\n\t\t\treturn\n\t\t}\n\t\t<-shutdownCompleted\n\t\tltndLog.Infof(\"Autocert challenge listener stopped\")\n\t}\n\n\tgo func() {\n\t\tltndLog.Infof(\"Autocert challenge listener started \"+\n\t\t\t\"at %v\", t.cfg.LetsEncryptListen)\n\n\t\terr := srv.ListenAndServe()\n\t\tif err != http.ErrServerClosed {\n\t\t\tltndLog.Errorf(\"autocert http: %v\", err)\n\t\t}\n\t\tclose(shutdownCompleted)\n\t}()\n\n\tgetCertificate := func(h *tls.ClientHelloInfo) (\n\t\t*tls.Certificate, error) {\n\n\t\tlecert, err := manager.GetCertificate(h)\n\t\tif err != nil {\n\t\t\tltndLog.Errorf(\"GetCertificate: %v\", err)\n\t\t\treturn certData, nil\n\t\t}\n\n\t\treturn lecert, err\n\t}\n\n\t// The self-signed tls.cert remains available as fallback.\n\ttlsCfg.GetCertificate = getCertificate\n\n\treturn cleanUp\n}\n\n// SetCertificateBeforeUnlock takes care of loading the certificate before\n// the wallet is unlocked. If the TLSEncryptKey setting is on, we need to\n// generate an ephemeral certificate we're able to use until the wallet is\n// unlocked and a new TLS pair can be encrypted to disk. Otherwise we can\n// process the certificate normally.",
+      "length": 1808,
+      "tokens": 215,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) SetCertificateBeforeUnlock() ([]grpc.ServerOption,",
+      "content": "func (t *TLSManager) SetCertificateBeforeUnlock() ([]grpc.ServerOption,\n\t[]grpc.DialOption, func(net.Addr) (net.Listener, error), func(),\n\terror) {\n\n\tvar cleanUp func()\n\tif t.cfg.TLSEncryptKey {\n\t\t_, err := t.loadEphemeralCertificate()\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, nil, fmt.Errorf(\"unable to load \"+\n\t\t\t\t\"ephemeral certificate: %v\", err)\n\t\t}\n\t} else {\n\t\t_, cleanUpFunc, err := t.generateOrRenewCert()\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, nil, fmt.Errorf(\"unable to \"+\n\t\t\t\t\"generate or renew TLS certificate: %v\", err)\n\t\t}\n\t\tcleanUp = cleanUpFunc\n\t}\n\n\tserverOpts, restDialOpts, restListen, err := t.getConfig()\n\tif err != nil {\n\t\treturn nil, nil, nil, nil, fmt.Errorf(\"unable to load TLS \"+\n\t\t\t\"credentials: %v\", err)\n\t}\n\n\treturn serverOpts, restDialOpts, restListen, cleanUp, nil\n}\n\n// loadEphemeralCertificate creates and loads the ephemeral certificate which\n// is used temporarily for secure communications before the wallet is unlocked.",
+      "length": 859,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) loadEphemeralCertificate() ([]byte, error) {",
+      "content": "func (t *TLSManager) loadEphemeralCertificate() ([]byte, error) {\n\trpcsLog.Infof(\"Generating ephemeral TLS certificates...\")\n\n\ttmpValidity := validityHours * time.Hour\n\t// Append .tmp to the end of the cert for differentiation.\n\ttmpCertPath := t.cfg.TLSCertPath + \".tmp\"\n\n\t// Pass in a blank string for the key path so the\n\t// function doesn't write them to disk.\n\tcertBytes, keyBytes, err := cert.GenCertPair(\n\t\t\"lnd ephemeral autogenerated cert\", t.cfg.TLSExtraIPs,\n\t\tt.cfg.TLSExtraDomains, t.cfg.TLSDisableAutofill, tmpValidity,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tt.setEphemeralSettings(keyBytes, certBytes, t.cfg.TLSCertPath+\".tmp\")\n\n\terr = cert.WriteCertPair(tmpCertPath, \"\", certBytes, keyBytes)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\trpcsLog.Infof(\"Done generating ephemeral TLS certificates\")\n\n\treturn keyBytes, nil\n}\n\n// LoadPermanentCertificate deletes the ephemeral certificate file and\n// generates a new one with the real keyring.",
+      "length": 857,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) LoadPermanentCertificate(",
+      "content": "func (t *TLSManager) LoadPermanentCertificate(\n\tkeyRing keychain.SecretKeyRing) error {\n\n\tif !t.cfg.TLSEncryptKey {\n\t\treturn nil\n\t}\n\n\ttmpCertPath := t.cfg.TLSCertPath + \".tmp\"\n\terr := os.Remove(tmpCertPath)\n\tif err != nil {\n\t\tltndLog.Warn(\"Unable to delete temp cert at %v\",\n\t\t\ttmpCertPath)\n\t}\n\n\terr = t.generateCertPair(keyRing)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tcertBytes, encryptedKeyBytes, err := cert.GetCertBytesFromPath(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treader := bytes.NewReader(encryptedKeyBytes)\n\te, err := lnencrypt.KeyRingEncrypter(keyRing)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to generate encrypt key %w\",\n\t\t\terr)\n\t}\n\n\tkeyBytes, err := e.DecryptPayloadFromReader(reader)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Switch the server's TLS certificate to the persistent one. By\n\t// changing the cert data the TLSReloader points to,\n\terr = t.tlsReloader.AttemptReload(certBytes, keyBytes)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tt.deleteEphemeralSettings()\n\n\treturn nil\n}\n\n// setEphemeralSettings sets the TLSManager settings needed when an ephemeral\n// certificate is created.",
+      "length": 1033,
+      "tokens": 142,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) setEphemeralSettings(keyBytes, certBytes []byte,",
+      "content": "func (t *TLSManager) setEphemeralSettings(keyBytes, certBytes []byte,\n\tcertPath string) {\n\n\tt.ephemeralKey = keyBytes\n\tt.ephemeralCert = certBytes\n\tt.ephemeralCertPath = t.cfg.TLSCertPath + \".tmp\"\n}\n\n// deleteEphemeralSettings deletes the TLSManager ephemeral settings that are\n// no longer needed when the ephemeral certificate is deleted so the Manager\n// knows we're no longer using it.",
+      "length": 310,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) deleteEphemeralSettings() {",
+      "content": "func (t *TLSManager) deleteEphemeralSettings() {\n\tt.ephemeralKey = nil\n\tt.ephemeralCert = nil\n\tt.ephemeralCertPath = \"\"\n}\n\n// IsCertExpired checks if the current TLS certificate is expired.",
+      "length": 135,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (t *TLSManager) IsCertExpired(keyRing keychain.SecretKeyRing) (bool,",
+      "content": "func (t *TLSManager) IsCertExpired(keyRing keychain.SecretKeyRing) (bool,\n\ttime.Time, error) {\n\n\tcertBytes, keyBytes, err := cert.GetCertBytesFromPath(\n\t\tt.cfg.TLSCertPath, t.cfg.TLSKeyPath,\n\t)\n\tif err != nil {\n\t\treturn false, time.Time{}, err\n\t}\n\n\t// If TLSEncryptKey is set, there are two states the\n\t// certificate can be in: ephemeral or permanent.\n\t// Retrieve the key depending on which state it is in.\n\tif t.ephemeralKey != nil {\n\t\tkeyBytes = t.ephemeralKey\n\t} else if t.cfg.TLSEncryptKey {\n\t\tkeyBytes, err = decryptTLSKeyBytes(keyRing, keyBytes)\n\t\tif err != nil {\n\t\t\treturn false, time.Time{}, err\n\t\t}\n\t}\n\n\t_, parsedCert, err := cert.LoadCertFromBytes(\n\t\tcertBytes, keyBytes,\n\t)\n\tif err != nil {\n\t\treturn false, time.Time{}, err\n\t}\n\n\t// If the current time is passed the certificate's\n\t// expiry time, then it is considered expired\n\tif time.Now().After(parsedCert.NotAfter) {\n\t\treturn true, parsedCert.NotAfter, nil\n\t}\n\n\treturn false, parsedCert.NotAfter, nil\n}\n",
+      "length": 860,
+      "tokens": 127,
+      "embedding": []
+    }
+  ]
+}

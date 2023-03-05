@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/workers.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Workers struct {",
+      "content": "type Workers struct {\n\t// Read is the maximum number of concurrent read pool workers.\n\tRead int `long:\"read\" description:\"Maximum number of concurrent read pool workers. This number should be proportional to the number of peers.\"`\n\n\t// Write is the maximum number of concurrent write pool workers.\n\tWrite int `long:\"write\" description:\"Maximum number of concurrent write pool workers. This number should be proportional to the number of CPUs on the host. \"`\n\n\t// Sig is the maximum number of concurrent sig pool workers.\n\tSig int `long:\"sig\" description:\"Maximum number of concurrent sig pool workers. This number should be proportional to the number of CPUs on the host.\"`\n}\n\n// Validate checks the Workers configuration to ensure that the input values are\n// sane.",
+      "length": 733,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Workers) Validate() error {",
+      "content": "func (w *Workers) Validate() error {\n\tif w.Read <= 0 {\n\t\treturn fmt.Errorf(\"number of read workers (%d) must be \"+\n\t\t\t\"positive\", w.Read)\n\t}\n\tif w.Write <= 0 {\n\t\treturn fmt.Errorf(\"number of write workers (%d) must be \"+\n\t\t\t\"positive\", w.Write)\n\t}\n\tif w.Sig <= 0 {\n\t\treturn fmt.Errorf(\"number of sig workers (%d) must be \"+\n\t\t\t\"positive\", w.Sig)\n\t}\n\n\treturn nil\n}\n\n// Compile-time constraint to ensure Workers implements the Validator interface.\nvar _ Validator = (*Workers)(nil)\n",
+      "length": 425,
+      "tokens": 69,
+      "embedding": []
+    }
+  ]
+}

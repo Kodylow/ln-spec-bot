@@ -1,0 +1,874 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/mock.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "func isAlias(scid lnwire.ShortChannelID) bool {",
+      "content": "func isAlias(scid lnwire.ShortChannelID) bool {\n\treturn scid.BlockHeight >= 16_000_000 && scid.BlockHeight < 16_250_000\n}\n",
+      "length": 72,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type mockPreimageCache struct {",
+      "content": "type mockPreimageCache struct {\n\tsync.Mutex\n\tpreimageMap map[lntypes.Hash]lntypes.Preimage\n}\n",
+      "length": 58,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockPreimageCache() *mockPreimageCache {",
+      "content": "func newMockPreimageCache() *mockPreimageCache {\n\treturn &mockPreimageCache{\n\t\tpreimageMap: make(map[lntypes.Hash]lntypes.Preimage),\n\t}\n}\n",
+      "length": 85,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPreimageCache) LookupPreimage(",
+      "content": "func (m *mockPreimageCache) LookupPreimage(\n\thash lntypes.Hash) (lntypes.Preimage, bool) {\n\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tp, ok := m.preimageMap[hash]\n\treturn p, ok\n}\n",
+      "length": 115,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPreimageCache) AddPreimages(preimages ...lntypes.Preimage) error {",
+      "content": "func (m *mockPreimageCache) AddPreimages(preimages ...lntypes.Preimage) error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tfor _, preimage := range preimages {\n\t\tm.preimageMap[preimage.Hash()] = preimage\n\t}\n\n\treturn nil\n}\n",
+      "length": 120,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockPreimageCache) SubscribeUpdates(",
+      "content": "func (m *mockPreimageCache) SubscribeUpdates(\n\tchanID lnwire.ShortChannelID, htlc *channeldb.HTLC,\n\tpayload *hop.Payload,\n\tnextHopOnionBlob []byte) (*contractcourt.WitnessSubscription, error) {\n\n\treturn nil, nil\n}\n",
+      "length": 162,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "type mockFeeEstimator struct {",
+      "content": "type mockFeeEstimator struct {\n\tbyteFeeIn chan chainfee.SatPerKWeight\n\trelayFee  chan chainfee.SatPerKWeight\n\n\tquit chan struct{}\n}\n",
+      "length": 96,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockFeeEstimator() *mockFeeEstimator {",
+      "content": "func newMockFeeEstimator() *mockFeeEstimator {\n\treturn &mockFeeEstimator{\n\t\tbyteFeeIn: make(chan chainfee.SatPerKWeight),\n\t\trelayFee:  make(chan chainfee.SatPerKWeight),\n\t\tquit:      make(chan struct{}),\n\t}\n}\n",
+      "length": 156,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockFeeEstimator) EstimateFeePerKW(",
+      "content": "func (m *mockFeeEstimator) EstimateFeePerKW(\n\tnumBlocks uint32) (chainfee.SatPerKWeight, error) {\n\n\tselect {\n\tcase feeRate := <-m.byteFeeIn:\n\t\treturn feeRate, nil\n\tcase <-m.quit:\n\t\treturn 0, fmt.Errorf(\"exiting\")\n\t}\n}\n",
+      "length": 164,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockFeeEstimator) RelayFeePerKW() chainfee.SatPerKWeight {",
+      "content": "func (m *mockFeeEstimator) RelayFeePerKW() chainfee.SatPerKWeight {\n\tselect {\n\tcase feeRate := <-m.relayFee:\n\t\treturn feeRate\n\tcase <-m.quit:\n\t\treturn 0\n\t}\n}\n",
+      "length": 83,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockFeeEstimator) Start() error {",
+      "content": "func (m *mockFeeEstimator) Start() error {\n\treturn nil\n}",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockFeeEstimator) Stop() error {",
+      "content": "func (m *mockFeeEstimator) Stop() error {\n\tclose(m.quit)\n\treturn nil\n}\n\nvar _ chainfee.Estimator = (*mockFeeEstimator)(nil)\n",
+      "length": 77,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type mockForwardingLog struct {",
+      "content": "type mockForwardingLog struct {\n\tsync.Mutex\n\n\tevents map[time.Time]channeldb.ForwardingEvent\n}\n",
+      "length": 59,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockForwardingLog) AddForwardingEvents(events []channeldb.ForwardingEvent) error {",
+      "content": "func (m *mockForwardingLog) AddForwardingEvents(events []channeldb.ForwardingEvent) error {\n\tm.Lock()\n\tdefer m.Unlock()\n\n\tfor _, event := range events {\n\t\tm.events[event.Timestamp] = event\n\t}\n\n\treturn nil\n}\n",
+      "length": 106,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type mockServer struct {",
+      "content": "type mockServer struct {\n\tstarted  int32 // To be used atomically.\n\tshutdown int32 // To be used atomically.\n\twg       sync.WaitGroup\n\tquit     chan struct{}\n\n\tt testing.TB\n\n\tname     string\n\tmessages chan lnwire.Message\n\n\tid         [33]byte\n\thtlcSwitch *Switch\n\n\tregistry         *mockInvoiceRegistry\n\tpCache           *mockPreimageCache\n\tinterceptorFuncs []messageInterceptor\n}\n\nvar _ lnpeer.Peer = (*mockServer)(nil)\n",
+      "length": 377,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func initSwitchWithDB(startingHeight uint32, db *channeldb.DB) (*Switch, error) {",
+      "content": "func initSwitchWithDB(startingHeight uint32, db *channeldb.DB) (*Switch, error) {\n\tsignAliasUpdate := func(u *lnwire.ChannelUpdate) (*ecdsa.Signature,\n\t\terror) {\n\n\t\treturn testSig, nil\n\t}\n\n\tcfg := Config{\n\t\tDB:                   db,\n\t\tFetchAllOpenChannels: db.ChannelStateDB().FetchAllOpenChannels,\n\t\tFetchAllChannels:     db.ChannelStateDB().FetchAllChannels,\n\t\tFetchClosedChannels:  db.ChannelStateDB().FetchClosedChannels,\n\t\tSwitchPackager:       channeldb.NewSwitchPackager(),\n\t\tFwdingLog: &mockForwardingLog{\n\t\t\tevents: make(map[time.Time]channeldb.ForwardingEvent),\n\t\t},\n\t\tFetchLastChannelUpdate: func(scid lnwire.ShortChannelID) (\n\t\t\t*lnwire.ChannelUpdate, error) {\n\n\t\t\treturn &lnwire.ChannelUpdate{\n\t\t\t\tShortChannelID: scid,\n\t\t\t}, nil\n\t\t},\n\t\tNotifier: &mock.ChainNotifier{\n\t\t\tSpendChan: make(chan *chainntnfs.SpendDetail),\n\t\t\tEpochChan: make(chan *chainntnfs.BlockEpoch),\n\t\t\tConfChan:  make(chan *chainntnfs.TxConfirmation),\n\t\t},\n\t\tFwdEventTicker: ticker.NewForce(\n\t\t\tDefaultFwdEventInterval,\n\t\t),\n\t\tLogEventTicker:         ticker.NewForce(DefaultLogInterval),\n\t\tAckEventTicker:         ticker.NewForce(DefaultAckInterval),\n\t\tHtlcNotifier:           &mockHTLCNotifier{},\n\t\tClock:                  clock.NewDefaultClock(),\n\t\tMailboxDeliveryTimeout: time.Hour,\n\t\tDustThreshold:          DefaultDustThreshold,\n\t\tSignAliasUpdate:        signAliasUpdate,\n\t\tIsAlias:                isAlias,\n\t}\n\n\treturn New(cfg, startingHeight)\n}\n",
+      "length": 1308,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func initSwitchWithTempDB(t testing.TB, startingHeight uint32) (*Switch,",
+      "content": "func initSwitchWithTempDB(t testing.TB, startingHeight uint32) (*Switch,\n\terror) {\n\n\ttempPath := filepath.Join(t.TempDir(), \"switchdb\")\n\tdb, err := channeldb.Open(tempPath)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tt.Cleanup(func() { db.Close() })\n\n\ts, err := initSwitchWithDB(startingHeight, db)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn s, nil\n}\n",
+      "length": 261,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockServer(t testing.TB, name string, startingHeight uint32,",
+      "content": "func newMockServer(t testing.TB, name string, startingHeight uint32,\n\tdb *channeldb.DB, defaultDelta uint32) (*mockServer, error) {\n\n\tvar id [33]byte\n\th := sha256.Sum256([]byte(name))\n\tcopy(id[:], h[:])\n\n\tpCache := newMockPreimageCache()\n\n\tvar (\n\t\thtlcSwitch *Switch\n\t\terr        error\n\t)\n\tif db == nil {\n\t\thtlcSwitch, err = initSwitchWithTempDB(t, startingHeight)\n\t} else {\n\t\thtlcSwitch, err = initSwitchWithDB(startingHeight, db)\n\t}\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tt.Cleanup(func() { _ = htlcSwitch.Stop() })\n\n\tregistry := newMockRegistry(defaultDelta)\n\n\tt.Cleanup(func() { registry.cleanup() })\n\n\treturn &mockServer{\n\t\tt:                t,\n\t\tid:               id,\n\t\tname:             name,\n\t\tmessages:         make(chan lnwire.Message, 3000),\n\t\tquit:             make(chan struct{}),\n\t\tregistry:         registry,\n\t\thtlcSwitch:       htlcSwitch,\n\t\tpCache:           pCache,\n\t\tinterceptorFuncs: make([]messageInterceptor, 0),\n\t}, nil\n}\n",
+      "length": 838,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) Start() error {",
+      "content": "func (s *mockServer) Start() error {\n\tif !atomic.CompareAndSwapInt32(&s.started, 0, 1) {\n\t\treturn errors.New(\"mock server already started\")\n\t}\n\n\tif err := s.htlcSwitch.Start(); err != nil {\n\t\treturn err\n\t}\n\n\ts.wg.Add(1)\n\tgo func() {\n\t\tdefer s.wg.Done()\n\n\t\tdefer func() {\n\t\t\ts.htlcSwitch.Stop()\n\t\t}()\n\n\t\tfor {\n\t\t\tselect {\n\t\t\tcase msg := <-s.messages:\n\t\t\t\tvar shouldSkip bool\n\n\t\t\t\tfor _, interceptor := range s.interceptorFuncs {\n\t\t\t\t\tskip, err := interceptor(msg)\n\t\t\t\t\tif err != nil {\n\t\t\t\t\t\ts.t.Fatalf(\"%v: error in the \"+\n\t\t\t\t\t\t\t\"interceptor: %v\", s.name, err)\n\t\t\t\t\t\treturn\n\t\t\t\t\t}\n\t\t\t\t\tshouldSkip = shouldSkip || skip\n\t\t\t\t}\n\n\t\t\t\tif shouldSkip {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tif err := s.readHandler(msg); err != nil {\n\t\t\t\t\ts.t.Fatal(err)\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\tcase <-s.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}()\n\n\treturn nil\n}\n",
+      "length": 725,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) QuitSignal() <-chan struct{} {",
+      "content": "func (s *mockServer) QuitSignal() <-chan struct{} {\n\treturn s.quit\n}\n\n// mockHopIterator represents the test version of hop iterator which instead\n// of encrypting the path in onion blob just stores the path as a list of hops.",
+      "length": 170,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "type mockHopIterator struct {",
+      "content": "type mockHopIterator struct {\n\thops []*hop.Payload\n}\n",
+      "length": 21,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockHopIterator(hops ...*hop.Payload) hop.Iterator {",
+      "content": "func newMockHopIterator(hops ...*hop.Payload) hop.Iterator {\n\treturn &mockHopIterator{hops: hops}\n}\n",
+      "length": 37,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockHopIterator) HopPayload() (*hop.Payload, error) {",
+      "content": "func (r *mockHopIterator) HopPayload() (*hop.Payload, error) {\n\th := r.hops[0]\n\tr.hops = r.hops[1:]\n\treturn h, nil\n}\n",
+      "length": 50,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockHopIterator) ExtraOnionBlob() []byte {",
+      "content": "func (r *mockHopIterator) ExtraOnionBlob() []byte {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockHopIterator) ExtractErrorEncrypter(",
+      "content": "func (r *mockHopIterator) ExtractErrorEncrypter(\n\textracter hop.ErrorEncrypterExtracter) (hop.ErrorEncrypter,\n\tlnwire.FailCode) {\n\n\treturn extracter(nil)\n}\n",
+      "length": 102,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockHopIterator) EncodeNextHop(w io.Writer) error {",
+      "content": "func (r *mockHopIterator) EncodeNextHop(w io.Writer) error {\n\tvar hopLength [4]byte\n\tbinary.BigEndian.PutUint32(hopLength[:], uint32(len(r.hops)))\n\n\tif _, err := w.Write(hopLength[:]); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, hop := range r.hops {\n\t\tfwdInfo := hop.ForwardingInfo()\n\t\tif err := encodeFwdInfo(w, &fwdInfo); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 291,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func encodeFwdInfo(w io.Writer, f *hop.ForwardingInfo) error {",
+      "content": "func encodeFwdInfo(w io.Writer, f *hop.ForwardingInfo) error {\n\tif _, err := w.Write([]byte{byte(f.Network)}); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Write(w, binary.BigEndian, f.NextHop); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Write(w, binary.BigEndian, f.AmountToForward); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Write(w, binary.BigEndian, f.OutgoingCTLV); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\nvar _ hop.Iterator = (*mockHopIterator)(nil)\n\n// mockObfuscator mock implementation of the failure obfuscator which only\n// encodes the failure and do not makes any onion obfuscation.",
+      "length": 528,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "type mockObfuscator struct {",
+      "content": "type mockObfuscator struct {\n\togPacket *sphinx.OnionPacket\n\tfailure  lnwire.FailureMessage\n}\n\n// NewMockObfuscator initializes a dummy mockObfuscator used for testing.",
+      "length": 134,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMockObfuscator() hop.ErrorEncrypter {",
+      "content": "func NewMockObfuscator() hop.ErrorEncrypter {\n\treturn &mockObfuscator{}\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) OnionPacket() *sphinx.OnionPacket {",
+      "content": "func (o *mockObfuscator) OnionPacket() *sphinx.OnionPacket {\n\treturn o.ogPacket\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) Type() hop.EncrypterType {",
+      "content": "func (o *mockObfuscator) Type() hop.EncrypterType {\n\treturn hop.EncrypterTypeMock\n}\n",
+      "length": 30,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) Encode(w io.Writer) error {",
+      "content": "func (o *mockObfuscator) Encode(w io.Writer) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) Decode(r io.Reader) error {",
+      "content": "func (o *mockObfuscator) Decode(r io.Reader) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) Reextract(",
+      "content": "func (o *mockObfuscator) Reextract(\n\textracter hop.ErrorEncrypterExtracter) error {\n\n\treturn nil\n}\n\nvar fakeHmac = []byte(\"hmachmachmachmachmachmachmachmac\")\n",
+      "length": 116,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) EncryptFirstHop(failure lnwire.FailureMessage) (",
+      "content": "func (o *mockObfuscator) EncryptFirstHop(failure lnwire.FailureMessage) (\n\tlnwire.OpaqueReason, error) {\n\n\to.failure = failure\n\n\tvar b bytes.Buffer\n\tb.Write(fakeHmac)\n\n\tif err := lnwire.EncodeFailure(&b, failure, 0); err != nil {\n\t\treturn nil, err\n\t}\n\treturn b.Bytes(), nil\n}\n",
+      "length": 190,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) IntermediateEncrypt(reason lnwire.OpaqueReason) lnwire.OpaqueReason {",
+      "content": "func (o *mockObfuscator) IntermediateEncrypt(reason lnwire.OpaqueReason) lnwire.OpaqueReason {\n\treturn reason\n}\n",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockObfuscator) EncryptMalformedError(reason lnwire.OpaqueReason) lnwire.OpaqueReason {",
+      "content": "func (o *mockObfuscator) EncryptMalformedError(reason lnwire.OpaqueReason) lnwire.OpaqueReason {\n\tvar b bytes.Buffer\n\tb.Write(fakeHmac)\n\n\tb.Write(reason)\n\n\treturn b.Bytes()\n}\n\n// mockDeobfuscator mock implementation of the failure deobfuscator which\n// only decodes the failure do not makes any onion obfuscation.",
+      "length": 207,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type mockDeobfuscator struct{}",
+      "content": "type mockDeobfuscator struct{}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockDeobfuscator() ErrorDecrypter {",
+      "content": "func newMockDeobfuscator() ErrorDecrypter {\n\treturn &mockDeobfuscator{}\n}\n",
+      "length": 28,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *mockDeobfuscator) DecryptError(reason lnwire.OpaqueReason) (",
+      "content": "func (o *mockDeobfuscator) DecryptError(reason lnwire.OpaqueReason) (\n\t*ForwardingError, error) {\n\n\tif !bytes.Equal(reason[:32], fakeHmac) {\n\t\treturn nil, errors.New(\"fake decryption error\")\n\t}\n\treason = reason[32:]\n\n\tr := bytes.NewReader(reason)\n\tfailure, err := lnwire.DecodeFailure(r, 0)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn NewForwardingError(failure, 1), nil\n}\n\nvar _ ErrorDecrypter = (*mockDeobfuscator)(nil)\n\n// mockIteratorDecoder test version of hop iterator decoder which decodes the\n// encoded array of hops.",
+      "length": 440,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "type mockIteratorDecoder struct {",
+      "content": "type mockIteratorDecoder struct {\n\tmu sync.RWMutex\n\n\tresponses map[[32]byte][]hop.DecodeHopIteratorResponse\n\n\tdecodeFail bool\n}\n",
+      "length": 88,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockIteratorDecoder() *mockIteratorDecoder {",
+      "content": "func newMockIteratorDecoder() *mockIteratorDecoder {\n\treturn &mockIteratorDecoder{\n\t\tresponses: make(map[[32]byte][]hop.DecodeHopIteratorResponse),\n\t}\n}\n",
+      "length": 96,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockIteratorDecoder) DecodeHopIterator(r io.Reader, rHash []byte,",
+      "content": "func (p *mockIteratorDecoder) DecodeHopIterator(r io.Reader, rHash []byte,\n\tcltv uint32) (hop.Iterator, lnwire.FailCode) {\n\n\tvar b [4]byte\n\t_, err := r.Read(b[:])\n\tif err != nil {\n\t\treturn nil, lnwire.CodeTemporaryChannelFailure\n\t}\n\thopLength := binary.BigEndian.Uint32(b[:])\n\n\thops := make([]*hop.Payload, hopLength)\n\tfor i := uint32(0); i < hopLength; i++ {\n\t\tvar f hop.ForwardingInfo\n\t\tif err := decodeFwdInfo(r, &f); err != nil {\n\t\t\treturn nil, lnwire.CodeTemporaryChannelFailure\n\t\t}\n\n\t\tvar nextHopBytes [8]byte\n\t\tbinary.BigEndian.PutUint64(nextHopBytes[:], f.NextHop.ToUint64())\n\n\t\thops[i] = hop.NewLegacyPayload(&sphinx.HopData{\n\t\t\tRealm:         [1]byte{}, // hop.BitcoinNetwork\n\t\t\tNextAddress:   nextHopBytes,\n\t\t\tForwardAmount: uint64(f.AmountToForward),\n\t\t\tOutgoingCltv:  f.OutgoingCTLV,\n\t\t})\n\t}\n\n\treturn newMockHopIterator(hops...), lnwire.CodeNone\n}\n",
+      "length": 757,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockIteratorDecoder) DecodeHopIterators(id []byte,",
+      "content": "func (p *mockIteratorDecoder) DecodeHopIterators(id []byte,\n\treqs []hop.DecodeHopIteratorRequest) (\n\t[]hop.DecodeHopIteratorResponse, error) {\n\n\tidHash := sha256.Sum256(id)\n\n\tp.mu.RLock()\n\tif resps, ok := p.responses[idHash]; ok {\n\t\tp.mu.RUnlock()\n\t\treturn resps, nil\n\t}\n\tp.mu.RUnlock()\n\n\tbatchSize := len(reqs)\n\n\tresps := make([]hop.DecodeHopIteratorResponse, 0, batchSize)\n\tfor _, req := range reqs {\n\t\titerator, failcode := p.DecodeHopIterator(\n\t\t\treq.OnionReader, req.RHash, req.IncomingCltv,\n\t\t)\n\n\t\tif p.decodeFail {\n\t\t\tfailcode = lnwire.CodeTemporaryChannelFailure\n\t\t}\n\n\t\tresp := hop.DecodeHopIteratorResponse{\n\t\t\tHopIterator: iterator,\n\t\t\tFailCode:    failcode,\n\t\t}\n\t\tresps = append(resps, resp)\n\t}\n\n\tp.mu.Lock()\n\tp.responses[idHash] = resps\n\tp.mu.Unlock()\n\n\treturn resps, nil\n}\n",
+      "length": 689,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func decodeFwdInfo(r io.Reader, f *hop.ForwardingInfo) error {",
+      "content": "func decodeFwdInfo(r io.Reader, f *hop.ForwardingInfo) error {\n\tvar net [1]byte\n\tif _, err := r.Read(net[:]); err != nil {\n\t\treturn err\n\t}\n\tf.Network = hop.Network(net[0])\n\n\tif err := binary.Read(r, binary.BigEndian, &f.NextHop); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Read(r, binary.BigEndian, &f.AmountToForward); err != nil {\n\t\treturn err\n\t}\n\n\tif err := binary.Read(r, binary.BigEndian, &f.OutgoingCTLV); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// messageInterceptor is function that handles the incoming peer messages and\n// may decide should the peer skip the message or not.",
+      "length": 509,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "type messageInterceptor func(m lnwire.Message) (bool, error)",
+      "content": "type messageInterceptor func(m lnwire.Message) (bool, error)\n\n// Record is used to set the function which will be triggered when new\n// lnwire message was received.",
+      "length": 101,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) intersect(f messageInterceptor) {",
+      "content": "func (s *mockServer) intersect(f messageInterceptor) {\n\ts.interceptorFuncs = append(s.interceptorFuncs, f)\n}\n",
+      "length": 52,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) SendMessage(sync bool, msgs ...lnwire.Message) error {",
+      "content": "func (s *mockServer) SendMessage(sync bool, msgs ...lnwire.Message) error {\n\n\tfor _, msg := range msgs {\n\t\tselect {\n\t\tcase s.messages <- msg:\n\t\tcase <-s.quit:\n\t\t\treturn errors.New(\"server is stopped\")\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 136,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) SendMessageLazy(sync bool, msgs ...lnwire.Message) error {",
+      "content": "func (s *mockServer) SendMessageLazy(sync bool, msgs ...lnwire.Message) error {\n\tpanic(\"not implemented\")\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) readHandler(message lnwire.Message) error {",
+      "content": "func (s *mockServer) readHandler(message lnwire.Message) error {\n\tvar targetChan lnwire.ChannelID\n\n\tswitch msg := message.(type) {\n\tcase *lnwire.UpdateAddHTLC:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.UpdateFulfillHTLC:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.UpdateFailHTLC:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.UpdateFailMalformedHTLC:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.RevokeAndAck:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.CommitSig:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.FundingLocked:\n\t\t// Ignore\n\t\treturn nil\n\tcase *lnwire.ChannelReestablish:\n\t\ttargetChan = msg.ChanID\n\tcase *lnwire.UpdateFee:\n\t\ttargetChan = msg.ChanID\n\tdefault:\n\t\treturn fmt.Errorf(\"unknown message type: %T\", msg)\n\t}\n\n\t// Dispatch the commitment update message to the proper channel link\n\t// dedicated to this channel. If the link is not found, we will discard\n\t// the message.\n\tlink, err := s.htlcSwitch.GetLink(targetChan)\n\tif err != nil {\n\t\treturn nil\n\t}\n\n\t// Create goroutine for this, in order to be able to properly stop\n\t// the server when handler stacked (server unavailable)\n\tlink.HandleChannelUpdate(message)\n\n\treturn nil\n}\n",
+      "length": 1014,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) PubKey() [33]byte {",
+      "content": "func (s *mockServer) PubKey() [33]byte {\n\treturn s.id\n}\n",
+      "length": 13,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) IdentityKey() *btcec.PublicKey {",
+      "content": "func (s *mockServer) IdentityKey() *btcec.PublicKey {\n\tpubkey, _ := btcec.ParsePubKey(s.id[:])\n\treturn pubkey\n}\n",
+      "length": 55,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) Address() net.Addr {",
+      "content": "func (s *mockServer) Address() net.Addr {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) AddNewChannel(channel *channeldb.OpenChannel,",
+      "content": "func (s *mockServer) AddNewChannel(channel *channeldb.OpenChannel,\n\tcancel <-chan struct{}) error {\n\n\treturn nil\n}\n",
+      "length": 44,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) WipeChannel(*wire.OutPoint) {}",
+      "content": "func (s *mockServer) WipeChannel(*wire.OutPoint) {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) LocalFeatures() *lnwire.FeatureVector {",
+      "content": "func (s *mockServer) LocalFeatures() *lnwire.FeatureVector {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) RemoteFeatures() *lnwire.FeatureVector {",
+      "content": "func (s *mockServer) RemoteFeatures() *lnwire.FeatureVector {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) Stop() error {",
+      "content": "func (s *mockServer) Stop() error {\n\tif !atomic.CompareAndSwapInt32(&s.shutdown, 0, 1) {\n\t\treturn nil\n\t}\n\n\tclose(s.quit)\n\ts.wg.Wait()\n\n\treturn nil\n}\n",
+      "length": 104,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockServer) String() string {",
+      "content": "func (s *mockServer) String() string {\n\treturn s.name\n}\n",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChannelLink struct {",
+      "content": "type mockChannelLink struct {\n\thtlcSwitch *Switch\n\n\tshortChanID lnwire.ShortChannelID\n\n\t// Only used for zero-conf channels.\n\trealScid lnwire.ShortChannelID\n\n\taliases []lnwire.ShortChannelID\n\n\tchanID lnwire.ChannelID\n\n\tpeer lnpeer.Peer\n\n\tmailBox MailBox\n\n\tpackets chan *htlcPacket\n\n\teligible bool\n\n\tunadvertised bool\n\n\tzeroConf bool\n\n\toptionFeature bool\n\n\thtlcID uint64\n\n\tcheckHtlcTransitResult *LinkError\n\n\tcheckHtlcForwardResult *LinkError\n\n\tfailAliasUpdate func(sid lnwire.ShortChannelID,\n\t\tincoming bool) *lnwire.ChannelUpdate\n\n\tconfirmedZC bool\n}\n\n// completeCircuit is a helper method for adding the finalized payment circuit\n// to the switch's circuit map. In testing, this should be executed after\n// receiving an htlc from the downstream packets channel.",
+      "length": 694,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) completeCircuit(pkt *htlcPacket) error {",
+      "content": "func (f *mockChannelLink) completeCircuit(pkt *htlcPacket) error {\n\tswitch htlc := pkt.htlc.(type) {\n\tcase *lnwire.UpdateAddHTLC:\n\t\tpkt.outgoingChanID = f.shortChanID\n\t\tpkt.outgoingHTLCID = f.htlcID\n\t\thtlc.ID = f.htlcID\n\n\t\tkeystone := Keystone{pkt.inKey(), pkt.outKey()}\n\t\terr := f.htlcSwitch.circuits.OpenCircuits(keystone)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tf.htlcID++\n\n\tcase *lnwire.UpdateFulfillHTLC, *lnwire.UpdateFailHTLC:\n\t\tif pkt.circuit != nil {\n\t\t\terr := f.htlcSwitch.teardownCircuit(pkt)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\tf.mailBox.AckPacket(pkt.inKey())\n\n\treturn nil\n}\n",
+      "length": 505,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) deleteCircuit(pkt *htlcPacket) error {",
+      "content": "func (f *mockChannelLink) deleteCircuit(pkt *htlcPacket) error {\n\treturn f.htlcSwitch.circuits.DeleteCircuits(pkt.inKey())\n}\n",
+      "length": 58,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockChannelLink(htlcSwitch *Switch, chanID lnwire.ChannelID,",
+      "content": "func newMockChannelLink(htlcSwitch *Switch, chanID lnwire.ChannelID,\n\tshortChanID, realScid lnwire.ShortChannelID, peer lnpeer.Peer,\n\teligible, unadvertised, zeroConf, optionFeature bool,\n) *mockChannelLink {\n\n\taliases := make([]lnwire.ShortChannelID, 0)\n\tvar realConfirmed bool\n\n\tif zeroConf {\n\t\taliases = append(aliases, shortChanID)\n\t}\n\n\tif realScid != hop.Source {\n\t\trealConfirmed = true\n\t}\n\n\treturn &mockChannelLink{\n\t\thtlcSwitch:    htlcSwitch,\n\t\tchanID:        chanID,\n\t\tshortChanID:   shortChanID,\n\t\trealScid:      realScid,\n\t\tpeer:          peer,\n\t\teligible:      eligible,\n\t\tunadvertised:  unadvertised,\n\t\tzeroConf:      zeroConf,\n\t\toptionFeature: optionFeature,\n\t\taliases:       aliases,\n\t\tconfirmedZC:   realConfirmed,\n\t}\n}\n\n// addAlias is not part of any interface method.",
+      "length": 686,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) addAlias(alias lnwire.ShortChannelID) {",
+      "content": "func (f *mockChannelLink) addAlias(alias lnwire.ShortChannelID) {\n\tf.aliases = append(f.aliases, alias)\n}\n",
+      "length": 38,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) handleSwitchPacket(pkt *htlcPacket) error {",
+      "content": "func (f *mockChannelLink) handleSwitchPacket(pkt *htlcPacket) error {\n\tf.mailBox.AddPacket(pkt)\n\treturn nil\n}\n",
+      "length": 37,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) getDustSum(remote bool) lnwire.MilliSatoshi {",
+      "content": "func (f *mockChannelLink) getDustSum(remote bool) lnwire.MilliSatoshi {\n\treturn 0\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) getFeeRate() chainfee.SatPerKWeight {",
+      "content": "func (f *mockChannelLink) getFeeRate() chainfee.SatPerKWeight {\n\treturn 0\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) getDustClosure() dustClosure {",
+      "content": "func (f *mockChannelLink) getDustClosure() dustClosure {\n\tdustLimit := btcutil.Amount(400)\n\treturn dustHelper(\n\t\tchanneldb.SingleFunderTweaklessBit, dustLimit, dustLimit,\n\t)\n}\n",
+      "length": 114,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) HandleChannelUpdate(lnwire.Message) {",
+      "content": "func (f *mockChannelLink) HandleChannelUpdate(lnwire.Message) {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) UpdateForwardingPolicy(_ ForwardingPolicy) {",
+      "content": "func (f *mockChannelLink) UpdateForwardingPolicy(_ ForwardingPolicy) {\n}",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) CheckHtlcForward([32]byte, lnwire.MilliSatoshi,",
+      "content": "func (f *mockChannelLink) CheckHtlcForward([32]byte, lnwire.MilliSatoshi,\n\tlnwire.MilliSatoshi, uint32, uint32, uint32,\n\tlnwire.ShortChannelID) *LinkError {\n\n\treturn f.checkHtlcForwardResult\n}\n",
+      "length": 114,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) CheckHtlcTransit(payHash [32]byte,",
+      "content": "func (f *mockChannelLink) CheckHtlcTransit(payHash [32]byte,\n\tamt lnwire.MilliSatoshi, timeout uint32,\n\theightNow uint32) *LinkError {\n\n\treturn f.checkHtlcTransitResult\n}\n",
+      "length": 105,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) Stats() (",
+      "content": "func (f *mockChannelLink) Stats() (\n\tuint64, lnwire.MilliSatoshi, lnwire.MilliSatoshi) {\n\n\treturn 0, 0, 0\n}\n",
+      "length": 68,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) AttachMailBox(mailBox MailBox) {",
+      "content": "func (f *mockChannelLink) AttachMailBox(mailBox MailBox) {\n\tf.mailBox = mailBox\n\tf.packets = mailBox.PacketOutBox()\n\tmailBox.SetDustClosure(f.getDustClosure())\n}\n",
+      "length": 99,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) attachFailAliasUpdate(closure func(",
+      "content": "func (f *mockChannelLink) attachFailAliasUpdate(closure func(\n\tsid lnwire.ShortChannelID, incoming bool) *lnwire.ChannelUpdate) {\n\n\tf.failAliasUpdate = closure\n}\n",
+      "length": 96,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) getAliases() []lnwire.ShortChannelID {",
+      "content": "func (f *mockChannelLink) getAliases() []lnwire.ShortChannelID {\n\treturn f.aliases\n}\n",
+      "length": 18,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) isZeroConf() bool {",
+      "content": "func (f *mockChannelLink) isZeroConf() bool {\n\treturn f.zeroConf\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) negotiatedAliasFeature() bool {",
+      "content": "func (f *mockChannelLink) negotiatedAliasFeature() bool {\n\treturn f.optionFeature\n}\n",
+      "length": 24,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) confirmedScid() lnwire.ShortChannelID {",
+      "content": "func (f *mockChannelLink) confirmedScid() lnwire.ShortChannelID {\n\treturn f.realScid\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) zeroConfConfirmed() bool {",
+      "content": "func (f *mockChannelLink) zeroConfConfirmed() bool {\n\treturn f.confirmedZC\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) Start() error {",
+      "content": "func (f *mockChannelLink) Start() error {\n\tf.mailBox.ResetMessages()\n\tf.mailBox.ResetPackets()\n\treturn nil\n}\n",
+      "length": 63,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) ChanID() lnwire.ChannelID                     { return f.chanID }",
+      "content": "func (f *mockChannelLink) ChanID() lnwire.ChannelID                     { return f.chanID }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) ShortChanID() lnwire.ShortChannelID           { return f.shortChanID }",
+      "content": "func (f *mockChannelLink) ShortChanID() lnwire.ShortChannelID           { return f.shortChanID }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) Bandwidth() lnwire.MilliSatoshi               { return 99999999 }",
+      "content": "func (f *mockChannelLink) Bandwidth() lnwire.MilliSatoshi               { return 99999999 }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) Peer() lnpeer.Peer                            { return f.peer }",
+      "content": "func (f *mockChannelLink) Peer() lnpeer.Peer                            { return f.peer }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) ChannelPoint() *wire.OutPoint                 { return &wire.OutPoint{} }",
+      "content": "func (f *mockChannelLink) ChannelPoint() *wire.OutPoint                 { return &wire.OutPoint{} }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) Stop()                                        {}",
+      "content": "func (f *mockChannelLink) Stop()                                        {}",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) EligibleToForward() bool                      { return f.eligible }",
+      "content": "func (f *mockChannelLink) EligibleToForward() bool                      { return f.eligible }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) MayAddOutgoingHtlc(lnwire.MilliSatoshi) error { return nil }",
+      "content": "func (f *mockChannelLink) MayAddOutgoingHtlc(lnwire.MilliSatoshi) error { return nil }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) ShutdownIfChannelClean() error                { return nil }",
+      "content": "func (f *mockChannelLink) ShutdownIfChannelClean() error                { return nil }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) setLiveShortChanID(sid lnwire.ShortChannelID) { f.shortChanID = sid }",
+      "content": "func (f *mockChannelLink) setLiveShortChanID(sid lnwire.ShortChannelID) { f.shortChanID = sid }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) IsUnadvertised() bool                         { return f.unadvertised }",
+      "content": "func (f *mockChannelLink) IsUnadvertised() bool                         { return f.unadvertised }",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockChannelLink) UpdateShortChanID() (lnwire.ShortChannelID, error) {",
+      "content": "func (f *mockChannelLink) UpdateShortChanID() (lnwire.ShortChannelID, error) {\n\tf.eligible = true\n\treturn f.shortChanID, nil\n}\n\nvar _ ChannelLink = (*mockChannelLink)(nil)\n",
+      "length": 88,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func newDB() (*channeldb.DB, func(), error) {",
+      "content": "func newDB() (*channeldb.DB, func(), error) {\n\t// First, create a temporary directory to be used for the duration of\n\t// this test.\n\ttempDirName, err := ioutil.TempDir(\"\", \"channeldb\")\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\t// Next, create channeldb for the first time.\n\tcdb, err := channeldb.Open(tempDirName)\n\tif err != nil {\n\t\tos.RemoveAll(tempDirName)\n\t\treturn nil, nil, err\n\t}\n\n\tcleanUp := func() {\n\t\tcdb.Close()\n\t\tos.RemoveAll(tempDirName)\n\t}\n\n\treturn cdb, cleanUp, nil\n}\n\nconst testInvoiceCltvExpiry = 6\n",
+      "length": 448,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "type mockInvoiceRegistry struct {",
+      "content": "type mockInvoiceRegistry struct {\n\tsettleChan chan lntypes.Hash\n\n\tregistry *invoices.InvoiceRegistry\n\n\tcleanup func()\n}\n",
+      "length": 80,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChainNotifier struct {",
+      "content": "type mockChainNotifier struct {\n\tchainntnfs.ChainNotifier\n}\n\n// RegisterBlockEpochNtfn mocks a successful call to register block\n// notifications.",
+      "length": 110,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (",
+      "content": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (\n\t*chainntnfs.BlockEpochEvent, error) {\n\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tCancel: func() {},\n\t}, nil\n}\n",
+      "length": 102,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockRegistry(minDelta uint32) *mockInvoiceRegistry {",
+      "content": "func newMockRegistry(minDelta uint32) *mockInvoiceRegistry {\n\tcdb, cleanup, err := newDB()\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\tregistry := invoices.NewRegistry(\n\t\tcdb,\n\t\tinvoices.NewInvoiceExpiryWatcher(\n\t\t\tclock.NewDefaultClock(), 0, 0, nil,\n\t\t\t&mockChainNotifier{},\n\t\t),\n\t\t&invoices.RegistryConfig{\n\t\t\tFinalCltvRejectDelta: 5,\n\t\t},\n\t)\n\tregistry.Start()\n\n\treturn &mockInvoiceRegistry{\n\t\tregistry: registry,\n\t\tcleanup:  cleanup,\n\t}\n}\n",
+      "length": 350,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) LookupInvoice(rHash lntypes.Hash) (",
+      "content": "func (i *mockInvoiceRegistry) LookupInvoice(rHash lntypes.Hash) (\n\tinvoices.Invoice, error) {\n\n\treturn i.registry.LookupInvoice(rHash)\n}\n",
+      "length": 67,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) SettleHodlInvoice(",
+      "content": "func (i *mockInvoiceRegistry) SettleHodlInvoice(\n\tpreimage lntypes.Preimage) error {\n\n\treturn i.registry.SettleHodlInvoice(preimage)\n}\n",
+      "length": 82,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) NotifyExitHopHtlc(rhash lntypes.Hash,",
+      "content": "func (i *mockInvoiceRegistry) NotifyExitHopHtlc(rhash lntypes.Hash,\n\tamt lnwire.MilliSatoshi, expiry uint32, currentHeight int32,\n\tcircuitKey models.CircuitKey, hodlChan chan<- interface{},\n\tpayload invoices.Payload) (invoices.HtlcResolution, error) {\n\n\tevent, err := i.registry.NotifyExitHopHtlc(\n\t\trhash, amt, expiry, currentHeight, circuitKey, hodlChan,\n\t\tpayload,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tif i.settleChan != nil {\n\t\ti.settleChan <- rhash\n\t}\n\n\treturn event, nil\n}\n",
+      "length": 399,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) CancelInvoice(payHash lntypes.Hash) error {",
+      "content": "func (i *mockInvoiceRegistry) CancelInvoice(payHash lntypes.Hash) error {\n\treturn i.registry.CancelInvoice(payHash)\n}\n",
+      "length": 42,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) AddInvoice(invoice invoices.Invoice,",
+      "content": "func (i *mockInvoiceRegistry) AddInvoice(invoice invoices.Invoice,\n\tpaymentHash lntypes.Hash) error {\n\n\t_, err := i.registry.AddInvoice(&invoice, paymentHash)\n\treturn err\n}\n",
+      "length": 101,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *mockInvoiceRegistry) HodlUnsubscribeAll(",
+      "content": "func (i *mockInvoiceRegistry) HodlUnsubscribeAll(\n\tsubscriber chan<- interface{}) {\n\n\ti.registry.HodlUnsubscribeAll(subscriber)\n}\n\nvar _ InvoiceDatabase = (*mockInvoiceRegistry)(nil)\n",
+      "length": 127,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type mockCircuitMap struct {",
+      "content": "type mockCircuitMap struct {\n\tlookup chan *PaymentCircuit\n}\n\nvar _ CircuitMap = (*mockCircuitMap)(nil)\n",
+      "length": 70,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) OpenCircuits(...Keystone) error {",
+      "content": "func (m *mockCircuitMap) OpenCircuits(...Keystone) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) TrimOpenCircuits(chanID lnwire.ShortChannelID,",
+      "content": "func (m *mockCircuitMap) TrimOpenCircuits(chanID lnwire.ShortChannelID,\n\tstart uint64) error {\n\treturn nil\n}\n",
+      "length": 34,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) DeleteCircuits(inKeys ...CircuitKey) error {",
+      "content": "func (m *mockCircuitMap) DeleteCircuits(inKeys ...CircuitKey) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) CommitCircuits(",
+      "content": "func (m *mockCircuitMap) CommitCircuits(\n\tcircuit ...*PaymentCircuit) (*CircuitFwdActions, error) {\n\n\treturn nil, nil\n}\n",
+      "length": 75,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) CloseCircuit(outKey CircuitKey) (*PaymentCircuit,",
+      "content": "func (m *mockCircuitMap) CloseCircuit(outKey CircuitKey) (*PaymentCircuit,\n\terror) {\n\treturn nil, nil\n}\n",
+      "length": 26,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) FailCircuit(inKey CircuitKey) (*PaymentCircuit,",
+      "content": "func (m *mockCircuitMap) FailCircuit(inKey CircuitKey) (*PaymentCircuit,\n\terror) {\n\treturn nil, nil\n}\n",
+      "length": 26,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) LookupCircuit(inKey CircuitKey) *PaymentCircuit {",
+      "content": "func (m *mockCircuitMap) LookupCircuit(inKey CircuitKey) *PaymentCircuit {\n\treturn <-m.lookup\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) LookupOpenCircuit(outKey CircuitKey) *PaymentCircuit {",
+      "content": "func (m *mockCircuitMap) LookupOpenCircuit(outKey CircuitKey) *PaymentCircuit {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) LookupByPaymentHash(hash [32]byte) []*PaymentCircuit {",
+      "content": "func (m *mockCircuitMap) LookupByPaymentHash(hash [32]byte) []*PaymentCircuit {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) NumPending() int {",
+      "content": "func (m *mockCircuitMap) NumPending() int {\n\treturn 0\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockCircuitMap) NumOpen() int {",
+      "content": "func (m *mockCircuitMap) NumOpen() int {\n\treturn 0\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type mockOnionErrorDecryptor struct {",
+      "content": "type mockOnionErrorDecryptor struct {\n\tsourceIdx int\n\tmessage   []byte\n\terr       error\n}\n",
+      "length": 48,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockOnionErrorDecryptor) DecryptError(encryptedData []byte) (",
+      "content": "func (m *mockOnionErrorDecryptor) DecryptError(encryptedData []byte) (\n\t*sphinx.DecryptedError, error) {\n\n\treturn &sphinx.DecryptedError{\n\t\tSenderIdx: m.sourceIdx,\n\t\tMessage:   m.message,\n\t}, m.err\n}\n\nvar _ htlcNotifier = (*mockHTLCNotifier)(nil)\n",
+      "length": 167,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type mockHTLCNotifier struct {",
+      "content": "type mockHTLCNotifier struct {\n\thtlcNotifier\n}\n",
+      "length": 14,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHTLCNotifier) NotifyForwardingEvent(key HtlcKey, info HtlcInfo,",
+      "content": "func (h *mockHTLCNotifier) NotifyForwardingEvent(key HtlcKey, info HtlcInfo,\n\teventType HtlcEventType) { //nolint:whitespace\n}\n",
+      "length": 48,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHTLCNotifier) NotifyLinkFailEvent(key HtlcKey, info HtlcInfo,",
+      "content": "func (h *mockHTLCNotifier) NotifyLinkFailEvent(key HtlcKey, info HtlcInfo,\n\teventType HtlcEventType, linkErr *LinkError,\n\tincoming bool) { //nolint:whitespace\n}\n",
+      "length": 83,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHTLCNotifier) NotifyForwardingFailEvent(key HtlcKey,",
+      "content": "func (h *mockHTLCNotifier) NotifyForwardingFailEvent(key HtlcKey,\n\teventType HtlcEventType) { //nolint:whitespace\n}\n",
+      "length": 48,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHTLCNotifier) NotifySettleEvent(key HtlcKey,",
+      "content": "func (h *mockHTLCNotifier) NotifySettleEvent(key HtlcKey,\n\tpreimage lntypes.Preimage, eventType HtlcEventType) { //nolint:whitespace,lll\n}\n",
+      "length": 79,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *mockHTLCNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,",
+      "content": "func (h *mockHTLCNotifier) NotifyFinalHtlcEvent(key models.CircuitKey,\n\tinfo channeldb.FinalHtlcInfo) { //nolint:whitespace\n}\n",
+      "length": 53,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/peersrpc_active.go",
+  "package": "peersrpc",
+  "sections": [
+    {
+      "slug": "func peersCommands() []cli.Command {",
+      "content": "func peersCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"peers\",\n\t\t\tCategory: \"Peers\",\n\t\t\tUsage: \"Interacts with the other nodes of the \" +\n\t\t\t\t\"network\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\tupdateNodeAnnouncementCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n",
+      "length": 209,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func getPeersClient(ctx *cli.Context) (peersrpc.PeersClient, func()) {",
+      "content": "func getPeersClient(ctx *cli.Context) (peersrpc.PeersClient, func()) {\n\tconn := getClientConn(ctx, false)\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\treturn peersrpc.NewPeersClient(conn), cleanUp\n}\n\nvar updateNodeAnnouncementCommand = cli.Command{\n\tName:     \"updatenodeannouncement\",\n\tCategory: \"Peers\",\n\tUsage:    \"update and brodcast a new node announcement\",\n\tDescription: `\n\tUpdate the node's information and broadcast a new node announcement.\n\n\tAdd or remove addresses where your node can be reached at, change the\n\talias/color of the node or enable/disable supported feature bits without\n\trestarting the node. A node announcement with the new information will\n\tbe created and brodcasted to the network.`,\n\tArgsUsage: \"[--address_add=] [--address_remove=] [--alias=] \" +\n\t\t\"[--color=] [--feature_bit_add=] [--feature_bit_remove=]\",\n\tFlags: []cli.Flag{\n\t\tcli.StringSliceFlag{\n\t\t\tName: \"address_add\",\n\t\t\tUsage: \"a new address that should be added to the \" +\n\t\t\t\t\"set of URIs of this node. Can be set \" +\n\t\t\t\t\"multiple times in the same command\",\n\t\t},\n\t\tcli.StringSliceFlag{\n\t\t\tName: \"address_remove\",\n\t\t\tUsage: \"an address that needs to be removed from the \" +\n\t\t\t\t\"set of URIs of this node. Can be set \" +\n\t\t\t\t\"multiple times in the same command\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:  \"alias\",\n\t\t\tUsage: \"the new alias for this node, e.g. \\\"bob\\\"\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:  \"color\",\n\t\t\tUsage: \"the new color for this node, e.g. #c42a81\",\n\t\t},\n\t\tcli.Int64SliceFlag{\n\t\t\tName: \"feature_bit_add\",\n\t\t\tUsage: \"a feature bit index that needs to be enabled. \" +\n\t\t\t\t\"Can be set multiple times in the same command\",\n\t\t},\n\t\tcli.Int64SliceFlag{\n\t\t\tName: \"feature_bit_remove\",\n\t\t\tUsage: \"a feature bit that needs to be disabled\" +\n\t\t\t\t\"Can be set multiple times in the same command\",\n\t\t},\n\t},\n\tAction: actionDecorator(updateNodeAnnouncement),\n}\n",
+      "length": 1713,
+      "tokens": 238,
+      "embedding": []
+    },
+    {
+      "slug": "func updateNodeAnnouncement(ctx *cli.Context) error {",
+      "content": "func updateNodeAnnouncement(ctx *cli.Context) error {\n\tctxc := getContext()\n\tclient, cleanUp := getPeersClient(ctx)\n\tdefer cleanUp()\n\n\tchange := false\n\n\treq := &peersrpc.NodeAnnouncementUpdateRequest{}\n\n\tif ctx.IsSet(\"address_add\") {\n\t\tchange = true\n\t\tfor _, addr := range ctx.StringSlice(\"address_add\") {\n\t\t\taction := &peersrpc.UpdateAddressAction{\n\t\t\t\tAction:  peersrpc.UpdateAction_ADD,\n\t\t\t\tAddress: addr,\n\t\t\t}\n\t\t\treq.AddressUpdates = append(req.AddressUpdates, action)\n\t\t}\n\t}\n\n\tif ctx.IsSet(\"address_remove\") {\n\t\tchange = true\n\t\tfor _, addr := range ctx.StringSlice(\"address_remove\") {\n\t\t\taction := &peersrpc.UpdateAddressAction{\n\t\t\t\tAction:  peersrpc.UpdateAction_REMOVE,\n\t\t\t\tAddress: addr,\n\t\t\t}\n\t\t\treq.AddressUpdates = append(req.AddressUpdates, action)\n\t\t}\n\t}\n\n\tif ctx.IsSet(\"alias\") {\n\t\tchange = true\n\t\treq.Alias = ctx.String(\"alias\")\n\t}\n\n\tif ctx.IsSet(\"color\") {\n\t\tchange = true\n\t\treq.Color = ctx.String(\"color\")\n\t}\n\n\tif ctx.IsSet(\"feature_bit_add\") {\n\t\tchange = true\n\t\tfor _, feature := range ctx.Int64Slice(\"feature_bit_add\") {\n\t\t\taction := &peersrpc.UpdateFeatureAction{\n\t\t\t\tAction:     peersrpc.UpdateAction_ADD,\n\t\t\t\tFeatureBit: lnrpc.FeatureBit(feature),\n\t\t\t}\n\t\t\treq.FeatureUpdates = append(req.FeatureUpdates, action)\n\t\t}\n\t}\n\n\tif ctx.IsSet(\"feature_bit_remove\") {\n\t\tchange = true\n\t\tfor _, feature := range ctx.Int64Slice(\"feature_bit_remove\") {\n\t\t\taction := &peersrpc.UpdateFeatureAction{\n\t\t\t\tAction:     peersrpc.UpdateAction_REMOVE,\n\t\t\t\tFeatureBit: lnrpc.FeatureBit(feature),\n\t\t\t}\n\t\t\treq.FeatureUpdates = append(req.FeatureUpdates, action)\n\t\t}\n\t}\n\n\tif !change {\n\t\treturn fmt.Errorf(\"no changes for the node information \" +\n\t\t\t\"detected\")\n\t}\n\n\tresp, err := client.UpdateNodeAnnouncement(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n",
+      "length": 1654,
+      "tokens": 174,
+      "embedding": []
+    }
+  ]
+}

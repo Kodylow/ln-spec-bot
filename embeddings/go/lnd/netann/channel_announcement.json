@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/netann/channel_announcement.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "func CreateChanAnnouncement(chanProof *channeldb.ChannelAuthProof,",
+      "content": "func CreateChanAnnouncement(chanProof *channeldb.ChannelAuthProof,\n\tchanInfo *channeldb.ChannelEdgeInfo,\n\te1, e2 *channeldb.ChannelEdgePolicy) (*lnwire.ChannelAnnouncement,\n\t*lnwire.ChannelUpdate, *lnwire.ChannelUpdate, error) {\n\n\t// First, using the parameters of the channel, along with the channel\n\t// authentication chanProof, we'll create re-create the original\n\t// authenticated channel announcement.\n\tchanID := lnwire.NewShortChanIDFromInt(chanInfo.ChannelID)\n\tchanAnn := &lnwire.ChannelAnnouncement{\n\t\tShortChannelID:  chanID,\n\t\tNodeID1:         chanInfo.NodeKey1Bytes,\n\t\tNodeID2:         chanInfo.NodeKey2Bytes,\n\t\tChainHash:       chanInfo.ChainHash,\n\t\tBitcoinKey1:     chanInfo.BitcoinKey1Bytes,\n\t\tBitcoinKey2:     chanInfo.BitcoinKey2Bytes,\n\t\tFeatures:        lnwire.NewRawFeatureVector(),\n\t\tExtraOpaqueData: chanInfo.ExtraOpaqueData,\n\t}\n\n\terr := chanAnn.Features.Decode(bytes.NewReader(chanInfo.Features))\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\tchanAnn.BitcoinSig1, err = lnwire.NewSigFromRawSignature(\n\t\tchanProof.BitcoinSig1Bytes,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\tchanAnn.BitcoinSig2, err = lnwire.NewSigFromRawSignature(\n\t\tchanProof.BitcoinSig2Bytes,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\tchanAnn.NodeSig1, err = lnwire.NewSigFromRawSignature(\n\t\tchanProof.NodeSig1Bytes,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\tchanAnn.NodeSig2, err = lnwire.NewSigFromRawSignature(\n\t\tchanProof.NodeSig2Bytes,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, nil, err\n\t}\n\n\t// We'll unconditionally queue the channel's existence chanProof as it\n\t// will need to be processed before either of the channel update\n\t// networkMsgs.\n\n\t// Since it's up to a node's policy as to whether they advertise the\n\t// edge in a direction, we don't create an advertisement if the edge is\n\t// nil.\n\tvar edge1Ann, edge2Ann *lnwire.ChannelUpdate\n\tif e1 != nil {\n\t\tedge1Ann, err = ChannelUpdateFromEdge(chanInfo, e1)\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\t}\n\tif e2 != nil {\n\t\tedge2Ann, err = ChannelUpdateFromEdge(chanInfo, e2)\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\t}\n\n\treturn chanAnn, edge1Ann, edge2Ann, nil\n}\n",
+      "length": 2023,
+      "tokens": 247,
+      "embedding": []
+    }
+  ]
+}

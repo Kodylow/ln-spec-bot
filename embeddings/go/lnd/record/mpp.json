@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/record/mpp.go",
+  "package": "record",
+  "sections": [
+    {
+      "slug": "type MPP struct {",
+      "content": "type MPP struct {\n\t// paymentAddr is a random, receiver-generated value used to avoid\n\t// collisions with concurrent payers.\n\tpaymentAddr [32]byte\n\n\t// totalMsat is the total value of the payment, potentially spread\n\t// across more than one HTLC.\n\ttotalMsat lnwire.MilliSatoshi\n}\n\n// NewMPP generates a new MPP record with the given total and payment address.",
+      "length": 332,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMPP(total lnwire.MilliSatoshi, addr [32]byte) *MPP {",
+      "content": "func NewMPP(total lnwire.MilliSatoshi, addr [32]byte) *MPP {\n\treturn &MPP{\n\t\tpaymentAddr: addr,\n\t\ttotalMsat:   total,\n\t}\n}\n\n// PaymentAddr returns the payment address contained in the MPP record.",
+      "length": 128,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *MPP) PaymentAddr() [32]byte {",
+      "content": "func (r *MPP) PaymentAddr() [32]byte {\n\treturn r.paymentAddr\n}\n\n// TotalMsat returns the total value of an MPP payment in msats.",
+      "length": 86,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *MPP) TotalMsat() lnwire.MilliSatoshi {",
+      "content": "func (r *MPP) TotalMsat() lnwire.MilliSatoshi {\n\treturn r.totalMsat\n}\n\n// MPPEncoder writes the MPP record to the provided io.Writer.",
+      "length": 82,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func MPPEncoder(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func MPPEncoder(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif v, ok := val.(*MPP); ok {\n\t\terr := tlv.EBytes32(w, &v.paymentAddr, buf)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn tlv.ETUint64T(w, uint64(v.totalMsat), buf)\n\t}\n\treturn tlv.NewTypeForEncodingErr(val, \"MPP\")\n}\n\nconst (\n\t// minMPPLength is the minimum length of a serialized MPP TLV record,\n\t// which occurs when the truncated encoding of total_amt_msat takes 0\n\t// bytes, leaving only the payment_addr.\n\tminMPPLength = 32\n\n\t// maxMPPLength is the maximum length of a serialized MPP TLV record,\n\t// which occurs when the truncated encoding of total_amt_msat takes 8\n\t// bytes.\n\tmaxMPPLength = 40\n)\n\n// MPPDecoder reads the MPP record to the provided io.Reader.",
+      "length": 642,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func MPPDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func MPPDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tif v, ok := val.(*MPP); ok && minMPPLength <= l && l <= maxMPPLength {\n\t\tif err := tlv.DBytes32(r, &v.paymentAddr, buf, 32); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tvar total uint64\n\t\tif err := tlv.DTUint64(r, &total, buf, l-32); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tv.totalMsat = lnwire.MilliSatoshi(total)\n\n\t\treturn nil\n\t}\n\treturn tlv.NewTypeForDecodingErr(val, \"MPP\", l, maxMPPLength)\n}\n\n// Record returns a tlv.Record that can be used to encode or decode this record.",
+      "length": 446,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *MPP) Record() tlv.Record {",
+      "content": "func (r *MPP) Record() tlv.Record {\n\t// Fixed-size, 32 byte payment address followed by truncated 64-bit\n\t// total msat.\n\tsize := func() uint64 {\n\t\treturn 32 + tlv.SizeTUint64(uint64(r.totalMsat))\n\t}\n\n\treturn tlv.MakeDynamicRecord(\n\t\tMPPOnionType, r, size, MPPEncoder, MPPDecoder,\n\t)\n}\n\n// PayloadSize returns the size this record takes up in encoded form.",
+      "length": 309,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *MPP) PayloadSize() uint64 {",
+      "content": "func (r *MPP) PayloadSize() uint64 {\n\treturn 32 + tlv.SizeTUint64(uint64(r.totalMsat))\n}\n\n// String returns a human-readable representation of the mpp payload field.",
+      "length": 125,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *MPP) String() string {",
+      "content": "func (r *MPP) String() string {\n\tif r == nil {\n\t\treturn \"<nil>\"\n\t}\n\n\treturn fmt.Sprintf(\"total=%v, addr=%x\", r.totalMsat, r.paymentAddr)\n}\n",
+      "length": 101,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

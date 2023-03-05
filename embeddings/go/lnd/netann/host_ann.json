@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/netann/host_ann.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type HostAnnouncerConfig struct {",
+      "content": "type HostAnnouncerConfig struct {\n\t// Hosts is the set of hosts we should watch for IP changes.\n\tHosts []string\n\n\t// RefreshTicker ticks each time we should check for any address\n\t// changes.\n\tRefreshTicker ticker.Ticker\n\n\t// LookupHost performs DNS resolution on a given host and returns its\n\t// addresses.\n\tLookupHost func(string) (net.Addr, error)\n\n\t// AdvertisedIPs is the set of IPs that we've already announced with\n\t// our current NodeAnnouncement. This set will be constructed to avoid\n\t// unnecessary node NodeAnnouncement updates.\n\tAdvertisedIPs map[string]struct{}\n\n\t// AnnounceNewIPs announces a new set of IP addresses for the backing\n\t// Lightning node. The first set of addresses is the new set of\n\t// addresses that we should advertise, while the other set are the\n\t// stale addresses that we should no longer advertise.\n\tAnnounceNewIPs func([]net.Addr, map[string]struct{}) error\n}\n\n// HostAnnouncer is a sub-system that allows a user to specify a set of hosts\n// for lnd that will be continually resolved to notice any IP address changes.\n// If the target IP address for a host changes, then we'll generate a new\n// NodeAnnouncement that includes these new IPs.",
+      "length": 1119,
+      "tokens": 180,
+      "embedding": []
+    },
+    {
+      "slug": "type HostAnnouncer struct {",
+      "content": "type HostAnnouncer struct {\n\tcfg HostAnnouncerConfig\n\n\tquit chan struct{}\n\twg   sync.WaitGroup\n\n\tstartOnce sync.Once\n\tstopOnce  sync.Once\n}\n\n// NewHostAnnouncer returns a new instance of the HostAnnouncer.",
+      "length": 168,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func NewHostAnnouncer(cfg HostAnnouncerConfig) *HostAnnouncer {",
+      "content": "func NewHostAnnouncer(cfg HostAnnouncerConfig) *HostAnnouncer {\n\treturn &HostAnnouncer{\n\t\tcfg:  cfg,\n\t\tquit: make(chan struct{}),\n\t}\n}\n\n// Start starts the HostAnnouncer.",
+      "length": 100,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HostAnnouncer) Start() error {",
+      "content": "func (h *HostAnnouncer) Start() error {\n\th.startOnce.Do(func() {\n\t\tlog.Info(\"HostAnnouncer starting\")\n\t\th.wg.Add(1)\n\t\tgo h.hostWatcher()\n\t})\n\n\treturn nil\n}\n\n// Stop signals the HostAnnouncer for a graceful stop.",
+      "length": 162,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HostAnnouncer) Stop() error {",
+      "content": "func (h *HostAnnouncer) Stop() error {\n\th.stopOnce.Do(func() {\n\t\tlog.Info(\"HostAnnouncer shutting down\")\n\t\tclose(h.quit)\n\t\th.wg.Wait()\n\t})\n\n\treturn nil\n}\n\n// hostWatcher periodically attempts to resolve the IP for each host, updating\n// them if they change within the interval.",
+      "length": 228,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HostAnnouncer) hostWatcher() {",
+      "content": "func (h *HostAnnouncer) hostWatcher() {\n\tdefer h.wg.Done()\n\n\tipMapping := make(map[string]net.Addr)\n\trefreshHosts := func() {\n\t\t// We'll now run through each of our hosts to check if they had\n\t\t// their backing IPs changed. If so, we'll want to re-announce\n\t\t// them.\n\t\tvar addrsToUpdate []net.Addr\n\t\taddrsToRemove := make(map[string]struct{})\n\t\tfor _, host := range h.cfg.Hosts {\n\t\t\tnewAddr, err := h.cfg.LookupHost(host)\n\t\t\tif err != nil {\n\t\t\t\tlog.Warnf(\"unable to resolve IP for \"+\n\t\t\t\t\t\"host %v: %v\", host, err)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// If nothing has changed since the last time we\n\t\t\t// checked, then we don't need to do any updates.\n\t\t\toldAddr, oldAddrFound := ipMapping[host]\n\t\t\tif oldAddrFound && oldAddr.String() == newAddr.String() {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Update the IP mapping now, as if this is the first\n\t\t\t// time then we don't need to send a new announcement.\n\t\t\tipMapping[host] = newAddr\n\n\t\t\t// If this IP has already been announced, then we'll\n\t\t\t// skip it to avoid triggering an unnecessary node\n\t\t\t// announcement update.\n\t\t\t_, ipAnnounced := h.cfg.AdvertisedIPs[newAddr.String()]\n\t\t\tif ipAnnounced {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// If we've reached this point, then the old address\n\t\t\t// was found, and the new address we just looked up\n\t\t\t// differs from the old one.\n\t\t\tlog.Debugf(\"IP change detected! %v: %v -> %v\", host,\n\t\t\t\toldAddr, newAddr)\n\n\t\t\t// If we had already advertised an addr for this host,\n\t\t\t// then we'll need to remove that old stale address.\n\t\t\tif oldAddr != nil {\n\t\t\t\taddrsToRemove[oldAddr.String()] = struct{}{}\n\t\t\t}\n\n\t\t\taddrsToUpdate = append(addrsToUpdate, newAddr)\n\t\t}\n\n\t\t// If we don't have any addresses to update, then we can skip\n\t\t// things around until the next round.\n\t\tif len(addrsToUpdate) == 0 {\n\t\t\tlog.Debugf(\"No IP changes detected for hosts: %v\",\n\t\t\t\th.cfg.Hosts)\n\t\t\treturn\n\t\t}\n\n\t\t// Now that we know the set of IPs we need to update, we'll do\n\t\t// them all in a single batch.\n\t\terr := h.cfg.AnnounceNewIPs(addrsToUpdate, addrsToRemove)\n\t\tif err != nil {\n\t\t\tlog.Warnf(\"unable to announce new IPs: %v\", err)\n\t\t}\n\t}\n\n\trefreshHosts()\n\n\th.cfg.RefreshTicker.Resume()\n\n\tfor {\n\t\tselect {\n\t\tcase <-h.cfg.RefreshTicker.Ticks():\n\t\t\tlog.Debugf(\"HostAnnouncer checking for any IP \" +\n\t\t\t\t\"changes...\")\n\n\t\t\trefreshHosts()\n\n\t\tcase <-h.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// NodeAnnUpdater describes a function that's able to update our current node\n// announcement on disk. It returns the updated node announcement given a set\n// of updates to be applied to the current node announcement.",
+      "length": 2393,
+      "tokens": 367,
+      "embedding": []
+    },
+    {
+      "slug": "type NodeAnnUpdater func(refresh bool, modifier ...NodeAnnModifier,",
+      "content": "type NodeAnnUpdater func(refresh bool, modifier ...NodeAnnModifier,\n) (lnwire.NodeAnnouncement, error)\n\n// IPAnnouncer is a factory function that generates a new function that uses\n// the passed annUpdater function to to announce new IP changes for a given\n// host.",
+      "length": 193,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func IPAnnouncer(annUpdater NodeAnnUpdater) func([]net.Addr, map[string]struct{}) error {",
+      "content": "func IPAnnouncer(annUpdater NodeAnnUpdater) func([]net.Addr, map[string]struct{}) error {\n\treturn func(newAddrs []net.Addr, oldAddrs map[string]struct{}) error {\n\t\t_, err := annUpdater(true, func(currentNodeAnn *lnwire.NodeAnnouncement) {\n\t\t\t// To ensure we don't duplicate any addresses, we'll\n\t\t\t// filter out the same of addresses we should no longer\n\t\t\t// advertise.\n\t\t\tfilteredAddrs := make(\n\t\t\t\t[]net.Addr, 0, len(currentNodeAnn.Addresses),\n\t\t\t)\n\t\t\tfor _, addr := range currentNodeAnn.Addresses {\n\t\t\t\tif _, ok := oldAddrs[addr.String()]; ok {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tfilteredAddrs = append(filteredAddrs, addr)\n\t\t\t}\n\n\t\t\tfilteredAddrs = append(filteredAddrs, newAddrs...)\n\t\t\tcurrentNodeAnn.Addresses = filteredAddrs\n\t\t})\n\t\treturn err\n\t}\n}\n",
+      "length": 633,
+      "tokens": 76,
+      "embedding": []
+    }
+  ]
+}

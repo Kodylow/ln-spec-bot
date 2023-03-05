@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/client_session.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type CSessionStatus uint8",
+      "content": "type CSessionStatus uint8\n\nconst (\n\t// CSessionActive indicates that the ClientSession is active and can be\n\t// used for backups.\n\tCSessionActive CSessionStatus = 0\n\n\t// CSessionInactive indicates that the ClientSession is inactive and\n\t// cannot be used for backups.\n\tCSessionInactive CSessionStatus = 1\n)\n\n// ClientSession encapsulates a SessionInfo returned from a successful\n// session negotiation, and also records the tower and ephemeral secret used for\n// communicating with the tower.",
+      "length": 453,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type ClientSession struct {",
+      "content": "type ClientSession struct {\n\t// ID is the client's public key used when authenticating with the\n\t// tower.\n\t//\n\t// NOTE: This value is not serialized with the body of the struct, it\n\t// should be set and recovered as the ClientSession's key.\n\tID SessionID\n\n\tClientSessionBody\n}\n\n// ClientSessionBody represents the primary components of a ClientSession that\n// are serialized together within the database. The CommittedUpdates and\n// AckedUpdates are serialized in buckets separate from the body.",
+      "length": 456,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "type ClientSessionBody struct {",
+      "content": "type ClientSessionBody struct {\n\t// SeqNum is the next unallocated sequence number that can be sent to\n\t// the tower.\n\tSeqNum uint16\n\n\t// TowerLastApplied the last last-applied the tower has echoed back.\n\tTowerLastApplied uint16\n\n\t// TowerID is the unique, db-assigned identifier that references the\n\t// Tower with which the session is negotiated.\n\tTowerID TowerID\n\n\t// KeyIndex is the index of key locator used to derive the client's\n\t// session key so that it can authenticate with the tower to update its\n\t// session. In order to rederive the private key, the key locator should\n\t// use the keychain.KeyFamilyTowerSession key family.\n\tKeyIndex uint32\n\n\t// Policy holds the negotiated session parameters.\n\tPolicy wtpolicy.Policy\n\n\t// Status indicates the current state of the ClientSession.\n\tStatus CSessionStatus\n\n\t// RewardPkScript is the pkscript that the tower's reward will be\n\t// deposited to if a sweep transaction confirms and the sessions\n\t// specifies a reward output.\n\tRewardPkScript []byte\n}\n\n// Encode writes a ClientSessionBody to the passed io.Writer.",
+      "length": 1007,
+      "tokens": 157,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientSessionBody) Encode(w io.Writer) error {",
+      "content": "func (s *ClientSessionBody) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\ts.SeqNum,\n\t\ts.TowerLastApplied,\n\t\tuint64(s.TowerID),\n\t\ts.KeyIndex,\n\t\tuint8(s.Status),\n\t\ts.Policy,\n\t\ts.RewardPkScript,\n\t)\n}\n\n// Decode reads a ClientSessionBody from the passed io.Reader.",
+      "length": 202,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientSessionBody) Decode(r io.Reader) error {",
+      "content": "func (s *ClientSessionBody) Decode(r io.Reader) error {\n\tvar (\n\t\ttowerID uint64\n\t\tstatus  uint8\n\t)\n\terr := ReadElements(r,\n\t\t&s.SeqNum,\n\t\t&s.TowerLastApplied,\n\t\t&towerID,\n\t\t&s.KeyIndex,\n\t\t&status,\n\t\t&s.Policy,\n\t\t&s.RewardPkScript,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\ts.TowerID = TowerID(towerID)\n\ts.Status = CSessionStatus(status)\n\n\treturn nil\n}\n\n// BackupID identifies a particular revoked, remote commitment by channel id and\n// commitment height.",
+      "length": 371,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type BackupID struct {",
+      "content": "type BackupID struct {\n\t// ChanID is the channel id of the revoked commitment.\n\tChanID lnwire.ChannelID\n\n\t// CommitHeight is the commitment height of the revoked commitment.\n\tCommitHeight uint64\n}\n\n// Encode writes the BackupID from the passed io.Writer.",
+      "length": 224,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BackupID) Encode(w io.Writer) error {",
+      "content": "func (b *BackupID) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\tb.ChanID,\n\t\tb.CommitHeight,\n\t)\n}\n\n// Decode reads a BackupID from the passed io.Reader.",
+      "length": 108,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BackupID) Decode(r io.Reader) error {",
+      "content": "func (b *BackupID) Decode(r io.Reader) error {\n\treturn ReadElements(r,\n\t\t&b.ChanID,\n\t\t&b.CommitHeight,\n\t)\n}\n\n// String returns a human-readable encoding of a BackupID.",
+      "length": 114,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BackupID) String() string {",
+      "content": "func (b BackupID) String() string {\n\treturn fmt.Sprintf(\"backup(%v, %d)\", b.ChanID, b.CommitHeight)\n}\n\n// CommittedUpdate holds a state update sent by a client along with its\n// allocated sequence number and the exact remote commitment the encrypted\n// justice transaction can rectify.",
+      "length": 244,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "type CommittedUpdate struct {",
+      "content": "type CommittedUpdate struct {\n\t// SeqNum is the unique sequence number allocated by the session to this\n\t// update.\n\tSeqNum uint16\n\n\tCommittedUpdateBody\n}\n\n// CommittedUpdateBody represents the primary components of a CommittedUpdate.\n// On disk, this is stored under the sequence number, which acts as its key.",
+      "length": 273,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type CommittedUpdateBody struct {",
+      "content": "type CommittedUpdateBody struct {\n\t// BackupID identifies the breached commitment that the encrypted blob\n\t// can spend from.\n\tBackupID BackupID\n\n\t// Hint is the 16-byte prefix of the revoked commitment transaction ID.\n\tHint blob.BreachHint\n\n\t// EncryptedBlob is a ciphertext containing the sweep information for\n\t// exacting justice if the commitment transaction matching the breach\n\t// hint is broadcast.\n\tEncryptedBlob []byte\n}\n\n// Encode writes the CommittedUpdateBody to the passed io.Writer.",
+      "length": 450,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *CommittedUpdateBody) Encode(w io.Writer) error {",
+      "content": "func (u *CommittedUpdateBody) Encode(w io.Writer) error {\n\terr := u.BackupID.Encode(w)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteElements(w,\n\t\tu.Hint,\n\t\tu.EncryptedBlob,\n\t)\n}\n\n// Decode reads a CommittedUpdateBody from the passed io.Reader.",
+      "length": 176,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *CommittedUpdateBody) Decode(r io.Reader) error {",
+      "content": "func (u *CommittedUpdateBody) Decode(r io.Reader) error {\n\terr := u.BackupID.Decode(r)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn ReadElements(r,\n\t\t&u.Hint,\n\t\t&u.EncryptedBlob,\n\t)\n}\n",
+      "length": 113,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

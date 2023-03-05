@@ -1,0 +1,272 @@
+{
+  "filepath": "../implementations/go/lnd/rpcperms/interceptor.go",
+  "package": "rpcperms",
+  "sections": [
+    {
+      "slug": "type rpcState uint8",
+      "content": "type rpcState uint8\n\nconst (\n\t// waitingToStart indicates that we're at the beginning of the startup\n\t// process. In a cluster environment this may mean that we're waiting to\n\t// become the leader in which case RPC calls will be disabled until\n\t// this instance has been elected as leader.\n\twaitingToStart rpcState = iota\n\n\t// walletNotCreated is the starting state if the RPC server is active,\n\t// but the wallet is not yet created. In this state we'll only allow\n\t// calls to the WalletUnlockerService.\n\twalletNotCreated\n\n\t// walletLocked indicates the RPC server is active, but the wallet is\n\t// locked. In this state we'll only allow calls to the\n\t// WalletUnlockerService.\n\twalletLocked\n\n\t// walletUnlocked means that the wallet has been unlocked, but the full\n\t// RPC server is not yet ready.\n\twalletUnlocked\n\n\t// rpcActive means that the RPC server is ready to accept calls.\n\trpcActive\n\n\t// serverActive means that the lnd server is ready to accept calls.\n\tserverActive\n)\n\nvar (\n\t// ErrWaitingToStart is returned if LND is still waiting to start,\n\t// possibly blocked until elected as the leader.\n\tErrWaitingToStart = fmt.Errorf(\"waiting to start, RPC services not \" +\n\t\t\"available\")\n\n\t// ErrNoWallet is returned if the wallet does not exist.\n\tErrNoWallet = fmt.Errorf(\"wallet not created, create one to enable \" +\n\t\t\"full RPC access\")\n\n\t// ErrWalletLocked is returned if the wallet is locked and any service\n\t// other than the WalletUnlocker is called.\n\tErrWalletLocked = fmt.Errorf(\"wallet locked, unlock it to enable \" +\n\t\t\"full RPC access\")\n\n\t// ErrWalletUnlocked is returned if the WalletUnlocker service is\n\t// called when the wallet already has been unlocked.\n\tErrWalletUnlocked = fmt.Errorf(\"wallet already unlocked, \" +\n\t\t\"WalletUnlocker service is no longer available\")\n\n\t// ErrRPCStarting is returned if the wallet has been unlocked but the\n\t// RPC server is not yet ready to accept calls.\n\tErrRPCStarting = fmt.Errorf(\"the RPC server is in the process of \" +\n\t\t\"starting up, but not yet ready to accept calls\")\n\n\t// macaroonWhitelist defines methods that we don't require macaroons to\n\t// access. We also allow these methods to be called even if not all\n\t// mandatory middlewares are registered yet. If the wallet is locked\n\t// then a middleware cannot register itself, creating an impossible\n\t// situation. Also, a middleware might want to check the state of lnd\n\t// by calling the State service before it registers itself. So we also\n\t// need to exclude those calls from the mandatory middleware check.\n\tmacaroonWhitelist = map[string]struct{}{\n\t\t// We allow all calls to the WalletUnlocker without macaroons.\n\t\t\"/lnrpc.WalletUnlocker/GenSeed\":        {},\n\t\t\"/lnrpc.WalletUnlocker/InitWallet\":     {},\n\t\t\"/lnrpc.WalletUnlocker/UnlockWallet\":   {},\n\t\t\"/lnrpc.WalletUnlocker/ChangePassword\": {},\n\n\t\t// The State service must be available at all times, even\n\t\t// before we can check macaroons, so we whitelist it.\n\t\t\"/lnrpc.State/SubscribeState\": {},\n\t\t\"/lnrpc.State/GetState\":       {},\n\t}\n)\n\n// InterceptorChain is a struct that can be added to the running GRPC server,\n// intercepting API calls. This is useful for logging, enforcing permissions,\n// supporting middleware etc. The following diagram shows the order of each\n// interceptor in the chain and when exactly requests/responses are intercepted\n// and forwarded to external middleware for approval/modification. Middleware in\n// general can only intercept gRPC requests/responses that are sent by the\n// client with a macaroon that contains a custom caveat that is supported by one\n// of the registered middlewares.\n//\n//\t    |\n//\t    | gRPC request from client\n//\t    |\n//\t+---v--------------------------------+\n//\t|   InterceptorChain                 |\n//\t+-+----------------------------------+\n//\t  | Log Interceptor                  |\n//\t  +----------------------------------+\n//\t  | RPC State Interceptor            |\n//\t  +----------------------------------+\n//\t  | Macaroon Interceptor             |\n//\t  +----------------------------------+--------> +---------------------+\n//\t  | RPC Macaroon Middleware Handler  |<-------- | External Middleware |\n//\t  +----------------------------------+          |   - modify request |\n//\t  | Prometheus Interceptor           |          +---------------------+\n//\t  +-+--------------------------------+\n//\t    | validated gRPC request from client\n//\t+---v--------------------------------+\n//\t|   main gRPC server                 |\n//\t+---+--------------------------------+\n//\t    |\n//\t    | original gRPC request to client\n//\t    |\n//\t+---v--------------------------------+--------> +---------------------+\n//\t|   RPC Macaroon Middleware Handler  |<-------- | External Middleware |\n//\t+---+--------------------------------+          |   - modify response |\n//\t    |                                           +---------------------+\n//\t    | edited gRPC request to client\n//\t    v",
+      "length": 4771,
+      "tokens": 667,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptorChain struct {",
+      "content": "type InterceptorChain struct {\n\t// lastRequestID is the ID of the last gRPC request or stream that was\n\t// intercepted by the middleware interceptor.\n\t//\n\t// NOTE: Must be used atomically!\n\tlastRequestID uint64\n\n\t// Required by the grpc-gateway/v2 library for forward compatibility.\n\tlnrpc.UnimplementedStateServer\n\n\tstarted sync.Once\n\tstopped sync.Once\n\n\t// state is the current RPC state of our RPC server.\n\tstate rpcState\n\n\t// ntfnServer is a subscription server we use to notify clients of the\n\t// State service when the state changes.\n\tntfnServer *subscribe.Server\n\n\t// noMacaroons should be set true if we don't want to check macaroons.\n\tnoMacaroons bool\n\n\t// svc is the macaroon service used to enforce permissions in case\n\t// macaroons are used.\n\tsvc *macaroons.Service\n\n\t// permissionMap is the permissions to enforce if macaroons are used.\n\tpermissionMap map[string][]bakery.Op\n\n\t// rpcsLog is the logger used to log calls to the RPCs intercepted.\n\trpcsLog btclog.Logger\n\n\t// registeredMiddleware is a slice of all macaroon permission based RPC\n\t// middleware clients that are currently registered. The\n\t// registeredMiddlewareNames can be used to find the index of a specific\n\t// interceptor within the registeredMiddleware slide using the name of\n\t// the interceptor as the key. The reason for using these two separate\n\t// structures is so that the order in which interceptors are run is\n\t// the same as the order in which they were registered.\n\tregisteredMiddleware []*MiddlewareHandler\n\n\t// registeredMiddlewareNames is a map of registered middleware names\n\t// to the index at which they are stored in the registeredMiddleware\n\t// map.\n\tregisteredMiddlewareNames map[string]int\n\n\t// mandatoryMiddleware is a list of all middleware that is considered to\n\t// be mandatory. If any of them is not registered then all RPC requests\n\t// (except for the macaroon white listed methods and the middleware\n\t// registration itself) are blocked. This is a security feature to make\n\t// sure that requests can't just go through unobserved/unaudited if a\n\t// middleware crashes.\n\tmandatoryMiddleware []string\n\n\tquit chan struct{}\n\tsync.RWMutex\n}\n\n// A compile time check to ensure that InterceptorChain fully implements the\n// StateServer gRPC service.\nvar _ lnrpc.StateServer = (*InterceptorChain)(nil)\n\n// NewInterceptorChain creates a new InterceptorChain.",
+      "length": 2264,
+      "tokens": 341,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInterceptorChain(log btclog.Logger, noMacaroons bool,",
+      "content": "func NewInterceptorChain(log btclog.Logger, noMacaroons bool,\n\tmandatoryMiddleware []string) *InterceptorChain {\n\n\treturn &InterceptorChain{\n\t\tstate:                     waitingToStart,\n\t\tntfnServer:                subscribe.NewServer(),\n\t\tnoMacaroons:               noMacaroons,\n\t\tpermissionMap:             make(map[string][]bakery.Op),\n\t\trpcsLog:                   log,\n\t\tregisteredMiddlewareNames: make(map[string]int),\n\t\tmandatoryMiddleware:       mandatoryMiddleware,\n\t\tquit:                      make(chan struct{}),\n\t}\n}\n\n// Start starts the InterceptorChain, which is needed to start the state\n// subscription server it powers.",
+      "length": 559,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) Start() error {",
+      "content": "func (r *InterceptorChain) Start() error {\n\tvar err error\n\tr.started.Do(func() {\n\t\terr = r.ntfnServer.Start()\n\t})\n\n\treturn err\n}\n\n// Stop stops the InterceptorChain and its internal state subscription server.",
+      "length": 157,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) Stop() error {",
+      "content": "func (r *InterceptorChain) Stop() error {\n\tvar err error\n\tr.stopped.Do(func() {\n\t\tclose(r.quit)\n\t\terr = r.ntfnServer.Stop()\n\t})\n\n\treturn err\n}\n\n// SetWalletNotCreated moves the RPC state from either waitingToStart to\n// walletNotCreated.",
+      "length": 185,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SetWalletNotCreated() {",
+      "content": "func (r *InterceptorChain) SetWalletNotCreated() {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.state = walletNotCreated\n\t_ = r.ntfnServer.SendUpdate(r.state)\n}\n\n// SetWalletLocked moves the RPC state from either walletNotCreated to\n// walletLocked.",
+      "length": 177,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SetWalletLocked() {",
+      "content": "func (r *InterceptorChain) SetWalletLocked() {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.state = walletLocked\n\t_ = r.ntfnServer.SendUpdate(r.state)\n}\n\n// SetWalletUnlocked moves the RPC state from either walletNotCreated or\n// walletLocked to walletUnlocked.",
+      "length": 193,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SetWalletUnlocked() {",
+      "content": "func (r *InterceptorChain) SetWalletUnlocked() {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.state = walletUnlocked\n\t_ = r.ntfnServer.SendUpdate(r.state)\n}\n\n// SetRPCActive moves the RPC state from walletUnlocked to rpcActive.",
+      "length": 158,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SetRPCActive() {",
+      "content": "func (r *InterceptorChain) SetRPCActive() {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.state = rpcActive\n\t_ = r.ntfnServer.SendUpdate(r.state)\n}\n\n// SetServerActive moves the RPC state from walletUnlocked to rpcActive.",
+      "length": 156,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SetServerActive() {",
+      "content": "func (r *InterceptorChain) SetServerActive() {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.state = serverActive\n\t_ = r.ntfnServer.SendUpdate(r.state)\n}\n\n// rpcStateToWalletState converts rpcState to lnrpc.WalletState. Returns\n// WAITING_TO_START and an error on conversion error.",
+      "length": 212,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func rpcStateToWalletState(state rpcState) (lnrpc.WalletState, error) {",
+      "content": "func rpcStateToWalletState(state rpcState) (lnrpc.WalletState, error) {\n\tconst defaultState = lnrpc.WalletState_WAITING_TO_START\n\tvar walletState lnrpc.WalletState\n\n\tswitch state {\n\tcase waitingToStart:\n\t\twalletState = lnrpc.WalletState_WAITING_TO_START\n\tcase walletNotCreated:\n\t\twalletState = lnrpc.WalletState_NON_EXISTING\n\tcase walletLocked:\n\t\twalletState = lnrpc.WalletState_LOCKED\n\tcase walletUnlocked:\n\t\twalletState = lnrpc.WalletState_UNLOCKED\n\tcase rpcActive:\n\t\twalletState = lnrpc.WalletState_RPC_ACTIVE\n\tcase serverActive:\n\t\twalletState = lnrpc.WalletState_SERVER_ACTIVE\n\n\tdefault:\n\t\treturn defaultState, fmt.Errorf(\"unknown wallet state %v\", state)\n\t}\n\n\treturn walletState, nil\n}\n\n// SubscribeState subscribes to the state of the wallet. The current wallet\n// state will always be delivered immediately.\n//\n// NOTE: Part of the StateService interface.",
+      "length": 763,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) SubscribeState(_ *lnrpc.SubscribeStateRequest,",
+      "content": "func (r *InterceptorChain) SubscribeState(_ *lnrpc.SubscribeStateRequest,\n\tstream lnrpc.State_SubscribeStateServer) error {\n\n\tsendStateUpdate := func(state rpcState) error {\n\t\twalletState, err := rpcStateToWalletState(state)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn stream.Send(&lnrpc.SubscribeStateResponse{\n\t\t\tState: walletState,\n\t\t})\n\t}\n\n\t// Subscribe to state updates.\n\tclient, err := r.ntfnServer.Subscribe()\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer client.Cancel()\n\n\t// Always start by sending the current state.\n\tr.RLock()\n\tstate := r.state\n\tr.RUnlock()\n\n\tif err := sendStateUpdate(state); err != nil {\n\t\treturn err\n\t}\n\n\tfor {\n\t\tselect {\n\t\tcase e := <-client.Updates():\n\t\t\tnewState := e.(rpcState)\n\n\t\t\t// Ignore already sent state.\n\t\t\tif newState == state {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tstate = newState\n\t\t\terr := sendStateUpdate(state)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t// The response stream's context for whatever reason has been\n\t\t// closed. If context is closed by an exceeded deadline we will\n\t\t// return an error.\n\t\tcase <-stream.Context().Done():\n\t\t\tif errors.Is(stream.Context().Err(), context.Canceled) {\n\t\t\t\treturn nil\n\t\t\t}\n\t\t\treturn stream.Context().Err()\n\n\t\tcase <-r.quit:\n\t\t\treturn fmt.Errorf(\"server exiting\")\n\t\t}\n\t}\n}\n\n// GetState returns the current wallet state.",
+      "length": 1158,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) GetState(_ context.Context,",
+      "content": "func (r *InterceptorChain) GetState(_ context.Context,\n\t_ *lnrpc.GetStateRequest) (*lnrpc.GetStateResponse, error) {\n\n\tr.RLock()\n\tstate := r.state\n\tr.RUnlock()\n\n\twalletState, err := rpcStateToWalletState(state)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &lnrpc.GetStateResponse{\n\t\tState: walletState,\n\t}, nil\n}\n\n// AddMacaroonService adds a macaroon service to the interceptor. After this is\n// done every RPC call made will have to pass a valid macaroon to be accepted.",
+      "length": 402,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) AddMacaroonService(svc *macaroons.Service) {",
+      "content": "func (r *InterceptorChain) AddMacaroonService(svc *macaroons.Service) {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tr.svc = svc\n}\n\n// MacaroonService returns the currently registered macaroon service. This might\n// be nil if none was registered (yet).",
+      "length": 158,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) MacaroonService() *macaroons.Service {",
+      "content": "func (r *InterceptorChain) MacaroonService() *macaroons.Service {\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\treturn r.svc\n}\n\n// AddPermission adds a new macaroon rule for the given method.",
+      "length": 105,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) AddPermission(method string, ops []bakery.Op) error {",
+      "content": "func (r *InterceptorChain) AddPermission(method string, ops []bakery.Op) error {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tif _, ok := r.permissionMap[method]; ok {\n\t\treturn fmt.Errorf(\"detected duplicate macaroon constraints \"+\n\t\t\t\"for path: %v\", method)\n\t}\n\n\tr.permissionMap[method] = ops\n\treturn nil\n}\n\n// Permissions returns the current set of macaroon permissions.",
+      "length": 264,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) Permissions() map[string][]bakery.Op {",
+      "content": "func (r *InterceptorChain) Permissions() map[string][]bakery.Op {\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\t// Make a copy under the read lock to avoid races.\n\tc := make(map[string][]bakery.Op)\n\tfor k, v := range r.permissionMap {\n\t\ts := make([]bakery.Op, len(v))\n\t\tcopy(s, v)\n\t\tc[k] = s\n\t}\n\n\treturn c\n}\n\n// RegisterMiddleware registers a new middleware that will handle request/\n// response interception for all RPC messages that are initiated with a custom\n// macaroon caveat. The name of the custom caveat a middleware is handling is\n// also its unique identifier. Only one middleware can be registered for each\n// custom caveat.",
+      "length": 538,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) RegisterMiddleware(mw *MiddlewareHandler) error {",
+      "content": "func (r *InterceptorChain) RegisterMiddleware(mw *MiddlewareHandler) error {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\t// The name of the middleware is the unique identifier.\n\t_, ok := r.registeredMiddlewareNames[mw.middlewareName]\n\tif ok {\n\t\treturn fmt.Errorf(\"a middleware with the name '%s' is already \"+\n\t\t\t\"registered\", mw.middlewareName)\n\t}\n\n\t// For now, we only want one middleware per custom caveat name. If we\n\t// allowed multiple middlewares handling the same caveat there would be\n\t// a need for extra call chaining logic, and they could overwrite each\n\t// other's responses.\n\tfor _, middleware := range r.registeredMiddleware {\n\t\tif middleware.customCaveatName == mw.customCaveatName {\n\t\t\treturn fmt.Errorf(\"a middleware is already registered \"+\n\t\t\t\t\"for the custom caveat name '%s': %v\",\n\t\t\t\tmw.customCaveatName, middleware.middlewareName)\n\t\t}\n\t}\n\n\tr.registeredMiddleware = append(r.registeredMiddleware, mw)\n\tindex := len(r.registeredMiddleware) - 1\n\tr.registeredMiddlewareNames[mw.middlewareName] = index\n\n\treturn nil\n}\n\n// RemoveMiddleware removes the middleware that handles the given custom caveat\n// name.",
+      "length": 1005,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) RemoveMiddleware(middlewareName string) {",
+      "content": "func (r *InterceptorChain) RemoveMiddleware(middlewareName string) {\n\tr.Lock()\n\tdefer r.Unlock()\n\n\tlog.Debugf(\"Removing middleware %s\", middlewareName)\n\n\tindex, ok := r.registeredMiddlewareNames[middlewareName]\n\tif !ok {\n\t\treturn\n\t}\n\tdelete(r.registeredMiddlewareNames, middlewareName)\n\n\tr.registeredMiddleware = append(\n\t\tr.registeredMiddleware[:index],\n\t\tr.registeredMiddleware[index+1:]...,\n\t)\n\n\t// Re-initialise the middleware look-up map with the updated indexes.\n\tr.registeredMiddlewareNames = make(map[string]int)\n\tfor i, mw := range r.registeredMiddleware {\n\t\tr.registeredMiddlewareNames[mw.middlewareName] = i\n\t}\n}\n\n// CustomCaveatSupported makes sure a middleware that handles the given custom\n// caveat name is registered. If none is, an error is returned, signalling to\n// the macaroon bakery and its validator to reject macaroons that have a custom\n// caveat with that name.\n//\n// NOTE: This method is part of the macaroons.CustomCaveatAcceptor interface.",
+      "length": 871,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) CustomCaveatSupported(customCaveatName string) error {",
+      "content": "func (r *InterceptorChain) CustomCaveatSupported(customCaveatName string) error {\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\t// We only accept requests with a custom caveat if we also have a\n\t// middleware registered that handles that custom caveat. That is\n\t// crucial for security! Otherwise a request with an encumbered (=has\n\t// restricted permissions based upon the custom caveat condition)\n\t// macaroon would not be validated against the limitations that the\n\t// custom caveat implicate. Since the map is keyed by the _name_ of the\n\t// middleware, we need to loop through all of them to see if one has\n\t// the given custom macaroon caveat name.\n\tfor _, middleware := range r.registeredMiddleware {\n\t\tif middleware.customCaveatName == customCaveatName {\n\t\t\treturn nil\n\t\t}\n\t}\n\n\treturn fmt.Errorf(\"cannot accept macaroon with custom caveat '%s', \"+\n\t\t\"no middleware registered to handle it\", customCaveatName)\n}\n\n// CreateServerOpts creates the GRPC server options that can be added to a GRPC\n// server in order to add this InterceptorChain.",
+      "length": 929,
+      "tokens": 149,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) CreateServerOpts() []grpc.ServerOption {",
+      "content": "func (r *InterceptorChain) CreateServerOpts() []grpc.ServerOption {\n\tvar unaryInterceptors []grpc.UnaryServerInterceptor\n\tvar strmInterceptors []grpc.StreamServerInterceptor\n\n\t// The first interceptors we'll add to the chain is our logging\n\t// interceptors, so we can automatically log all errors that happen\n\t// during RPC calls.\n\tunaryInterceptors = append(\n\t\tunaryInterceptors, errorLogUnaryServerInterceptor(r.rpcsLog),\n\t)\n\tstrmInterceptors = append(\n\t\tstrmInterceptors, errorLogStreamServerInterceptor(r.rpcsLog),\n\t)\n\n\t// Next we'll add our RPC state check interceptors, that will check\n\t// whether the attempted call is allowed in the current state.\n\tunaryInterceptors = append(\n\t\tunaryInterceptors, r.rpcStateUnaryServerInterceptor(),\n\t)\n\tstrmInterceptors = append(\n\t\tstrmInterceptors, r.rpcStateStreamServerInterceptor(),\n\t)\n\n\t// We'll add the macaroon interceptors. If macaroons aren't disabled,\n\t// then these interceptors will enforce macaroon authentication.\n\tunaryInterceptors = append(\n\t\tunaryInterceptors, r.MacaroonUnaryServerInterceptor(),\n\t)\n\tstrmInterceptors = append(\n\t\tstrmInterceptors, r.MacaroonStreamServerInterceptor(),\n\t)\n\n\t// Next, we'll add the interceptors for our custom macaroon caveat based\n\t// middleware.\n\tunaryInterceptors = append(\n\t\tunaryInterceptors, r.middlewareUnaryServerInterceptor(),\n\t)\n\tstrmInterceptors = append(\n\t\tstrmInterceptors, r.middlewareStreamServerInterceptor(),\n\t)\n\n\t// Get interceptors for Prometheus to gather gRPC performance metrics.\n\t// If monitoring is disabled, GetPromInterceptors() will return empty\n\t// slices.\n\tpromUnaryInterceptors, promStrmInterceptors :=\n\t\tmonitoring.GetPromInterceptors()\n\n\t// Concatenate the slices of unary and stream interceptors respectively.\n\tunaryInterceptors = append(unaryInterceptors, promUnaryInterceptors...)\n\tstrmInterceptors = append(strmInterceptors, promStrmInterceptors...)\n\n\t// Create server options from the interceptors we just set up.\n\tchainedUnary := grpc_middleware.WithUnaryServerChain(\n\t\tunaryInterceptors...,\n\t)\n\tchainedStream := grpc_middleware.WithStreamServerChain(\n\t\tstrmInterceptors...,\n\t)\n\tserverOpts := []grpc.ServerOption{chainedUnary, chainedStream}\n\n\treturn serverOpts\n}\n\n// errorLogUnaryServerInterceptor is a simple UnaryServerInterceptor that will\n// automatically log any errors that occur when serving a client's unary\n// request.",
+      "length": 2225,
+      "tokens": 229,
+      "embedding": []
+    },
+    {
+      "slug": "func errorLogUnaryServerInterceptor(logger btclog.Logger) grpc.UnaryServerInterceptor {",
+      "content": "func errorLogUnaryServerInterceptor(logger btclog.Logger) grpc.UnaryServerInterceptor {\n\treturn func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,\n\t\thandler grpc.UnaryHandler) (interface{}, error) {\n\n\t\tresp, err := handler(ctx, req)\n\t\tif err != nil {\n\t\t\t// TODO(roasbeef): also log request details?\n\t\t\tlogger.Errorf(\"[%v]: %v\", info.FullMethod, err)\n\t\t}\n\n\t\treturn resp, err\n\t}\n}\n\n// errorLogStreamServerInterceptor is a simple StreamServerInterceptor that\n// will log any errors that occur while processing a client or server streaming\n// RPC.",
+      "length": 460,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func errorLogStreamServerInterceptor(logger btclog.Logger) grpc.StreamServerInterceptor {",
+      "content": "func errorLogStreamServerInterceptor(logger btclog.Logger) grpc.StreamServerInterceptor {\n\treturn func(srv interface{}, ss grpc.ServerStream,\n\t\tinfo *grpc.StreamServerInfo, handler grpc.StreamHandler) error {\n\n\t\terr := handler(srv, ss)\n\t\tif err != nil {\n\t\t\tlogger.Errorf(\"[%v]: %v\", info.FullMethod, err)\n\t\t}\n\n\t\treturn err\n\t}\n}\n\n// checkMacaroon validates that the context contains the macaroon needed to\n// invoke the given RPC method.",
+      "length": 333,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) checkMacaroon(ctx context.Context,",
+      "content": "func (r *InterceptorChain) checkMacaroon(ctx context.Context,\n\tfullMethod string) error {\n\n\t// If noMacaroons is set, we'll always allow the call.\n\tif r.noMacaroons {\n\t\treturn nil\n\t}\n\n\t// Check whether the method is whitelisted, if so we'll allow it\n\t// regardless of macaroons.\n\t_, ok := macaroonWhitelist[fullMethod]\n\tif ok {\n\t\treturn nil\n\t}\n\n\tr.RLock()\n\tsvc := r.svc\n\tr.RUnlock()\n\n\t// If the macaroon service is not yet active, we cannot allow\n\t// the call.\n\tif svc == nil {\n\t\treturn fmt.Errorf(\"unable to determine macaroon permissions\")\n\t}\n\n\tr.RLock()\n\turiPermissions, ok := r.permissionMap[fullMethod]\n\tr.RUnlock()\n\tif !ok {\n\t\treturn fmt.Errorf(\"%s: unknown permissions required for method\",\n\t\t\tfullMethod)\n\t}\n\n\t// Find out if there is an external validator registered for\n\t// this method. Fall back to the internal one if there isn't.\n\tvalidator, ok := svc.ExternalValidators[fullMethod]\n\tif !ok {\n\t\tvalidator = svc\n\t}\n\n\t// Now that we know what validator to use, let it do its work.\n\treturn validator.ValidateMacaroon(ctx, uriPermissions, fullMethod)\n}\n\n// MacaroonUnaryServerInterceptor is a GRPC interceptor that checks whether the\n// request is authorized by the included macaroons.",
+      "length": 1087,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) MacaroonUnaryServerInterceptor() grpc.UnaryServerInterceptor {",
+      "content": "func (r *InterceptorChain) MacaroonUnaryServerInterceptor() grpc.UnaryServerInterceptor {\n\treturn func(ctx context.Context, req interface{},\n\t\tinfo *grpc.UnaryServerInfo,\n\t\thandler grpc.UnaryHandler) (interface{}, error) {\n\n\t\t// Check macaroons.\n\t\tif err := r.checkMacaroon(ctx, info.FullMethod); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn handler(ctx, req)\n\t}\n}\n\n// MacaroonStreamServerInterceptor is a GRPC interceptor that checks whether\n// the request is authorized by the included macaroons.",
+      "length": 395,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) MacaroonStreamServerInterceptor() grpc.StreamServerInterceptor {",
+      "content": "func (r *InterceptorChain) MacaroonStreamServerInterceptor() grpc.StreamServerInterceptor {\n\treturn func(srv interface{}, ss grpc.ServerStream,\n\t\tinfo *grpc.StreamServerInfo, handler grpc.StreamHandler) error {\n\n\t\t// Check macaroons.\n\t\terr := r.checkMacaroon(ss.Context(), info.FullMethod)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn handler(srv, ss)\n\t}\n}\n\n// checkRPCState checks whether a call to the given server is allowed in the\n// current RPC state.",
+      "length": 351,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) checkRPCState(srv interface{}) error {",
+      "content": "func (r *InterceptorChain) checkRPCState(srv interface{}) error {\n\t// The StateService is being accessed, we allow the call regardless of\n\t// the current state.\n\t_, ok := srv.(lnrpc.StateServer)\n\tif ok {\n\t\treturn nil\n\t}\n\n\tr.RLock()\n\tstate := r.state\n\tr.RUnlock()\n\n\tswitch state {\n\t// Do not accept any RPC calls (unless to the state service) until LND\n\t// has not started.\n\tcase waitingToStart:\n\t\treturn ErrWaitingToStart\n\n\t// If the wallet does not exists, only calls to the WalletUnlocker are\n\t// accepted.\n\tcase walletNotCreated:\n\t\t_, ok := srv.(lnrpc.WalletUnlockerServer)\n\t\tif !ok {\n\t\t\treturn ErrNoWallet\n\t\t}\n\n\t// If the wallet is locked, only calls to the WalletUnlocker are\n\t// accepted.\n\tcase walletLocked:\n\t\t_, ok := srv.(lnrpc.WalletUnlockerServer)\n\t\tif !ok {\n\t\t\treturn ErrWalletLocked\n\t\t}\n\n\t// If the wallet is unlocked, but the RPC not yet active, we reject.\n\tcase walletUnlocked:\n\t\t_, ok := srv.(lnrpc.WalletUnlockerServer)\n\t\tif ok {\n\t\t\treturn ErrWalletUnlocked\n\t\t}\n\n\t\treturn ErrRPCStarting\n\n\t// If the RPC server or lnd server is active, we allow calls to any\n\t// service except the WalletUnlocker.\n\tcase rpcActive, serverActive:\n\t\t_, ok := srv.(lnrpc.WalletUnlockerServer)\n\t\tif ok {\n\t\t\treturn ErrWalletUnlocked\n\t\t}\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unknown RPC state: %v\", state)\n\t}\n\n\treturn nil\n}\n\n// rpcStateUnaryServerInterceptor is a GRPC interceptor that checks whether\n// calls to the given gGRPC server is allowed in the current rpc state.",
+      "length": 1335,
+      "tokens": 204,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) rpcStateUnaryServerInterceptor() grpc.UnaryServerInterceptor {",
+      "content": "func (r *InterceptorChain) rpcStateUnaryServerInterceptor() grpc.UnaryServerInterceptor {\n\treturn func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,\n\t\thandler grpc.UnaryHandler) (interface{}, error) {\n\n\t\tif err := r.checkRPCState(info.Server); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn handler(ctx, req)\n\t}\n}\n\n// rpcStateStreamServerInterceptor is a GRPC interceptor that checks whether\n// calls to the given gGRPC server is allowed in the current rpc state.",
+      "length": 380,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) rpcStateStreamServerInterceptor() grpc.StreamServerInterceptor {",
+      "content": "func (r *InterceptorChain) rpcStateStreamServerInterceptor() grpc.StreamServerInterceptor {\n\treturn func(srv interface{}, ss grpc.ServerStream,\n\t\tinfo *grpc.StreamServerInfo, handler grpc.StreamHandler) error {\n\n\t\tif err := r.checkRPCState(srv); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn handler(srv, ss)\n\t}\n}\n\n// middlewareUnaryServerInterceptor is a unary gRPC interceptor that intercepts\n// all requests and responses that are sent with a macaroon containing a custom\n// caveat condition that is handled by registered middleware.",
+      "length": 426,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) middlewareUnaryServerInterceptor() grpc.UnaryServerInterceptor {",
+      "content": "func (r *InterceptorChain) middlewareUnaryServerInterceptor() grpc.UnaryServerInterceptor {\n\treturn func(ctx context.Context,\n\t\treq interface{}, info *grpc.UnaryServerInfo,\n\t\thandler grpc.UnaryHandler) (interface{}, error) {\n\n\t\t// Make sure we don't allow any requests through if one of the\n\t\t// mandatory middlewares is missing.\n\t\tfullMethod := info.FullMethod\n\t\tif err := r.checkMandatoryMiddleware(fullMethod); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// If there is no middleware registered, we don't need to\n\t\t// intercept anything.\n\t\tif !r.middlewareRegistered() {\n\t\t\treturn handler(ctx, req)\n\t\t}\n\n\t\trequestID := atomic.AddUint64(&r.lastRequestID, 1)\n\t\treq, err := r.interceptMessage(\n\t\t\tctx, TypeRequest, requestID, false, info.FullMethod,\n\t\t\treq,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Call the handler, which executes the request against lnd.\n\t\tlndResp, lndErr := handler(ctx, req)\n\t\tif lndErr != nil {\n\t\t\t// The call to lnd ended in an error and not a normal\n\t\t\t// proto message response. Send the error to the\n\t\t\t// interceptor as well to inform about the abnormal\n\t\t\t// termination of the stream and to give the option to\n\t\t\t// replace the error message with a custom one.\n\t\t\treplacedErr, err := r.interceptMessage(\n\t\t\t\tctx, TypeResponse, requestID, false,\n\t\t\t\tinfo.FullMethod, lndErr,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\treturn lndResp, replacedErr.(error)\n\t\t}\n\n\t\treturn r.interceptMessage(\n\t\t\tctx, TypeResponse, requestID, false, info.FullMethod,\n\t\t\tlndResp,\n\t\t)\n\t}\n}\n\n// middlewareStreamServerInterceptor is a streaming gRPC interceptor that\n// intercepts all requests and responses that are sent with a macaroon\n// containing a custom caveat condition that is handled by registered\n// middleware.",
+      "length": 1592,
+      "tokens": 229,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) middlewareStreamServerInterceptor() grpc.StreamServerInterceptor {",
+      "content": "func (r *InterceptorChain) middlewareStreamServerInterceptor() grpc.StreamServerInterceptor {\n\treturn func(srv interface{},\n\t\tss grpc.ServerStream, info *grpc.StreamServerInfo,\n\t\thandler grpc.StreamHandler) error {\n\n\t\t// Don't intercept the interceptor itself which is a streaming\n\t\t// RPC too!\n\t\tfullMethod := info.FullMethod\n\t\tif fullMethod == lnrpc.RegisterRPCMiddlewareURI {\n\t\t\treturn handler(srv, ss)\n\t\t}\n\n\t\t// Make sure we don't allow any requests through if one of the\n\t\t// mandatory middlewares is missing. We add this check here to\n\t\t// make sure the middleware registration itself can still be\n\t\t// called.\n\t\tif err := r.checkMandatoryMiddleware(fullMethod); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If there is no middleware registered, we don't need to\n\t\t// intercept anything.\n\t\tif !r.middlewareRegistered() {\n\t\t\treturn handler(srv, ss)\n\t\t}\n\n\t\t// To give the middleware a chance to accept or reject the\n\t\t// establishment of the stream itself (and not only when the\n\t\t// first message is sent on the stream), we send an intercept\n\t\t// request for the stream auth now:\n\t\tmsg, err := NewStreamAuthInterceptionRequest(\n\t\t\tss.Context(), info.FullMethod,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\trequestID := atomic.AddUint64(&r.lastRequestID, 1)\n\t\terr = r.acceptStream(requestID, msg)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\twrappedSS := &serverStreamWrapper{\n\t\t\tServerStream: ss,\n\t\t\trequestID:    requestID,\n\t\t\tfullMethod:   info.FullMethod,\n\t\t\tinterceptor:  r,\n\t\t}\n\n\t\t// Call the stream handler, which will block as long as the\n\t\t// stream is alive.\n\t\tlndErr := handler(srv, wrappedSS)\n\t\tif lndErr != nil {\n\t\t\t// This is an error being returned from lnd. Send it to\n\t\t\t// the interceptor as well to inform about the abnormal\n\t\t\t// termination of the stream and to give the option to\n\t\t\t// replace the error message with a custom one.\n\t\t\treplacedErr, err := r.interceptMessage(\n\t\t\t\tss.Context(), TypeResponse, requestID,\n\t\t\t\ttrue, info.FullMethod, lndErr,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\treturn replacedErr.(error)\n\t\t}\n\n\t\t// Normal/successful termination of the stream.\n\t\treturn nil\n\t}\n}\n\n// checkMandatoryMiddleware makes sure that each of the middlewares declared as\n// mandatory is currently registered.",
+      "length": 2061,
+      "tokens": 304,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) checkMandatoryMiddleware(fullMethod string) error {",
+      "content": "func (r *InterceptorChain) checkMandatoryMiddleware(fullMethod string) error {\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\t// Allow calls that are whitelisted for macaroons as well, otherwise we\n\t// get into impossible situations where the wallet is locked but the\n\t// unlock call is denied because the middleware isn't registered. But\n\t// the middleware cannot register itself because the wallet is locked.\n\tif _, ok := macaroonWhitelist[fullMethod]; ok {\n\t\treturn nil\n\t}\n\n\t// Not a white listed call so make sure every mandatory middleware is\n\t// currently connected to lnd.\n\tfor _, name := range r.mandatoryMiddleware {\n\t\tif _, ok := r.registeredMiddlewareNames[name]; !ok {\n\t\t\treturn fmt.Errorf(\"mandatory middleware '%s' is \"+\n\t\t\t\t\"currently not registered, not allowing any \"+\n\t\t\t\t\"RPC calls\", name)\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// middlewareRegistered returns true if there is at least one middleware\n// currently registered.",
+      "length": 810,
+      "tokens": 126,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) middlewareRegistered() bool {",
+      "content": "func (r *InterceptorChain) middlewareRegistered() bool {\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\treturn len(r.registeredMiddleware) > 0\n}\n\n// acceptStream sends an intercept request to all middlewares that have\n// registered for it. This means either a middleware has requested read-only\n// access or the request actually has a macaroon with a caveat the middleware\n// registered for.",
+      "length": 310,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) acceptStream(requestID uint64,",
+      "content": "func (r *InterceptorChain) acceptStream(requestID uint64,\n\tmsg *InterceptionRequest) error {\n\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\tfor _, middleware := range r.registeredMiddleware {\n\t\t// If there is a custom caveat in the macaroon, make sure the\n\t\t// middleware registered for it. Or if a middleware registered\n\t\t// for read-only mode, it also gets the request.\n\t\thasCustomCaveat := macaroons.HasCustomCaveat(\n\t\t\tmsg.Macaroon, middleware.customCaveatName,\n\t\t)\n\t\tif !hasCustomCaveat && !middleware.readOnly {\n\t\t\tcontinue\n\t\t}\n\n\t\tmsg.CustomCaveatCondition = macaroons.GetCustomCaveatCondition(\n\t\t\tmsg.Macaroon, middleware.customCaveatName,\n\t\t)\n\n\t\tresp, err := middleware.intercept(requestID, msg)\n\n\t\t// Error during interception itself.\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Error returned from middleware client.\n\t\tif resp.err != nil {\n\t\t\treturn resp.err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// interceptMessage sends out an intercept request for an RPC response. Since\n// middleware that hasn't registered for the read-only mode has the option to\n// overwrite/replace the message, this needs to be handled differently than the\n// auth path above.",
+      "length": 1034,
+      "tokens": 142,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *InterceptorChain) interceptMessage(ctx context.Context,",
+      "content": "func (r *InterceptorChain) interceptMessage(ctx context.Context,\n\tinterceptType InterceptType, requestID uint64, isStream bool,\n\tfullMethod string, m interface{}) (interface{}, error) {\n\n\tr.RLock()\n\tdefer r.RUnlock()\n\n\tcurrentMessage := m\n\tfor _, middleware := range r.registeredMiddleware {\n\t\tmsg, err := NewMessageInterceptionRequest(\n\t\t\tctx, interceptType, isStream, fullMethod,\n\t\t\tcurrentMessage,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// If there is a custom caveat in the macaroon, make sure the\n\t\t// middleware registered for it. Or if a middleware registered\n\t\t// for read-only mode, it also gets the request.\n\t\thasCustomCaveat := macaroons.HasCustomCaveat(\n\t\t\tmsg.Macaroon, middleware.customCaveatName,\n\t\t)\n\t\tif !hasCustomCaveat && !middleware.readOnly {\n\t\t\tcontinue\n\t\t}\n\n\t\tmsg.CustomCaveatCondition = macaroons.GetCustomCaveatCondition(\n\t\t\tmsg.Macaroon, middleware.customCaveatName,\n\t\t)\n\n\t\tresp, err := middleware.intercept(requestID, msg)\n\n\t\t// Error during interception itself.\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Error returned from middleware client.\n\t\tif resp.err != nil {\n\t\t\treturn nil, resp.err\n\t\t}\n\n\t\t// The message was replaced, make sure the next middleware in\n\t\t// line receives the updated message.\n\t\tif !middleware.readOnly && resp.replace {\n\t\t\tcurrentMessage = resp.replacement\n\t\t}\n\t}\n\n\treturn currentMessage, nil\n}\n\n// serverStreamWrapper is a struct that wraps a server stream in a way that all\n// requests and responses can be intercepted individually.",
+      "length": 1381,
+      "tokens": 184,
+      "embedding": []
+    },
+    {
+      "slug": "type serverStreamWrapper struct {",
+      "content": "type serverStreamWrapper struct {\n\t// ServerStream is the stream that's being wrapped.\n\tgrpc.ServerStream\n\n\trequestID uint64\n\n\tfullMethod string\n\n\tinterceptor *InterceptorChain\n}\n\n// SendMsg is called when lnd sends a message to the client. This is wrapped to\n// intercept streaming RPC responses.",
+      "length": 252,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *serverStreamWrapper) SendMsg(m interface{}) error {",
+      "content": "func (w *serverStreamWrapper) SendMsg(m interface{}) error {\n\tnewMsg, err := w.interceptor.interceptMessage(\n\t\tw.ServerStream.Context(), TypeResponse, w.requestID, true,\n\t\tw.fullMethod, m,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn w.ServerStream.SendMsg(newMsg)\n}\n\n// RecvMsg is called when lnd wants to receive a message from the client. This\n// is wrapped to intercept streaming RPC requests.",
+      "length": 324,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *serverStreamWrapper) RecvMsg(m interface{}) error {",
+      "content": "func (w *serverStreamWrapper) RecvMsg(m interface{}) error {\n\terr := w.ServerStream.RecvMsg(m)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treq, err := w.interceptor.interceptMessage(\n\t\tw.ServerStream.Context(), TypeRequest, w.requestID, true,\n\t\tw.fullMethod, m,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn replaceProtoMsg(m, req)\n}\n",
+      "length": 248,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

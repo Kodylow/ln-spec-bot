@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/config.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "func CleanAndExpandPath(path string) string {",
+      "content": "func CleanAndExpandPath(path string) string {\n\tif path == \"\" {\n\t\treturn \"\"\n\t}\n\n\t// Expand initial ~ to OS specific home directory.\n\tif strings.HasPrefix(path, \"~\") {\n\t\tvar homeDir string\n\t\tu, err := user.Current()\n\t\tif err == nil {\n\t\t\thomeDir = u.HomeDir\n\t\t} else {\n\t\t\thomeDir = os.Getenv(\"HOME\")\n\t\t}\n\n\t\tpath = strings.Replace(path, \"~\", homeDir, 1)\n\t}\n\n\t// NOTE: The os.ExpandEnv doesn't work with Windows-style %VARIABLE%,\n\t// but the variables can still be expanded via POSIX-style $VARIABLE.\n\treturn filepath.Clean(os.ExpandEnv(path))\n}\n\n// NormalizeNetwork returns the common name of a network type used to create\n// file paths. This allows differently versioned networks to use the same path.",
+      "length": 629,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func NormalizeNetwork(network string) string {",
+      "content": "func NormalizeNetwork(network string) string {\n\tif strings.HasPrefix(network, \"testnet\") {\n\t\treturn \"testnet\"\n\t}\n\n\treturn network\n}\n",
+      "length": 79,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtpolicy/policy.go",
+  "package": "wtpolicy",
+  "sections": [
+    {
+      "slug": "func DefaultPolicy() Policy {",
+      "content": "func DefaultPolicy() Policy {\n\treturn Policy{\n\t\tTxPolicy: TxPolicy{\n\t\t\tBlobType:     blob.TypeAltruistCommit,\n\t\t\tSweepFeeRate: DefaultSweepFeeRate,\n\t\t},\n\t\tMaxUpdates: DefaultMaxUpdates,\n\t}\n}\n\n// TxPolicy defines the negotiate parameters that determine the form of the\n// justice transaction for a given breached state. Thus, for any given revoked\n// state, an identical key will result in an identical justice transaction\n// (barring signatures). The parameters specify the format of encrypted blobs\n// sent to the tower, the reward schedule for the tower, and the number of\n// encrypted blobs a client can send in one session.",
+      "length": 583,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "type TxPolicy struct {",
+      "content": "type TxPolicy struct {\n\t// BlobType specifies the blob format that must be used by all updates sent\n\t// under the session key used to negotiate this session.\n\tBlobType blob.Type\n\n\t// RewardBase is the fixed amount allocated to the tower when the\n\t// policy's blob type specifies a reward for the tower. This is taken\n\t// before adding the proportional reward.\n\tRewardBase uint32\n\n\t// RewardRate is the fraction of the total balance of the revoked\n\t// commitment that the watchtower is entitled to. This value is\n\t// expressed in millionths of the total balance.\n\tRewardRate uint32\n\n\t// SweepFeeRate expresses the intended fee rate to be used when\n\t// constructing the justice transaction. All sweep transactions created\n\t// for this session must use this value during construction, and the\n\t// signatures must implicitly commit to the resulting output values.\n\tSweepFeeRate chainfee.SatPerKWeight\n}\n\n// Policy defines the negotiated parameters for a session between a client and\n// server. In addition to the TxPolicy that governs the shape of the justice\n// transaction, the Policy also includes features which only affect the\n// operation of the session.",
+      "length": 1109,
+      "tokens": 180,
+      "embedding": []
+    },
+    {
+      "slug": "type Policy struct {",
+      "content": "type Policy struct {\n\tTxPolicy\n\n\t// MaxUpdates is the maximum number of updates the watchtower will honor\n\t// for this session.\n\tMaxUpdates uint16\n}\n\n// String returns a human-readable description of the current policy.",
+      "length": 191,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (p Policy) String() string {",
+      "content": "func (p Policy) String() string {\n\treturn fmt.Sprintf(\"(blob-type=%b max-updates=%d reward-rate=%d \"+\n\t\t\"sweep-fee-rate=%d)\", p.BlobType, p.MaxUpdates, p.RewardRate,\n\t\tp.SweepFeeRate)\n}\n\n// IsAnchorChannel returns true if the session policy requires anchor channels.",
+      "length": 227,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (p Policy) IsAnchorChannel() bool {",
+      "content": "func (p Policy) IsAnchorChannel() bool {\n\treturn p.TxPolicy.BlobType.IsAnchorChannel()\n}\n\n// Validate ensures that the policy satisfies some minimal correctness\n// constraints.",
+      "length": 131,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (p Policy) Validate() error {",
+      "content": "func (p Policy) Validate() error {\n\t// RewardBase and RewardRate should not be set if the policy doesn't\n\t// have a reward.\n\tif !p.BlobType.Has(blob.FlagReward) &&\n\t\t(p.RewardBase != 0 || p.RewardRate != 0) {\n\n\t\treturn ErrAltruistReward\n\t}\n\n\t// MaxUpdates must be positive.\n\tif p.MaxUpdates == 0 {\n\t\treturn ErrNoMaxUpdates\n\t}\n\n\t// SweepFeeRate must be sane enough to get in the mempool during low\n\t// congestion.\n\tif p.SweepFeeRate < MinSweepFeeRate {\n\t\treturn ErrSweepFeeRateTooLow\n\t}\n\n\treturn nil\n}\n\n// ComputeAltruistOutput computes the lone output value of a justice transaction\n// that pays no reward to the tower. The value is computed using the weight of\n// of the justice transaction and subtracting an amount that satisfies the\n// policy's fee rate.",
+      "length": 698,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Policy) ComputeAltruistOutput(totalAmt btcutil.Amount,",
+      "content": "func (p *Policy) ComputeAltruistOutput(totalAmt btcutil.Amount,\n\ttxWeight int64, sweepScript []byte) (btcutil.Amount, error) {\n\n\ttxFee := p.SweepFeeRate.FeeForWeight(txWeight)\n\tif txFee > totalAmt {\n\t\treturn 0, ErrFeeExceedsInputs\n\t}\n\n\tsweepAmt := totalAmt - txFee\n\n\t// Check that the created outputs won't be dusty. We'll base the dust\n\t// computation on the type of the script itself.\n\tif sweepAmt < lnwallet.DustLimitForSize(len(sweepScript)) {\n\t\treturn 0, ErrCreatesDust\n\t}\n\n\treturn sweepAmt, nil\n}\n\n// ComputeRewardOutputs splits the total funds in a breaching commitment\n// transaction between the victim and the tower, according to the sweep fee rate\n// and reward rate. The reward to he tower is subtracted first, before\n// splitting the remaining balance amongst the victim and fees.",
+      "length": 707,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Policy) ComputeRewardOutputs(totalAmt btcutil.Amount,",
+      "content": "func (p *Policy) ComputeRewardOutputs(totalAmt btcutil.Amount,\n\ttxWeight int64,\n\trewardScript []byte) (btcutil.Amount, btcutil.Amount, error) {\n\n\ttxFee := p.SweepFeeRate.FeeForWeight(txWeight)\n\tif txFee > totalAmt {\n\t\treturn 0, 0, ErrFeeExceedsInputs\n\t}\n\n\t// Apply the reward rate to the remaining total, specified in millionths\n\t// of the available balance.\n\trewardAmt := ComputeRewardAmount(totalAmt, p.RewardBase, p.RewardRate)\n\tif rewardAmt+txFee > totalAmt {\n\t\treturn 0, 0, ErrRewardExceedsInputs\n\t}\n\n\t// The sweep amount for the victim constitutes the remainder of the\n\t// input value.\n\tsweepAmt := totalAmt - rewardAmt - txFee\n\n\t// Check that the created outputs won't be dusty. We'll base the dust\n\t// computation on the type of the script itself.\n\tif sweepAmt < lnwallet.DustLimitForSize(len(rewardScript)) {\n\t\treturn 0, 0, ErrCreatesDust\n\t}\n\n\treturn sweepAmt, rewardAmt, nil\n}\n\n// ComputeRewardAmount computes the amount rewarded to the tower using the\n// proportional rate expressed in millionths, e.g. one million is equivalent to\n// one hundred percent of the total amount. The amount is rounded up to the\n// nearest whole satoshi.",
+      "length": 1050,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func ComputeRewardAmount(total btcutil.Amount, base, rate uint32) btcutil.Amount {",
+      "content": "func ComputeRewardAmount(total btcutil.Amount, base, rate uint32) btcutil.Amount {\n\trewardBase := btcutil.Amount(base)\n\trewardRate := btcutil.Amount(rate)\n\n\t// If the base reward exceeds the total, there is no more funds left\n\t// from which to derive the proportional fee. We simply return the base,\n\t// the caller should detect that this exceeds the total amount input.\n\tif rewardBase > total {\n\t\treturn rewardBase\n\t}\n\n\t// Otherwise, subtract the base from the total and compute the\n\t// proportional reward from the remaining total.\n\tafterBase := total - rewardBase\n\tproportional := (afterBase*rewardRate + RewardScale - 1) / RewardScale\n\n\treturn rewardBase + proportional\n}\n\n// ComputeJusticeTxOuts constructs the justice transaction outputs for the\n// given policy. If the policy specifies a reward for the tower, there will be\n// two outputs paying to the victim and the tower. Otherwise there will be a\n// single output sweeping funds back to the victim. The totalAmt should be the\n// sum of any inputs used in the transaction. The passed txWeight should\n// include the weight of the outputs for the justice transaction, which is\n// dependent on whether the justice transaction has a reward. The sweepPkScript\n// should be the pkScript of the victim to which funds will be recovered. The\n// rewardPkScript is the pkScript of the tower where its reward will be\n// deposited, and will be\n// ignored if the blob type does not specify a reward.",
+      "length": 1334,
+      "tokens": 225,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Policy) ComputeJusticeTxOuts(totalAmt btcutil.Amount, txWeight int64,",
+      "content": "func (p *Policy) ComputeJusticeTxOuts(totalAmt btcutil.Amount, txWeight int64,\n\tsweepPkScript, rewardPkScript []byte) ([]*wire.TxOut, error) {\n\n\tvar outputs []*wire.TxOut\n\n\t// If the policy specifies a reward for the tower, compute a split of\n\t// the funds based on the policy's parameters. Otherwise, we will use\n\t// the altruist output computation and sweep as much of the funds\n\t// back to the victim as possible.\n\tif p.BlobType.Has(blob.FlagReward) {\n\t\t// Using the total input amount and the transaction's weight,\n\t\t// compute the sweep and reward amounts. This corresponds to\n\t\t// the amount returned to the victim and the amount paid to the\n\t\t// tower, respectively. To do so, the required transaction fee\n\t\t// is subtracted from the total, and the remaining amount is\n\t\t// divided according to the pre negotiated reward rate from the\n\t\t// client's session info.\n\t\tsweepAmt, rewardAmt, err := p.ComputeRewardOutputs(\n\t\t\ttotalAmt, txWeight, rewardPkScript,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Add the sweep and reward outputs to the list of txouts.\n\t\toutputs = append(outputs, &wire.TxOut{\n\t\t\tPkScript: sweepPkScript,\n\t\t\tValue:    int64(sweepAmt),\n\t\t})\n\t\toutputs = append(outputs, &wire.TxOut{\n\t\t\tPkScript: rewardPkScript,\n\t\t\tValue:    int64(rewardAmt),\n\t\t})\n\t} else {\n\t\t// Using the total input amount and the transaction's weight,\n\t\t// compute the sweep amount, which corresponds to the amount\n\t\t// returned to the victim. To do so, the required transaction\n\t\t// fee is subtracted from the total input amount.\n\t\tsweepAmt, err := p.ComputeAltruistOutput(\n\t\t\ttotalAmt, txWeight, sweepPkScript,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\t// Add the sweep output to the list of txouts.\n\t\toutputs = append(outputs, &wire.TxOut{\n\t\t\tPkScript: sweepPkScript,\n\t\t\tValue:    int64(sweepAmt),\n\t\t})\n\t}\n\n\treturn outputs, nil\n}\n",
+      "length": 1709,
+      "tokens": 258,
+      "embedding": []
+    }
+  ]
+}

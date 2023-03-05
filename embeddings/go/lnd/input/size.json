@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/input/size.go",
+  "package": "input",
+  "sections": [
+    {
+      "slug": "func EstimateCommitTxWeight(count int, prediction bool) int64 {",
+      "content": "func EstimateCommitTxWeight(count int, prediction bool) int64 {\n\t// Make prediction about the size of commitment transaction with\n\t// additional HTLC.\n\tif prediction {\n\t\tcount++\n\t}\n\n\thtlcWeight := int64(count * HTLCWeight)\n\tbaseWeight := int64(BaseCommitmentTxWeight)\n\twitnessWeight := int64(WitnessCommitmentTxWeight)\n\n\treturn htlcWeight + baseWeight + witnessWeight\n}\n\n// TxWeightEstimator is able to calculate weight estimates for transactions\n// based on the input and output types. For purposes of estimation, all\n// signatures are assumed to be of the maximum possible size, 73 bytes. Each\n// method of the estimator returns an instance with the estimate applied. This\n// allows callers to chain each of the methods",
+      "length": 640,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "type TxWeightEstimator struct {",
+      "content": "type TxWeightEstimator struct {\n\thasWitness       bool\n\tinputCount       uint32\n\toutputCount      uint32\n\tinputSize        int\n\tinputWitnessSize int\n\toutputSize       int\n}\n\n// AddP2PKHInput updates the weight estimate to account for an additional input\n// spending a P2PKH output.",
+      "length": 240,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2PKHInput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2PKHInput() *TxWeightEstimator {\n\ttwe.inputSize += InputSize + P2PKHScriptSigSize\n\ttwe.inputWitnessSize++\n\ttwe.inputCount++\n\n\treturn twe\n}\n\n// AddP2WKHInput updates the weight estimate to account for an additional input\n// spending a native P2PWKH output.",
+      "length": 214,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2WKHInput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2WKHInput() *TxWeightEstimator {\n\ttwe.AddWitnessInput(P2WKHWitnessSize)\n\n\treturn twe\n}\n\n// AddWitnessInput updates the weight estimate to account for an additional\n// input spending a native pay-to-witness output. This accepts the total size\n// of the witness as a parameter.",
+      "length": 235,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddWitnessInput(witnessSize int) *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddWitnessInput(witnessSize int) *TxWeightEstimator {\n\ttwe.inputSize += InputSize\n\ttwe.inputWitnessSize += witnessSize\n\ttwe.inputCount++\n\ttwe.hasWitness = true\n\n\treturn twe\n}\n\n// AddTapscriptInput updates the weight estimate to account for an additional\n// input spending a segwit v1 pay-to-taproot output using the script path. This\n// accepts the total size of the witness for the script leaf that is executed\n// and adds the size of the control block to the total witness size.\n//\n// NOTE: The leaf witness size must be calculated without the byte that accounts\n// for the number of witness elements, only the total size of all elements on\n// the stack that are consumed by the revealed script should be counted.",
+      "length": 646,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddTapscriptInput(leafWitnessSize int,",
+      "content": "func (twe *TxWeightEstimator) AddTapscriptInput(leafWitnessSize int,\n\ttapscript *waddrmgr.Tapscript) *TxWeightEstimator {\n\n\t// We add 1 byte for the total number of witness elements.\n\tcontrolBlockWitnessSize := 1 + TaprootBaseControlBlockWitnessSize +\n\t\t// 1 byte for the length of the element plus the element itself.\n\t\t1 + len(tapscript.RevealedScript) +\n\t\t1 + len(tapscript.ControlBlock.InclusionProof)\n\n\ttwe.inputSize += InputSize\n\ttwe.inputWitnessSize += leafWitnessSize + controlBlockWitnessSize\n\ttwe.inputCount++\n\ttwe.hasWitness = true\n\n\treturn twe\n}\n\n// AddTaprootKeySpendInput updates the weight estimate to account for an\n// additional input spending a segwit v1 pay-to-taproot output using the key\n// spend path. This accepts the sighash type being used since that has an\n// influence on the total size of the signature.",
+      "length": 743,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddTaprootKeySpendInput(",
+      "content": "func (twe *TxWeightEstimator) AddTaprootKeySpendInput(\n\thashType txscript.SigHashType) *TxWeightEstimator {\n\n\ttwe.inputSize += InputSize\n\n\tif hashType == txscript.SigHashDefault {\n\t\ttwe.inputWitnessSize += TaprootKeyPathWitnessSize\n\t} else {\n\t\ttwe.inputWitnessSize += TaprootKeyPathCustomSighashWitnessSize\n\t}\n\n\ttwe.inputCount++\n\ttwe.hasWitness = true\n\n\treturn twe\n}\n\n// AddNestedP2WKHInput updates the weight estimate to account for an additional\n// input spending a P2SH output with a nested P2WKH redeem script.",
+      "length": 442,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddNestedP2WKHInput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddNestedP2WKHInput() *TxWeightEstimator {\n\ttwe.inputSize += InputSize + NestedP2WPKHSize\n\ttwe.inputWitnessSize += P2WKHWitnessSize\n\ttwe.inputCount++\n\ttwe.hasWitness = true\n\n\treturn twe\n}\n\n// AddNestedP2WSHInput updates the weight estimate to account for an additional\n// input spending a P2SH output with a nested P2WSH redeem script.",
+      "length": 283,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddNestedP2WSHInput(witnessSize int) *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddNestedP2WSHInput(witnessSize int) *TxWeightEstimator {\n\ttwe.inputSize += InputSize + NestedP2WSHSize\n\ttwe.inputWitnessSize += witnessSize\n\ttwe.inputCount++\n\ttwe.hasWitness = true\n\n\treturn twe\n}\n\n// AddTxOutput adds a known TxOut to the weight estimator.",
+      "length": 190,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddTxOutput(txOut *wire.TxOut) *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddTxOutput(txOut *wire.TxOut) *TxWeightEstimator {\n\ttwe.outputSize += txOut.SerializeSize()\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// AddP2PKHOutput updates the weight estimate to account for an additional P2PKH\n// output.",
+      "length": 160,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2PKHOutput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2PKHOutput() *TxWeightEstimator {\n\ttwe.outputSize += P2PKHOutputSize\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// AddP2WKHOutput updates the weight estimate to account for an additional\n// native P2WKH output.",
+      "length": 161,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2WKHOutput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2WKHOutput() *TxWeightEstimator {\n\ttwe.outputSize += P2WKHOutputSize\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// AddP2WSHOutput updates the weight estimate to account for an additional\n// native P2WSH output.",
+      "length": 161,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2WSHOutput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2WSHOutput() *TxWeightEstimator {\n\ttwe.outputSize += P2WSHOutputSize\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// AddP2TROutput updates the weight estimate to account for an additional native\n// SegWit v1 P2TR output.",
+      "length": 169,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2TROutput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2TROutput() *TxWeightEstimator {\n\ttwe.outputSize += P2TROutputSize\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// AddP2SHOutput updates the weight estimate to account for an additional P2SH\n// output.",
+      "length": 151,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) AddP2SHOutput() *TxWeightEstimator {",
+      "content": "func (twe *TxWeightEstimator) AddP2SHOutput() *TxWeightEstimator {\n\ttwe.outputSize += P2SHOutputSize\n\ttwe.outputCount++\n\n\treturn twe\n}\n\n// Weight gets the estimated weight of the transaction.",
+      "length": 118,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) Weight() int {",
+      "content": "func (twe *TxWeightEstimator) Weight() int {\n\ttxSizeStripped := BaseTxSize +\n\t\twire.VarIntSerializeSize(uint64(twe.inputCount)) + twe.inputSize +\n\t\twire.VarIntSerializeSize(uint64(twe.outputCount)) + twe.outputSize\n\tweight := txSizeStripped * witnessScaleFactor\n\tif twe.hasWitness {\n\t\tweight += WitnessHeaderSize + twe.inputWitnessSize\n\t}\n\treturn weight\n}\n\n// VSize gets the estimated virtual size of the transactions, in vbytes.",
+      "length": 374,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (twe *TxWeightEstimator) VSize() int {",
+      "content": "func (twe *TxWeightEstimator) VSize() int {\n\t// A tx's vsize is 1/4 of the weight, rounded up.\n\treturn (twe.Weight() + witnessScaleFactor - 1) / witnessScaleFactor\n}\n",
+      "length": 119,
+      "tokens": 20,
+      "embedding": []
+    }
+  ]
+}

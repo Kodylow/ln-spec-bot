@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/cmd_state.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func getState(ctx *cli.Context) error {",
+      "content": "func getState(ctx *cli.Context) error {\n\tctxb := context.Background()\n\tclient, cleanUp := getStateServiceClient(ctx)\n\tdefer cleanUp()\n\n\treq := &lnrpc.SubscribeStateRequest{}\n\tstream, err := client.SubscribeState(ctxb, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Get a single state, then exit.\n\tresp, err := stream.Recv()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n",
+      "length": 330,
+      "tokens": 48,
+      "embedding": []
+    }
+  ]
+}

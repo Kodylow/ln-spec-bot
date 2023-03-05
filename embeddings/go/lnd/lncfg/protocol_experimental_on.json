@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/protocol_experimental_on.go",
+  "package": "dev",
+  "sections": [
+    {
+      "slug": "type ExperimentalProtocol struct {",
+      "content": "type ExperimentalProtocol struct {\n\tCustomMessage []uint16 `long:\"custom-message\" description:\"allows the custom message apis to send and report messages with the protocol number provided that fall outside of the custom message number range.\"`\n}\n\n// CustomMessageOverrides returns the set of protocol messages that we override\n// to allow custom handling.",
+      "length": 316,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (p ExperimentalProtocol) CustomMessageOverrides() []uint16 {",
+      "content": "func (p ExperimentalProtocol) CustomMessageOverrides() []uint16 {\n\treturn p.CustomMessage\n}\n",
+      "length": 24,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

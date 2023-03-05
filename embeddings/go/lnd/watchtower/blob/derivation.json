@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/blob/derivation.go",
+  "package": "blob",
+  "sections": [
+    {
+      "slug": "type BreachHint [BreachHintSize]byte",
+      "content": "type BreachHint [BreachHintSize]byte\n\n// NewBreachHintFromHash creates a breach hint from a transaction ID.",
+      "length": 69,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBreachHintFromHash(hash *chainhash.Hash) BreachHint {",
+      "content": "func NewBreachHintFromHash(hash *chainhash.Hash) BreachHint {\n\th := sha256.New()\n\th.Write(hash[:])\n\n\tvar hint BreachHint\n\tcopy(hint[:], h.Sum(nil))\n\treturn hint\n}\n\n// String returns a hex encoding of the breach hint.",
+      "length": 146,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (h BreachHint) String() string {",
+      "content": "func (h BreachHint) String() string {\n\treturn hex.EncodeToString(h[:])\n}\n\n// BreachKey is computed as SHA256(txid || txid), which produces the key for\n// decrypting a client's encrypted blobs.",
+      "length": 150,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type BreachKey [KeySize]byte",
+      "content": "type BreachKey [KeySize]byte\n\n// NewBreachKeyFromHash creates a breach key from a transaction ID.",
+      "length": 67,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBreachKeyFromHash(hash *chainhash.Hash) BreachKey {",
+      "content": "func NewBreachKeyFromHash(hash *chainhash.Hash) BreachKey {\n\th := sha256.New()\n\th.Write(hash[:])\n\th.Write(hash[:])\n\n\tvar key BreachKey\n\tcopy(key[:], h.Sum(nil))\n\treturn key\n}\n\n// String returns a hex encoding of the breach key.",
+      "length": 158,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (k BreachKey) String() string {",
+      "content": "func (k BreachKey) String() string {\n\treturn hex.EncodeToString(k[:])\n}\n\n// NewBreachHintAndKeyFromHash derives a BreachHint and BreachKey from a given\n// txid in a single pass. The hint and key are computed as:\n//\n//\thint = SHA256(txid)\n//\tkey = SHA256(txid || txid)",
+      "length": 223,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func NewBreachHintAndKeyFromHash(hash *chainhash.Hash) (BreachHint, BreachKey) {",
+      "content": "func NewBreachHintAndKeyFromHash(hash *chainhash.Hash) (BreachHint, BreachKey) {\n\tvar (\n\t\thint BreachHint\n\t\tkey  BreachKey\n\t)\n\n\th := sha256.New()\n\th.Write(hash[:])\n\tcopy(hint[:], h.Sum(nil))\n\th.Write(hash[:])\n\tcopy(key[:], h.Sum(nil))\n\n\treturn hint, key\n}\n",
+      "length": 162,
+      "tokens": 20,
+      "embedding": []
+    }
+  ]
+}

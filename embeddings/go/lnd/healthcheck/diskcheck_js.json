@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/healthcheck/diskcheck_js.go",
+  "package": "healthcheck",
+  "sections": [
+    {
+      "slug": "func AvailableDiskSpaceRatio(_ string) (float64, error) {",
+      "content": "func AvailableDiskSpaceRatio(_ string) (float64, error) {\n\treturn 0, fmt.Errorf(\"disk space check not supported in WebAssembly\")\n}\n\n// AvailableDiskSpace returns the available disk space in bytes of the given\n// file system.",
+      "length": 162,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func AvailableDiskSpace(_ string) (uint64, error) {",
+      "content": "func AvailableDiskSpace(_ string) (uint64, error) {\n\treturn 0, fmt.Errorf(\"disk space check not supported in WebAssembly\")\n}\n",
+      "length": 71,
+      "tokens": 10,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnencrypt/test_utils.go",
+  "package": "lnencrypt",
+  "sections": [
+    {
+      "slug": "type MockKeyRing struct {",
+      "content": "type MockKeyRing struct {\n\tFail bool\n}\n",
+      "length": 11,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockKeyRing) DeriveNextKey(",
+      "content": "func (m *MockKeyRing) DeriveNextKey(\n\tkeyFam keychain.KeyFamily) (keychain.KeyDescriptor, error) {\n\n\treturn keychain.KeyDescriptor{}, nil\n}\n",
+      "length": 99,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockKeyRing) DeriveKey(",
+      "content": "func (m *MockKeyRing) DeriveKey(\n\tkeyLoc keychain.KeyLocator) (keychain.KeyDescriptor, error) {\n\n\tif m.Fail {\n\t\treturn keychain.KeyDescriptor{}, fmt.Errorf(\"fail\")\n\t}\n\n\t_, pub := btcec.PrivKeyFromBytes(testWalletPrivKey)\n\treturn keychain.KeyDescriptor{\n\t\tPubKey: pub,\n\t}, nil\n}\n",
+      "length": 234,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

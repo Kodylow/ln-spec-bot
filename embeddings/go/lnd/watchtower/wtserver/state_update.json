@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtserver/state_update.go",
+  "package": "wtserver",
+  "sections": [
+    {
+      "slug": "func (s *Server) handleStateUpdates(peer Peer, id *wtdb.SessionID,",
+      "content": "func (s *Server) handleStateUpdates(peer Peer, id *wtdb.SessionID,\n\tupdate *wtwire.StateUpdate) error {\n\n\t// Set the current update to the first update read off the wire.\n\t// Additional updates will be read if this value is set to nil after\n\t// processing the first.\n\tvar curUpdate = update\n\tfor {\n\t\t// If this is not the first update, read the next state update\n\t\t// from the peer.\n\t\tif curUpdate == nil {\n\t\t\tnextMsg, err := s.readMessage(peer)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tvar ok bool\n\t\t\tcurUpdate, ok = nextMsg.(*wtwire.StateUpdate)\n\t\t\tif !ok {\n\t\t\t\treturn fmt.Errorf(\"client sent %T after \"+\n\t\t\t\t\t\"StateUpdate\", nextMsg)\n\t\t\t}\n\t\t}\n\n\t\t// Try to accept the state update from the client.\n\t\terr := s.handleStateUpdate(peer, id, curUpdate)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// If the client signals that this is last StateUpdate\n\t\t// message, we can disconnect the client.\n\t\tif curUpdate.IsComplete == 1 {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Reset the current update to read subsequent updates in the\n\t\t// stream.\n\t\tcurUpdate = nil\n\n\t\tselect {\n\t\tcase <-s.quit:\n\t\t\treturn ErrServerExiting\n\t\tdefault:\n\t\t}\n\t}\n}\n\n// handleStateUpdate processes a StateUpdate message request from a client. An\n// attempt will be made to insert the update into the db, where it is validated\n// against the client's session. The possible errors are then mapped back to\n// StateUpdateCodes specified by the watchtower wire protocol, and sent back\n// using a StateUpdateReply message.",
+      "length": 1344,
+      "tokens": 225,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) handleStateUpdate(peer Peer, id *wtdb.SessionID,",
+      "content": "func (s *Server) handleStateUpdate(peer Peer, id *wtdb.SessionID,\n\tupdate *wtwire.StateUpdate) error {\n\n\tvar (\n\t\tlastApplied uint16\n\t\tfailCode    wtwire.ErrorCode\n\t\terr         error\n\t)\n\n\tsessionUpdate := wtdb.SessionStateUpdate{\n\t\tID:            *id,\n\t\tHint:          update.Hint,\n\t\tSeqNum:        update.SeqNum,\n\t\tLastApplied:   update.LastApplied,\n\t\tEncryptedBlob: update.EncryptedBlob,\n\t}\n\n\tlastApplied, err = s.cfg.DB.InsertStateUpdate(&sessionUpdate)\n\tswitch {\n\tcase err == nil:\n\t\tlog.Debugf(\"State update %d accepted for %s\",\n\t\t\tupdate.SeqNum, id)\n\n\t\tfailCode = wtwire.CodeOK\n\n\t// Return a permanent failure if a client tries to send an update for\n\t// which we have no session.\n\tcase err == wtdb.ErrSessionNotFound:\n\t\tfailCode = wtwire.CodePermanentFailure\n\n\tcase err == wtdb.ErrSeqNumAlreadyApplied:\n\t\tfailCode = wtwire.CodePermanentFailure\n\n\t\t// TODO(conner): remove session state for protocol\n\t\t// violation. Could also double as clean up method for\n\t\t// session-related state.\n\n\tcase err == wtdb.ErrLastAppliedReversion:\n\t\tfailCode = wtwire.StateUpdateCodeClientBehind\n\n\tcase err == wtdb.ErrSessionConsumed:\n\t\tfailCode = wtwire.StateUpdateCodeMaxUpdatesExceeded\n\n\tcase err == wtdb.ErrUpdateOutOfOrder:\n\t\tfailCode = wtwire.StateUpdateCodeSeqNumOutOfOrder\n\n\tdefault:\n\t\tfailCode = wtwire.CodeTemporaryFailure\n\t}\n\n\tif s.cfg.NoAckUpdates {\n\t\treturn &connFailure{\n\t\t\tID:   *id,\n\t\t\tCode: failCode,\n\t\t}\n\t}\n\n\treturn s.replyStateUpdate(\n\t\tpeer, id, failCode, lastApplied,\n\t)\n}\n\n// replyStateUpdate sends a response to a StateUpdate from a client. If the\n// status code in the reply is OK, the error from the write will be bubbled up.\n// Otherwise, this method returns a connection error to ensure we don't continue\n// communication with the client.",
+      "length": 1619,
+      "tokens": 195,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) replyStateUpdate(peer Peer, id *wtdb.SessionID,",
+      "content": "func (s *Server) replyStateUpdate(peer Peer, id *wtdb.SessionID,\n\tcode wtwire.StateUpdateCode, lastApplied uint16) error {\n\n\tmsg := &wtwire.StateUpdateReply{\n\t\tCode:        code,\n\t\tLastApplied: lastApplied,\n\t}\n\n\terr := s.sendMessage(peer, msg)\n\tif err != nil {\n\t\tlog.Errorf(\"unable to send StateUpdateReply to %s\", id)\n\t}\n\n\t// Return the write error if the request succeeded.\n\tif code == wtwire.CodeOK {\n\t\treturn err\n\t}\n\n\t// Otherwise the request failed, return a connection failure to\n\t// disconnect the client.\n\treturn &connFailure{\n\t\tID:   *id,\n\t\tCode: code,\n\t}\n}\n",
+      "length": 478,
+      "tokens": 70,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/shachain/producer.go",
+  "package": "shachain",
+  "sections": [
+    {
+      "slug": "type Producer interface {",
+      "content": "type Producer interface {\n\t// AtIndex produces a secret by evaluating using the initial seed and a\n\t// particular index.\n\tAtIndex(uint64) (*chainhash.Hash, error)\n\n\t// Encode writes a binary serialization of the Producer implementation\n\t// to the passed io.Writer.\n\tEncode(io.Writer) error\n}\n\n// RevocationProducer is an implementation of Producer interface using the\n// shachain PRF construct. Starting with a single 32-byte element generated\n// from a CSPRNG, shachain is able to efficiently generate a nearly unbounded\n// number of secrets while maintaining a constant amount of storage. The\n// original description of shachain can be found here:\n// https://github.com/rustyrussell/ccan/blob/master/ccan/crypto/shachain/design.txt\n// with supplementary material here:\n// https://github.com/lightningnetwork/lightning-rfc/blob/master/03-transactions.md#per-commitment-secret-requirements",
+      "length": 847,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "type RevocationProducer struct {",
+      "content": "type RevocationProducer struct {\n\t// root is the element from which we may generate all hashes which\n\t// corresponds to the index domain [281474976710655,0].\n\troot *element\n}\n\n// A compile time check to ensure RevocationProducer implements the Producer\n// interface.\nvar _ Producer = (*RevocationProducer)(nil)\n\n// NewRevocationProducer creates new instance of shachain producer.",
+      "length": 337,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRevocationProducer(root chainhash.Hash) *RevocationProducer {",
+      "content": "func NewRevocationProducer(root chainhash.Hash) *RevocationProducer {\n\treturn &RevocationProducer{\n\t\troot: &element{\n\t\t\tindex: rootIndex,\n\t\t\thash:  root,\n\t\t}}\n}\n\n// NewRevocationProducerFromBytes deserializes an instance of a\n// RevocationProducer encoded in the passed byte slice, returning a fully\n// initialized instance of a RevocationProducer.",
+      "length": 269,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRevocationProducerFromBytes(data []byte) (*RevocationProducer, error) {",
+      "content": "func NewRevocationProducerFromBytes(data []byte) (*RevocationProducer, error) {\n\troot, err := chainhash.NewHash(data)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &RevocationProducer{\n\t\troot: &element{\n\t\t\tindex: rootIndex,\n\t\t\thash:  *root,\n\t\t},\n\t}, nil\n}\n\n// AtIndex produces a secret by evaluating using the initial seed and a\n// particular index.\n//\n// NOTE: Part of the Producer interface.",
+      "length": 298,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *RevocationProducer) AtIndex(v uint64) (*chainhash.Hash, error) {",
+      "content": "func (p *RevocationProducer) AtIndex(v uint64) (*chainhash.Hash, error) {\n\tind := newIndex(v)\n\n\telement, err := p.root.derive(ind)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &element.hash, nil\n}\n\n// Encode writes a binary serialization of the Producer implementation to the\n// passed io.Writer.\n//\n// NOTE: Part of the Producer interface.",
+      "length": 255,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *RevocationProducer) Encode(w io.Writer) error {",
+      "content": "func (p *RevocationProducer) Encode(w io.Writer) error {\n\t_, err := w.Write(p.root.hash[:])\n\treturn err\n}\n",
+      "length": 46,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

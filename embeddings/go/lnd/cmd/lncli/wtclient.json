@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/wtclient.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func wtclientCommands() []cli.Command {",
+      "content": "func wtclientCommands() []cli.Command {\n\treturn []cli.Command{\n\t\t{\n\t\t\tName:     \"wtclient\",\n\t\t\tUsage:    \"Interact with the watchtower client.\",\n\t\t\tCategory: \"Watchtower\",\n\t\t\tSubcommands: []cli.Command{\n\t\t\t\taddTowerCommand,\n\t\t\t\tremoveTowerCommand,\n\t\t\t\tlistTowersCommand,\n\t\t\t\tgetTowerCommand,\n\t\t\t\tstatsCommand,\n\t\t\t\tpolicyCommand,\n\t\t\t},\n\t\t},\n\t}\n}\n\n// getWtclient initializes a connection to the watchtower client RPC in order to\n// interact with it.",
+      "length": 389,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func getWtclient(ctx *cli.Context) (wtclientrpc.WatchtowerClientClient, func()) {",
+      "content": "func getWtclient(ctx *cli.Context) (wtclientrpc.WatchtowerClientClient, func()) {\n\tconn := getClientConn(ctx, false)\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\treturn wtclientrpc.NewWatchtowerClientClient(conn), cleanUp\n}\n\nvar addTowerCommand = cli.Command{\n\tName:  \"add\",\n\tUsage: \"Register a watchtower to use for future sessions/backups.\",\n\tDescription: \"If the watchtower has already been registered, then \" +\n\t\t\"this command serves as a way of updating the watchtower \" +\n\t\t\"with new addresses it is reachable over.\",\n\tArgsUsage: \"pubkey@address\",\n\tAction:    actionDecorator(addTower),\n}\n",
+      "length": 492,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func addTower(ctx *cli.Context) error {",
+      "content": "func addTower(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() != 1 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"add\")\n\t}\n\n\tparts := strings.Split(ctx.Args().First(), \"@\")\n\tif len(parts) != 2 {\n\t\treturn errors.New(\"expected tower of format pubkey@address\")\n\t}\n\tpubKey, err := hex.DecodeString(parts[0])\n\tif err != nil {\n\t\treturn fmt.Errorf(\"invalid public key: %v\", err)\n\t}\n\taddress := parts[1]\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.AddTowerRequest{\n\t\tPubkey:  pubKey,\n\t\tAddress: address,\n\t}\n\tresp, err := client.AddTower(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar removeTowerCommand = cli.Command{\n\tName: \"remove\",\n\tUsage: \"Remove a watchtower to prevent its use for future \" +\n\t\t\"sessions/backups.\",\n\tDescription: \"An optional address can be provided to remove, \" +\n\t\t\"indicating that the watchtower is no longer reachable at \" +\n\t\t\"this address. If an address isn't provided, then the \" +\n\t\t\"watchtower will no longer be used for future sessions/backups.\",\n\tArgsUsage: \"pubkey | pubkey@address\",\n\tAction:    actionDecorator(removeTower),\n}\n",
+      "length": 1167,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func removeTower(ctx *cli.Context) error {",
+      "content": "func removeTower(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() != 1 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"remove\")\n\t}\n\n\t// The command can have only one argument, but it can be interpreted in\n\t// either of the following formats:\n\t//\n\t//   pubkey or pubkey@address\n\t//\n\t// The hex-encoded public key of the watchtower is always required,\n\t// while the second is an optional address we'll remove from the\n\t// watchtower's database record.\n\tparts := strings.Split(ctx.Args().First(), \"@\")\n\tif len(parts) > 2 {\n\t\treturn errors.New(\"expected tower of format pubkey@address\")\n\t}\n\tpubKey, err := hex.DecodeString(parts[0])\n\tif err != nil {\n\t\treturn fmt.Errorf(\"invalid public key: %v\", err)\n\t}\n\tvar address string\n\tif len(parts) == 2 {\n\t\taddress = parts[1]\n\t}\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.RemoveTowerRequest{\n\t\tPubkey:  pubKey,\n\t\tAddress: address,\n\t}\n\tresp, err := client.RemoveTower(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar listTowersCommand = cli.Command{\n\tName:  \"towers\",\n\tUsage: \"Display information about all registered watchtowers.\",\n\tFlags: []cli.Flag{\n\t\tcli.BoolFlag{\n\t\t\tName: \"include_sessions\",\n\t\t\tUsage: \"include sessions with the watchtower in the \" +\n\t\t\t\t\"response\",\n\t\t},\n\t},\n\tAction: actionDecorator(listTowers),\n}\n",
+      "length": 1353,
+      "tokens": 195,
+      "embedding": []
+    },
+    {
+      "slug": "func listTowers(ctx *cli.Context) error {",
+      "content": "func listTowers(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() > 0 || ctx.NumFlags() > 1 {\n\t\treturn cli.ShowCommandHelp(ctx, \"towers\")\n\t}\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.ListTowersRequest{\n\t\tIncludeSessions: ctx.Bool(\"include_sessions\"),\n\t}\n\tresp, err := client.ListTowers(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar getTowerCommand = cli.Command{\n\tName:      \"tower\",\n\tUsage:     \"Display information about a specific registered watchtower.\",\n\tArgsUsage: \"pubkey\",\n\tFlags: []cli.Flag{\n\t\tcli.BoolFlag{\n\t\t\tName: \"include_sessions\",\n\t\t\tUsage: \"include sessions with the watchtower in the \" +\n\t\t\t\t\"response\",\n\t\t},\n\t},\n\tAction: actionDecorator(getTower),\n}\n",
+      "length": 777,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func getTower(ctx *cli.Context) error {",
+      "content": "func getTower(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() != 1 || ctx.NumFlags() > 1 {\n\t\treturn cli.ShowCommandHelp(ctx, \"tower\")\n\t}\n\n\t// The command only has one argument, which we expect to be the\n\t// hex-encoded public key of the watchtower we'll display information\n\t// about.\n\tpubKey, err := hex.DecodeString(ctx.Args().Get(0))\n\tif err != nil {\n\t\treturn fmt.Errorf(\"invalid public key: %v\", err)\n\t}\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.GetTowerInfoRequest{\n\t\tPubkey:          pubKey,\n\t\tIncludeSessions: ctx.Bool(\"include_sessions\"),\n\t}\n\tresp, err := client.GetTowerInfo(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar statsCommand = cli.Command{\n\tName:   \"stats\",\n\tUsage:  \"Display the session stats of the watchtower client.\",\n\tAction: actionDecorator(stats),\n}\n",
+      "length": 887,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func stats(ctx *cli.Context) error {",
+      "content": "func stats(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() > 0 || ctx.NumFlags() > 0 {\n\t\treturn cli.ShowCommandHelp(ctx, \"stats\")\n\t}\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.StatsRequest{}\n\tresp, err := client.Stats(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n\nvar policyCommand = cli.Command{\n\tName:   \"policy\",\n\tUsage:  \"Display the active watchtower client policy configuration.\",\n\tAction: actionDecorator(policy),\n\tFlags: []cli.Flag{\n\t\tcli.BoolFlag{\n\t\t\tName: \"legacy\",\n\t\t\tUsage: \"Retrieve the legacy tower client's current \" +\n\t\t\t\t\"policy. (default)\",\n\t\t},\n\t\tcli.BoolFlag{\n\t\t\tName:  \"anchor\",\n\t\t\tUsage: \"Retrieve the anchor tower client's current policy.\",\n\t\t},\n\t},\n}\n",
+      "length": 785,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func policy(ctx *cli.Context) error {",
+      "content": "func policy(ctx *cli.Context) error {\n\tctxc := getContext()\n\n\t// Display the command's help message if the number of arguments/flags\n\t// is not what we expect.\n\tif ctx.NArg() > 0 || ctx.NumFlags() > 1 {\n\t\treturn cli.ShowCommandHelp(ctx, \"policy\")\n\t}\n\n\tvar policyType wtclientrpc.PolicyType\n\tswitch {\n\tcase ctx.Bool(\"anchor\"):\n\t\tpolicyType = wtclientrpc.PolicyType_ANCHOR\n\tcase ctx.Bool(\"legacy\"):\n\t\tpolicyType = wtclientrpc.PolicyType_LEGACY\n\n\t// For backwards compatibility with original rpc behavior.\n\tdefault:\n\t\tpolicyType = wtclientrpc.PolicyType_LEGACY\n\t}\n\n\tclient, cleanUp := getWtclient(ctx)\n\tdefer cleanUp()\n\n\treq := &wtclientrpc.PolicyRequest{\n\t\tPolicyType: policyType,\n\t}\n\tresp, err := client.Policy(ctxc, req)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\treturn nil\n}\n",
+      "length": 718,
+      "tokens": 90,
+      "embedding": []
+    }
+  ]
+}

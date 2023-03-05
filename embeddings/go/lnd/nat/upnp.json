@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/nat/upnp.go",
+  "package": "nat",
+  "sections": [
+    {
+      "slug": "type UPnP struct {",
+      "content": "type UPnP struct {\n\tdevice *upnp.IGD\n\n\tforwardedPortsMtx sync.Mutex\n\tforwardedPorts    map[uint16]struct{}\n}\n\n// DiscoverUPnP scans the local network for a UPnP enabled device.",
+      "length": 151,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func DiscoverUPnP(ctx context.Context) (*UPnP, error) {",
+      "content": "func DiscoverUPnP(ctx context.Context) (*UPnP, error) {\n\t// Scan the local network for a UPnP-enabled device.\n\tdevice, err := upnp.DiscoverCtx(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tu := &UPnP{\n\t\tdevice:         device,\n\t\tforwardedPorts: make(map[uint16]struct{}),\n\t}\n\n\t// We'll then attempt to retrieve the external IP address of this\n\t// device to ensure it is not behind multiple NATs.\n\tif _, err := u.ExternalIP(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn u, nil\n}\n\n// ExternalIP returns the external IP address of the UPnP enabled device.",
+      "length": 475,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UPnP) ExternalIP() (net.IP, error) {",
+      "content": "func (u *UPnP) ExternalIP() (net.IP, error) {\n\tip, err := u.device.ExternalIP()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif isPrivateIP(net.ParseIP(ip)) {\n\t\treturn nil, ErrMultipleNAT\n\t}\n\n\treturn net.ParseIP(ip), nil\n}\n\n// AddPortMapping enables port forwarding for the given port.",
+      "length": 222,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UPnP) AddPortMapping(port uint16) error {",
+      "content": "func (u *UPnP) AddPortMapping(port uint16) error {\n\tu.forwardedPortsMtx.Lock()\n\tdefer u.forwardedPortsMtx.Unlock()\n\n\tif err := u.device.Forward(port, \"\"); err != nil {\n\t\treturn err\n\t}\n\n\tu.forwardedPorts[port] = struct{}{}\n\n\treturn nil\n}\n\n// DeletePortMapping disables port forwarding for the given port.",
+      "length": 240,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UPnP) DeletePortMapping(port uint16) error {",
+      "content": "func (u *UPnP) DeletePortMapping(port uint16) error {\n\tu.forwardedPortsMtx.Lock()\n\tdefer u.forwardedPortsMtx.Unlock()\n\n\tif _, exists := u.forwardedPorts[port]; !exists {\n\t\treturn fmt.Errorf(\"port %d is not being forwarded\", port)\n\t}\n\n\tif err := u.device.Clear(port); err != nil {\n\t\treturn err\n\t}\n\n\tdelete(u.forwardedPorts, port)\n\n\treturn nil\n}\n\n// ForwardedPorts returns a list of ports currently being forwarded.",
+      "length": 343,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UPnP) ForwardedPorts() []uint16 {",
+      "content": "func (u *UPnP) ForwardedPorts() []uint16 {\n\tu.forwardedPortsMtx.Lock()\n\tdefer u.forwardedPortsMtx.Unlock()\n\n\tports := make([]uint16, 0, len(u.forwardedPorts))\n\tfor port := range u.forwardedPorts {\n\t\tports = append(ports, port)\n\t}\n\n\treturn ports\n}\n\n// Name returns the name of the specific NAT traversal technique used.",
+      "length": 264,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *UPnP) Name() string {",
+      "content": "func (u *UPnP) Name() string {\n\treturn \"UPnP\"\n}\n",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

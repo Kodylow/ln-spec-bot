@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/create_session.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type CreateSession struct {",
+      "content": "type CreateSession struct {\n\t// BlobType specifies the blob format that must be used by all updates sent\n\t// under the session key used to negotiate this session.\n\tBlobType blob.Type\n\n\t// MaxUpdates is the maximum number of updates the watchtower will honor\n\t// for this session.\n\tMaxUpdates uint16\n\n\t// RewardBase is the fixed amount allocated to the tower when the\n\t// policy's blob type specifies a reward for the tower. This is taken\n\t// before adding the proportional reward.\n\tRewardBase uint32\n\n\t// RewardRate is the fraction of the total balance of the revoked\n\t// commitment that the watchtower is entitled to. This value is\n\t// expressed in millionths of the total balance.\n\tRewardRate uint32\n\n\t// SweepFeeRate expresses the intended fee rate to be used when\n\t// constructing the justice transaction. All sweep transactions created\n\t// for this session must use this value during construction, and the\n\t// signatures must implicitly commit to the resulting output values.\n\tSweepFeeRate chainfee.SatPerKWeight\n}\n\n// A compile time check to ensure CreateSession implements the wtwire.Message\n// interface.\nvar _ Message = (*CreateSession)(nil)\n\n// Decode deserializes a serialized CreateSession message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 1277,
+      "tokens": 200,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSession) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (m *CreateSession) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&m.BlobType,\n\t\t&m.MaxUpdates,\n\t\t&m.RewardBase,\n\t\t&m.RewardRate,\n\t\t&m.SweepFeeRate,\n\t)\n}\n\n// Encode serializes the target CreateSession into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 271,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSession) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (m *CreateSession) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tm.BlobType,\n\t\tm.MaxUpdates,\n\t\tm.RewardBase,\n\t\tm.RewardRate,\n\t\tm.SweepFeeRate,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 236,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSession) MsgType() MessageType {",
+      "content": "func (m *CreateSession) MsgType() MessageType {\n\treturn MsgCreateSession\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a CreateSession\n// complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 216,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSession) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (m *CreateSession) MaxPayloadLength(uint32) uint32 {\n\treturn 2 + 2 + 4 + 4 + 8 // 20\n}\n",
+      "length": 32,
+      "tokens": 13,
+      "embedding": []
+    }
+  ]
+}

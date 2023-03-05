@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnencrypt/crypto.go",
+  "package": "lnencrypt",
+  "sections": [
+    {
+      "slug": "type EncrypterDecrypter interface {",
+      "content": "type EncrypterDecrypter interface {\n\t// EncryptPayloadToWriter attempts to write the set of provided bytes\n\t// into the passed io.Writer in an encrypted form.\n\tEncryptPayloadToWriter([]byte, io.Writer) error\n\n\t// DecryptPayloadFromReader attempts to decrypt the encrypted bytes\n\t// within the passed io.Reader instance using the key derived from\n\t// the passed keyRing.\n\tDecryptPayloadFromReader(io.Reader) ([]byte, error)\n}\n\n// Encrypter is a struct responsible for encrypting and decrypting data.",
+      "length": 452,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "type Encrypter struct {",
+      "content": "type Encrypter struct {\n\tencryptionKey []byte\n}\n\n// KeyRingEncrypter derives an encryption key to encrypt all our files that are\n// written to disk and returns an Encrypter object holding the key.\n//\n// The key itself, is the sha2 of a base key that we get from the keyring. We\n// derive the key this way as we don't force the HSM (or any future\n// abstractions) to be able to derive and know of the cipher that we'll use\n// within our protocol.",
+      "length": 412,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func KeyRingEncrypter(keyRing keychain.KeyRing) (*Encrypter, error) {",
+      "content": "func KeyRingEncrypter(keyRing keychain.KeyRing) (*Encrypter, error) {\n\t//  key = SHA256(baseKey)\n\tbaseKey, err := keyRing.DeriveKey(\n\t\tbaseEncryptionKeyLoc,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tencryptionKey := sha256.Sum256(\n\t\tbaseKey.PubKey.SerializeCompressed(),\n\t)\n\n\t// TODO(roasbeef): throw back in ECDH?\n\n\treturn &Encrypter{\n\t\tencryptionKey: encryptionKey[:],\n\t}, nil\n}\n\n// EncryptPayloadToWriter attempts to write the set of provided bytes into the\n// passed io.Writer in an encrypted form. We use a 24-byte chachapoly AEAD\n// instance with a randomized nonce that's pre-pended to the final payload and\n// used as associated data in the AEAD.",
+      "length": 563,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (e Encrypter) EncryptPayloadToWriter(payload []byte,",
+      "content": "func (e Encrypter) EncryptPayloadToWriter(payload []byte,\n\tw io.Writer) error {\n\n\t// Before encryption, we'll initialize our cipher with the target\n\t// encryption key, and also read out our random 24-byte nonce we use\n\t// for encryption. Note that we use NewX, not New, as the latter\n\t// version requires a 12-byte nonce, not a 24-byte nonce.\n\tcipher, err := chacha20poly1305.NewX(e.encryptionKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\tvar nonce [chacha20poly1305.NonceSizeX]byte\n\tif _, err := rand.Read(nonce[:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Finally, we encrypted the final payload, and write out our\n\t// ciphertext with nonce pre-pended.\n\tciphertext := cipher.Seal(nil, nonce[:], payload, nonce[:])\n\n\tif _, err := w.Write(nonce[:]); err != nil {\n\t\treturn err\n\t}\n\tif _, err := w.Write(ciphertext); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// DecryptPayloadFromReader attempts to decrypt the encrypted bytes within the\n// passed io.Reader instance using the key derived from the passed keyRing. For\n// further details regarding the key derivation protocol, see the\n// KeyRingEncrypter function.",
+      "length": 1010,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func (e Encrypter) DecryptPayloadFromReader(payload io.Reader) ([]byte,",
+      "content": "func (e Encrypter) DecryptPayloadFromReader(payload io.Reader) ([]byte,\n\terror) {\n\n\t// Next, we'll read out the entire blob as we need to isolate the nonce\n\t// from the rest of the ciphertext.\n\tpackedPayload, err := ioutil.ReadAll(payload)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tif len(packedPayload) < chacha20poly1305.NonceSizeX {\n\t\treturn nil, fmt.Errorf(\"payload size too small, must be at \"+\n\t\t\t\"least %v bytes\", chacha20poly1305.NonceSizeX)\n\t}\n\n\tnonce := packedPayload[:chacha20poly1305.NonceSizeX]\n\tciphertext := packedPayload[chacha20poly1305.NonceSizeX:]\n\n\t// Now that we have the cipher text and the nonce separated, we can go\n\t// ahead and decrypt the final blob so we can properly serialize.\n\tcipher, err := chacha20poly1305.NewX(e.encryptionKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tplaintext, err := cipher.Open(nil, nonce, ciphertext, nonce)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn plaintext, nil\n}\n",
+      "length": 822,
+      "tokens": 123,
+      "embedding": []
+    }
+  ]
+}

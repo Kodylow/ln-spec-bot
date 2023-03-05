@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/chainedacceptor.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "type ChainedAcceptor struct {",
+      "content": "type ChainedAcceptor struct {\n\tacceptorID uint64 // To be used atomically.\n\n\t// acceptors is a map of ChannelAcceptors that will be evaluated when\n\t// the ChainedAcceptor's Accept method is called.\n\tacceptors    map[uint64]ChannelAcceptor\n\tacceptorsMtx sync.RWMutex\n}\n\n// NewChainedAcceptor initializes a ChainedAcceptor.",
+      "length": 283,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChainedAcceptor() *ChainedAcceptor {",
+      "content": "func NewChainedAcceptor() *ChainedAcceptor {\n\treturn &ChainedAcceptor{\n\t\tacceptors: make(map[uint64]ChannelAcceptor),\n\t}\n}\n\n// AddAcceptor adds a ChannelAcceptor to this ChainedAcceptor.\n//\n// NOTE: Part of the MultiplexAcceptor interface.",
+      "length": 187,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainedAcceptor) AddAcceptor(acceptor ChannelAcceptor) uint64 {",
+      "content": "func (c *ChainedAcceptor) AddAcceptor(acceptor ChannelAcceptor) uint64 {\n\tid := atomic.AddUint64(&c.acceptorID, 1)\n\n\tc.acceptorsMtx.Lock()\n\tc.acceptors[id] = acceptor\n\tc.acceptorsMtx.Unlock()\n\n\t// Return the id so that a caller can call RemoveAcceptor.\n\treturn id\n}\n\n// RemoveAcceptor removes a ChannelAcceptor from this ChainedAcceptor given\n// an ID.\n//\n// NOTE: Part of the MultiplexAcceptor interface.",
+      "length": 319,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainedAcceptor) RemoveAcceptor(id uint64) {",
+      "content": "func (c *ChainedAcceptor) RemoveAcceptor(id uint64) {\n\tc.acceptorsMtx.Lock()\n\tdelete(c.acceptors, id)\n\tc.acceptorsMtx.Unlock()\n}\n\n// numAcceptors returns the number of acceptors contained in the\n// ChainedAcceptor.",
+      "length": 154,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainedAcceptor) numAcceptors() int {",
+      "content": "func (c *ChainedAcceptor) numAcceptors() int {\n\tc.acceptorsMtx.RLock()\n\tdefer c.acceptorsMtx.RUnlock()\n\treturn len(c.acceptors)\n}\n\n// Accept evaluates the results of all ChannelAcceptors in the acceptors map\n// and returns the conjunction of all these predicates.\n//\n// NOTE: Part of the ChannelAcceptor interface.",
+      "length": 259,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChainedAcceptor) Accept(req *ChannelAcceptRequest) *ChannelAcceptResponse {",
+      "content": "func (c *ChainedAcceptor) Accept(req *ChannelAcceptRequest) *ChannelAcceptResponse {\n\tc.acceptorsMtx.RLock()\n\tdefer c.acceptorsMtx.RUnlock()\n\n\tvar finalResp ChannelAcceptResponse\n\n\tfor _, acceptor := range c.acceptors {\n\t\t// Call our acceptor to determine whether we want to accept this\n\t\t// channel.\n\t\tacceptorResponse := acceptor.Accept(req)\n\n\t\t// If we should reject the channel, we can just exit early. This\n\t\t// has the effect of returning the error belonging to our first\n\t\t// failed acceptor.\n\t\tif acceptorResponse.RejectChannel() {\n\t\t\treturn acceptorResponse\n\t\t}\n\n\t\t// If we have accepted the channel, we need to set the other\n\t\t// fields that were set in the response. However, since we are\n\t\t// dealing with multiple responses, we need to make sure that we\n\t\t// have not received inconsistent values (eg a csv delay of 1\n\t\t// from one acceptor, and a delay of 120 from another). We\n\t\t// set each value on our final response if it has not been set\n\t\t// yet, and allow duplicate sets if the value is the same. If\n\t\t// we cannot set a field, we return an error response.\n\t\tvar err error\n\t\tfinalResp, err = mergeResponse(finalResp, *acceptorResponse)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"response for: %x has inconsistent values: %v\",\n\t\t\t\treq.OpenChanMsg.PendingChannelID, err)\n\n\t\t\treturn NewChannelAcceptResponse(\n\t\t\t\tfalse, errChannelRejected, nil, 0, 0,\n\t\t\t\t0, 0, 0, 0, false,\n\t\t\t)\n\t\t}\n\t}\n\n\t// If we have gone through all of our acceptors with no objections, we\n\t// can return an acceptor with a nil error.\n\treturn &finalResp\n}\n\n// A compile-time constraint to ensure ChainedAcceptor implements the\n// MultiplexAcceptor interface.\nvar _ MultiplexAcceptor = (*ChainedAcceptor)(nil)\n",
+      "length": 1555,
+      "tokens": 243,
+      "embedding": []
+    }
+  ]
+}

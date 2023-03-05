@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/errors.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "type ChanAcceptError struct {",
+      "content": "type ChanAcceptError struct {\n\terror\n}\n",
+      "length": 7,
+      "tokens": 2,
+      "embedding": []
+    }
+  ]
+}

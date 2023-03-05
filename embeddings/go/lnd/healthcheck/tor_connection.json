@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/healthcheck/tor_connection.go",
+  "package": "healthcheck",
+  "sections": [
+    {
+      "slug": "func CheckTorServiceStatus(tc *tor.Controller,",
+      "content": "func CheckTorServiceStatus(tc *tor.Controller,\n\tcreateService func() error) error {\n\n\t// Send a cmd using GETINFO onions/current and checks that our known\n\t// onion serviceID can be found.\n\terr := tc.CheckOnionService()\n\tif err == nil {\n\t\treturn nil\n\t}\n\n\tlog.Debugf(\"Checking tor service got: %v\", err)\n\n\tswitch {\n\t// We will get an EOF if the connection is lost. In this case, we will\n\t// return an error and wait for the Tor daemon to come back. We won't\n\t// attempt to make a new connection since we know Tor daemon is down.\n\tcase errors.Is(err, io.EOF), errors.Is(err, syscall.ECONNREFUSED):\n\t\treturn fmt.Errorf(\"Tor daemon connection lost, \" +\n\t\t\t\"check if Tor is up and running\")\n\n\t// Once Tor daemon is down, we will get a broken pipe error when we use\n\t// the existing connection to make a GETINFO request since that socket\n\t// has now been closed. As Tor daemon might not be running yet, we will\n\t// attempt to make a new connection till Tor daemon is back.\n\tcase errors.Is(err, syscall.EPIPE):\n\t\tlog.Warnf(\"Tor connection lost, attempting a tor controller \" +\n\t\t\t\"re-connection...\")\n\n\t\t// If the restart fails, we will attempt again during our next\n\t\t// healthcheck cycle.\n\t\treturn restartTorController(tc, createService)\n\n\t// If this is not a connection layer error, such as\n\t// ErrServiceNotCreated or ErrServiceIDMismatch, there's little we can\n\t// do but to report the error to the user.\n\tdefault:\n\t\treturn err\n\t}\n}\n\n// restartTorController attempts to make a new connection to the Tor daemon and\n// re-create the Hidden Service.",
+      "length": 1456,
+      "tokens": 244,
+      "embedding": []
+    },
+    {
+      "slug": "func restartTorController(tc *tor.Controller,",
+      "content": "func restartTorController(tc *tor.Controller,\n\tcreateService func() error) error {\n\n\terr := tc.Reconnect()\n\n\t// If we get a connection refused error, it means Tor daemon might not\n\t// be started.\n\tif errors.Is(err, syscall.ECONNREFUSED) {\n\t\treturn fmt.Errorf(\"check if Tor daemon is running\")\n\t}\n\n\t// Otherwise, we get an unexpected and return it.\n\tif err != nil {\n\t\tlog.Errorf(\"Re-connectting tor got err: %v\", err)\n\t\treturn err\n\t}\n\n\t// Recreate the Hidden Service.\n\tif err := createService(); err != nil {\n\t\tlog.Errorf(\"Re-create service tor got err: %v\", err)\n\t\treturn err\n\t}\n\n\tlog.Info(\"Successfully restarted tor connection!\")\n\n\treturn nil\n}\n",
+      "length": 575,
+      "tokens": 90,
+      "embedding": []
+    }
+  ]
+}

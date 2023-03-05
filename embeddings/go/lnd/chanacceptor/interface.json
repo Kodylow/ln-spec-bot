@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/interface.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "type ChannelAcceptRequest struct {",
+      "content": "type ChannelAcceptRequest struct {\n\t// Node is the public key of the node requesting to open a channel.\n\tNode *btcec.PublicKey\n\n\t// OpenChanMsg is the actual OpenChannel protocol message that the peer\n\t// sent to us.\n\tOpenChanMsg *lnwire.OpenChannel\n}\n\n// ChannelAcceptResponse is a struct containing the response to a request to\n// open an inbound channel. Note that fields added to this struct must be added\n// to the mergeResponse function to allow combining of responses from different\n// acceptors.",
+      "length": 457,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelAcceptResponse struct {",
+      "content": "type ChannelAcceptResponse struct {\n\t// ChanAcceptError the error returned by the channel acceptor. If the\n\t// channel was accepted, this value will be nil.\n\tChanAcceptError\n\n\t// UpfrontShutdown is the address that we will set as our upfront\n\t// shutdown address.\n\tUpfrontShutdown lnwire.DeliveryAddress\n\n\t// CSVDelay is the csv delay we require for the remote peer.\n\tCSVDelay uint16\n\n\t// Reserve is the amount that require the remote peer hold in reserve\n\t// on the channel.\n\tReserve btcutil.Amount\n\n\t// InFlightTotal is the maximum amount that we allow the remote peer to\n\t// hold in outstanding htlcs.\n\tInFlightTotal lnwire.MilliSatoshi\n\n\t// HtlcLimit is the maximum number of htlcs that we allow the remote\n\t// peer to offer us.\n\tHtlcLimit uint16\n\n\t// MinHtlcIn is the minimum incoming htlc value allowed on the channel.\n\tMinHtlcIn lnwire.MilliSatoshi\n\n\t// MinAcceptDepth is the minimum depth that the initiator of the\n\t// channel should wait before considering the channel open.\n\tMinAcceptDepth uint16\n\n\t// ZeroConf indicates that the fundee wishes to send min_depth = 0 and\n\t// request a zero-conf channel with the counter-party.\n\tZeroConf bool\n}\n\n// NewChannelAcceptResponse is a constructor for a channel accept response,\n// which creates a response with an appropriately wrapped error (in the case of\n// a rejection) so that the error will be whitelisted and delivered to the\n// initiating peer. Accepted channels simply return a response containing a nil\n// error.",
+      "length": 1399,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChannelAcceptResponse(accept bool, acceptErr error,",
+      "content": "func NewChannelAcceptResponse(accept bool, acceptErr error,\n\tupfrontShutdown lnwire.DeliveryAddress, csvDelay, htlcLimit,\n\tminDepth uint16, reserve btcutil.Amount, inFlight,\n\tminHtlcIn lnwire.MilliSatoshi, zeroConf bool) *ChannelAcceptResponse {\n\n\tresp := &ChannelAcceptResponse{\n\t\tUpfrontShutdown: upfrontShutdown,\n\t\tCSVDelay:        csvDelay,\n\t\tReserve:         reserve,\n\t\tInFlightTotal:   inFlight,\n\t\tHtlcLimit:       htlcLimit,\n\t\tMinHtlcIn:       minHtlcIn,\n\t\tMinAcceptDepth:  minDepth,\n\t\tZeroConf:        zeroConf,\n\t}\n\n\t// If we want to accept the channel, we return a response with a nil\n\t// error.\n\tif accept {\n\t\treturn resp\n\t}\n\n\t// Use a generic error when no custom error is provided.\n\tif acceptErr == nil {\n\t\tacceptErr = errChannelRejected\n\t}\n\n\tresp.ChanAcceptError = ChanAcceptError{\n\t\terror: acceptErr,\n\t}\n\n\treturn resp\n}\n\n// RejectChannel returns a boolean that indicates whether we should reject the\n// channel.",
+      "length": 831,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelAcceptResponse) RejectChannel() bool {",
+      "content": "func (c *ChannelAcceptResponse) RejectChannel() bool {\n\treturn c.error != nil\n}\n\n// ChannelAcceptor is an interface that represents  a predicate on the data\n// contained in ChannelAcceptRequest.",
+      "length": 135,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelAcceptor interface {",
+      "content": "type ChannelAcceptor interface {\n\tAccept(req *ChannelAcceptRequest) *ChannelAcceptResponse\n}\n\n// MultiplexAcceptor is an interface that abstracts the ability of a\n// ChannelAcceptor to contain sub-ChannelAcceptors.",
+      "length": 177,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type MultiplexAcceptor interface {",
+      "content": "type MultiplexAcceptor interface {\n\t// Embed the ChannelAcceptor.\n\tChannelAcceptor\n\n\t// AddAcceptor nests a ChannelAcceptor inside the MultiplexAcceptor.\n\tAddAcceptor(acceptor ChannelAcceptor) uint64\n\n\t// Remove a sub-ChannelAcceptor.\n\tRemoveAcceptor(id uint64)\n}\n",
+      "length": 220,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

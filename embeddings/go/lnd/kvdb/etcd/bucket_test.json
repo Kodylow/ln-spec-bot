@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/bucket_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestBucketKey(t *testing.T) {",
+      "content": "func TestBucketKey(t *testing.T) {\n\trootID := sha256.Sum256([]byte(\"@\"))\n\tkey := append(rootID[:], []byte(\"foo\")...)\n\tkey = append(key, 0xff)\n\trequire.Equal(t, string(key), BucketKey(\"foo\"))\n}\n\n// TestBucketVal tests that a key for a bucket value can be created correctly.",
+      "length": 231,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBucketVal(t *testing.T) {",
+      "content": "func TestBucketVal(t *testing.T) {\n\trootID := sha256.Sum256([]byte(\"@\"))\n\tkey := append(rootID[:], []byte(\"foo\")...)\n\tkey = append(key, 0xff)\n\n\tkeyID := sha256.Sum256(key)\n\trequire.Equal(t, string(keyID[:]), BucketVal(\"foo\"))\n}\n\n// TestSequenceKey tests that a key for a sequence can be created correctly.",
+      "length": 262,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSequenceKey(t *testing.T) {",
+      "content": "func TestSequenceKey(t *testing.T) {\n\trequire.Contains(t, SequenceKey(\"foo\", \"bar\", \"baz\"), \"$seq$\")\n}\n",
+      "length": 64,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/internal/musig2v040/sign.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "type PartialSignature struct {",
+      "content": "type PartialSignature struct {\n\tS *btcec.ModNScalar\n\n\tR *btcec.PublicKey\n}\n\n// NewPartialSignature returns a new instances of the partial sig struct.",
+      "length": 113,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPartialSignature(s *btcec.ModNScalar,",
+      "content": "func NewPartialSignature(s *btcec.ModNScalar,\n\tr *btcec.PublicKey) PartialSignature {\n\n\treturn PartialSignature{\n\t\tS: s,\n\t\tR: r,\n\t}\n}\n\n// Encode writes a serialized version of the partial signature to the passed\n// io.Writer",
+      "length": 169,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PartialSignature) Encode(w io.Writer) error {",
+      "content": "func (p *PartialSignature) Encode(w io.Writer) error {\n\tvar sBytes [32]byte\n\tp.S.PutBytes(&sBytes)\n\n\tif _, err := w.Write(sBytes[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// Decode attempts to parse a serialized PartialSignature stored in the passed\n// io reader.",
+      "length": 205,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PartialSignature) Decode(r io.Reader) error {",
+      "content": "func (p *PartialSignature) Decode(r io.Reader) error {\n\tp.S = new(btcec.ModNScalar)\n\n\tvar sBytes [32]byte\n\tif _, err := io.ReadFull(r, sBytes[:]); err != nil {\n\t\treturn nil\n\t}\n\n\toverflows := p.S.SetBytes(&sBytes)\n\tif overflows == 1 {\n\t\treturn ErrPartialSigInvalid\n\t}\n\n\treturn nil\n}\n\n// SignOption is a functional option argument that allows callers to modify the\n// way we generate musig2 schnorr signatures.",
+      "length": 337,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type SignOption func(*signOptions)",
+      "content": "type SignOption func(*signOptions)\n\n// signOptions houses the set of functional options that can be used to modify\n// the method used to generate the musig2 partial signature.",
+      "length": 138,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type signOptions struct {",
+      "content": "type signOptions struct {\n\t// fastSign determines if we'll skip the check at the end of the\n\t// routine where we attempt to verify the produced signature.\n\tfastSign bool\n\n\t// sortKeys determines if the set of keys should be sorted before doing\n\t// key aggregation.\n\tsortKeys bool\n\n\t// tweaks specifies a series of tweaks to be applied to the aggregated\n\t// public key, which also partially carries over into the signing\n\t// process.\n\ttweaks []KeyTweakDesc\n\n\t// taprootTweak specifies a taproot specific tweak.  of the tweaks\n\t// specified above. Normally we'd just apply the raw 32 byte tweak, but\n\t// for taproot, we first need to compute the aggregated key before\n\t// tweaking, and then use it as the internal key. This is required as\n\t// the taproot tweak also commits to the public key, which in this case\n\t// is the aggregated key before the tweak.\n\ttaprootTweak []byte\n\n\t// bip86Tweak specifies that the taproot tweak should be done in a BIP\n\t// 86 style, where we don't expect an actual tweak and instead just\n\t// commit to the public key itself.\n\tbip86Tweak bool\n}\n\n// defaultSignOptions returns the default set of signing operations.",
+      "length": 1089,
+      "tokens": 189,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultSignOptions() *signOptions {",
+      "content": "func defaultSignOptions() *signOptions {\n\treturn &signOptions{}\n}\n\n// WithFastSign forces signing to skip the extra verification step at the end.\n// Performance sensitive applications may opt to use this option to speed up\n// the signing operation.",
+      "length": 202,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func WithFastSign() SignOption {",
+      "content": "func WithFastSign() SignOption {\n\treturn func(o *signOptions) {\n\t\to.fastSign = true\n\t}\n}\n\n// WithSortedKeys determines if the set of signing public keys are to be sorted\n// or not before doing key aggregation.",
+      "length": 170,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func WithSortedKeys() SignOption {",
+      "content": "func WithSortedKeys() SignOption {\n\treturn func(o *signOptions) {\n\t\to.sortKeys = true\n\t}\n}\n\n// WithTweaks determines if the aggregated public key used should apply a\n// series of tweaks before key aggregation.",
+      "length": 168,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func WithTweaks(tweaks ...KeyTweakDesc) SignOption {",
+      "content": "func WithTweaks(tweaks ...KeyTweakDesc) SignOption {\n\treturn func(o *signOptions) {\n\t\to.tweaks = tweaks\n\t}\n}\n\n// WithTaprootSignTweak allows a caller to specify a tweak that should be used\n// in a bip 340 manner when signing. This differs from WithTweaks as the tweak\n// will be assumed to always be x-only and the intermediate aggregate key\n// before tweaking will be used to generate part of the tweak (as the taproot\n// tweak also commits to the internal key).\n//\n// This option should be used in the taproot context to create a valid\n// signature for the keypath spend for taproot, when the output key is actually\n// committing to a script path, or some other data.",
+      "length": 603,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func WithTaprootSignTweak(scriptRoot []byte) SignOption {",
+      "content": "func WithTaprootSignTweak(scriptRoot []byte) SignOption {\n\treturn func(o *signOptions) {\n\t\to.taprootTweak = scriptRoot\n\t}\n}\n\n// WithBip86SignTweak allows a caller to specify a tweak that should be used in\n// a bip 340 manner when signing, factoring in BIP 86 as well. This differs\n// from WithTaprootSignTweak as no true script root will be committed to,\n// instead we just commit to the internal key.\n//\n// This option should be used in the taproot context to create a valid\n// signature for the keypath spend for taproot, when the output key was\n// generated using BIP 86.",
+      "length": 504,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func WithBip86SignTweak() SignOption {",
+      "content": "func WithBip86SignTweak() SignOption {\n\treturn func(o *signOptions) {\n\t\to.bip86Tweak = true\n\t}\n}\n\n// Sign generates a musig2 partial signature given the passed key set, secret\n// nonce, public nonce, and private keys. This method returns an error if the\n// generated nonces are either too large, or end up mapping to the point at\n// infinity.",
+      "length": 295,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func Sign(secNonce [SecNonceSize]byte, privKey *btcec.PrivateKey,",
+      "content": "func Sign(secNonce [SecNonceSize]byte, privKey *btcec.PrivateKey,\n\tcombinedNonce [PubNonceSize]byte, pubKeys []*btcec.PublicKey,\n\tmsg [32]byte, signOpts ...SignOption) (*PartialSignature, error) {\n\n\t// First, parse the set of optional signing options.\n\topts := defaultSignOptions()\n\tfor _, option := range signOpts {\n\t\toption(opts)\n\t}\n\n\t// Compute the hash of all the keys here as we'll need it do aggregate\n\t// the keys and also at the final step of signing.\n\tkeysHash := keyHashFingerprint(pubKeys, opts.sortKeys)\n\tuniqueKeyIndex := secondUniqueKeyIndex(pubKeys, opts.sortKeys)\n\n\tkeyAggOpts := []KeyAggOption{\n\t\tWithKeysHash(keysHash), WithUniqueKeyIndex(uniqueKeyIndex),\n\t}\n\tswitch {\n\tcase opts.bip86Tweak:\n\t\tkeyAggOpts = append(\n\t\t\tkeyAggOpts, WithBIP86KeyTweak(),\n\t\t)\n\tcase opts.taprootTweak != nil:\n\t\tkeyAggOpts = append(\n\t\t\tkeyAggOpts, WithTaprootKeyTweak(opts.taprootTweak),\n\t\t)\n\tcase len(opts.tweaks) != 0:\n\t\tkeyAggOpts = append(keyAggOpts, WithKeyTweaks(opts.tweaks...))\n\t}\n\n\t// Next we'll construct the aggregated public key based on the set of\n\t// signers.\n\tcombinedKey, parityAcc, _, err := AggregateKeys(\n\t\tpubKeys, opts.sortKeys, keyAggOpts...,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Next we'll compute the value b, that blinds our second public\n\t// nonce:\n\t//  * b = h(tag=NonceBlindTag, combinedNonce || combinedKey || m).\n\tvar (\n\t\tnonceMsgBuf  bytes.Buffer\n\t\tnonceBlinder btcec.ModNScalar\n\t)\n\tnonceMsgBuf.Write(combinedNonce[:])\n\tnonceMsgBuf.Write(schnorr.SerializePubKey(combinedKey.FinalKey))\n\tnonceMsgBuf.Write(msg[:])\n\tnonceBlindHash := chainhash.TaggedHash(\n\t\tNonceBlindTag, nonceMsgBuf.Bytes(),\n\t)\n\tnonceBlinder.SetByteSlice(nonceBlindHash[:])\n\n\t// Next, we'll parse the public nonces into R1 and R2.\n\tr1J, err := btcec.ParseJacobian(\n\t\tcombinedNonce[:btcec.PubKeyBytesLenCompressed],\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tr2J, err := btcec.ParseJacobian(\n\t\tcombinedNonce[btcec.PubKeyBytesLenCompressed:],\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// With our nonce blinding value, we'll now combine both the public\n\t// nonces, using the blinding factor to tweak the second nonce:\n\t//  * R = R_1 + b*R_2\n\tvar nonce btcec.JacobianPoint\n\tbtcec.ScalarMultNonConst(&nonceBlinder, &r2J, &r2J)\n\tbtcec.AddNonConst(&r1J, &r2J, &nonce)\n\n\t// If the combined nonce it eh point at infinity, then we'll bail out.\n\tif nonce == infinityPoint {\n\t\tG := btcec.Generator()\n\t\tG.AsJacobian(&nonce)\n\t}\n\n\t// Next we'll parse out our two secret nonces, which we'll be using in\n\t// the core signing process below.\n\tvar k1, k2 btcec.ModNScalar\n\tk1.SetByteSlice(secNonce[:btcec.PrivKeyBytesLen])\n\tk2.SetByteSlice(secNonce[btcec.PrivKeyBytesLen:])\n\n\tif k1.IsZero() || k2.IsZero() {\n\t\treturn nil, ErrSecretNonceZero\n\t}\n\n\tnonce.ToAffine()\n\n\tnonceKey := btcec.NewPublicKey(&nonce.X, &nonce.Y)\n\n\t// If the nonce R has an odd y coordinate, then we'll negate both our\n\t// secret nonces.\n\tif nonce.Y.IsOdd() {\n\t\tk1.Negate()\n\t\tk2.Negate()\n\t}\n\n\tprivKeyScalar := privKey.Key\n\tif privKeyScalar.IsZero() {\n\t\treturn nil, ErrPrivKeyZero\n\t}\n\n\tpubKey := privKey.PubKey()\n\tpubKeyYIsOdd := func() bool {\n\t\tpubKeyBytes := pubKey.SerializeCompressed()\n\t\treturn pubKeyBytes[0] == secp.PubKeyFormatCompressedOdd\n\t}()\n\tcombinedKeyYIsOdd := func() bool {\n\t\tcombinedKeyBytes := combinedKey.FinalKey.SerializeCompressed()\n\t\treturn combinedKeyBytes[0] == secp.PubKeyFormatCompressedOdd\n\t}()\n\n\t// Next we'll compute our two parity factors for Q the combined public\n\t// key, and P, the public key we're signing with. If the keys are odd,\n\t// then we'll negate them.\n\tparityCombinedKey := new(btcec.ModNScalar).SetInt(1)\n\tparitySignKey := new(btcec.ModNScalar).SetInt(1)\n\tif combinedKeyYIsOdd {\n\t\tparityCombinedKey.Negate()\n\t}\n\tif pubKeyYIsOdd {\n\t\tparitySignKey.Negate()\n\t}\n\n\t// Before we sign below, we'll multiply by our various parity factors\n\t// to ensure that the signing key is properly negated (if necessary):\n\t//  * d = gv\u22c5gaccv\u22c5gp\u22c5d'\n\tprivKeyScalar.Mul(parityCombinedKey).Mul(paritySignKey).Mul(parityAcc)\n\n\t// Next we'll create the challenge hash that commits to the combined\n\t// nonce, combined public key and also the message:\n\t// * e = H(tag=ChallengeHashTag, R || Q || m) mod n\n\tvar challengeMsg bytes.Buffer\n\tchallengeMsg.Write(schnorr.SerializePubKey(nonceKey))\n\tchallengeMsg.Write(schnorr.SerializePubKey(combinedKey.FinalKey))\n\tchallengeMsg.Write(msg[:])\n\tchallengeBytes := chainhash.TaggedHash(\n\t\tChallengeHashTag, challengeMsg.Bytes(),\n\t)\n\tvar e btcec.ModNScalar\n\te.SetByteSlice(challengeBytes[:])\n\n\t// Next, we'll compute a, our aggregation coefficient for the key that\n\t// we're signing with.\n\ta := aggregationCoefficient(pubKeys, pubKey, keysHash, uniqueKeyIndex)\n\n\t// With mu constructed, we can finally generate our partial signature\n\t// as: s = (k1_1 + b*k_2 + e*a*d) mod n.\n\ts := new(btcec.ModNScalar)\n\ts.Add(&k1).Add(k2.Mul(&nonceBlinder)).Add(e.Mul(a).Mul(&privKeyScalar))\n\n\tsig := NewPartialSignature(s, nonceKey)\n\n\t// If we're not in fast sign mode, then we'll also validate our partial\n\t// signature.\n\tif !opts.fastSign {\n\t\tpubNonce := secNonceToPubNonce(secNonce)\n\t\tsigValid := sig.Verify(\n\t\t\tpubNonce, combinedNonce, pubKeys, pubKey, msg,\n\t\t\tsignOpts...,\n\t\t)\n\t\tif !sigValid {\n\t\t\treturn nil, fmt.Errorf(\"sig is invalid!\")\n\t\t}\n\t}\n\n\treturn &sig, nil\n}\n\n// Verify implements partial signature verification given the public nonce for\n// the signer, aggregate nonce, signer set and finally the message being\n// signed.",
+      "length": 5182,
+      "tokens": 634,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PartialSignature) Verify(pubNonce [PubNonceSize]byte,",
+      "content": "func (p *PartialSignature) Verify(pubNonce [PubNonceSize]byte,\n\tcombinedNonce [PubNonceSize]byte, keySet []*btcec.PublicKey,\n\tsigningKey *btcec.PublicKey, msg [32]byte, signOpts ...SignOption) bool {\n\n\tpubKey := schnorr.SerializePubKey(signingKey)\n\n\treturn verifyPartialSig(\n\t\tp, pubNonce, combinedNonce, keySet, pubKey, msg, signOpts...,\n\t) == nil\n}\n\n// verifyPartialSig attempts to verify a partial schnorr signature given the\n// necessary parameters. This is the internal version of Verify that returns\n// detailed errors.  signed.",
+      "length": 459,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func verifyPartialSig(partialSig *PartialSignature, pubNonce [PubNonceSize]byte,",
+      "content": "func verifyPartialSig(partialSig *PartialSignature, pubNonce [PubNonceSize]byte,\n\tcombinedNonce [PubNonceSize]byte, keySet []*btcec.PublicKey,\n\tpubKey []byte, msg [32]byte, signOpts ...SignOption) error {\n\n\topts := defaultSignOptions()\n\tfor _, option := range signOpts {\n\t\toption(opts)\n\t}\n\n\t// First we'll map the internal partial signature back into something\n\t// we can manipulate.\n\ts := partialSig.S\n\n\t// Next we'll parse out the two public nonces into something we can\n\t// use.\n\t//\n\n\t// Compute the hash of all the keys here as we'll need it do aggregate\n\t// the keys and also at the final step of verification.\n\tkeysHash := keyHashFingerprint(keySet, opts.sortKeys)\n\tuniqueKeyIndex := secondUniqueKeyIndex(keySet, opts.sortKeys)\n\n\tkeyAggOpts := []KeyAggOption{\n\t\tWithKeysHash(keysHash), WithUniqueKeyIndex(uniqueKeyIndex),\n\t}\n\tswitch {\n\tcase opts.bip86Tweak:\n\t\tkeyAggOpts = append(\n\t\t\tkeyAggOpts, WithBIP86KeyTweak(),\n\t\t)\n\tcase opts.taprootTweak != nil:\n\t\tkeyAggOpts = append(\n\t\t\tkeyAggOpts, WithTaprootKeyTweak(opts.taprootTweak),\n\t\t)\n\tcase len(opts.tweaks) != 0:\n\t\tkeyAggOpts = append(keyAggOpts, WithKeyTweaks(opts.tweaks...))\n\t}\n\n\t// Next we'll construct the aggregated public key based on the set of\n\t// signers.\n\tcombinedKey, parityAcc, _, err := AggregateKeys(\n\t\tkeySet, opts.sortKeys, keyAggOpts...,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Next we'll compute the value b, that blinds our second public\n\t// nonce:\n\t//  * b = h(tag=NonceBlindTag, combinedNonce || combinedKey || m).\n\tvar (\n\t\tnonceMsgBuf  bytes.Buffer\n\t\tnonceBlinder btcec.ModNScalar\n\t)\n\tnonceMsgBuf.Write(combinedNonce[:])\n\tnonceMsgBuf.Write(schnorr.SerializePubKey(combinedKey.FinalKey))\n\tnonceMsgBuf.Write(msg[:])\n\tnonceBlindHash := chainhash.TaggedHash(NonceBlindTag, nonceMsgBuf.Bytes())\n\tnonceBlinder.SetByteSlice(nonceBlindHash[:])\n\n\tr1J, err := btcec.ParseJacobian(\n\t\tcombinedNonce[:btcec.PubKeyBytesLenCompressed],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\tr2J, err := btcec.ParseJacobian(\n\t\tcombinedNonce[btcec.PubKeyBytesLenCompressed:],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// With our nonce blinding value, we'll now combine both the public\n\t// nonces, using the blinding factor to tweak the second nonce:\n\t//  * R = R_1 + b*R_2\n\n\tvar nonce btcec.JacobianPoint\n\tbtcec.ScalarMultNonConst(&nonceBlinder, &r2J, &r2J)\n\tbtcec.AddNonConst(&r1J, &r2J, &nonce)\n\n\t// Next, we'll parse out the set of public nonces this signer used to\n\t// generate the signature.\n\tpubNonce1J, err := btcec.ParseJacobian(\n\t\tpubNonce[:btcec.PubKeyBytesLenCompressed],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\tpubNonce2J, err := btcec.ParseJacobian(\n\t\tpubNonce[btcec.PubKeyBytesLenCompressed:],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// If the nonce is the infinity point we set it to the Generator.\n\tif nonce == infinityPoint {\n\t\tbtcec.GeneratorJacobian(&nonce)\n\t} else {\n\t\tnonce.ToAffine()\n\t}\n\n\t// We'll perform a similar aggregation and blinding operator as we did\n\t// above for the combined nonces: R' = R_1' + b*R_2'.\n\tvar pubNonceJ btcec.JacobianPoint\n\n\tbtcec.ScalarMultNonConst(&nonceBlinder, &pubNonce2J, &pubNonce2J)\n\tbtcec.AddNonConst(&pubNonce1J, &pubNonce2J, &pubNonceJ)\n\n\tpubNonceJ.ToAffine()\n\n\t// If the combined nonce used in the challenge hash has an odd y\n\t// coordinate, then we'll negate our final public nonce.\n\tif nonce.Y.IsOdd() {\n\t\tpubNonceJ.Y.Negate(1)\n\t\tpubNonceJ.Y.Normalize()\n\t}\n\n\t// Next we'll create the challenge hash that commits to the combined\n\t// nonce, combined public key and also the message:\n\t//  * e = H(tag=ChallengeHashTag, R || Q || m) mod n\n\tvar challengeMsg bytes.Buffer\n\tchallengeMsg.Write(schnorr.SerializePubKey(btcec.NewPublicKey(\n\t\t&nonce.X, &nonce.Y,\n\t)))\n\tchallengeMsg.Write(schnorr.SerializePubKey(combinedKey.FinalKey))\n\tchallengeMsg.Write(msg[:])\n\tchallengeBytes := chainhash.TaggedHash(\n\t\tChallengeHashTag, challengeMsg.Bytes(),\n\t)\n\tvar e btcec.ModNScalar\n\te.SetByteSlice(challengeBytes[:])\n\n\tsigningKey, err := schnorr.ParsePubKey(pubKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Next, we'll compute a, our aggregation coefficient for the key that\n\t// we're signing with.\n\ta := aggregationCoefficient(keySet, signingKey, keysHash, uniqueKeyIndex)\n\n\t// If the combined key has an odd y coordinate, then we'll negate\n\t// parity factor for the signing key.\n\tparitySignKey := new(btcec.ModNScalar).SetInt(1)\n\tcombinedKeyBytes := combinedKey.FinalKey.SerializeCompressed()\n\tif combinedKeyBytes[0] == secp.PubKeyFormatCompressedOdd {\n\t\tparitySignKey.Negate()\n\t}\n\n\t// Next, we'll construct the final parity factor by multiplying the\n\t// sign key parity factor with the accumulated parity factor for all\n\t// the keys.\n\tfinalParityFactor := paritySignKey.Mul(parityAcc)\n\n\t// Now we'll multiply the parity factor by our signing key, which'll\n\t// take care of the amount of negation needed.\n\tvar signKeyJ btcec.JacobianPoint\n\tsigningKey.AsJacobian(&signKeyJ)\n\tbtcec.ScalarMultNonConst(finalParityFactor, &signKeyJ, &signKeyJ)\n\n\t// In the final set, we'll check that: s*G == R' + e*a*P.\n\tvar sG, rP btcec.JacobianPoint\n\tbtcec.ScalarBaseMultNonConst(s, &sG)\n\tbtcec.ScalarMultNonConst(e.Mul(a), &signKeyJ, &rP)\n\tbtcec.AddNonConst(&rP, &pubNonceJ, &rP)\n\n\tsG.ToAffine()\n\trP.ToAffine()\n\n\tif sG != rP {\n\t\treturn ErrPartialSigInvalid\n\t}\n\n\treturn nil\n}\n\n// CombineOption is a functional option argument that allows callers to modify the\n// way we combine musig2 schnorr signatures.",
+      "length": 5107,
+      "tokens": 633,
+      "embedding": []
+    },
+    {
+      "slug": "type CombineOption func(*combineOptions)",
+      "content": "type CombineOption func(*combineOptions)\n\n// combineOptions houses the set of functional options that can be used to\n// modify the method used to combine the musig2 partial signatures.",
+      "length": 141,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type combineOptions struct {",
+      "content": "type combineOptions struct {\n\tmsg [32]byte\n\n\tcombinedKey *btcec.PublicKey\n\n\ttweakAcc *btcec.ModNScalar\n}\n\n// defaultCombineOptions returns the default set of signing operations.",
+      "length": 141,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultCombineOptions() *combineOptions {",
+      "content": "func defaultCombineOptions() *combineOptions {\n\treturn &combineOptions{}\n}\n\n// WithTweakedCombine is a functional option that allows callers to specify\n// that the signature was produced using a tweaked aggregated public key. In\n// order to properly aggregate the partial signatures, the caller must specify\n// enough information to reconstruct the challenge, and also the final\n// accumulated tweak value.",
+      "length": 352,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func WithTweakedCombine(msg [32]byte, keys []*btcec.PublicKey,",
+      "content": "func WithTweakedCombine(msg [32]byte, keys []*btcec.PublicKey,\n\ttweaks []KeyTweakDesc, sort bool) CombineOption {\n\n\treturn func(o *combineOptions) {\n\t\tcombinedKey, _, tweakAcc, _ := AggregateKeys(\n\t\t\tkeys, sort, WithKeyTweaks(tweaks...),\n\t\t)\n\n\t\to.msg = msg\n\t\to.combinedKey = combinedKey.FinalKey\n\t\to.tweakAcc = tweakAcc\n\t}\n}\n\n// WithTaprootTweakedCombine is similar to the WithTweakedCombine option, but\n// assumes a BIP 341 context where the final tweaked key is to be used as the\n// output key, where the internal key is the aggregated key pre-tweak.\n//\n// This option should be used over WithTweakedCombine when attempting to\n// aggregate signatures for a top-level taproot keyspend, where the output key\n// commits to a script root.",
+      "length": 654,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func WithTaprootTweakedCombine(msg [32]byte, keys []*btcec.PublicKey,",
+      "content": "func WithTaprootTweakedCombine(msg [32]byte, keys []*btcec.PublicKey,\n\tscriptRoot []byte, sort bool) CombineOption {\n\n\treturn func(o *combineOptions) {\n\t\tcombinedKey, _, tweakAcc, _ := AggregateKeys(\n\t\t\tkeys, sort, WithTaprootKeyTweak(scriptRoot),\n\t\t)\n\n\t\to.msg = msg\n\t\to.combinedKey = combinedKey.FinalKey\n\t\to.tweakAcc = tweakAcc\n\t}\n}\n\n// WithBip86TweakedCombine is similar to the WithTaprootTweakedCombine option,\n// but assumes a BIP 341 + BIP 86 context where the final tweaked key is to be\n// used as the output key, where the internal key is the aggregated key\n// pre-tweak.\n//\n// This option should be used over WithTaprootTweakedCombine when attempting to\n// aggregate signatures for a top-level taproot keyspend, where the output key\n// was generated using BIP 86.",
+      "length": 682,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "func WithBip86TweakedCombine(msg [32]byte, keys []*btcec.PublicKey,",
+      "content": "func WithBip86TweakedCombine(msg [32]byte, keys []*btcec.PublicKey,\n\tsort bool) CombineOption {\n\n\treturn func(o *combineOptions) {\n\t\tcombinedKey, _, tweakAcc, _ := AggregateKeys(\n\t\t\tkeys, sort, WithBIP86KeyTweak(),\n\t\t)\n\n\t\to.msg = msg\n\t\to.combinedKey = combinedKey.FinalKey\n\t\to.tweakAcc = tweakAcc\n\t}\n}\n\n// CombineSigs combines the set of public keys given the final aggregated\n// nonce, and the series of partial signatures for each nonce.",
+      "length": 357,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func CombineSigs(combinedNonce *btcec.PublicKey,",
+      "content": "func CombineSigs(combinedNonce *btcec.PublicKey,\n\tpartialSigs []*PartialSignature,\n\tcombineOpts ...CombineOption) *schnorr.Signature {\n\n\t// First, parse the set of optional combine options.\n\topts := defaultCombineOptions()\n\tfor _, option := range combineOpts {\n\t\toption(opts)\n\t}\n\n\t// If signer keys and tweaks are specified, then we need to carry out\n\t// some intermediate steps before we can combine the signature.\n\tvar tweakProduct *btcec.ModNScalar\n\tif opts.combinedKey != nil && opts.tweakAcc != nil {\n\t\t// Next, we'll construct the parity factor of the combined key,\n\t\t// negating it if the combined key has an even y coordinate.\n\t\tparityFactor := new(btcec.ModNScalar).SetInt(1)\n\t\tcombinedKeyBytes := opts.combinedKey.SerializeCompressed()\n\t\tif combinedKeyBytes[0] == secp.PubKeyFormatCompressedOdd {\n\t\t\tparityFactor.Negate()\n\t\t}\n\n\t\t// Next we'll reconstruct e the challenge has based on the\n\t\t// nonce and combined public key.\n\t\t//  * e = H(tag=ChallengeHashTag, R || Q || m) mod n\n\t\tvar challengeMsg bytes.Buffer\n\t\tchallengeMsg.Write(schnorr.SerializePubKey(combinedNonce))\n\t\tchallengeMsg.Write(schnorr.SerializePubKey(opts.combinedKey))\n\t\tchallengeMsg.Write(opts.msg[:])\n\t\tchallengeBytes := chainhash.TaggedHash(\n\t\t\tChallengeHashTag, challengeMsg.Bytes(),\n\t\t)\n\t\tvar e btcec.ModNScalar\n\t\te.SetByteSlice(challengeBytes[:])\n\n\t\ttweakProduct = new(btcec.ModNScalar).Set(&e)\n\t\ttweakProduct.Mul(opts.tweakAcc).Mul(parityFactor)\n\t}\n\n\t// Finally, the tweak factor also needs to be re-computed as well.\n\tvar combinedSig btcec.ModNScalar\n\tfor _, partialSig := range partialSigs {\n\t\tcombinedSig.Add(partialSig.S)\n\t}\n\n\t// If the tweak product was set above, then we'll need to add the value\n\t// at the very end in order to produce a valid signature under the\n\t// final tweaked key.\n\tif tweakProduct != nil {\n\t\tcombinedSig.Add(tweakProduct)\n\t}\n\n\t// TODO(roasbeef): less verbose way to get the x coord...\n\tvar nonceJ btcec.JacobianPoint\n\tcombinedNonce.AsJacobian(&nonceJ)\n\tnonceJ.ToAffine()\n\n\treturn schnorr.NewSignature(&nonceJ.X, &combinedSig)\n}\n",
+      "length": 1935,
+      "tokens": 232,
+      "embedding": []
+    }
+  ]
+}

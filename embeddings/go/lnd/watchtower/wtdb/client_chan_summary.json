@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/client_chan_summary.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type ChannelSummaries map[lnwire.ChannelID]ClientChanSummary",
+      "content": "type ChannelSummaries map[lnwire.ChannelID]ClientChanSummary\n\n// ClientChanSummary tracks channel-specific information. A new\n// ClientChanSummary is inserted in the database the first time the client\n// encounters a particular channel.",
+      "length": 172,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "type ClientChanSummary struct {",
+      "content": "type ClientChanSummary struct {\n\t// SweepPkScript is the pkscript to which all justice transactions will\n\t// deposit recovered funds for this particular channel.\n\tSweepPkScript []byte\n\n\t// TODO(conner): later extend with info about initial commit height,\n\t// ineligible states, etc.\n}\n\n// Encode writes the ClientChanSummary to the passed io.Writer.",
+      "length": 309,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientChanSummary) Encode(w io.Writer) error {",
+      "content": "func (s *ClientChanSummary) Encode(w io.Writer) error {\n\treturn WriteElement(w, s.SweepPkScript)\n}\n\n// Decode reads a ClientChanSummary form the passed io.Reader.",
+      "length": 103,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientChanSummary) Decode(r io.Reader) error {",
+      "content": "func (s *ClientChanSummary) Decode(r io.Reader) error {\n\treturn ReadElement(r, &s.SweepPkScript)\n}\n",
+      "length": 41,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

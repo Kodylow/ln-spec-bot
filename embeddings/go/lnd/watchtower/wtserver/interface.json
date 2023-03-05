@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtserver/interface.go",
+  "package": "wtserver",
+  "sections": [
+    {
+      "slug": "type Interface interface {",
+      "content": "type Interface interface {\n\t// InboundPeerConnected accepts a new watchtower client, and handles any\n\t// requests sent by the peer.\n\tInboundPeerConnected(Peer)\n\n\t// Start sets up the watchtower server.\n\tStart() error\n\n\t// Stop cleans up the watchtower's current connections and resources.\n\tStop() error\n}\n\n// Peer is the primary interface used to abstract watchtower clients.",
+      "length": 337,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type Peer interface {",
+      "content": "type Peer interface {\n\tio.WriteCloser\n\n\t// ReadNextMessage pulls the next framed message from the client.\n\tReadNextMessage() ([]byte, error)\n\n\t// SetWriteDeadline specifies the time by which the client must have\n\t// read a message sent by the server. In practice, the connection is\n\t// buffered, so the client must read enough from the connection to\n\t// support the server adding another reply.\n\tSetWriteDeadline(time.Time) error\n\n\t// SetReadDeadline specifies the time by which the client must send\n\t// another message.\n\tSetReadDeadline(time.Time) error\n\n\t// RemotePub returns the client's public key.\n\tRemotePub() *btcec.PublicKey\n\n\t// RemoteAddr returns the client's network address.\n\tRemoteAddr() net.Addr\n}\n\n// DB provides the server access to session creation and retrieval, as well as\n// persisting state updates sent by clients.",
+      "length": 791,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "type DB interface {",
+      "content": "type DB interface {\n\t// InsertSessionInfo saves a newly agreed-upon session from a client.\n\t// This method should fail if a session with the same session id already\n\t// exists.\n\tInsertSessionInfo(*wtdb.SessionInfo) error\n\n\t// GetSessionInfo retrieves the SessionInfo associated with the session\n\t// id, if it exists.\n\tGetSessionInfo(*wtdb.SessionID) (*wtdb.SessionInfo, error)\n\n\t// InsertStateUpdate persists a state update sent by a client, and\n\t// validates the update against the current SessionInfo stored under the\n\t// update's session id..\n\tInsertStateUpdate(*wtdb.SessionStateUpdate) (uint16, error)\n\n\t// DeleteSession removes all data associated with a particular session\n\t// id from the tower's database.\n\tDeleteSession(wtdb.SessionID) error\n}\n",
+      "length": 715,
+      "tokens": 93,
+      "embedding": []
+    }
+  ]
+}

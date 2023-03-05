@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/shachain/producer_test.go",
+  "package": "shachain",
+  "sections": [
+    {
+      "slug": "func TestShaChainProducerRestore(t *testing.T) {",
+      "content": "func TestShaChainProducerRestore(t *testing.T) {\n\tt.Parallel()\n\n\tvar err error\n\n\tseed := chainhash.DoubleHashH([]byte(\"shachaintest\"))\n\tsender := NewRevocationProducer(seed)\n\n\ts1, err := sender.AtIndex(0)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tvar b bytes.Buffer\n\tif err := sender.Encode(&b); err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tsender, err = NewRevocationProducerFromBytes(b.Bytes())\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\ts3, err := sender.AtIndex(0)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tif !s1.IsEqual(s3) {\n\t\tt.Fatalf(\"secrets should match: %v:%v\", s1.String(), s3.String())\n\t}\n}\n",
+      "length": 497,
+      "tokens": 67,
+      "embedding": []
+    }
+  ]
+}

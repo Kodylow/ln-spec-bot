@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/short_channel_id.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ShortChannelID struct {",
+      "content": "type ShortChannelID struct {\n\t// BlockHeight is the height of the block where funding transaction\n\t// located.\n\t//\n\t// NOTE: This field is limited to 3 bytes.\n\tBlockHeight uint32\n\n\t// TxIndex is a position of funding transaction within a block.\n\t//\n\t// NOTE: This field is limited to 3 bytes.\n\tTxIndex uint32\n\n\t// TxPosition indicating transaction output which pays to the channel.\n\tTxPosition uint16\n}\n\n// NewShortChanIDFromInt returns a new ShortChannelID which is the decoded\n// version of the compact channel ID encoded within the uint64. The format of\n// the compact channel ID is as follows: 3 bytes for the block height, 3 bytes\n// for the transaction index, and 2 bytes for the output index.",
+      "length": 652,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func NewShortChanIDFromInt(chanID uint64) ShortChannelID {",
+      "content": "func NewShortChanIDFromInt(chanID uint64) ShortChannelID {\n\treturn ShortChannelID{\n\t\tBlockHeight: uint32(chanID >> 40),\n\t\tTxIndex:     uint32(chanID>>16) & 0xFFFFFF,\n\t\tTxPosition:  uint16(chanID),\n\t}\n}\n\n// ToUint64 converts the ShortChannelID into a compact format encoded within a\n// uint64 (8 bytes).",
+      "length": 235,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ShortChannelID) ToUint64() uint64 {",
+      "content": "func (c ShortChannelID) ToUint64() uint64 {\n\t// TODO(roasbeef): explicit error on overflow?\n\treturn ((uint64(c.BlockHeight) << 40) | (uint64(c.TxIndex) << 16) |\n\t\t(uint64(c.TxPosition)))\n}\n\n// String generates a human-readable representation of the channel ID.",
+      "length": 211,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ShortChannelID) String() string {",
+      "content": "func (c ShortChannelID) String() string {\n\treturn fmt.Sprintf(\"%d:%d:%d\", c.BlockHeight, c.TxIndex, c.TxPosition)\n}\n\n// Record returns a TLV record that can be used to encode/decode a\n// ShortChannelID to/from a TLV stream.",
+      "length": 177,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ShortChannelID) Record() tlv.Record {",
+      "content": "func (c *ShortChannelID) Record() tlv.Record {\n\treturn tlv.MakeStaticRecord(\n\t\tAliasScidRecordType, c, 8, EShortChannelID, DShortChannelID,\n\t)\n}\n\n// IsDefault returns true if the ShortChannelID represents the zero value for\n// its type.",
+      "length": 183,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ShortChannelID) IsDefault() bool {",
+      "content": "func (c ShortChannelID) IsDefault() bool {\n\treturn c == ShortChannelID{}\n}\n\n// EShortChannelID is an encoder for ShortChannelID. It is exported so other\n// packages can use the encoding scheme.",
+      "length": 146,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func EShortChannelID(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func EShortChannelID(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif v, ok := val.(*ShortChannelID); ok {\n\t\treturn tlv.EUint64T(w, v.ToUint64(), buf)\n\t}\n\treturn tlv.NewTypeForEncodingErr(val, \"lnwire.ShortChannelID\")\n}\n\n// DShortChannelID is a decoder for ShortChannelID. It is exported so other\n// packages can use the decoding scheme.",
+      "length": 264,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func DShortChannelID(r io.Reader, val interface{}, buf *[8]byte,",
+      "content": "func DShortChannelID(r io.Reader, val interface{}, buf *[8]byte,\n\tl uint64) error {\n\n\tif v, ok := val.(*ShortChannelID); ok {\n\t\tvar scid uint64\n\t\terr := tlv.DUint64(r, &scid, buf, 8)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t*v = NewShortChanIDFromInt(scid)\n\t\treturn nil\n\t}\n\treturn tlv.NewTypeForDecodingErr(val, \"lnwire.ShortChannelID\", l, 8)\n}\n",
+      "length": 264,
+      "tokens": 40,
+      "embedding": []
+    }
+  ]
+}

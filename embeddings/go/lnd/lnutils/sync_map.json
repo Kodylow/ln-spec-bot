@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnutils/sync_map.go",
+  "package": "lnutils",
+  "sections": [
+    {
+      "slug": "type SyncMap[K comparable, V any] struct {",
+      "content": "type SyncMap[K comparable, V any] struct {\n\tsync.Map\n}\n\n// Store puts an item in the map.",
+      "length": 43,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncMap[K, V]) Store(key K, value V) {",
+      "content": "func (m *SyncMap[K, V]) Store(key K, value V) {\n\tm.Map.Store(key, value)\n}\n\n// Load queries an item from the map using the specified key. If the item\n// cannot be found, an empty value and false will be returned. If the stored\n// item fails the type assertion, a nil value and false will be returned.",
+      "length": 247,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncMap[K, V]) Load(key K) (V, bool) {",
+      "content": "func (m *SyncMap[K, V]) Load(key K) (V, bool) {\n\tresult, ok := m.Map.Load(key)\n\tif !ok {\n\t\treturn *new(V), false // nolint: gocritic\n\t}\n\n\titem, ok := result.(V)\n\treturn item, ok\n}\n\n// Delete removes an item from the map specified by the key.",
+      "length": 184,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncMap[K, V]) Delete(key K) {",
+      "content": "func (m *SyncMap[K, V]) Delete(key K) {\n\tm.Map.Delete(key)\n}\n\n// LoadAndDelete queries an item and deletes it from the map using the\n// specified key.",
+      "length": 106,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncMap[K, V]) LoadAndDelete(key K) (V, bool) {",
+      "content": "func (m *SyncMap[K, V]) LoadAndDelete(key K) (V, bool) {\n\tresult, loaded := m.Map.LoadAndDelete(key)\n\tif !loaded {\n\t\treturn *new(V), loaded // nolint: gocritic\n\t}\n\n\titem, ok := result.(V)\n\treturn item, ok\n}\n\n// Range iterates the map.",
+      "length": 168,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SyncMap[K, V]) Range(visitor func(K, V) bool) {",
+      "content": "func (m *SyncMap[K, V]) Range(visitor func(K, V) bool) {\n\tm.Map.Range(func(k any, v any) bool {\n\t\treturn visitor(k.(K), v.(V))\n\t})\n}\n",
+      "length": 72,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

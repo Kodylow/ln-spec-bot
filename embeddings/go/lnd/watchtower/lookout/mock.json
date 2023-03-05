@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/lookout/mock.go",
+  "package": "lookout",
+  "sections": [
+    {
+      "slug": "type MockBackend struct {",
+      "content": "type MockBackend struct {\n\tmu sync.RWMutex\n\n\tblocks chan *chainntnfs.BlockEpoch\n\tepochs map[chainhash.Hash]*wire.MsgBlock\n\tquit   chan struct{}\n}\n",
+      "length": 114,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMockBackend() *MockBackend {",
+      "content": "func NewMockBackend() *MockBackend {\n\treturn &MockBackend{\n\t\tblocks: make(chan *chainntnfs.BlockEpoch),\n\t\tepochs: make(map[chainhash.Hash]*wire.MsgBlock),\n\t\tquit:   make(chan struct{}),\n\t}\n}\n",
+      "length": 148,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockBackend) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (",
+      "content": "func (m *MockBackend) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (\n\t*chainntnfs.BlockEpochEvent, error) {\n\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tEpochs: m.blocks,\n\t}, nil\n}\n",
+      "length": 101,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockBackend) GetBlock(hash *chainhash.Hash) (*wire.MsgBlock, error) {",
+      "content": "func (m *MockBackend) GetBlock(hash *chainhash.Hash) (*wire.MsgBlock, error) {\n\tm.mu.RLock()\n\tdefer m.mu.RUnlock()\n\n\tblock, ok := m.epochs[*hash]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"unknown block for hash %x\", hash)\n\t}\n\n\treturn block, nil\n}\n",
+      "length": 152,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockBackend) ConnectEpoch(epoch *chainntnfs.BlockEpoch,",
+      "content": "func (m *MockBackend) ConnectEpoch(epoch *chainntnfs.BlockEpoch,\n\tblock *wire.MsgBlock) {\n\n\tm.mu.Lock()\n\tm.epochs[*epoch.Hash] = block\n\tm.mu.Unlock()\n\n\tselect {\n\tcase m.blocks <- epoch:\n\tcase <-m.quit:\n\t}\n}\n",
+      "length": 131,
+      "tokens": 18,
+      "embedding": []
+    }
+  ]
+}

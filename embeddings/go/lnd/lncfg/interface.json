@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/interface.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Validator interface {",
+      "content": "type Validator interface {\n\t// Validate returns an error if a particular configuration is invalid or\n\t// insane.\n\tValidate() error\n}\n\n// Validate accepts a variadic list of Validators and checks that each one\n// passes its Validate method. An error is returned from the first Validator\n// that fails.",
+      "length": 266,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func Validate(validators ...Validator) error {",
+      "content": "func Validate(validators ...Validator) error {\n\tfor _, validator := range validators {\n\t\tif err := validator.Validate(); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 115,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/workers_test.go",
+  "package": "lncfg_test",
+  "sections": [
+    {
+      "slug": "func TestValidateWorkers(t *testing.T) {",
+      "content": "func TestValidateWorkers(t *testing.T) {\n\ttests := []struct {\n\t\tname  string\n\t\tcfg   *lncfg.Workers\n\t\tvalid bool\n\t}{\n\t\t{\n\t\t\tname: \"min valid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  1,\n\t\t\t\tWrite: 1,\n\t\t\t\tSig:   1,\n\t\t\t},\n\t\t\tvalid: true,\n\t\t},\n\t\t{\n\t\t\tname: \"max valid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  maxInt,\n\t\t\t\tWrite: maxInt,\n\t\t\t\tSig:   maxInt,\n\t\t\t},\n\t\t\tvalid: true,\n\t\t},\n\t\t{\n\t\t\tname: \"read max invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  0,\n\t\t\t\tWrite: 1,\n\t\t\t\tSig:   1,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"write max invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  1,\n\t\t\t\tWrite: 0,\n\t\t\t\tSig:   1,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"sig max invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  1,\n\t\t\t\tWrite: 1,\n\t\t\t\tSig:   0,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"read min invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  minInt,\n\t\t\t\tWrite: 1,\n\t\t\t\tSig:   1,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"write min invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  1,\n\t\t\t\tWrite: minInt,\n\t\t\t\tSig:   1,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"sig min invalid\",\n\t\t\tcfg: &lncfg.Workers{\n\t\t\t\tRead:  1,\n\t\t\t\tWrite: 1,\n\t\t\t\tSig:   minInt,\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\terr := test.cfg.Validate()\n\t\t\tswitch {\n\t\t\tcase test.valid && err != nil:\n\t\t\t\tt.Fatalf(\"valid config was invalid: %v\", err)\n\t\t\tcase !test.valid && err == nil:\n\t\t\t\tt.Fatalf(\"invalid config was valid\")\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 1210,
+      "tokens": 176,
+      "embedding": []
+    }
+  ]
+}

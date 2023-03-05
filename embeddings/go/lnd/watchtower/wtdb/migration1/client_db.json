@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration1/client_db.go",
+  "package": "migration1",
+  "sections": [
+    {
+      "slug": "func MigrateTowerToSessionIndex(tx kvdb.RwTx) error {",
+      "content": "func MigrateTowerToSessionIndex(tx kvdb.RwTx) error {\n\tlog.Infof(\"Migrating the tower client db to add a \" +\n\t\t\"towerID-to-sessionID index\")\n\n\t// First, we collect all the entries we want to add to the index.\n\tentries, err := getIndexEntries(tx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Then we create a new top-level bucket for the index.\n\tindexBkt, err := tx.CreateTopLevelBucket(cTowerIDToSessionIDIndexBkt)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Finally, we add all the collected entries to the index.\n\tfor towerID, sessions := range entries {\n\t\t// Create a sub-bucket using the tower ID.\n\t\ttowerBkt, err := indexBkt.CreateBucketIfNotExists(\n\t\t\ttowerID.Bytes(),\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor sessionID := range sessions {\n\t\t\terr := addIndex(towerBkt, sessionID)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// addIndex adds a new towerID-sessionID pair to the given bucket. The\n// session ID is used as a key within the bucket and a value of []byte{1} is\n// used for each session ID key.",
+      "length": 929,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func addIndex(towerBkt kvdb.RwBucket, sessionID SessionID) error {",
+      "content": "func addIndex(towerBkt kvdb.RwBucket, sessionID SessionID) error {\n\tsession := towerBkt.Get(sessionID[:])\n\tif session != nil {\n\t\treturn fmt.Errorf(\"session %x duplicated\", sessionID)\n\t}\n\n\treturn towerBkt.Put(sessionID[:], []byte{1})\n}\n\n// getIndexEntries collects all the towerID-sessionID entries that need to be\n// added to the new index.",
+      "length": 264,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func getIndexEntries(tx kvdb.RwTx) (map[TowerID]map[SessionID]bool, error) {",
+      "content": "func getIndexEntries(tx kvdb.RwTx) (map[TowerID]map[SessionID]bool, error) {\n\tsessions := tx.ReadBucket(cSessionBkt)\n\tif sessions == nil {\n\t\treturn nil, ErrUninitializedDB\n\t}\n\n\tindex := make(map[TowerID]map[SessionID]bool)\n\terr := sessions.ForEach(func(k, _ []byte) error {\n\t\tsession, err := getClientSession(sessions, k)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif index[session.TowerID] == nil {\n\t\t\tindex[session.TowerID] = make(map[SessionID]bool)\n\t\t}\n\n\t\tindex[session.TowerID][session.ID] = true\n\t\treturn nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn index, nil\n}\n\n// getClientSession fetches the session with the given ID from the db.",
+      "length": 543,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func getClientSession(sessions kvdb.RBucket, idBytes []byte) (*ClientSession,",
+      "content": "func getClientSession(sessions kvdb.RBucket, idBytes []byte) (*ClientSession,\n\terror) {\n\n\tsessionBkt := sessions.NestedReadBucket(idBytes)\n\tif sessionBkt == nil {\n\t\treturn nil, ErrClientSessionNotFound\n\t}\n\n\t// Should never have a sessionBkt without also having its body.\n\tsessionBody := sessionBkt.Get(cSessionBody)\n\tif sessionBody == nil {\n\t\treturn nil, ErrCorruptClientSession\n\t}\n\n\tvar session ClientSession\n\tcopy(session.ID[:], idBytes)\n\n\terr := session.Decode(bytes.NewReader(sessionBody))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &session, nil\n}\n",
+      "length": 456,
+      "tokens": 58,
+      "embedding": []
+    }
+  ]
+}

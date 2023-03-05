@@ -1,0 +1,307 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/invoices.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type RefModifier uint8",
+      "content": "type RefModifier uint8\n\nconst (\n\t// DefaultModifier is the base modifier that doesn't change any\n\t// behavior.\n\tDefaultModifier RefModifier = iota\n\n\t// HtlcSetOnlyModifier can only be used with a setID based invoice ref,\n\t// and specifies that only the set of HTLCs related to that setID are\n\t// to be returned.\n\tHtlcSetOnlyModifier\n\n\t// HtlcSetOnlyModifier can only be used with a payAddr based invoice\n\t// ref, and specifies that the returned invoice shouldn't include any\n\t// HTLCs at all.\n\tHtlcSetBlankModifier\n)\n\n// InvoiceRef is a composite identifier for invoices. Invoices can be referenced\n// by various combinations of payment hash and payment addr, in certain contexts\n// only some of these are known. An InvoiceRef and its constructors thus\n// encapsulate the valid combinations of query parameters that can be supplied\n// to LookupInvoice and UpdateInvoice.",
+      "length": 826,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceRef struct {",
+      "content": "type InvoiceRef struct {\n\t// payHash is the payment hash of the target invoice. All invoices are\n\t// currently indexed by payment hash. This value will be used as a\n\t// fallback when no payment address is known.\n\tpayHash *lntypes.Hash\n\n\t// payAddr is the payment addr of the target invoice. Newer invoices\n\t// (0.11 and up) are indexed by payment address in addition to payment\n\t// hash, but pre 0.8 invoices do not have one at all. When this value is\n\t// known it will be used as the primary identifier, falling back to\n\t// payHash if no value is known.\n\tpayAddr *[32]byte\n\n\t// setID is the optional set id for an AMP payment. This can be used to\n\t// lookup or update the invoice knowing only this value. Queries by set\n\t// id are only used to facilitate user-facing requests, e.g. lookup,\n\t// settle or cancel an AMP invoice. The regular update flow from the\n\t// invoice registry will always query for the invoice by\n\t// payHash+payAddr.\n\tsetID *[32]byte\n\n\t// refModifier allows an invoice ref to include or exclude specific\n\t// HTLC sets based on the payAddr or setId.\n\trefModifier RefModifier\n}\n\n// InvoiceRefByHash creates an InvoiceRef that queries for an invoice only by\n// its payment hash.",
+      "length": 1147,
+      "tokens": 205,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefByHash(payHash lntypes.Hash) InvoiceRef {",
+      "content": "func InvoiceRefByHash(payHash lntypes.Hash) InvoiceRef {\n\treturn InvoiceRef{\n\t\tpayHash: &payHash,\n\t}\n}\n\n// InvoiceRefByHashAndAddr creates an InvoiceRef that first queries for an\n// invoice by the provided payment address, falling back to the payment hash if\n// the payment address is unknown.",
+      "length": 229,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefByHashAndAddr(payHash lntypes.Hash,",
+      "content": "func InvoiceRefByHashAndAddr(payHash lntypes.Hash,\n\tpayAddr [32]byte) InvoiceRef {\n\n\treturn InvoiceRef{\n\t\tpayHash: &payHash,\n\t\tpayAddr: &payAddr,\n\t}\n}\n\n// InvoiceRefByAddr creates an InvoiceRef that queries the payment addr index\n// for an invoice with the provided payment address.",
+      "length": 222,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefByAddr(addr [32]byte) InvoiceRef {",
+      "content": "func InvoiceRefByAddr(addr [32]byte) InvoiceRef {\n\treturn InvoiceRef{\n\t\tpayAddr: &addr,\n\t}\n}\n\n// InvoiceRefByAddrBlankHtlc creates an InvoiceRef that queries the payment addr\n// index for an invoice with the provided payment address, but excludes any of\n// the core HTLC information.",
+      "length": 226,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefByAddrBlankHtlc(addr [32]byte) InvoiceRef {",
+      "content": "func InvoiceRefByAddrBlankHtlc(addr [32]byte) InvoiceRef {\n\treturn InvoiceRef{\n\t\tpayAddr:     &addr,\n\t\trefModifier: HtlcSetBlankModifier,\n\t}\n}\n\n// InvoiceRefBySetID creates an InvoiceRef that queries the set id index for an\n// invoice with the provided setID. If the invoice is not found, the query will\n// not fallback to payHash or payAddr.",
+      "length": 275,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefBySetID(setID [32]byte) InvoiceRef {",
+      "content": "func InvoiceRefBySetID(setID [32]byte) InvoiceRef {\n\treturn InvoiceRef{\n\t\tsetID: &setID,\n\t}\n}\n\n// InvoiceRefBySetIDFiltered is similar to the InvoiceRefBySetID identifier,\n// but it specifies that the returned set of HTLCs should be filtered to only\n// include HTLCs that are part of that set.",
+      "length": 234,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func InvoiceRefBySetIDFiltered(setID [32]byte) InvoiceRef {",
+      "content": "func InvoiceRefBySetIDFiltered(setID [32]byte) InvoiceRef {\n\treturn InvoiceRef{\n\t\tsetID:       &setID,\n\t\trefModifier: HtlcSetOnlyModifier,\n\t}\n}\n\n// PayHash returns the optional payment hash of the target invoice.\n//\n// NOTE: This value may be nil.",
+      "length": 179,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (r InvoiceRef) PayHash() *lntypes.Hash {",
+      "content": "func (r InvoiceRef) PayHash() *lntypes.Hash {\n\tif r.payHash != nil {\n\t\thash := *r.payHash\n\t\treturn &hash\n\t}\n\n\treturn nil\n}\n\n// PayAddr returns the optional payment address of the target invoice.\n//\n// NOTE: This value may be nil.",
+      "length": 173,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (r InvoiceRef) PayAddr() *[32]byte {",
+      "content": "func (r InvoiceRef) PayAddr() *[32]byte {\n\tif r.payAddr != nil {\n\t\taddr := *r.payAddr\n\t\treturn &addr\n\t}\n\n\treturn nil\n}\n\n// SetID returns the optional set id of the target invoice.\n//\n// NOTE: This value may be nil.",
+      "length": 162,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (r InvoiceRef) SetID() *[32]byte {",
+      "content": "func (r InvoiceRef) SetID() *[32]byte {\n\tif r.setID != nil {\n\t\tid := *r.setID\n\t\treturn &id\n\t}\n\n\treturn nil\n}\n\n// Modifier defines the set of available modifications to the base invoice ref\n// look up that are available.",
+      "length": 170,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (r InvoiceRef) Modifier() RefModifier {",
+      "content": "func (r InvoiceRef) Modifier() RefModifier {\n\treturn r.refModifier\n}\n\n// String returns a human-readable representation of an InvoiceRef.",
+      "length": 89,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (r InvoiceRef) String() string {",
+      "content": "func (r InvoiceRef) String() string {\n\tvar ids []string\n\tif r.payHash != nil {\n\t\tids = append(ids, fmt.Sprintf(\"pay_hash=%v\", *r.payHash))\n\t}\n\tif r.payAddr != nil {\n\t\tids = append(ids, fmt.Sprintf(\"pay_addr=%x\", *r.payAddr))\n\t}\n\tif r.setID != nil {\n\t\tids = append(ids, fmt.Sprintf(\"set_id=%x\", *r.setID))\n\t}\n\n\treturn fmt.Sprintf(\"(%s)\", strings.Join(ids, \", \"))\n}\n\n// ContractState describes the state the invoice is in.",
+      "length": 368,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "type ContractState uint8",
+      "content": "type ContractState uint8\n\nconst (\n\t// ContractOpen means the invoice has only been created.\n\tContractOpen ContractState = 0\n\n\t// ContractSettled means the htlc is settled and the invoice has been\n\t// paid.\n\tContractSettled ContractState = 1\n\n\t// ContractCanceled means the invoice has been canceled.\n\tContractCanceled ContractState = 2\n\n\t// ContractAccepted means the HTLC has been accepted but not settled\n\t// yet.\n\tContractAccepted ContractState = 3\n)\n\n// String returns a human readable identifier for the ContractState type.",
+      "length": 486,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ContractState) String() string {",
+      "content": "func (c ContractState) String() string {\n\tswitch c {\n\tcase ContractOpen:\n\t\treturn \"Open\"\n\n\tcase ContractSettled:\n\t\treturn \"Settled\"\n\n\tcase ContractCanceled:\n\t\treturn \"Canceled\"\n\n\tcase ContractAccepted:\n\t\treturn \"Accepted\"\n\t}\n\n\treturn \"Unknown\"\n}\n\n// IsFinal returns a boolean indicating whether an invoice state is final.",
+      "length": 263,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ContractState) IsFinal() bool {",
+      "content": "func (c ContractState) IsFinal() bool {\n\treturn c == ContractSettled || c == ContractCanceled\n}\n\n// ContractTerm is a companion struct to the Invoice struct. This struct houses\n// the necessary conditions required before the invoice can be considered fully\n// settled by the payee.",
+      "length": 236,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "type ContractTerm struct {",
+      "content": "type ContractTerm struct {\n\t// FinalCltvDelta is the minimum required number of blocks before htlc\n\t// expiry when the invoice is accepted.\n\tFinalCltvDelta int32\n\n\t// Expiry defines how long after creation this invoice should expire.\n\tExpiry time.Duration\n\n\t// PaymentPreimage is the preimage which is to be revealed in the\n\t// occasion that an HTLC paying to the hash of this preimage is\n\t// extended. Set to nil if the preimage isn't known yet.\n\tPaymentPreimage *lntypes.Preimage\n\n\t// Value is the expected amount of milli-satoshis to be paid to an HTLC\n\t// which can be satisfied by the above preimage.\n\tValue lnwire.MilliSatoshi\n\n\t// PaymentAddr is a randomly generated value include in the MPP record\n\t// by the sender to prevent probing of the receiver.\n\tPaymentAddr [32]byte\n\n\t// Features is the feature vectors advertised on the payment request.\n\tFeatures *lnwire.FeatureVector\n}\n\n// String returns a human-readable description of the prominent contract terms.",
+      "length": 917,
+      "tokens": 145,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ContractTerm) String() string {",
+      "content": "func (c ContractTerm) String() string {\n\treturn fmt.Sprintf(\"amt=%v, expiry=%v, final_cltv_delta=%v\", c.Value,\n\t\tc.Expiry, c.FinalCltvDelta)\n}\n\n// SetID is the extra unique tuple item for AMP invoices. In addition to\n// setting a payment address, each repeated payment to an AMP invoice will also\n// contain a set ID as well.",
+      "length": 279,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type SetID [32]byte",
+      "content": "type SetID [32]byte\n\n// InvoiceStateAMP is a struct that associates the current state of an AMP\n// invoice identified by its set ID along with the set of invoices identified\n// by the circuit key. This allows callers to easily look up the latest state\n// of an AMP \"sub-invoice\" and also look up the invoice HLTCs themselves in the\n// greater HTLC map index.",
+      "length": 333,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceStateAMP struct {",
+      "content": "type InvoiceStateAMP struct {\n\t// State is the state of this sub-AMP invoice.\n\tState HtlcState\n\n\t// SettleIndex indicates the location in the settle index that\n\t// references this instance of InvoiceStateAMP, but only if\n\t// this value is set (non-zero), and State is HtlcStateSettled.\n\tSettleIndex uint64\n\n\t// SettleDate is the date that the setID was settled.\n\tSettleDate time.Time\n\n\t// InvoiceKeys is the set of circuit keys that can be used to locate\n\t// the invoices for a given set ID.\n\tInvoiceKeys map[CircuitKey]struct{}\n\n\t// AmtPaid is the total amount that was paid in the AMP sub-invoice.\n\t// Fetching the full HTLC/invoice state allows one to extract the\n\t// custom records as well as the break down of the payment splits used\n\t// when paying.\n\tAmtPaid lnwire.MilliSatoshi\n}\n\n// copy makes a deep copy of the underlying InvoiceStateAMP.",
+      "length": 796,
+      "tokens": 132,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *InvoiceStateAMP) copy() (InvoiceStateAMP, error) {",
+      "content": "func (i *InvoiceStateAMP) copy() (InvoiceStateAMP, error) {\n\tresult := *i\n\n\t// Make a copy of the InvoiceKeys map.\n\tresult.InvoiceKeys = make(map[CircuitKey]struct{})\n\tfor k := range i.InvoiceKeys {\n\t\tresult.InvoiceKeys[k] = struct{}{}\n\t}\n\n\t// As a safety measure, copy SettleDate. time.Time is concurrency safe\n\t// except when using any of the (un)marshalling methods.\n\tsettleDateBytes, err := i.SettleDate.MarshalBinary()\n\tif err != nil {\n\t\treturn InvoiceStateAMP{}, err\n\t}\n\n\terr = result.SettleDate.UnmarshalBinary(settleDateBytes)\n\tif err != nil {\n\t\treturn InvoiceStateAMP{}, err\n\t}\n\n\treturn result, nil\n}\n\n// AMPInvoiceState represents a type that stores metadata related to the set of\n// settled AMP \"sub-invoices\".",
+      "length": 637,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "type AMPInvoiceState map[SetID]InvoiceStateAMP",
+      "content": "type AMPInvoiceState map[SetID]InvoiceStateAMP\n\n// Invoice is a payment invoice generated by a payee in order to request\n// payment for some good or service. The inclusion of invoices within Lightning\n// creates a payment work flow for merchants very similar to that of the\n// existing financial system within PayPal, etc.  Invoices are added to the\n// database when a payment is requested, then can be settled manually once the\n// payment is received at the upper layer. For record keeping purposes,\n// invoices are never deleted from the database, instead a bit is toggled\n// denoting the invoice has been fully settled. Within the database, all\n// invoices must have a unique payment hash which is generated by taking the\n// sha256 of the payment preimage.",
+      "length": 702,
+      "tokens": 124,
+      "embedding": []
+    },
+    {
+      "slug": "type Invoice struct {",
+      "content": "type Invoice struct {\n\t// Memo is an optional memo to be stored along side an invoice.  The\n\t// memo may contain further details pertaining to the invoice itself,\n\t// or any other message which fits within the size constraints.\n\tMemo []byte\n\n\t// PaymentRequest is the encoded payment request for this invoice. For\n\t// spontaneous (keysend) payments, this field will be empty.\n\tPaymentRequest []byte\n\n\t// CreationDate is the exact time the invoice was created.\n\tCreationDate time.Time\n\n\t// SettleDate is the exact time the invoice was settled.\n\tSettleDate time.Time\n\n\t// Terms are the contractual payment terms of the invoice. Once all the\n\t// terms have been satisfied by the payer, then the invoice can be\n\t// considered fully fulfilled.\n\t//\n\t// TODO(roasbeef): later allow for multiple terms to fulfill the final\n\t// invoice: payment fragmentation, etc.\n\tTerms ContractTerm\n\n\t// AddIndex is an auto-incrementing integer that acts as a\n\t// monotonically increasing sequence number for all invoices created.\n\t// Clients can then use this field as a \"checkpoint\" of sorts when\n\t// implementing a streaming RPC to notify consumers of instances where\n\t// an invoice has been added before they re-connected.\n\t//\n\t// NOTE: This index starts at 1.\n\tAddIndex uint64\n\n\t// SettleIndex is an auto-incrementing integer that acts as a\n\t// monotonically increasing sequence number for all settled invoices.\n\t// Clients can then use this field as a \"checkpoint\" of sorts when\n\t// implementing a streaming RPC to notify consumers of instances where\n\t// an invoice has been settled before they re-connected.\n\t//\n\t// NOTE: This index starts at 1.\n\tSettleIndex uint64\n\n\t// State describes the state the invoice is in. This is the global\n\t// state of the invoice which may remain open even when a series of\n\t// sub-invoices for this invoice has been settled.\n\tState ContractState\n\n\t// AmtPaid is the final amount that we ultimately accepted for pay for\n\t// this invoice. We specify this value independently as it's possible\n\t// that the invoice originally didn't specify an amount, or the sender\n\t// overpaid.\n\tAmtPaid lnwire.MilliSatoshi\n\n\t// Htlcs records all htlcs that paid to this invoice. Some of these\n\t// htlcs may have been marked as canceled.\n\tHtlcs map[CircuitKey]*InvoiceHTLC\n\n\t// AMPState describes the state of any related sub-invoices AMP to this\n\t// greater invoice. A sub-invoice is defined by a set of HTLCs with the\n\t// same set ID that attempt to make one time or recurring payments to\n\t// this greater invoice. It's possible for a sub-invoice to be canceled\n\t// or settled, but the greater invoice still open.\n\tAMPState AMPInvoiceState\n\n\t// HodlInvoice indicates whether the invoice should be held in the\n\t// Accepted state or be settled right away.\n\tHodlInvoice bool\n}\n\n// HTLCSet returns the set of HTLCs belonging to setID and in the provided\n// state. Passing a nil setID will return all HTLCs in the provided state in the\n// case of legacy or MPP, and no HTLCs in the case of AMP.  Otherwise, the\n// returned set will be filtered by the populated setID which is used to\n// retrieve AMP HTLC sets.",
+      "length": 3009,
+      "tokens": 507,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) HTLCSet(setID *[32]byte,",
+      "content": "func (i *Invoice) HTLCSet(setID *[32]byte,\n\tstate HtlcState) map[CircuitKey]*InvoiceHTLC {\n\n\thtlcSet := make(map[CircuitKey]*InvoiceHTLC)\n\tfor key, htlc := range i.Htlcs {\n\t\t// Only add HTLCs that are in the requested HtlcState.\n\t\tif htlc.State != state {\n\t\t\tcontinue\n\t\t}\n\n\t\tif !htlc.IsInHTLCSet(setID) {\n\t\t\tcontinue\n\t\t}\n\n\t\thtlcSet[key] = htlc\n\t}\n\n\treturn htlcSet\n}\n\n// HTLCSetCompliment returns the set of all HTLCs not belonging to setID that\n// are in the target state. Passing a nil setID will return no invoices, since\n// all MPP HTLCs are part of the same HTLC set.",
+      "length": 507,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) HTLCSetCompliment(setID *[32]byte,",
+      "content": "func (i *Invoice) HTLCSetCompliment(setID *[32]byte,\n\tstate HtlcState) map[CircuitKey]*InvoiceHTLC {\n\n\thtlcSet := make(map[CircuitKey]*InvoiceHTLC)\n\tfor key, htlc := range i.Htlcs {\n\t\t// Only add HTLCs that are in the requested HtlcState.\n\t\tif htlc.State != state {\n\t\t\tcontinue\n\t\t}\n\n\t\t// We are constructing the compliment, so filter anything that\n\t\t// matches this set id.\n\t\tif htlc.IsInHTLCSet(setID) {\n\t\t\tcontinue\n\t\t}\n\n\t\thtlcSet[key] = htlc\n\t}\n\n\treturn htlcSet\n}\n\n// IsKeysend returns true if the invoice is a Keysend invoice.",
+      "length": 455,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) IsKeysend() bool {",
+      "content": "func (i *Invoice) IsKeysend() bool {\n\t// TODO(positiveblue): look for a more reliable way to tests if\n\t// an invoice is keysend.\n\treturn len(i.PaymentRequest) == 0 && !i.IsAMP()\n}\n\n// IsAMP returns true if the invoice is an AMP invoice.",
+      "length": 194,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) IsAMP() bool {",
+      "content": "func (i *Invoice) IsAMP() bool {\n\tif i.Terms.Features == nil {\n\t\treturn false\n\t}\n\n\treturn i.Terms.Features.HasFeature(\n\t\tlnwire.AMPRequired,\n\t)\n}\n\n// HtlcState defines the states an htlc paying to an invoice can be in.",
+      "length": 176,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcState uint8",
+      "content": "type HtlcState uint8\n\nconst (\n\t// HtlcStateAccepted indicates the htlc is locked-in, but not resolved.\n\tHtlcStateAccepted HtlcState = iota\n\n\t// HtlcStateCanceled indicates the htlc is canceled back to the\n\t// sender.\n\tHtlcStateCanceled\n\n\t// HtlcStateSettled indicates the htlc is settled.\n\tHtlcStateSettled\n)\n\n// InvoiceHTLC contains details about an htlc paying to this invoice.",
+      "length": 345,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceHTLC struct {",
+      "content": "type InvoiceHTLC struct {\n\t// Amt is the amount that is carried by this htlc.\n\tAmt lnwire.MilliSatoshi\n\n\t// MppTotalAmt is a field for mpp that indicates the expected total\n\t// amount.\n\tMppTotalAmt lnwire.MilliSatoshi\n\n\t// AcceptHeight is the block height at which the invoice registry\n\t// decided to accept this htlc as a payment to the invoice. At this\n\t// height, the invoice cltv delay must have been met.\n\tAcceptHeight uint32\n\n\t// AcceptTime is the wall clock time at which the invoice registry\n\t// decided to accept the htlc.\n\tAcceptTime time.Time\n\n\t// ResolveTime is the wall clock time at which the invoice registry\n\t// decided to settle the htlc.\n\tResolveTime time.Time\n\n\t// Expiry is the expiry height of this htlc.\n\tExpiry uint32\n\n\t// State indicates the state the invoice htlc is currently in. A\n\t// canceled htlc isn't just removed from the invoice htlcs map, because\n\t// we need AcceptHeight to properly cancel the htlc back.\n\tState HtlcState\n\n\t// CustomRecords contains the custom key/value pairs that accompanied\n\t// the htlc.\n\tCustomRecords record.CustomSet\n\n\t// AMP encapsulates additional data relevant to AMP HTLCs. This includes\n\t// the AMP onion record, in addition to the HTLC's payment hash and\n\t// preimage since these are unique to each AMP HTLC, and not the invoice\n\t// as a whole.\n\t//\n\t// NOTE: This value will only be set for AMP HTLCs.\n\tAMP *InvoiceHtlcAMPData\n}\n\n// Copy makes a deep copy of the target InvoiceHTLC.",
+      "length": 1379,
+      "tokens": 234,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *InvoiceHTLC) Copy() *InvoiceHTLC {",
+      "content": "func (h *InvoiceHTLC) Copy() *InvoiceHTLC {\n\tresult := *h\n\n\t// Make a copy of the CustomSet map.\n\tresult.CustomRecords = make(record.CustomSet)\n\tfor k, v := range h.CustomRecords {\n\t\tresult.CustomRecords[k] = v\n\t}\n\n\tresult.AMP = h.AMP.Copy()\n\n\treturn &result\n}\n\n// IsInHTLCSet returns true if this HTLC is part an HTLC set. If nil is passed,\n// this method returns true if this is an MPP HTLC. Otherwise, it only returns\n// true if the AMP HTLC's set id matches the populated setID.",
+      "length": 423,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *InvoiceHTLC) IsInHTLCSet(setID *[32]byte) bool {",
+      "content": "func (h *InvoiceHTLC) IsInHTLCSet(setID *[32]byte) bool {\n\twantAMPSet := setID != nil\n\tisAMPHtlc := h.AMP != nil\n\n\t// Non-AMP HTLCs cannot be part of AMP HTLC sets, and vice versa.\n\tif wantAMPSet != isAMPHtlc {\n\t\treturn false\n\t}\n\n\t// Skip AMP HTLCs that have differing set ids.\n\tif isAMPHtlc && *setID != h.AMP.Record.SetID() {\n\t\treturn false\n\t}\n\n\treturn true\n}\n\n// InvoiceHtlcAMPData is a struct hodling the additional metadata stored for\n// each received AMP HTLC. This includes the AMP onion record, in addition to\n// the HTLC's payment hash and preimage.",
+      "length": 482,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceHtlcAMPData struct {",
+      "content": "type InvoiceHtlcAMPData struct {\n\t// AMP is a copy of the AMP record presented in the onion payload\n\t// containing the information necessary to correlate and settle a\n\t// spontaneous HTLC set. Newly accepted legacy keysend payments will\n\t// also have this field set as we automatically promote them into an AMP\n\t// payment for internal processing.\n\tRecord record.AMP\n\n\t// Hash is an HTLC-level payment hash that is stored only for AMP\n\t// payments. This is done because an AMP HTLC will carry a different\n\t// payment hash from the invoice it might be satisfying, so we track the\n\t// payment hashes individually to able to compute whether or not the\n\t// reconstructed preimage correctly matches the HTLC's hash.\n\tHash lntypes.Hash\n\n\t// Preimage is an HTLC-level preimage that satisfies the AMP HTLC's\n\t// Hash. The preimage will be derived either from secret share\n\t// reconstruction of the shares in the AMP payload.\n\t//\n\t// NOTE: Preimage will only be present once the HTLC is in\n\t// HtlcStateSettled.\n\tPreimage *lntypes.Preimage\n}\n\n// Copy returns a deep copy of the InvoiceHtlcAMPData.",
+      "length": 1032,
+      "tokens": 175,
+      "embedding": []
+    },
+    {
+      "slug": "func (d *InvoiceHtlcAMPData) Copy() *InvoiceHtlcAMPData {",
+      "content": "func (d *InvoiceHtlcAMPData) Copy() *InvoiceHtlcAMPData {\n\tif d == nil {\n\t\treturn nil\n\t}\n\n\tvar preimage *lntypes.Preimage\n\tif d.Preimage != nil {\n\t\tpimg := *d.Preimage\n\t\tpreimage = &pimg\n\t}\n\n\treturn &InvoiceHtlcAMPData{\n\t\tRecord:   d.Record,\n\t\tHash:     d.Hash,\n\t\tPreimage: preimage,\n\t}\n}\n\n// HtlcAcceptDesc describes the details of a newly accepted htlc.",
+      "length": 280,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcAcceptDesc struct {",
+      "content": "type HtlcAcceptDesc struct {\n\t// AcceptHeight is the block height at which this htlc was accepted.\n\tAcceptHeight int32\n\n\t// Amt is the amount that is carried by this htlc.\n\tAmt lnwire.MilliSatoshi\n\n\t// MppTotalAmt is a field for mpp that indicates the expected total\n\t// amount.\n\tMppTotalAmt lnwire.MilliSatoshi\n\n\t// Expiry is the expiry height of this htlc.\n\tExpiry uint32\n\n\t// CustomRecords contains the custom key/value pairs that accompanied\n\t// the htlc.\n\tCustomRecords record.CustomSet\n\n\t// AMP encapsulates additional data relevant to AMP HTLCs. This includes\n\t// the AMP onion record, in addition to the HTLC's payment hash and\n\t// preimage since these are unique to each AMP HTLC, and not the invoice\n\t// as a whole.\n\t//\n\t// NOTE: This value will only be set for AMP HTLCs.\n\tAMP *InvoiceHtlcAMPData\n}\n\n// InvoiceUpdateDesc describes the changes that should be applied to the\n// invoice.",
+      "length": 839,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceUpdateDesc struct {",
+      "content": "type InvoiceUpdateDesc struct {\n\t// State is the new state that this invoice should progress to. If nil,\n\t// the state is left unchanged.\n\tState *InvoiceStateUpdateDesc\n\n\t// CancelHtlcs describes the htlcs that need to be canceled.\n\tCancelHtlcs map[CircuitKey]struct{}\n\n\t// AddHtlcs describes the newly accepted htlcs that need to be added to\n\t// the invoice.\n\tAddHtlcs map[CircuitKey]*HtlcAcceptDesc\n\n\t// SetID is an optional set ID for AMP invoices that allows operations\n\t// to be more efficient by ensuring we don't need to read out the\n\t// entire HTLC set each timee an HTLC is to be cancelled.\n\tSetID *SetID\n}\n\n// InvoiceStateUpdateDesc describes an invoice-level state transition.",
+      "length": 638,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceStateUpdateDesc struct {",
+      "content": "type InvoiceStateUpdateDesc struct {\n\t// NewState is the new state that this invoice should progress to.\n\tNewState ContractState\n\n\t// Preimage must be set to the preimage when NewState is settled.\n\tPreimage *lntypes.Preimage\n\n\t// HTLCPreimages set the HTLC-level preimages stored for AMP HTLCs.\n\t// These are only learned when settling the invoice as a whole. Must be\n\t// set when settling an invoice with non-nil SetID.\n\tHTLCPreimages map[CircuitKey]lntypes.Preimage\n\n\t// SetID identifies a specific set of HTLCs destined for the same\n\t// invoice as part of a larger AMP payment. This value will be nil for\n\t// legacy or MPP payments.\n\tSetID *[32]byte\n}\n\n// InvoiceUpdateCallback is a callback used in the db transaction to update the\n// invoice.",
+      "length": 692,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceUpdateCallback = func(invoice *Invoice) (*InvoiceUpdateDesc, error)",
+      "content": "type InvoiceUpdateCallback = func(invoice *Invoice) (*InvoiceUpdateDesc, error)\n\n// ValidateInvoice assures the invoice passes the checks for all the relevant\n// constraints.",
+      "length": 92,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func ValidateInvoice(i *Invoice, paymentHash lntypes.Hash) error {",
+      "content": "func ValidateInvoice(i *Invoice, paymentHash lntypes.Hash) error {\n\t// Avoid conflicts with all-zeroes magic value in the database.\n\tif paymentHash == UnknownPreimage.Hash() {\n\t\treturn fmt.Errorf(\"cannot use hash of all-zeroes preimage\")\n\t}\n\n\tif len(i.Memo) > MaxMemoSize {\n\t\treturn fmt.Errorf(\"max length a memo is %v, and invoice \"+\n\t\t\t\"of length %v was provided\", MaxMemoSize, len(i.Memo))\n\t}\n\tif len(i.PaymentRequest) > MaxPaymentRequestSize {\n\t\treturn fmt.Errorf(\"max length of payment request is %v, \"+\n\t\t\t\"length provided was %v\", MaxPaymentRequestSize,\n\t\t\tlen(i.PaymentRequest))\n\t}\n\tif i.Terms.Features == nil {\n\t\treturn errors.New(\"invoice must have a feature vector\")\n\t}\n\n\terr := feature.ValidateDeps(i.Terms.Features)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif i.requiresPreimage() && i.Terms.PaymentPreimage == nil {\n\t\treturn errors.New(\"this invoice must have a preimage\")\n\t}\n\n\tif len(i.Htlcs) > 0 {\n\t\treturn ErrInvoiceHasHtlcs\n\t}\n\n\treturn nil\n}\n\n// requiresPreimage returns true if the invoice requires a preimage to be valid.",
+      "length": 934,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) requiresPreimage() bool {",
+      "content": "func (i *Invoice) requiresPreimage() bool {\n\t// AMP invoices and hodl invoices are allowed to have no preimage\n\t// specified.\n\tif i.HodlInvoice || i.IsAMP() {\n\t\treturn false\n\t}\n\n\treturn true\n}\n\n// IsPending returns true if the invoice is in ContractOpen state.",
+      "length": 207,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *Invoice) IsPending() bool {",
+      "content": "func (i *Invoice) IsPending() bool {\n\treturn i.State == ContractOpen || i.State == ContractAccepted\n}\n\n// copySlice allocates a new slice and copies the source into it.",
+      "length": 128,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func copySlice(src []byte) []byte {",
+      "content": "func copySlice(src []byte) []byte {\n\tdest := make([]byte, len(src))\n\tcopy(dest, src)\n\treturn dest\n}\n\n// CopyInvoice makes a deep copy of the supplied invoice.",
+      "length": 117,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func CopyInvoice(src *Invoice) (*Invoice, error) {",
+      "content": "func CopyInvoice(src *Invoice) (*Invoice, error) {\n\tdest := Invoice{\n\t\tMemo:           copySlice(src.Memo),\n\t\tPaymentRequest: copySlice(src.PaymentRequest),\n\t\tCreationDate:   src.CreationDate,\n\t\tSettleDate:     src.SettleDate,\n\t\tTerms:          src.Terms,\n\t\tAddIndex:       src.AddIndex,\n\t\tSettleIndex:    src.SettleIndex,\n\t\tState:          src.State,\n\t\tAmtPaid:        src.AmtPaid,\n\t\tHtlcs: make(\n\t\t\tmap[CircuitKey]*InvoiceHTLC, len(src.Htlcs),\n\t\t),\n\t\tAMPState:    make(map[SetID]InvoiceStateAMP),\n\t\tHodlInvoice: src.HodlInvoice,\n\t}\n\n\tdest.Terms.Features = src.Terms.Features.Clone()\n\n\tif src.Terms.PaymentPreimage != nil {\n\t\tpreimage := *src.Terms.PaymentPreimage\n\t\tdest.Terms.PaymentPreimage = &preimage\n\t}\n\n\tfor k, v := range src.Htlcs {\n\t\tdest.Htlcs[k] = v.Copy()\n\t}\n\n\t// Lastly, copy the amp invoice state.\n\tfor k, v := range src.AMPState {\n\t\tampInvState, err := v.copy()\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tdest.AMPState[k] = ampInvState\n\t}\n\n\treturn &dest, nil\n}\n\n// InvoiceDeleteRef holds a reference to an invoice to be deleted.",
+      "length": 953,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceDeleteRef struct {",
+      "content": "type InvoiceDeleteRef struct {\n\t// PayHash is the payment hash of the target invoice. All invoices are\n\t// currently indexed by payment hash.\n\tPayHash lntypes.Hash\n\n\t// PayAddr is the payment addr of the target invoice. Newer invoices\n\t// (0.11 and up) are indexed by payment address in addition to payment\n\t// hash, but pre 0.8 invoices do not have one at all.\n\tPayAddr *[32]byte\n\n\t// AddIndex is the add index of the invoice.\n\tAddIndex uint64\n\n\t// SettleIndex is the settle index of the invoice.\n\tSettleIndex uint64\n}\n",
+      "length": 474,
+      "tokens": 83,
+      "embedding": []
+    }
+  ]
+}

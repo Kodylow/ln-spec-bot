@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/db.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type callerStats struct {",
+      "content": "type callerStats struct {\n\tcount       int\n\tcommitStats CommitStats\n}\n",
+      "length": 41,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (s callerStats) String() string {",
+      "content": "func (s callerStats) String() string {\n\treturn fmt.Sprintf(\"count: %d, retries: %d, rset: %d, wset: %d\",\n\t\ts.count, s.commitStats.Retries, s.commitStats.Rset,\n\t\ts.commitStats.Wset)\n}\n\n// commitStatsCollector collects commit stats for commits succeeding\n// and also for commits failing.",
+      "length": 240,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type commitStatsCollector struct {",
+      "content": "type commitStatsCollector struct {\n\tsync.RWMutex\n\tsucc map[string]*callerStats\n\tfail map[string]*callerStats\n}\n\n// newCommitStatsCollector creates a new commitStatsCollector instance.",
+      "length": 143,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func newCommitStatsCollector() *commitStatsCollector {",
+      "content": "func newCommitStatsCollector() *commitStatsCollector {\n\treturn &commitStatsCollector{\n\t\tsucc: make(map[string]*callerStats),\n\t\tfail: make(map[string]*callerStats),\n\t}\n}\n\n// PrintStats returns collected stats pretty printed into a string.",
+      "length": 176,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitStatsCollector) PrintStats() string {",
+      "content": "func (c *commitStatsCollector) PrintStats() string {\n\tc.RLock()\n\tdefer c.RUnlock()\n\n\ts := \"\\nFailure:\\n\"\n\tfor k, v := range c.fail {\n\t\ts += fmt.Sprintf(\"%s\\t%s\\n\", k, v)\n\t}\n\n\ts += \"\\nSuccess:\\n\"\n\tfor k, v := range c.succ {\n\t\ts += fmt.Sprintf(\"%s\\t%s\\n\", k, v)\n\t}\n\n\treturn s\n}\n\n// updateStatsMap updatess commit stats map for a caller.",
+      "length": 265,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func updateStatMap(",
+      "content": "func updateStatMap(\n\tcaller string, stats CommitStats, m map[string]*callerStats) {\n\n\tif _, ok := m[caller]; !ok {\n\t\tm[caller] = &callerStats{}\n\t}\n\n\tcurr := m[caller]\n\tcurr.count++\n\n\t// Update only if the total commit set is greater or equal.\n\tcurrTotal := curr.commitStats.Rset + curr.commitStats.Wset\n\tif currTotal <= (stats.Rset + stats.Wset) {\n\t\tcurr.commitStats = stats\n\t}\n}\n\n// callback is an STM commit stats callback passed which can be passed\n// using a WithCommitStatsCallback to the STM upon construction.",
+      "length": 479,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *commitStatsCollector) callback(succ bool, stats CommitStats) {",
+      "content": "func (c *commitStatsCollector) callback(succ bool, stats CommitStats) {\n\tcaller := \"unknown\"\n\n\t// Get the caller. As this callback is called from\n\t// the backend interface that means we need to ascend\n\t// 4 frames in the callstack.\n\t_, file, no, ok := runtime.Caller(4)\n\tif ok {\n\t\tcaller = fmt.Sprintf(\"%s#%d\", file, no)\n\t}\n\n\tc.Lock()\n\tdefer c.Unlock()\n\n\tif succ {\n\t\tupdateStatMap(caller, stats, c.succ)\n\t} else {\n\t\tupdateStatMap(caller, stats, c.fail)\n\t}\n}\n\n// db holds a reference to the etcd client connection.",
+      "length": 421,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "type db struct {",
+      "content": "type db struct {\n\tcfg                  Config\n\tctx                  context.Context\n\tcancel               func()\n\tcli                  *clientv3.Client\n\tcommitStatsCollector *commitStatsCollector\n\ttxQueue              *commitQueue\n\ttxMutex              sync.RWMutex\n}\n\n// Enforce db implements the walletdb.DB interface.\nvar _ walletdb.DB = (*db)(nil)\n\n// NewEtcdClient creates a new etcd v3 API client.",
+      "length": 374,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func NewEtcdClient(ctx context.Context, cfg Config) (*clientv3.Client,",
+      "content": "func NewEtcdClient(ctx context.Context, cfg Config) (*clientv3.Client,\n\tcontext.Context, func(), error) {\n\n\tclientCfg := clientv3.Config{\n\t\tEndpoints:          []string{cfg.Host},\n\t\tDialTimeout:        etcdConnectionTimeout,\n\t\tUsername:           cfg.User,\n\t\tPassword:           cfg.Pass,\n\t\tMaxCallSendMsgSize: cfg.MaxMsgSize,\n\t}\n\n\tif !cfg.DisableTLS {\n\t\ttlsInfo := transport.TLSInfo{\n\t\t\tCertFile:           cfg.CertFile,\n\t\t\tKeyFile:            cfg.KeyFile,\n\t\t\tInsecureSkipVerify: cfg.InsecureSkipVerify,\n\t\t}\n\n\t\ttlsConfig, err := tlsInfo.ClientConfig()\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\n\t\tclientCfg.TLS = tlsConfig\n\t}\n\n\tctx, cancel := context.WithCancel(ctx)\n\tclientCfg.Context = ctx\n\tcli, err := clientv3.New(clientCfg)\n\tif err != nil {\n\t\tcancel()\n\t\treturn nil, nil, nil, err\n\t}\n\n\t// Apply the namespace.\n\tcli.KV = namespace.NewKV(cli.KV, cfg.Namespace)\n\tcli.Watcher = namespace.NewWatcher(cli.Watcher, cfg.Namespace)\n\tcli.Lease = namespace.NewLease(cli.Lease, cfg.Namespace)\n\n\treturn cli, ctx, cancel, nil\n}\n\n// newEtcdBackend returns a db object initialized with the passed backend\n// config. If etcd connection cannot be established, then returns error.",
+      "length": 1062,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func newEtcdBackend(ctx context.Context, cfg Config) (*db, error) {",
+      "content": "func newEtcdBackend(ctx context.Context, cfg Config) (*db, error) {\n\tcli, ctx, cancel, err := NewEtcdClient(ctx, cfg)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tbackend := &db{\n\t\tcfg:     cfg,\n\t\tctx:     ctx,\n\t\tcancel:  cancel,\n\t\tcli:     cli,\n\t\ttxQueue: NewCommitQueue(ctx),\n\t}\n\n\tif cfg.CollectStats {\n\t\tbackend.commitStatsCollector = newCommitStatsCollector()\n\t}\n\n\treturn backend, nil\n}\n\n// getSTMOptions creates all STM options based on the backend config.",
+      "length": 368,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) getSTMOptions() []STMOptionFunc {",
+      "content": "func (db *db) getSTMOptions() []STMOptionFunc {\n\topts := []STMOptionFunc{\n\t\tWithAbortContext(db.ctx),\n\t}\n\n\tif db.cfg.CollectStats {\n\t\topts = append(opts,\n\t\t\tWithCommitStatsCallback(db.commitStatsCollector.callback),\n\t\t)\n\t}\n\n\treturn opts\n}\n\n// View opens a database read transaction and executes the function f with the\n// transaction passed as a parameter. After f exits, the transaction is rolled\n// back. If f errors, its error is returned, not a rollback error (if any\n// occur). The passed reset function is called before the start of the\n// transaction and can be used to reset intermediate state. As callers may\n// expect retries of the f closure (depending on the database backend used), the\n// reset function will be called before each retry respectively.",
+      "length": 696,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) View(f func(tx walletdb.ReadTx) error, reset func()) error {",
+      "content": "func (db *db) View(f func(tx walletdb.ReadTx) error, reset func()) error {\n\tif db.cfg.SingleWriter {\n\t\tdb.txMutex.RLock()\n\t\tdefer db.txMutex.RUnlock()\n\t}\n\n\tapply := func(stm STM) error {\n\t\treset()\n\t\treturn f(newReadWriteTx(stm, etcdDefaultRootBucketId, nil))\n\t}\n\n\t_, err := RunSTM(db.cli, apply, db.txQueue, db.getSTMOptions()...)\n\treturn err\n}\n\n// Update opens a database read/write transaction and executes the function f\n// with the transaction passed as a parameter. After f exits, if f did not\n// error, the transaction is committed. Otherwise, if f did error, the\n// transaction is rolled back. If the rollback fails, the original error\n// returned by f is still returned. If the commit fails, the commit error is\n// returned. As callers may expect retries of the f closure, the reset function\n// will be called before each retry respectively.",
+      "length": 754,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Update(f func(tx walletdb.ReadWriteTx) error, reset func()) error {",
+      "content": "func (db *db) Update(f func(tx walletdb.ReadWriteTx) error, reset func()) error {\n\tif db.cfg.SingleWriter {\n\t\tdb.txMutex.Lock()\n\t\tdefer db.txMutex.Unlock()\n\t}\n\n\tapply := func(stm STM) error {\n\t\treset()\n\t\treturn f(newReadWriteTx(stm, etcdDefaultRootBucketId, nil))\n\t}\n\n\t_, err := RunSTM(db.cli, apply, db.txQueue, db.getSTMOptions()...)\n\treturn err\n}\n\n// PrintStats returns all collected stats pretty printed into a string.",
+      "length": 326,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) PrintStats() string {",
+      "content": "func (db *db) PrintStats() string {\n\tif db.commitStatsCollector != nil {\n\t\treturn db.commitStatsCollector.PrintStats()\n\t}\n\n\treturn \"\"\n}\n\n// BeginReadWriteTx opens a database read+write transaction.",
+      "length": 154,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {",
+      "content": "func (db *db) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {\n\tvar locker sync.Locker\n\tif db.cfg.SingleWriter {\n\t\tdb.txMutex.Lock()\n\t\tlocker = &db.txMutex\n\t}\n\n\treturn newReadWriteTx(\n\t\tNewSTM(db.cli, db.txQueue, db.getSTMOptions()...),\n\t\tetcdDefaultRootBucketId, locker,\n\t), nil\n}\n\n// BeginReadTx opens a database read transaction.",
+      "length": 257,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) BeginReadTx() (walletdb.ReadTx, error) {",
+      "content": "func (db *db) BeginReadTx() (walletdb.ReadTx, error) {\n\tvar locker sync.Locker\n\tif db.cfg.SingleWriter {\n\t\tdb.txMutex.RLock()\n\t\tlocker = db.txMutex.RLocker()\n\t}\n\n\treturn newReadWriteTx(\n\t\tNewSTM(db.cli, db.txQueue, db.getSTMOptions()...),\n\t\tetcdDefaultRootBucketId, locker,\n\t), nil\n}\n\n// Copy writes a copy of the database to the provided writer.  This call will\n// start a read-only transaction to perform all operations.\n// This function is part of the walletdb.Db interface implementation.",
+      "length": 423,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Copy(w io.Writer) error {",
+      "content": "func (db *db) Copy(w io.Writer) error {\n\tctx, cancel := context.WithTimeout(db.ctx, etcdLongTimeout)\n\tdefer cancel()\n\n\treadCloser, err := db.cli.Snapshot(ctx)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t_, err = io.Copy(w, readCloser)\n\n\treturn err\n}\n\n// Close cleanly shuts down the database and syncs all data.\n// This function is part of the walletdb.Db interface implementation.",
+      "length": 318,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (db *db) Close() error {",
+      "content": "func (db *db) Close() error {\n\terr := db.cli.Close()\n\tdb.cancel()\n\tdb.txQueue.Stop()\n\treturn err\n}\n",
+      "length": 64,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

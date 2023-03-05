@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/stream_test.go",
+  "package": "tlv_test",
+  "sections": [
+    {
+      "slug": "type parsedTypeTest struct {",
+      "content": "type parsedTypeTest struct {\n\tname           string\n\tencode         []tlv.Type\n\tdecode         []tlv.Type\n\texpParsedTypes tlv.TypeMap\n}\n\n// TestParsedTypes asserts that a Stream will properly return the set of types\n// that it encounters when the type is known-and-decoded or unknown-and-ignored.",
+      "length": 260,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func TestParsedTypes(t *testing.T) {",
+      "content": "func TestParsedTypes(t *testing.T) {\n\tconst (\n\t\tknownType       = 1\n\t\tunknownType     = 3\n\t\tsecondKnownType = 4\n\t)\n\n\ttests := []parsedTypeTest{\n\t\t{\n\t\t\tname:   \"known and unknown\",\n\t\t\tencode: []tlv.Type{knownType, unknownType},\n\t\t\tdecode: []tlv.Type{knownType},\n\t\t\texpParsedTypes: tlv.TypeMap{\n\t\t\t\tunknownType: []byte{0, 0, 0, 0, 0, 0, 0, 0},\n\t\t\t\tknownType:   nil,\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname:   \"known and missing known\",\n\t\t\tencode: []tlv.Type{knownType},\n\t\t\tdecode: []tlv.Type{knownType, secondKnownType},\n\t\t\texpParsedTypes: tlv.TypeMap{\n\t\t\t\tknownType: nil,\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestParsedTypes(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 622,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func testParsedTypes(t *testing.T, test parsedTypeTest) {",
+      "content": "func testParsedTypes(t *testing.T, test parsedTypeTest) {\n\tencRecords := make([]tlv.Record, 0, len(test.encode))\n\tfor _, typ := range test.encode {\n\t\tencRecords = append(\n\t\t\tencRecords, tlv.MakePrimitiveRecord(typ, new(uint64)),\n\t\t)\n\t}\n\n\tdecRecords := make([]tlv.Record, 0, len(test.decode))\n\tfor _, typ := range test.decode {\n\t\tdecRecords = append(\n\t\t\tdecRecords, tlv.MakePrimitiveRecord(typ, new(uint64)),\n\t\t)\n\t}\n\n\t// Construct a stream that will encode the test's set of types.\n\tencStream := tlv.MustNewStream(encRecords...)\n\n\tvar b bytes.Buffer\n\tif err := encStream.Encode(&b); err != nil {\n\t\tt.Fatalf(\"unable to encode stream: %v\", err)\n\t}\n\n\t// Create a stream that will parse a subset of the test's types.\n\tdecStream := tlv.MustNewStream(decRecords...)\n\n\tparsedTypes, err := decStream.DecodeWithParsedTypes(\n\t\tbytes.NewReader(b.Bytes()),\n\t)\n\trequire.NoError(t, err, \"error decoding\")\n\tif !reflect.DeepEqual(parsedTypes, test.expParsedTypes) {\n\t\tt.Fatalf(\"error mismatch on parsed types\")\n\t}\n}\n\nvar (\n\tsmallValue      = 1\n\tsmallValueBytes = []byte{\n\t\t// uint32 tlv, value uses 1 byte.\n\t\t0xa, 0x1, 0x1,\n\t\t// uint64 tlv, value uses 1 byte.\n\t\t0xb, 0x1, 0x1,\n\t}\n\n\tmedianValue      = 255\n\tmedianValueBytes = []byte{\n\t\t// uint32 tlv, value uses 3 byte.\n\t\t0xa, 0x3, 0xfd, 0x0, 0xff,\n\t\t// uint64 tlv, value uses 3 byte.\n\t\t0xb, 0x3, 0xfd, 0x0, 0xff,\n\t}\n\n\tlargeValue      = 65536\n\tlargeValueBytes = []byte{\n\t\t// uint32 tlv, value uses 5 byte.\n\t\t0xa, 0x5, 0xfe, 0x0, 0x1, 0x0, 0x0,\n\t\t// uint64 tlv, value uses 5 byte.\n\t\t0xb, 0x5, 0xfe, 0x0, 0x1, 0x0, 0x0,\n\t}\n)\n\n// TestEncodeBigSizeFormatTlvStream tests that the bigsize encoder works as\n// expected.",
+      "length": 1525,
+      "tokens": 217,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEncodeBigSizeFormatTlvStream(t *testing.T) {",
+      "content": "func TestEncodeBigSizeFormatTlvStream(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tname          string\n\t\tvalue         int\n\t\texpectedBytes []byte\n\t}{\n\t\t{\n\t\t\t// Test encode 1, which saves us space.\n\t\t\tname:          \"encode small value\",\n\t\t\tvalue:         smallValue,\n\t\t\texpectedBytes: smallValueBytes,\n\t\t},\n\t\t{\n\t\t\t// Test encode 255, which still saves us space.\n\t\t\tname:          \"encode median value\",\n\t\t\tvalue:         medianValue,\n\t\t\texpectedBytes: medianValueBytes,\n\t\t},\n\t\t{\n\t\t\t// Test encode 65536, which takes more space to encode\n\t\t\t// an uint32.\n\t\t\tname:          \"encode large value\",\n\t\t\tvalue:         largeValue,\n\t\t\texpectedBytes: largeValueBytes,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\ttestUint32 := uint32(tc.value)\n\t\t\ttestUint64 := uint64(tc.value)\n\t\t\tts := makeBigSizeFormatTlvStream(\n\t\t\t\tt, &testUint32, &testUint64,\n\t\t\t)\n\n\t\t\t// Encode the tlv stream.\n\t\t\tbuf := bytes.NewBuffer([]byte{})\n\t\t\trequire.NoError(t, ts.Encode(buf))\n\n\t\t\t// Check the bytes are written as expected.\n\t\t\trequire.Equal(t, tc.expectedBytes, buf.Bytes())\n\t\t})\n\t}\n}\n\n// TestDecodeBigSizeFormatTlvStream tests that the bigsize decoder works as\n// expected.",
+      "length": 1106,
+      "tokens": 135,
+      "embedding": []
+    },
+    {
+      "slug": "func TestDecodeBigSizeFormatTlvStream(t *testing.T) {",
+      "content": "func TestDecodeBigSizeFormatTlvStream(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tname          string\n\t\tbytes         []byte\n\t\texpectedValue int\n\t}{\n\t\t{\n\t\t\t// Test decode 1.\n\t\t\tname: \"decode small value\",\n\t\t\tbytes: []byte{\n\t\t\t\t// uint32 tlv, value uses 1 byte.\n\t\t\t\t0xa, 0x1, 0x1,\n\t\t\t\t// uint64 tlv, value uses 1 byte.\n\t\t\t\t0xb, 0x1, 0x1,\n\t\t\t},\n\t\t\texpectedValue: smallValue,\n\t\t},\n\t\t{\n\t\t\t// Test decode 255.\n\t\t\tname: \"decode median value\",\n\t\t\tbytes: []byte{\n\t\t\t\t// uint32 tlv, value uses 3 byte.\n\t\t\t\t0xa, 0x3, 0xfd, 0x0, 0xff,\n\t\t\t\t// uint64 tlv, value uses 3 byte.\n\t\t\t\t0xb, 0x3, 0xfd, 0x0, 0xff,\n\t\t\t},\n\t\t\texpectedValue: medianValue,\n\t\t},\n\t\t{\n\t\t\t// Test decode 65536.\n\t\t\tname: \"decode value 65536\",\n\t\t\tbytes: []byte{\n\t\t\t\t// uint32 tlv, value uses 5 byte.\n\t\t\t\t0xa, 0x5, 0xfe, 0x0, 0x1, 0x0, 0x0,\n\t\t\t\t// uint64 tlv, value uses 5 byte.\n\t\t\t\t0xb, 0x5, 0xfe, 0x0, 0x1, 0x0, 0x0,\n\t\t\t},\n\t\t\texpectedValue: largeValue,\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tvar (\n\t\t\t\ttestUint32 uint32\n\t\t\t\ttestUint64 uint64\n\t\t\t)\n\t\t\tts := makeBigSizeFormatTlvStream(\n\t\t\t\tt, &testUint32, &testUint64,\n\t\t\t)\n\n\t\t\t// Decode the tlv stream.\n\t\t\tbuf := bytes.NewBuffer(tc.bytes)\n\t\t\trequire.NoError(t, ts.Decode(buf))\n\n\t\t\t// Check the values are written as expected.\n\t\t\trequire.EqualValues(t, tc.expectedValue, testUint32)\n\t\t\trequire.EqualValues(t, tc.expectedValue, testUint64)\n\t\t})\n\t}\n}\n",
+      "length": 1301,
+      "tokens": 185,
+      "embedding": []
+    },
+    {
+      "slug": "func makeBigSizeFormatTlvStream(t *testing.T, vUint32 *uint32,",
+      "content": "func makeBigSizeFormatTlvStream(t *testing.T, vUint32 *uint32,\n\tvUint64 *uint64) *tlv.Stream {\n\n\tconst (\n\t\ttypeUint32 tlv.Type = 10\n\t\ttypeUint64 tlv.Type = 11\n\t)\n\n\t// Create a dummy tlv stream for testing.\n\tts, err := tlv.NewStream(\n\t\ttlv.MakeBigSizeRecord(typeUint32, vUint32),\n\t\ttlv.MakeBigSizeRecord(typeUint64, vUint64),\n\t)\n\trequire.NoError(t, err)\n\n\treturn ts\n}\n\n// TestDecodeP2P tests that the p2p variants of the stream decode functions\n// work with small records and fail with large records.",
+      "length": 418,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func TestDecodeP2P(t *testing.T) {",
+      "content": "func TestDecodeP2P(t *testing.T) {\n\tt.Parallel()\n\n\tconst (\n\t\tsmallType tlv.Type = 8\n\t\tlargeType tlv.Type = 10\n\t)\n\n\tvar (\n\t\tsmallBytes = []byte{\n\t\t\t0x08, // tlv type = 8\n\t\t\t0x10, // length = 16\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,\n\t\t}\n\n\t\tlargeBytes = []byte{\n\t\t\t0x0a,                         // tlv type = 10\n\t\t\t0xfe, 0x00, 0x01, 0x00, 0x00, // length = 65536\n\t\t}\n\t)\n\n\t// Verify the expected behavior for the large type.\n\ts, err := tlv.NewStream(tlv.MakePrimitiveRecord(largeType, &[]byte{}))\n\trequire.NoError(t, err)\n\n\t// Decoding with either of the p2p stream decoders should fail with the\n\t// record too large error.\n\tbuf := bytes.NewBuffer(largeBytes)\n\trequire.Equal(t, s.DecodeP2P(buf), tlv.ErrRecordTooLarge)\n\n\tbuf2 := bytes.NewBuffer(largeBytes)\n\t_, err = s.DecodeWithParsedTypesP2P(buf2)\n\trequire.Equal(t, err, tlv.ErrRecordTooLarge)\n\n\t// Extend largeBytes with a payload of 65536 bytes so that the non-p2p\n\t// decoders can successfully decode it.\n\tlargeSlice := make([]byte, 65542)\n\tcopy(largeSlice[:6], largeBytes)\n\tbuf3 := bytes.NewBuffer(largeSlice)\n\trequire.NoError(t, s.Decode(buf3))\n\n\tbuf4 := bytes.NewBuffer(largeSlice)\n\t_, err = s.DecodeWithParsedTypes(buf4)\n\trequire.NoError(t, err)\n\n\t// Now create a new stream and assert that the p2p-variants can decode\n\t// small types.\n\ts2, err := tlv.NewStream(tlv.MakePrimitiveRecord(smallType, &[]byte{}))\n\trequire.NoError(t, err)\n\n\tbuf5 := bytes.NewBuffer(smallBytes)\n\trequire.NoError(t, s2.DecodeP2P(buf5))\n\n\tbuf6 := bytes.NewBuffer(smallBytes)\n\t_, err = s2.DecodeWithParsedTypesP2P(buf6)\n\trequire.NoError(t, err)\n}\n",
+      "length": 1548,
+      "tokens": 192,
+      "embedding": []
+    }
+  ]
+}

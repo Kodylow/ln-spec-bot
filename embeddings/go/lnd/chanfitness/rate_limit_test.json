@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/rate_limit_test.go",
+  "package": "chanfitness",
+  "sections": [
+    {
+      "slug": "func TestGetRateLimit(t *testing.T) {",
+      "content": "func TestGetRateLimit(t *testing.T) {\n\ttests := []struct {\n\t\tname      string\n\t\tflapCount int\n\t\trateLimit time.Duration\n\t}{\n\t\t{\n\t\t\tname:      \"zero flaps\",\n\t\t\tflapCount: 0,\n\t\t\trateLimit: rateLimits[0],\n\t\t},\n\t\t{\n\t\t\tname:      \"middle tier\",\n\t\t\tflapCount: rateLimitScale * (len(rateLimits) / 2),\n\t\t\trateLimit: rateLimits[len(rateLimits)/2],\n\t\t},\n\t\t{\n\t\t\tname:      \"last tier\",\n\t\t\tflapCount: rateLimitScale * (len(rateLimits) - 1),\n\t\t\trateLimit: rateLimits[len(rateLimits)-1],\n\t\t},\n\t\t{\n\t\t\tname:      \"beyond last tier\",\n\t\t\tflapCount: rateLimitScale * (len(rateLimits) * 2),\n\t\t\trateLimit: rateLimits[len(rateLimits)-1],\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tlimit := getRateLimit(test.flapCount)\n\t\t\trequire.Equal(t, test.rateLimit, limit)\n\t\t})\n\t}\n}\n\n// TestCooldownFlapCount tests cooldown of all time flap counts.",
+      "length": 810,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCooldownFlapCount(t *testing.T) {",
+      "content": "func TestCooldownFlapCount(t *testing.T) {\n\ttests := []struct {\n\t\tname      string\n\t\tflapCount int\n\t\tlastFlap  time.Time\n\t\texpected  int\n\t}{\n\t\t{\n\t\t\tname:      \"just flapped, do not cooldown\",\n\t\t\tflapCount: 1,\n\t\t\tlastFlap:  testNow,\n\t\t\texpected:  1,\n\t\t},\n\t\t{\n\t\t\tname:      \"period not elapsed, do not cooldown\",\n\t\t\tflapCount: 1,\n\t\t\tlastFlap:  testNow.Add(flapCountCooldownPeriod / 2 * -1),\n\t\t\texpected:  1,\n\t\t},\n\t\t{\n\t\t\tname:      \"rounded to 0\",\n\t\t\tflapCount: 1,\n\t\t\tlastFlap:  testNow.Add(flapCountCooldownPeriod * -1),\n\t\t\texpected:  0,\n\t\t},\n\t\t{\n\t\t\tname:      \"decreased to integer value\",\n\t\t\tflapCount: 10,\n\t\t\tlastFlap:  testNow.Add(flapCountCooldownPeriod * -1),\n\t\t\texpected:  9,\n\t\t},\n\t\t{\n\t\t\tname:      \"multiple cooldown periods\",\n\t\t\tflapCount: 10,\n\t\t\tlastFlap:  testNow.Add(flapCountCooldownPeriod * -3),\n\t\t\texpected:  8,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tflapCount := cooldownFlapCount(\n\t\t\t\ttestNow, test.flapCount, test.lastFlap,\n\t\t\t)\n\t\t\trequire.Equal(t, test.expected, flapCount)\n\t\t})\n\t}\n}\n",
+      "length": 983,
+      "tokens": 118,
+      "embedding": []
+    }
+  ]
+}

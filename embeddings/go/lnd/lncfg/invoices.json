@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/invoices.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Invoices struct {",
+      "content": "type Invoices struct {\n\tHoldExpiryDelta uint32 `long:\"holdexpirydelta\" description:\"The number of blocks before a hold invoice's htlc expires that the invoice should be canceled to prevent a force close. Force closes will not be prevented if this value is not greater than DefaultIncomingBroadcastDelta.\"`\n}\n",
+      "length": 283,
+      "tokens": 39,
+      "embedding": []
+    }
+  ]
+}

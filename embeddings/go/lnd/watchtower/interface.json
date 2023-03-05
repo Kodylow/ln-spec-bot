@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/interface.go",
+  "package": "watchtower",
+  "sections": [
+    {
+      "slug": "type DB interface {",
+      "content": "type DB interface {\n\tlookout.DB\n\twtserver.DB\n}\n\n// AddressNormalizer is a function signature that allows the tower to resolve\n// TCP addresses on clear or onion networks.",
+      "length": 145,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type AddressNormalizer func(addrs []string, defaultPort string,",
+      "content": "type AddressNormalizer func(addrs []string, defaultPort string,\n\tresolver func(string, string) (*net.TCPAddr, error)) ([]net.Addr, error)\n",
+      "length": 73,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

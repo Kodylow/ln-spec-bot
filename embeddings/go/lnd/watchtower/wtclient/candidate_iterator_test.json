@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/candidate_iterator_test.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\trand.Seed(time.Now().Unix())\n}\n",
+      "length": 30,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func randAddr(t *testing.T) net.Addr {",
+      "content": "func randAddr(t *testing.T) net.Addr {\n\tt.Helper()\n\n\tvar ip [4]byte\n\t_, err := rand.Read(ip[:])\n\trequire.NoError(t, err)\n\n\tvar port [2]byte\n\t_, err = rand.Read(port[:])\n\trequire.NoError(t, err)\n\n\treturn &net.TCPAddr{\n\t\tIP:   net.IP(ip[:]),\n\t\tPort: int(binary.BigEndian.Uint16(port[:])),\n\t}\n}\n",
+      "length": 238,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func randTower(t *testing.T) *Tower {",
+      "content": "func randTower(t *testing.T) *Tower {\n\tt.Helper()\n\n\tpriv, err := btcec.NewPrivateKey()\n\trequire.NoError(t, err, \"unable to create private key\")\n\tpubKey := priv.PubKey()\n\taddrs, err := newAddressIterator(randAddr(t))\n\trequire.NoError(t, err)\n\n\treturn &Tower{\n\t\tID:          wtdb.TowerID(rand.Uint64()),\n\t\tIdentityKey: pubKey,\n\t\tAddresses:   addrs,\n\t}\n}\n",
+      "length": 300,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func copyTower(t *testing.T, tower *Tower) *Tower {",
+      "content": "func copyTower(t *testing.T, tower *Tower) *Tower {\n\tt.Helper()\n\n\taddrs := tower.Addresses.GetAll()\n\taddrIterator, err := newAddressIterator(addrs...)\n\trequire.NoError(t, err)\n\n\treturn &Tower{\n\t\tID:          tower.ID,\n\t\tIdentityKey: tower.IdentityKey,\n\t\tAddresses:   addrIterator,\n\t}\n}\n",
+      "length": 222,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func assertActiveCandidate(t *testing.T, i TowerCandidateIterator, c *Tower,",
+      "content": "func assertActiveCandidate(t *testing.T, i TowerCandidateIterator, c *Tower,\n\tactive bool) {\n\n\tt.Helper()\n\n\tisCandidate := i.IsActive(c.ID)\n\tif isCandidate {\n\t\trequire.Truef(t, active, \"expected tower %v to no longer be \"+\n\t\t\t\"an active candidate\", c.ID)\n\t\treturn\n\t}\n\trequire.Falsef(t, active, \"expected tower %v to be an active candidate\",\n\t\tc.ID)\n}\n",
+      "length": 261,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNextCandidate(t *testing.T, i TowerCandidateIterator, c *Tower) {",
+      "content": "func assertNextCandidate(t *testing.T, i TowerCandidateIterator, c *Tower) {\n\tt.Helper()\n\n\ttower, err := i.Next()\n\trequire.NoError(t, err)\n\trequire.True(t, tower.IdentityKey.IsEqual(c.IdentityKey))\n\trequire.Equal(t, tower.ID, c.ID)\n\trequire.Equal(t, tower.Addresses.GetAll(), c.Addresses.GetAll())\n}\n\n// TestTowerCandidateIterator asserts the internal state of a\n// TowerCandidateIterator after a series of updates to its candidates.",
+      "length": 346,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTowerCandidateIterator(t *testing.T) {",
+      "content": "func TestTowerCandidateIterator(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll start our test by creating an iterator of four candidate\n\t// towers. We'll use copies of these towers within the iterator to\n\t// ensure the iterator properly updates the state of its candidates.\n\tconst numTowers = 4\n\ttowers := make([]*Tower, 0, numTowers)\n\tfor i := 0; i < numTowers; i++ {\n\t\ttowers = append(towers, randTower(t))\n\t}\n\ttowerCopies := make([]*Tower, 0, numTowers)\n\tfor _, tower := range towers {\n\t\ttowerCopies = append(towerCopies, copyTower(t, tower))\n\t}\n\ttowerIterator := newTowerListIterator(towerCopies...)\n\n\t// We should expect to see all of our candidates in the order that they\n\t// were added.\n\tfor _, expTower := range towers {\n\t\ttower, err := towerIterator.Next()\n\t\trequire.NoError(t, err)\n\t\trequire.Equal(t, expTower, tower)\n\t}\n\n\t_, err := towerIterator.Next()\n\trequire.ErrorIs(t, err, ErrTowerCandidatesExhausted)\n\n\ttowerIterator.Reset()\n\n\t// We'll then attempt to test the RemoveCandidate behavior of the\n\t// iterator. We'll attempt to remove the address of the first tower,\n\t// which should result in an error due to it being the last address of\n\t// the tower.\n\tfirstTower := towers[0]\n\tfirstTowerAddr := firstTower.Addresses.Peek()\n\terr = towerIterator.RemoveCandidate(firstTower.ID, firstTowerAddr)\n\trequire.ErrorIs(t, err, wtdb.ErrLastTowerAddr)\n\tassertActiveCandidate(t, towerIterator, firstTower, true)\n\tassertNextCandidate(t, towerIterator, firstTower)\n\n\t// We'll then remove the second tower completely from the iterator by\n\t// not providing the optional address. Since it's been removed, we\n\t// should expect to see the third tower next.\n\tsecondTower, thirdTower := towers[1], towers[2]\n\terr = towerIterator.RemoveCandidate(secondTower.ID, nil)\n\trequire.NoError(t, err)\n\tassertActiveCandidate(t, towerIterator, secondTower, false)\n\tassertNextCandidate(t, towerIterator, thirdTower)\n\n\t// We'll then update the fourth candidate with a new address. A\n\t// duplicate shouldn't be added since it already exists within the\n\t// iterator, but the new address should be.\n\tfourthTower := towers[3]\n\tassertActiveCandidate(t, towerIterator, fourthTower, true)\n\tfourthTower.Addresses.Add(randAddr(t))\n\ttowerIterator.AddCandidate(fourthTower)\n\tassertNextCandidate(t, towerIterator, fourthTower)\n\n\t// Finally, we'll attempt to add a new candidate to the end of the\n\t// iterator. Since it didn't already exist and we've reached the end, it\n\t// should be available as the next candidate.\n\ttowerIterator.AddCandidate(secondTower)\n\tassertActiveCandidate(t, towerIterator, secondTower, true)\n\tassertNextCandidate(t, towerIterator, secondTower)\n}\n",
+      "length": 2520,
+      "tokens": 321,
+      "embedding": []
+    }
+  ]
+}

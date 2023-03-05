@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/bucket.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func makeBucketID(key []byte) [bucketIDLength]byte {",
+      "content": "func makeBucketID(key []byte) [bucketIDLength]byte {\n\treturn sha256.Sum256(key)\n}\n\n// isValidBucketID checks if the passed slice is the required length to be a\n// valid bucket id.",
+      "length": 122,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func isValidBucketID(s []byte) bool {",
+      "content": "func isValidBucketID(s []byte) bool {\n\treturn len(s) == bucketIDLength\n}\n\n// makeKey concatenates parent, key and postfix into one byte slice.\n// The postfix indicates the use of this key (whether bucket or value), while\n// parent refers to the parent bucket.",
+      "length": 216,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func makeKey(parent, key, postfix []byte) []byte {",
+      "content": "func makeKey(parent, key, postfix []byte) []byte {\n\tkeyBuf := make([]byte, len(parent)+len(key)+len(postfix))\n\tcopy(keyBuf, parent)\n\tcopy(keyBuf[len(parent):], key)\n\tcopy(keyBuf[len(parent)+len(key):], postfix)\n\n\treturn keyBuf\n}\n\n// makeBucketKey returns a bucket key from the passed parent bucket id and\n// the key.",
+      "length": 256,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func makeBucketKey(parent []byte, key []byte) []byte {",
+      "content": "func makeBucketKey(parent []byte, key []byte) []byte {\n\treturn makeKey(parent, key, bucketPostfix)\n}\n\n// makeValueKey returns a value key from the passed parent bucket id and\n// the key.",
+      "length": 127,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func makeValueKey(parent []byte, key []byte) []byte {",
+      "content": "func makeValueKey(parent []byte, key []byte) []byte {\n\treturn makeKey(parent, key, valuePostfix)\n}\n\n// makeSequenceKey returns a sequence key of the passed parent bucket id.",
+      "length": 116,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func makeSequenceKey(parent []byte) []byte {",
+      "content": "func makeSequenceKey(parent []byte) []byte {\n\tkeyBuf := make([]byte, len(sequencePrefix)+len(parent))\n\tcopy(keyBuf, sequencePrefix)\n\tcopy(keyBuf[len(sequencePrefix):], parent)\n\treturn keyBuf\n}\n\n// isBucketKey returns true if the passed key is a bucket key, meaning it\n// keys a bucket name.",
+      "length": 238,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func isBucketKey(key string) bool {",
+      "content": "func isBucketKey(key string) bool {\n\tif len(key) < bucketIDLength+1 {\n\t\treturn false\n\t}\n\n\treturn key[len(key)-1] == bucketPostfix[0]\n}\n\n// getKey chops out the key from the raw key (by removing the bucket id\n// prefixing the key and the postfix indicating whether it is a bucket or\n// a value key)",
+      "length": 252,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func getKey(rawKey string) []byte {",
+      "content": "func getKey(rawKey string) []byte {\n\treturn []byte(rawKey[bucketIDLength : len(rawKey)-1])\n}\n\n// getKeyVal chops out the key from the raw key (by removing the bucket id\n// prefixing the key and the postfix indicating whether it is a bucket or\n// a value key) and also returns the appropriate value for the key, which is\n// nil in case of buckets (or the set value otherwise).",
+      "length": 333,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func getKeyVal(kv *KV) ([]byte, []byte) {",
+      "content": "func getKeyVal(kv *KV) ([]byte, []byte) {\n\tvar val []byte\n\n\tif !isBucketKey(kv.key) {\n\t\tval = []byte(kv.val)\n\t}\n\n\treturn getKey(kv.key), val\n}\n\n// BucketKey is a helper function used in tests to create a bucket key from\n// passed bucket list.",
+      "length": 190,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func BucketKey(buckets ...string) string {",
+      "content": "func BucketKey(buckets ...string) string {\n\tvar bucketKey []byte\n\n\trootID := makeBucketID([]byte(etcdDefaultRootBucketId))\n\tparent := rootID[:]\n\n\tfor _, bucketName := range buckets {\n\t\tbucketKey = makeBucketKey(parent, []byte(bucketName))\n\t\tid := makeBucketID(bucketKey)\n\t\tparent = id[:]\n\t}\n\n\treturn string(bucketKey)\n}\n\n// BucketVal is a helper function used in tests to create a bucket value (the\n// value for a bucket key) from the passed bucket list.",
+      "length": 396,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func BucketVal(buckets ...string) string {",
+      "content": "func BucketVal(buckets ...string) string {\n\tid := makeBucketID([]byte(BucketKey(buckets...)))\n\treturn string(id[:])\n}\n\n// ValueKey is a helper function used in tests to create a value key from the\n// passed key and bucket list.",
+      "length": 179,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func ValueKey(key string, buckets ...string) string {",
+      "content": "func ValueKey(key string, buckets ...string) string {\n\trootID := makeBucketID([]byte(etcdDefaultRootBucketId))\n\tbucket := rootID[:]\n\n\tfor _, bucketName := range buckets {\n\t\tbucketKey := makeBucketKey(bucket, []byte(bucketName))\n\t\tid := makeBucketID(bucketKey)\n\t\tbucket = id[:]\n\t}\n\n\treturn string(makeValueKey(bucket, []byte(key)))\n}\n\n// SequenceKey is a helper function used in tests or external tools to create a\n// sequence key from the passed bucket list.",
+      "length": 391,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func SequenceKey(buckets ...string) string {",
+      "content": "func SequenceKey(buckets ...string) string {\n\tid := makeBucketID([]byte(BucketKey(buckets...)))\n\treturn string(makeSequenceKey(id[:]))\n}\n",
+      "length": 89,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

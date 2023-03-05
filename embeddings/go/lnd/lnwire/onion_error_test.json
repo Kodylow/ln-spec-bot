@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/onion_error_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestEncodeDecodeCode(t *testing.T) {",
+      "content": "func TestEncodeDecodeCode(t *testing.T) {\n\tfor _, failure1 := range onionFailures {\n\t\tvar b bytes.Buffer\n\n\t\tif err := EncodeFailure(&b, failure1, 0); err != nil {\n\t\t\tt.Fatalf(\"unable to encode failure code(%v): %v\",\n\t\t\t\tfailure1.Code(), err)\n\t\t}\n\n\t\tfailure2, err := DecodeFailure(&b, 0)\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"unable to decode failure code(%v): %v\",\n\t\t\t\tfailure1.Code(), err)\n\t\t}\n\n\t\tif !reflect.DeepEqual(failure1, failure2) {\n\t\t\tt.Fatalf(\"expected %v, got %v\", spew.Sdump(failure1),\n\t\t\t\tspew.Sdump(failure2))\n\t\t}\n\t}\n}\n\n// TestEncodeDecodeTlv tests the ability of onion errors to be properly encoded\n// and decoded with tlv data present.",
+      "length": 581,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEncodeDecodeTlv(t *testing.T) {",
+      "content": "func TestEncodeDecodeTlv(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, testFailure := range onionFailures {\n\t\ttestFailure := testFailure\n\t\tcode := testFailure.Code().String()\n\n\t\tt.Run(code, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\ttestEncodeDecodeTlv(t, testFailure)\n\t\t})\n\t}\n}\n\nvar testTlv, _ = hex.DecodeString(\"fd023104deadbeef\")\n",
+      "length": 269,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func testEncodeDecodeTlv(t *testing.T, testFailure FailureMessage) {",
+      "content": "func testEncodeDecodeTlv(t *testing.T, testFailure FailureMessage) {\n\tvar failureMessageBuffer bytes.Buffer\n\n\terr := EncodeFailureMessage(&failureMessageBuffer, testFailure, 0)\n\trequire.NoError(t, err)\n\n\tfailureMessageBuffer.Write(testTlv)\n\n\tfailure, err := DecodeFailureMessage(&failureMessageBuffer, 0)\n\trequire.NoError(t, err)\n\n\t// FailIncorrectDetails already reads tlv data. Adapt the expected data.\n\tif incorrectDetails, ok := testFailure.(*FailIncorrectDetails); ok {\n\t\tincorrectDetails.extraOpaqueData = testTlv\n\t}\n\n\trequire.Equal(t, testFailure, failure)\n}\n\n// TestChannelUpdateCompatabilityParsing tests that we're able to properly read\n// out channel update messages encoded in an onion error payload that was\n// written in the legacy (type prefixed) format.",
+      "length": 680,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChannelUpdateCompatabilityParsing(t *testing.T) {",
+      "content": "func TestChannelUpdateCompatabilityParsing(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll start by taking out test channel update, and encoding it into\n\t// a set of raw bytes.\n\tvar b bytes.Buffer\n\tif err := testChannelUpdate.Encode(&b, 0); err != nil {\n\t\tt.Fatalf(\"unable to encode chan update: %v\", err)\n\t}\n\n\t// Now that we have the set of bytes encoded, we'll ensure that we're\n\t// able to decode it using our compatibility method, as it's a regular\n\t// encoded channel update message.\n\tvar newChanUpdate ChannelUpdate\n\terr := parseChannelUpdateCompatabilityMode(\n\t\t&b, uint16(b.Len()), &newChanUpdate, 0,\n\t)\n\trequire.NoError(t, err, \"unable to parse channel update\")\n\n\t// At this point, we'll ensure that we get the exact same failure out\n\t// on the other side.\n\tif !reflect.DeepEqual(testChannelUpdate, newChanUpdate) {\n\t\tt.Fatalf(\"mismatched channel updates: %v\", err)\n\t}\n\n\t// We'll now reset then re-encoded the same channel update to try it in\n\t// the proper compatible mode.\n\tb.Reset()\n\n\t// Before we encode the update itself, we'll also write out the 2-byte\n\t// type in order to simulate the compat mode.\n\tvar tByte [2]byte\n\tbinary.BigEndian.PutUint16(tByte[:], MsgChannelUpdate)\n\tb.Write(tByte[:])\n\tif err := testChannelUpdate.Encode(&b, 0); err != nil {\n\t\tt.Fatalf(\"unable to encode chan update: %v\", err)\n\t}\n\n\t// We should be able to properly parse the encoded channel update\n\t// message even with the extra two bytes.\n\tvar newChanUpdate2 ChannelUpdate\n\terr = parseChannelUpdateCompatabilityMode(\n\t\t&b, uint16(b.Len()), &newChanUpdate2, 0,\n\t)\n\trequire.NoError(t, err, \"unable to parse channel update\")\n\n\tif !reflect.DeepEqual(newChanUpdate2, newChanUpdate) {\n\t\tt.Fatalf(\"mismatched channel updates: %v\", err)\n\t}\n}\n\n// TestWriteOnionErrorChanUpdate tests that we write an exact size for the\n// channel update in order to be more compliant with the parsers of other\n// implementations.",
+      "length": 1778,
+      "tokens": 260,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteOnionErrorChanUpdate(t *testing.T) {",
+      "content": "func TestWriteOnionErrorChanUpdate(t *testing.T) {\n\tt.Parallel()\n\n\t// First, we'll write out the raw channel update so we can obtain the\n\t// raw serialized length.\n\tvar b bytes.Buffer\n\tupdate := testChannelUpdate\n\tif err := update.Encode(&b, 0); err != nil {\n\t\tt.Fatalf(\"unable to write update: %v\", err)\n\t}\n\ttrueUpdateLength := b.Len()\n\n\t// Next, we'll use the function to encode the update as we would in a\n\t// onion error message.\n\tvar errorBuf bytes.Buffer\n\terr := writeOnionErrorChanUpdate(&errorBuf, &update, 0)\n\trequire.NoError(t, err, \"unable to encode onion error\")\n\n\t// Finally, read the length encoded and ensure that it matches the raw\n\t// length.\n\tvar encodedLen uint16\n\tif err := ReadElement(&errorBuf, &encodedLen); err != nil {\n\t\tt.Fatalf(\"unable to read len: %v\", err)\n\t}\n\tif uint16(trueUpdateLength) != encodedLen {\n\t\tt.Fatalf(\"wrong length written: expected %v, got %v\",\n\t\t\ttrueUpdateLength, encodedLen)\n\t}\n}\n\n// TestFailIncorrectDetailsOptionalAmount tests that we're able to decode an\n// FailIncorrectDetails error that doesn't have the optional amount. This\n// ensures we're able to decode FailIncorrectDetails messages from older nodes.",
+      "length": 1077,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFailIncorrectDetailsOptionalAmount(t *testing.T) {",
+      "content": "func TestFailIncorrectDetailsOptionalAmount(t *testing.T) {\n\tt.Parallel()\n\n\tonionError := &mockFailIncorrectDetailsNoAmt{}\n\n\tvar b bytes.Buffer\n\tif err := EncodeFailure(&b, onionError, 0); err != nil {\n\t\tt.Fatalf(\"unable to encode failure: %v\", err)\n\t}\n\n\tonionError2, err := DecodeFailure(bytes.NewReader(b.Bytes()), 0)\n\trequire.NoError(t, err, \"unable to decode error\")\n\n\tinvalidDetailsErr, ok := onionError2.(*FailIncorrectDetails)\n\tif !ok {\n\t\tt.Fatalf(\"expected FailIncorrectDetails, but got %T\",\n\t\t\tonionError2)\n\t}\n\n\tif invalidDetailsErr.amount != 0 {\n\t\tt.Fatalf(\"expected amount to be zero\")\n\t}\n\tif invalidDetailsErr.height != 0 {\n\t\tt.Fatalf(\"height incorrect\")\n\t}\n}\n",
+      "length": 587,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "type mockFailIncorrectDetailsNoAmt struct {",
+      "content": "type mockFailIncorrectDetailsNoAmt struct {\n}\n",
+      "length": 1,
+      "tokens": 1,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoAmt) Code() FailCode {",
+      "content": "func (f *mockFailIncorrectDetailsNoAmt) Code() FailCode {\n\treturn CodeIncorrectOrUnknownPaymentDetails\n}\n",
+      "length": 45,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoAmt) Error() string {",
+      "content": "func (f *mockFailIncorrectDetailsNoAmt) Error() string {\n\treturn \"\"\n}\n",
+      "length": 11,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoAmt) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (f *mockFailIncorrectDetailsNoAmt) Decode(r io.Reader, pver uint32) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoAmt) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (f *mockFailIncorrectDetailsNoAmt) Encode(w io.Writer, pver uint32) error {\n\treturn nil\n}\n\n// TestFailIncorrectDetailsOptionalHeight tests that we're able to decode an\n// FailIncorrectDetails error that doesn't have the optional height. This\n// ensures we're able to decode FailIncorrectDetails messages from older nodes.",
+      "length": 240,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func TestFailIncorrectDetailsOptionalHeight(t *testing.T) {",
+      "content": "func TestFailIncorrectDetailsOptionalHeight(t *testing.T) {\n\tt.Parallel()\n\n\tonionError := &mockFailIncorrectDetailsNoHeight{\n\t\tamount: uint64(123),\n\t}\n\n\tvar b bytes.Buffer\n\tif err := EncodeFailure(&b, onionError, 0); err != nil {\n\t\tt.Fatalf(\"unable to encode failure: %v\", err)\n\t}\n\n\tonionError2, err := DecodeFailure(bytes.NewReader(b.Bytes()), 0)\n\trequire.NoError(t, err, \"unable to decode error\")\n\n\tinvalidDetailsErr, ok := onionError2.(*FailIncorrectDetails)\n\tif !ok {\n\t\tt.Fatalf(\"expected FailIncorrectDetails, but got %T\",\n\t\t\tonionError2)\n\t}\n\n\tif invalidDetailsErr.amount != 123 {\n\t\tt.Fatalf(\"amount incorrect\")\n\t}\n\tif invalidDetailsErr.height != 0 {\n\t\tt.Fatalf(\"height incorrect\")\n\t}\n}\n",
+      "length": 605,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "type mockFailIncorrectDetailsNoHeight struct {",
+      "content": "type mockFailIncorrectDetailsNoHeight struct {\n\tamount uint64\n}\n",
+      "length": 15,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoHeight) Code() FailCode {",
+      "content": "func (f *mockFailIncorrectDetailsNoHeight) Code() FailCode {\n\treturn CodeIncorrectOrUnknownPaymentDetails\n}\n",
+      "length": 45,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoHeight) Error() string {",
+      "content": "func (f *mockFailIncorrectDetailsNoHeight) Error() string {\n\treturn \"\"\n}\n",
+      "length": 11,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoHeight) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (f *mockFailIncorrectDetailsNoHeight) Decode(r io.Reader, pver uint32) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *mockFailIncorrectDetailsNoHeight) Encode(w *bytes.Buffer,",
+      "content": "func (f *mockFailIncorrectDetailsNoHeight) Encode(w *bytes.Buffer,\n\tpver uint32) error {\n\n\treturn WriteUint64(w, f.amount)\n}\n",
+      "length": 54,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/postgres/config.go",
+  "package": "postgres",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\tDsn            string        `long:\"dsn\" description:\"Database connection string.\"`\n\tTimeout        time.Duration `long:\"timeout\" description:\"Database connection timeout. Set to zero to disable.\"`\n\tMaxConnections int           `long:\"maxconnections\" description:\"The maximum number of open connections to the database. Set to zero for unlimited.\"`\n}\n",
+      "length": 348,
+      "tokens": 35,
+      "embedding": []
+    }
+  ]
+}

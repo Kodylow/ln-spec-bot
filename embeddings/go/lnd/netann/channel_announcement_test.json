@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/netann/channel_announcement_test.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "func TestCreateChanAnnouncement(t *testing.T) {",
+      "content": "func TestCreateChanAnnouncement(t *testing.T) {\n\tt.Parallel()\n\n\tkey := [33]byte{0x1}\n\tsig := lnwire.Sig{0x1}\n\tfeatures := lnwire.NewRawFeatureVector(lnwire.AnchorsRequired)\n\tvar featuresBuf bytes.Buffer\n\tif err := features.Encode(&featuresBuf); err != nil {\n\t\tt.Fatalf(\"unable to encode features: %v\", err)\n\t}\n\n\texpChanAnn := &lnwire.ChannelAnnouncement{\n\t\tChainHash:       chainhash.Hash{0x1},\n\t\tShortChannelID:  lnwire.ShortChannelID{BlockHeight: 1},\n\t\tNodeID1:         key,\n\t\tNodeID2:         key,\n\t\tNodeSig1:        sig,\n\t\tNodeSig2:        sig,\n\t\tBitcoinKey1:     key,\n\t\tBitcoinKey2:     key,\n\t\tBitcoinSig1:     sig,\n\t\tBitcoinSig2:     sig,\n\t\tFeatures:        features,\n\t\tExtraOpaqueData: []byte{0x1},\n\t}\n\n\tchanProof := &channeldb.ChannelAuthProof{\n\t\tNodeSig1Bytes:    expChanAnn.NodeSig1.ToSignatureBytes(),\n\t\tNodeSig2Bytes:    expChanAnn.NodeSig2.ToSignatureBytes(),\n\t\tBitcoinSig1Bytes: expChanAnn.BitcoinSig1.ToSignatureBytes(),\n\t\tBitcoinSig2Bytes: expChanAnn.BitcoinSig2.ToSignatureBytes(),\n\t}\n\tchanInfo := &channeldb.ChannelEdgeInfo{\n\t\tChainHash:        expChanAnn.ChainHash,\n\t\tChannelID:        expChanAnn.ShortChannelID.ToUint64(),\n\t\tChannelPoint:     wire.OutPoint{Index: 1},\n\t\tCapacity:         btcutil.SatoshiPerBitcoin,\n\t\tNodeKey1Bytes:    key,\n\t\tNodeKey2Bytes:    key,\n\t\tBitcoinKey1Bytes: key,\n\t\tBitcoinKey2Bytes: key,\n\t\tFeatures:         featuresBuf.Bytes(),\n\t\tExtraOpaqueData:  expChanAnn.ExtraOpaqueData,\n\t}\n\tchanAnn, _, _, err := CreateChanAnnouncement(\n\t\tchanProof, chanInfo, nil, nil,\n\t)\n\trequire.NoError(t, err, \"unable to create channel announcement\")\n\n\tassert.Equal(t, chanAnn, expChanAnn)\n}\n",
+      "length": 1519,
+      "tokens": 116,
+      "embedding": []
+    }
+  ]
+}

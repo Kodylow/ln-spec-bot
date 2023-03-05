@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/rpcmiddleware.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type RPCMiddleware struct {",
+      "content": "type RPCMiddleware struct {\n\tEnable           bool          `long:\"enable\" description:\"Enable the RPC middleware interceptor functionality.\"`\n\tInterceptTimeout time.Duration `long:\"intercepttimeout\" description:\"Time after which a RPC middleware intercept request will time out and return an error if it hasn't yet received a response.\"`\n\tMandatory        []string      `long:\"addmandatory\" description:\"Add the named middleware to the list of mandatory middlewares. All RPC requests are blocked/denied if any of the mandatory middlewares is not registered. Can be specified multiple times.\"`\n}\n\n// Validate checks the values configured for the RPC middleware.",
+      "length": 628,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RPCMiddleware) Validate() error {",
+      "content": "func (r *RPCMiddleware) Validate() error {\n\tif r.InterceptTimeout < 0 {\n\t\treturn fmt.Errorf(\"RPC middleware intercept timeout cannot \" +\n\t\t\t\"be negative\")\n\t}\n\n\treturn nil\n}\n\n// DefaultRPCMiddleware returns the default values for the RPC interception\n// middleware configuration.",
+      "length": 226,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultRPCMiddleware() *RPCMiddleware {",
+      "content": "func DefaultRPCMiddleware() *RPCMiddleware {\n\treturn &RPCMiddleware{\n\t\tInterceptTimeout: defaultRPCMiddlewareTimeout,\n\t}\n}\n",
+      "length": 74,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

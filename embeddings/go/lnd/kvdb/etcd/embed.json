@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/embed.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func getFreePort() int {",
+      "content": "func getFreePort() int {\n\tport := atomic.AddUint32(&lastPort, 1)\n\tfor port < 65535 {\n\t\t// If there are no errors while attempting to listen on this\n\t\t// port, close the socket and return it as available.\n\t\taddr := fmt.Sprintf(\"127.0.0.1:%d\", port)\n\t\tl, err := net.Listen(\"tcp4\", addr)\n\t\tif err == nil {\n\t\t\terr := l.Close()\n\t\t\tif err == nil {\n\t\t\t\treturn int(port)\n\t\t\t}\n\t\t}\n\t\tport = atomic.AddUint32(&lastPort, 1)\n\t}\n\n\t// No ports available? Must be a mistake.\n\tpanic(\"no ports available for listening\")\n}\n\n// NewEmbeddedEtcdInstance creates an embedded etcd instance for testing,\n// listening on random open ports. Returns the backend config and a cleanup\n// func that will stop the etcd instance.",
+      "length": 650,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func NewEmbeddedEtcdInstance(path string, clientPort, peerPort uint16,",
+      "content": "func NewEmbeddedEtcdInstance(path string, clientPort, peerPort uint16,\n\tlogFile string) (*Config, func(), error) {\n\n\tcfg := embed.NewConfig()\n\tcfg.Dir = path\n\n\t// To ensure that we can submit large transactions.\n\tcfg.MaxTxnOps = 16384\n\tcfg.MaxRequestBytes = 16384 * 1024\n\tcfg.Logger = \"zap\"\n\tif logFile != \"\" {\n\t\tcfg.LogLevel = \"info\"\n\t\tcfg.LogOutputs = []string{logFile}\n\t} else {\n\t\tcfg.LogLevel = \"error\"\n\t}\n\n\t// Listen on random free ports if no ports were specified.\n\tif clientPort == 0 {\n\t\tclientPort = uint16(getFreePort())\n\t}\n\n\tif peerPort == 0 {\n\t\tpeerPort = uint16(getFreePort())\n\t}\n\n\tclientURL := fmt.Sprintf(\"127.0.0.1:%d\", clientPort)\n\tpeerURL := fmt.Sprintf(\"127.0.0.1:%d\", peerPort)\n\tcfg.LCUrls = []url.URL{{Host: clientURL}}\n\tcfg.LPUrls = []url.URL{{Host: peerURL}}\n\n\tetcd, err := embed.StartEtcd(cfg)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tselect {\n\tcase <-etcd.Server.ReadyNotify():\n\tcase <-time.After(readyTimeout):\n\t\tetcd.Close()\n\t\treturn nil, nil,\n\t\t\tfmt.Errorf(\"etcd failed to start after: %v\", readyTimeout)\n\t}\n\n\tconnConfig := &Config{\n\t\tHost:               \"http://\" + clientURL,\n\t\tInsecureSkipVerify: true,\n\t\tNamespace:          defaultNamespace,\n\t\tMaxMsgSize:         int(cfg.MaxRequestBytes),\n\t}\n\n\treturn connConfig, func() {\n\t\tetcd.Close()\n\t}, nil\n}\n",
+      "length": 1158,
+      "tokens": 149,
+      "embedding": []
+    }
+  ]
+}

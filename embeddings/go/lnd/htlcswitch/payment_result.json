@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/payment_result.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type PaymentResult struct {",
+      "content": "type PaymentResult struct {\n\t// Preimage is set by the switch in case a sent HTLC was settled.\n\tPreimage [32]byte\n\n\t// Error is non-nil in case a HTLC send failed, and the HTLC is now\n\t// irrevocably canceled. If the payment failed during forwarding, this\n\t// error will be a *ForwardingError.\n\tError error\n}\n\n// networkResult is the raw result received from the network after a payment\n// attempt has been made. Since the switch doesn't always have the necessary\n// data to decode the raw message, we store it together with some meta data,\n// and decode it when the router query for the final result.",
+      "length": 561,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "type networkResult struct {",
+      "content": "type networkResult struct {\n\t// msg is the received result. This should be of type UpdateFulfillHTLC\n\t// or UpdateFailHTLC.\n\tmsg lnwire.Message\n\n\t// unencrypted indicates whether the failure encoded in the message is\n\t// unencrypted, and hence doesn't need to be decrypted.\n\tunencrypted bool\n\n\t// isResolution indicates whether this is a resolution message, in\n\t// which the failure reason might not be included.\n\tisResolution bool\n}\n\n// serializeNetworkResult serializes the networkResult.",
+      "length": 449,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeNetworkResult(w io.Writer, n *networkResult) error {",
+      "content": "func serializeNetworkResult(w io.Writer, n *networkResult) error {\n\treturn channeldb.WriteElements(w, n.msg, n.unencrypted, n.isResolution)\n}\n\n// deserializeNetworkResult deserializes the networkResult.",
+      "length": 132,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeNetworkResult(r io.Reader) (*networkResult, error) {",
+      "content": "func deserializeNetworkResult(r io.Reader) (*networkResult, error) {\n\tn := &networkResult{}\n\n\tif err := channeldb.ReadElements(r,\n\t\t&n.msg, &n.unencrypted, &n.isResolution,\n\t); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn n, nil\n}\n\n// networkResultStore is a persistent store that stores any results of HTLCs in\n// flight on the network. Since payment results are inherently asynchronous, it\n// is used as a common access point for senders of HTLCs, to know when a result\n// is back. The Switch will checkpoint any received result to the store, and\n// the store will keep results and notify the callers about them.",
+      "length": 528,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "type networkResultStore struct {",
+      "content": "type networkResultStore struct {\n\tbackend kvdb.Backend\n\n\t// results is a map from paymentIDs to channels where subscribers to\n\t// payment results will be notified.\n\tresults    map[uint64][]chan *networkResult\n\tresultsMtx sync.Mutex\n\n\t// paymentIDMtx is a multimutex used to make sure the database and\n\t// result subscribers map is consistent for each payment ID in case of\n\t// concurrent callers.\n\tpaymentIDMtx *multimutex.Mutex\n}\n",
+      "length": 386,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func newNetworkResultStore(db kvdb.Backend) *networkResultStore {",
+      "content": "func newNetworkResultStore(db kvdb.Backend) *networkResultStore {\n\treturn &networkResultStore{\n\t\tbackend:      db,\n\t\tresults:      make(map[uint64][]chan *networkResult),\n\t\tpaymentIDMtx: multimutex.NewMutex(),\n\t}\n}\n\n// storeResult stores the networkResult for the given paymentID, and\n// notifies any subscribers.",
+      "length": 239,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (store *networkResultStore) storeResult(paymentID uint64,",
+      "content": "func (store *networkResultStore) storeResult(paymentID uint64,\n\tresult *networkResult) error {\n\n\t// We get a mutex for this payment ID. This is needed to ensure\n\t// consistency between the database state and the subscribers in case\n\t// of concurrent calls.\n\tstore.paymentIDMtx.Lock(paymentID)\n\tdefer store.paymentIDMtx.Unlock(paymentID)\n\n\tlog.Debugf(\"Storing result for paymentID=%v\", paymentID)\n\n\t// Serialize the payment result.\n\tvar b bytes.Buffer\n\tif err := serializeNetworkResult(&b, result); err != nil {\n\t\treturn err\n\t}\n\n\tvar paymentIDBytes [8]byte\n\tbinary.BigEndian.PutUint64(paymentIDBytes[:], paymentID)\n\n\terr := kvdb.Batch(store.backend, func(tx kvdb.RwTx) error {\n\t\tnetworkResults, err := tx.CreateTopLevelBucket(\n\t\t\tnetworkResultStoreBucketKey,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn networkResults.Put(paymentIDBytes[:], b.Bytes())\n\t})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now that the result is stored in the database, we can notify any\n\t// active subscribers.\n\tstore.resultsMtx.Lock()\n\tfor _, res := range store.results[paymentID] {\n\t\tres <- result\n\t}\n\tdelete(store.results, paymentID)\n\tstore.resultsMtx.Unlock()\n\n\treturn nil\n}\n\n// subscribeResult is used to get the payment result for the given\n// payment ID. It returns a channel on which the result will be delivered when\n// ready.",
+      "length": 1202,
+      "tokens": 163,
+      "embedding": []
+    },
+    {
+      "slug": "func (store *networkResultStore) subscribeResult(paymentID uint64) (",
+      "content": "func (store *networkResultStore) subscribeResult(paymentID uint64) (\n\t<-chan *networkResult, error) {\n\n\t// We get a mutex for this payment ID. This is needed to ensure\n\t// consistency between the database state and the subscribers in case\n\t// of concurrent calls.\n\tstore.paymentIDMtx.Lock(paymentID)\n\tdefer store.paymentIDMtx.Unlock(paymentID)\n\n\tlog.Debugf(\"Subscribing to result for paymentID=%v\", paymentID)\n\n\tvar (\n\t\tresult     *networkResult\n\t\tresultChan = make(chan *networkResult, 1)\n\t)\n\n\terr := kvdb.View(store.backend, func(tx kvdb.RTx) error {\n\t\tvar err error\n\t\tresult, err = fetchResult(tx, paymentID)\n\t\tswitch {\n\n\t\t// Result not yet available, we will notify once a result is\n\t\t// available.\n\t\tcase err == ErrPaymentIDNotFound:\n\t\t\treturn nil\n\n\t\tcase err != nil:\n\t\t\treturn err\n\n\t\t// The result was found, and will be returned immediately.\n\t\tdefault:\n\t\t\treturn nil\n\t\t}\n\t}, func() {\n\t\tresult = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If the result was found, we can send it on the result channel\n\t// imemdiately.\n\tif result != nil {\n\t\tresultChan <- result\n\t\treturn resultChan, nil\n\t}\n\n\t// Otherwise we store the result channel for when the result is\n\t// available.\n\tstore.resultsMtx.Lock()\n\tstore.results[paymentID] = append(\n\t\tstore.results[paymentID], resultChan,\n\t)\n\tstore.resultsMtx.Unlock()\n\n\treturn resultChan, nil\n}\n\n// getResult attempts to immediately fetch the result for the given pid from\n// the store. If no result is available, ErrPaymentIDNotFound is returned.",
+      "length": 1367,
+      "tokens": 203,
+      "embedding": []
+    },
+    {
+      "slug": "func (store *networkResultStore) getResult(pid uint64) (",
+      "content": "func (store *networkResultStore) getResult(pid uint64) (\n\t*networkResult, error) {\n\n\tvar result *networkResult\n\terr := kvdb.View(store.backend, func(tx kvdb.RTx) error {\n\t\tvar err error\n\t\tresult, err = fetchResult(tx, pid)\n\t\treturn err\n\t}, func() {\n\t\tresult = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn result, nil\n}\n",
+      "length": 256,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func fetchResult(tx kvdb.RTx, pid uint64) (*networkResult, error) {",
+      "content": "func fetchResult(tx kvdb.RTx, pid uint64) (*networkResult, error) {\n\tvar paymentIDBytes [8]byte\n\tbinary.BigEndian.PutUint64(paymentIDBytes[:], pid)\n\n\tnetworkResults := tx.ReadBucket(networkResultStoreBucketKey)\n\tif networkResults == nil {\n\t\treturn nil, ErrPaymentIDNotFound\n\t}\n\n\t// Check whether a result is already available.\n\tresultBytes := networkResults.Get(paymentIDBytes[:])\n\tif resultBytes == nil {\n\t\treturn nil, ErrPaymentIDNotFound\n\t}\n\n\t// Decode the result we found.\n\tr := bytes.NewReader(resultBytes)\n\n\treturn deserializeNetworkResult(r)\n}\n\n// cleanStore removes all entries from the store, except the payment IDs given.\n// NOTE: Since every result not listed in the keep map will be deleted, care\n// should be taken to ensure no new payment attempts are being made\n// concurrently while this process is ongoing, as its result might end up being\n// deleted.",
+      "length": 776,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (store *networkResultStore) cleanStore(keep map[uint64]struct{}) error {",
+      "content": "func (store *networkResultStore) cleanStore(keep map[uint64]struct{}) error {\n\treturn kvdb.Update(store.backend, func(tx kvdb.RwTx) error {\n\t\tnetworkResults, err := tx.CreateTopLevelBucket(\n\t\t\tnetworkResultStoreBucketKey,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Iterate through the bucket, deleting all items not in the\n\t\t// keep map.\n\t\tvar toClean [][]byte\n\t\tif err := networkResults.ForEach(func(k, _ []byte) error {\n\t\t\tpid := binary.BigEndian.Uint64(k)\n\t\t\tif _, ok := keep[pid]; ok {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\ttoClean = append(toClean, k)\n\t\t\treturn nil\n\t\t}); err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor _, k := range toClean {\n\t\t\terr := networkResults.Delete(k)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\tif len(toClean) > 0 {\n\t\t\tlog.Infof(\"Removed %d stale entries from network \"+\n\t\t\t\t\"result store\", len(toClean))\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n}\n",
+      "length": 739,
+      "tokens": 113,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration2/client_db.go",
+  "package": "migration2",
+  "sections": [
+    {
+      "slug": "func MigrateClientChannelDetails(tx kvdb.RwTx) error {",
+      "content": "func MigrateClientChannelDetails(tx kvdb.RwTx) error {\n\tlog.Infof(\"Migrating the tower client db to move the channel \" +\n\t\t\"summaries to the new channel-details bucket\")\n\n\t// Create the new top level cChanDetailsBkt.\n\tchanDetailsBkt, err := tx.CreateTopLevelBucket(cChanDetailsBkt)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Get the top-level channel summaries bucket.\n\tchanSummaryBkt := tx.ReadWriteBucket(cChanSummaryBkt)\n\tif chanSummaryBkt == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\t// Iterate over the cChanSummaryBkt's keys. Each key is a channel-id.\n\t// For each of these, create a new sub-bucket with this key in\n\t// cChanDetailsBkt. In this sub-bucket, add the cChannelSummary key with\n\t// the encoded ClientChanSummary as the value.\n\terr = chanSummaryBkt.ForEach(func(chanID, summary []byte) error {\n\t\t// Force the migration to fail if the summary is empty. This\n\t\t// should never be the case, but it is added so that we can\n\t\t// force the migration to fail in a test so that we can test\n\t\t// that the db remains unaffected if a migration failure takes\n\t\t// place.\n\t\tif len(summary) == 0 {\n\t\t\treturn ErrCorruptChanSummary\n\t\t}\n\n\t\t// Create a new sub-bucket in the channel details bucket using\n\t\t// this channel ID.\n\t\tchannelBkt, err := chanDetailsBkt.CreateBucket(chanID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Add the encoded channel summary in the new bucket under the\n\t\t// channel-summary key.\n\t\treturn channelBkt.Put(cChannelSummary, summary)\n\t})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Now delete the cChanSummaryBkt from the DB.\n\treturn tx.DeleteTopLevelBucket(cChanSummaryBkt)\n}\n",
+      "length": 1487,
+      "tokens": 228,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/update_fail_malformed_htlc.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type UpdateFailMalformedHTLC struct {",
+      "content": "type UpdateFailMalformedHTLC struct {\n\t// ChanID is the particular active channel that this\n\t// UpdateFailMalformedHTLC is bound to.\n\tChanID ChannelID\n\n\t// ID references which HTLC on the remote node's commitment transaction\n\t// has timed out.\n\tID uint64\n\n\t// ShaOnionBlob hash of the onion blob on which can't be parsed by the\n\t// node in the payment path.\n\tShaOnionBlob [sha256.Size]byte\n\n\t// FailureCode the exact reason why onion blob haven't been parsed.\n\tFailureCode FailCode\n\n\t// ExtraData is the set of data that was appended to this message to\n\t// fill out the full maximum transport message size. These fields can\n\t// be used to specify optional data such as custom TLV fields.\n\tExtraData ExtraOpaqueData\n}\n\n// A compile time check to ensure UpdateFailMalformedHTLC implements the\n// lnwire.Message interface.\nvar _ Message = (*UpdateFailMalformedHTLC)(nil)\n\n// Decode deserializes a serialized UpdateFailMalformedHTLC message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 998,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *UpdateFailMalformedHTLC) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.ID,\n\t\tc.ShaOnionBlob[:],\n\t\t&c.FailureCode,\n\t\t&c.ExtraData,\n\t)\n}\n\n// Encode serializes the target UpdateFailMalformedHTLC into the passed\n// io.Writer observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 273,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) Encode(w *bytes.Buffer,",
+      "content": "func (c *UpdateFailMalformedHTLC) Encode(w *bytes.Buffer,\n\tpver uint32) error {\n\n\tif err := WriteChannelID(w, c.ChanID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint64(w, c.ID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, c.ShaOnionBlob[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteFailCode(w, c.FailureCode); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, c.ExtraData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 456,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) MsgType() MessageType {",
+      "content": "func (c *UpdateFailMalformedHTLC) MsgType() MessageType {\n\treturn MsgUpdateFailMalformedHTLC\n}\n\n// TargetChanID returns the channel id of the link for which this message is\n// intended.\n//\n// NOTE: Part of peer.LinkUpdater interface.",
+      "length": 169,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateFailMalformedHTLC) TargetChanID() ChannelID {",
+      "content": "func (c *UpdateFailMalformedHTLC) TargetChanID() ChannelID {\n\treturn c.ChanID\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

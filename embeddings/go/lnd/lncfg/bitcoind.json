@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/bitcoind.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Bitcoind struct {",
+      "content": "type Bitcoind struct {\n\tDir                  string        `long:\"dir\" description:\"The base directory that contains the node's data, logs, configuration file, etc.\"`\n\tConfigPath           string        `long:\"config\" description:\"Configuration filepath. If not set, will default to the default filename under 'dir'.\"`\n\tRPCCookie            string        `long:\"rpccookie\" description:\"Authentication cookie file for RPC connections. If not set, will default to .cookie under 'dir'.\"`\n\tRPCHost              string        `long:\"rpchost\" description:\"The daemon's rpc listening address. If a port is omitted, then the default port for the selected chain parameters will be used.\"`\n\tRPCUser              string        `long:\"rpcuser\" description:\"Username for RPC connections\"`\n\tRPCPass              string        `long:\"rpcpass\" default-mask:\"-\" description:\"Password for RPC connections\"`\n\tZMQPubRawBlock       string        `long:\"zmqpubrawblock\" description:\"The address listening for ZMQ connections to deliver raw block notifications\"`\n\tZMQPubRawTx          string        `long:\"zmqpubrawtx\" description:\"The address listening for ZMQ connections to deliver raw transaction notifications\"`\n\tZMQReadDeadline      time.Duration `long:\"zmqreaddeadline\" description:\"The read deadline for reading ZMQ messages from both the block and tx subscriptions\"`\n\tEstimateMode         string        `long:\"estimatemode\" description:\"The fee estimate mode. Must be either ECONOMICAL or CONSERVATIVE.\"`\n\tPrunedNodeMaxPeers   int           `long:\"pruned-node-max-peers\" description:\"The maximum number of peers lnd will choose from the backend node to retrieve pruned blocks from. This only applies to pruned nodes.\"`\n\tRPCPolling           bool          `long:\"rpcpolling\" description:\"Poll the bitcoind RPC interface for block and transaction notifications instead of using the ZMQ interface\"`\n\tBlockPollingInterval time.Duration `long:\"blockpollinginterval\" description:\"The interval that will be used to poll bitcoind for new blocks. Only used if rpcpolling is true.\"`\n\tTxPollingInterval    time.Duration `long:\"txpollinginterval\" description:\"The interval that will be used to poll bitcoind for new tx. Only used if rpcpolling is true.\"`\n}\n",
+      "length": 2193,
+      "tokens": 235,
+      "embedding": []
+    }
+  ]
+}

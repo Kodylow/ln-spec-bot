@@ -1,0 +1,230 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/mailbox.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type MailBox interface {",
+      "content": "type MailBox interface {\n\t// AddMessage appends a new message to the end of the message queue.\n\tAddMessage(msg lnwire.Message) error\n\n\t// AddPacket appends a new message to the end of the packet queue.\n\tAddPacket(pkt *htlcPacket) error\n\n\t// HasPacket queries the packets for a circuit key, this is used to drop\n\t// packets bound for the switch that already have a queued response.\n\tHasPacket(CircuitKey) bool\n\n\t// AckPacket removes a packet from the mailboxes in-memory replay\n\t// buffer. This will prevent a packet from being delivered after a link\n\t// restarts if the switch has remained online. The returned boolean\n\t// indicates whether or not a packet with the passed incoming circuit\n\t// key was removed.\n\tAckPacket(CircuitKey) bool\n\n\t// FailAdd fails an UpdateAddHTLC that exists within the mailbox,\n\t// removing it from the in-memory replay buffer. This will prevent the\n\t// packet from being delivered after the link restarts if the switch has\n\t// remained online. The generated LinkError will show an\n\t// OutgoingFailureDownstreamHtlcAdd FailureDetail.\n\tFailAdd(pkt *htlcPacket)\n\n\t// MessageOutBox returns a channel that any new messages ready for\n\t// delivery will be sent on.\n\tMessageOutBox() chan lnwire.Message\n\n\t// PacketOutBox returns a channel that any new packets ready for\n\t// delivery will be sent on.\n\tPacketOutBox() chan *htlcPacket\n\n\t// Clears any pending wire messages from the inbox.\n\tResetMessages() error\n\n\t// Reset the packet head to point at the first element in the list.\n\tResetPackets() error\n\n\t// SetDustClosure takes in a closure that is used to evaluate whether\n\t// mailbox HTLC's are dust.\n\tSetDustClosure(isDust dustClosure)\n\n\t// SetFeeRate sets the feerate to be used when evaluating dust.\n\tSetFeeRate(feerate chainfee.SatPerKWeight)\n\n\t// DustPackets returns the dust sum for Adds in the mailbox for the\n\t// local and remote commitments.\n\tDustPackets() (lnwire.MilliSatoshi, lnwire.MilliSatoshi)\n\n\t// Start starts the mailbox and any goroutines it needs to operate\n\t// properly.\n\tStart()\n\n\t// Stop signals the mailbox and its goroutines for a graceful shutdown.\n\tStop()\n}\n",
+      "length": 2028,
+      "tokens": 310,
+      "embedding": []
+    },
+    {
+      "slug": "type mailBoxConfig struct {",
+      "content": "type mailBoxConfig struct {\n\t// shortChanID is the short channel id of the channel this mailbox\n\t// belongs to.\n\tshortChanID lnwire.ShortChannelID\n\n\t// forwardPackets send a varidic number of htlcPackets to the switch to\n\t// be routed. A quit channel should be provided so that the call can\n\t// properly exit during shutdown.\n\tforwardPackets func(chan struct{}, ...*htlcPacket) error\n\n\t// clock is a time source for the mailbox.\n\tclock clock.Clock\n\n\t// expiry is the interval after which Adds will be cancelled if they\n\t// have not been yet been delivered. The computed deadline will expiry\n\t// this long after the Adds are added via AddPacket.\n\texpiry time.Duration\n\n\t// failMailboxUpdate is used to fail an expired HTLC and use the\n\t// correct SCID if the underlying channel uses aliases.\n\tfailMailboxUpdate func(outScid,\n\t\tmailboxScid lnwire.ShortChannelID) lnwire.FailureMessage\n}\n\n// memoryMailBox is an implementation of the MailBox struct backed by purely\n// in-memory queues.",
+      "length": 931,
+      "tokens": 143,
+      "embedding": []
+    },
+    {
+      "slug": "type memoryMailBox struct {",
+      "content": "type memoryMailBox struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tcfg *mailBoxConfig\n\n\twireMessages *list.List\n\twireMtx      sync.Mutex\n\twireCond     *sync.Cond\n\n\tmessageOutbox chan lnwire.Message\n\tmsgReset      chan chan struct{}\n\n\t// repPkts is a queue for reply packets, e.g. Settles and Fails.\n\trepPkts  *list.List\n\trepIndex map[CircuitKey]*list.Element\n\trepHead  *list.Element\n\n\t// addPkts is a dedicated queue for Adds.\n\taddPkts  *list.List\n\taddIndex map[CircuitKey]*list.Element\n\taddHead  *list.Element\n\n\tpktMtx  sync.Mutex\n\tpktCond *sync.Cond\n\n\tpktOutbox chan *htlcPacket\n\tpktReset  chan chan struct{}\n\n\twireShutdown chan struct{}\n\tpktShutdown  chan struct{}\n\tquit         chan struct{}\n\n\t// feeRate is set when the link receives or sends out fee updates. It\n\t// is refreshed when AttachMailBox is called in case a fee update did\n\t// not get committed. In some cases it may be out of sync with the\n\t// channel's feerate, but it should eventually get back in sync.\n\tfeeRate chainfee.SatPerKWeight\n\n\t// isDust is set when AttachMailBox is called and serves to evaluate\n\t// the outstanding dust in the memoryMailBox given the current set\n\t// feeRate.\n\tisDust dustClosure\n}\n\n// newMemoryMailBox creates a new instance of the memoryMailBox.",
+      "length": 1173,
+      "tokens": 163,
+      "embedding": []
+    },
+    {
+      "slug": "func newMemoryMailBox(cfg *mailBoxConfig) *memoryMailBox {",
+      "content": "func newMemoryMailBox(cfg *mailBoxConfig) *memoryMailBox {\n\tbox := &memoryMailBox{\n\t\tcfg:           cfg,\n\t\twireMessages:  list.New(),\n\t\trepPkts:       list.New(),\n\t\taddPkts:       list.New(),\n\t\tmessageOutbox: make(chan lnwire.Message),\n\t\tpktOutbox:     make(chan *htlcPacket),\n\t\tmsgReset:      make(chan chan struct{}, 1),\n\t\tpktReset:      make(chan chan struct{}, 1),\n\t\trepIndex:      make(map[CircuitKey]*list.Element),\n\t\taddIndex:      make(map[CircuitKey]*list.Element),\n\t\twireShutdown:  make(chan struct{}),\n\t\tpktShutdown:   make(chan struct{}),\n\t\tquit:          make(chan struct{}),\n\t}\n\tbox.wireCond = sync.NewCond(&box.wireMtx)\n\tbox.pktCond = sync.NewCond(&box.pktMtx)\n\n\treturn box\n}\n\n// A compile time assertion to ensure that memoryMailBox meets the MailBox\n// interface.\nvar _ MailBox = (*memoryMailBox)(nil)\n\n// courierType is an enum that reflects the distinct types of messages a\n// MailBox can handle. Each type will be placed in an isolated mail box and\n// will have a dedicated goroutine for delivering the messages.",
+      "length": 946,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "type courierType uint8",
+      "content": "type courierType uint8\n\nconst (\n\t// wireCourier is a type of courier that handles wire messages.\n\twireCourier courierType = iota\n\n\t// pktCourier is a type of courier that handles htlc packets.\n\tpktCourier\n)\n\n// Start starts the mailbox and any goroutines it needs to operate properly.\n//\n// NOTE: This method is part of the MailBox interface.",
+      "length": 308,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) Start() {",
+      "content": "func (m *memoryMailBox) Start() {\n\tm.started.Do(func() {\n\t\tgo m.mailCourier(wireCourier)\n\t\tgo m.mailCourier(pktCourier)\n\t})\n}\n\n// ResetMessages blocks until all buffered wire messages are cleared.",
+      "length": 156,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) ResetMessages() error {",
+      "content": "func (m *memoryMailBox) ResetMessages() error {\n\tmsgDone := make(chan struct{})\n\tselect {\n\tcase m.msgReset <- msgDone:\n\t\treturn m.signalUntilReset(wireCourier, msgDone)\n\tcase <-m.quit:\n\t\treturn ErrMailBoxShuttingDown\n\t}\n}\n\n// ResetPackets blocks until the head of packets buffer is reset, causing the\n// packets to be redelivered in order.",
+      "length": 281,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) ResetPackets() error {",
+      "content": "func (m *memoryMailBox) ResetPackets() error {\n\tpktDone := make(chan struct{})\n\tselect {\n\tcase m.pktReset <- pktDone:\n\t\treturn m.signalUntilReset(pktCourier, pktDone)\n\tcase <-m.quit:\n\t\treturn ErrMailBoxShuttingDown\n\t}\n}\n\n// signalUntilReset strobes the condition variable for the specified inbox type\n// until receiving a response that the mailbox has processed a reset.",
+      "length": 313,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) signalUntilReset(cType courierType,",
+      "content": "func (m *memoryMailBox) signalUntilReset(cType courierType,\n\tdone chan struct{}) error {\n\n\tfor {\n\n\t\tswitch cType {\n\t\tcase wireCourier:\n\t\t\tm.wireCond.Signal()\n\t\tcase pktCourier:\n\t\t\tm.pktCond.Signal()\n\t\t}\n\n\t\tselect {\n\t\tcase <-time.After(time.Millisecond):\n\t\t\tcontinue\n\t\tcase <-done:\n\t\t\treturn nil\n\t\tcase <-m.quit:\n\t\t\treturn ErrMailBoxShuttingDown\n\t\t}\n\t}\n}\n\n// AckPacket removes the packet identified by it's incoming circuit key from the\n// queue of packets to be delivered. The returned boolean indicates whether or\n// not a packet with the passed incoming circuit key was removed.\n//\n// NOTE: It is safe to call this method multiple times for the same circuit key.",
+      "length": 578,
+      "tokens": 88,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) AckPacket(inKey CircuitKey) bool {",
+      "content": "func (m *memoryMailBox) AckPacket(inKey CircuitKey) bool {\n\tm.pktCond.L.Lock()\n\tdefer m.pktCond.L.Unlock()\n\n\tif entry, ok := m.repIndex[inKey]; ok {\n\t\t// Check whether we are removing the head of the queue. If so,\n\t\t// we must advance the head to the next packet before removing.\n\t\t// It's possible that the courier has already advanced the\n\t\t// repHead, so this check prevents the repHead from getting\n\t\t// desynchronized.\n\t\tif entry == m.repHead {\n\t\t\tm.repHead = entry.Next()\n\t\t}\n\t\tm.repPkts.Remove(entry)\n\t\tdelete(m.repIndex, inKey)\n\n\t\treturn true\n\t}\n\n\tif entry, ok := m.addIndex[inKey]; ok {\n\t\t// Check whether we are removing the head of the queue. If so,\n\t\t// we must advance the head to the next add before removing.\n\t\t// It's possible that the courier has already advanced the\n\t\t// addHead, so this check prevents the addHead from getting\n\t\t// desynchronized.\n\t\t//\n\t\t// NOTE: While this event is rare for Settles or Fails, it could\n\t\t// be very common for Adds since the mailbox has the ability to\n\t\t// cancel Adds before they are delivered. When that occurs, the\n\t\t// head of addPkts has only been peeked and we expect to be\n\t\t// removing the head of the queue.\n\t\tif entry == m.addHead {\n\t\t\tm.addHead = entry.Next()\n\t\t}\n\n\t\tm.addPkts.Remove(entry)\n\t\tdelete(m.addIndex, inKey)\n\n\t\treturn true\n\t}\n\n\treturn false\n}\n\n// HasPacket queries the packets for a circuit key, this is used to drop packets\n// bound for the switch that already have a queued response.",
+      "length": 1358,
+      "tokens": 228,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) HasPacket(inKey CircuitKey) bool {",
+      "content": "func (m *memoryMailBox) HasPacket(inKey CircuitKey) bool {\n\tm.pktCond.L.Lock()\n\t_, ok := m.repIndex[inKey]\n\tm.pktCond.L.Unlock()\n\n\treturn ok\n}\n\n// Stop signals the mailbox and its goroutines for a graceful shutdown.\n//\n// NOTE: This method is part of the MailBox interface.",
+      "length": 205,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) Stop() {",
+      "content": "func (m *memoryMailBox) Stop() {\n\tm.stopped.Do(func() {\n\t\tclose(m.quit)\n\n\t\tm.signalUntilShutdown(wireCourier)\n\t\tm.signalUntilShutdown(pktCourier)\n\t})\n}\n\n// signalUntilShutdown strobes the condition variable of the passed courier\n// type, blocking until the worker has exited.",
+      "length": 233,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) signalUntilShutdown(cType courierType) {",
+      "content": "func (m *memoryMailBox) signalUntilShutdown(cType courierType) {\n\tvar (\n\t\tcond     *sync.Cond\n\t\tshutdown chan struct{}\n\t)\n\n\tswitch cType {\n\tcase wireCourier:\n\t\tcond = m.wireCond\n\t\tshutdown = m.wireShutdown\n\tcase pktCourier:\n\t\tcond = m.pktCond\n\t\tshutdown = m.pktShutdown\n\t}\n\n\tfor {\n\t\tselect {\n\t\tcase <-time.After(time.Millisecond):\n\t\t\tcond.Signal()\n\t\tcase <-shutdown:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// pktWithExpiry wraps an incoming packet and records the time at which it it\n// should be canceled from the mailbox. This will be used to detect if it gets\n// stuck in the mailbox and inform when to cancel back.",
+      "length": 508,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "type pktWithExpiry struct {",
+      "content": "type pktWithExpiry struct {\n\tpkt    *htlcPacket\n\texpiry time.Time\n}\n",
+      "length": 37,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *pktWithExpiry) deadline(clock clock.Clock) <-chan time.Time {",
+      "content": "func (p *pktWithExpiry) deadline(clock clock.Clock) <-chan time.Time {\n\treturn clock.TickAfter(p.expiry.Sub(clock.Now()))\n}\n\n// mailCourier is a dedicated goroutine whose job is to reliably deliver\n// messages of a particular type. There are two types of couriers: wire\n// couriers, and mail couriers. Depending on the passed courierType, this\n// goroutine will assume one of two roles.",
+      "length": 309,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) mailCourier(cType courierType) {",
+      "content": "func (m *memoryMailBox) mailCourier(cType courierType) {\n\tswitch cType {\n\tcase wireCourier:\n\t\tdefer close(m.wireShutdown)\n\tcase pktCourier:\n\t\tdefer close(m.pktShutdown)\n\t}\n\n\t// TODO(roasbeef): refactor...\n\n\tfor {\n\t\t// First, we'll check our condition. If our target mailbox is\n\t\t// empty, then we'll wait until a new item is added.\n\t\tswitch cType {\n\t\tcase wireCourier:\n\t\t\tm.wireCond.L.Lock()\n\t\t\tfor m.wireMessages.Front() == nil {\n\t\t\t\tm.wireCond.Wait()\n\n\t\t\t\tselect {\n\t\t\t\tcase msgDone := <-m.msgReset:\n\t\t\t\t\tm.wireMessages.Init()\n\n\t\t\t\t\tclose(msgDone)\n\t\t\t\tcase <-m.quit:\n\t\t\t\t\tm.wireCond.L.Unlock()\n\t\t\t\t\treturn\n\t\t\t\tdefault:\n\t\t\t\t}\n\t\t\t}\n\n\t\tcase pktCourier:\n\t\t\tm.pktCond.L.Lock()\n\t\t\tfor m.repHead == nil && m.addHead == nil {\n\t\t\t\tm.pktCond.Wait()\n\n\t\t\t\tselect {\n\t\t\t\t// Resetting the packet queue means just moving\n\t\t\t\t// our pointer to the front. This ensures that\n\t\t\t\t// any un-ACK'd messages are re-delivered upon\n\t\t\t\t// reconnect.\n\t\t\t\tcase pktDone := <-m.pktReset:\n\t\t\t\t\tm.repHead = m.repPkts.Front()\n\t\t\t\t\tm.addHead = m.addPkts.Front()\n\n\t\t\t\t\tclose(pktDone)\n\n\t\t\t\tcase <-m.quit:\n\t\t\t\t\tm.pktCond.L.Unlock()\n\t\t\t\t\treturn\n\t\t\t\tdefault:\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tvar (\n\t\t\tnextRep   *htlcPacket\n\t\t\tnextRepEl *list.Element\n\t\t\tnextAdd   *pktWithExpiry\n\t\t\tnextAddEl *list.Element\n\t\t\tnextMsg   lnwire.Message\n\t\t)\n\t\tswitch cType {\n\t\t// Grab the datum off the front of the queue, shifting the\n\t\t// slice's reference down one in order to remove the datum from\n\t\t// the queue.\n\t\tcase wireCourier:\n\t\t\tentry := m.wireMessages.Front()\n\t\t\tnextMsg = m.wireMessages.Remove(entry).(lnwire.Message)\n\n\t\t// For packets, we actually never remove an item until it has\n\t\t// been ACK'd by the link. This ensures that if a read packet\n\t\t// doesn't make it into a commitment, then it'll be\n\t\t// re-delivered once the link comes back online.\n\t\tcase pktCourier:\n\t\t\t// Peek at the head of the Settle/Fails and Add queues.\n\t\t\t// We peak both even if there is a Settle/Fail present\n\t\t\t// because we need to set a deadline for the next\n\t\t\t// pending Add if it's present. Due to clock\n\t\t\t// monotonicity, we know that the head of the Adds is\n\t\t\t// the next to expire.\n\t\t\tif m.repHead != nil {\n\t\t\t\tnextRep = m.repHead.Value.(*htlcPacket)\n\t\t\t\tnextRepEl = m.repHead\n\t\t\t}\n\t\t\tif m.addHead != nil {\n\t\t\t\tnextAdd = m.addHead.Value.(*pktWithExpiry)\n\t\t\t\tnextAddEl = m.addHead\n\t\t\t}\n\t\t}\n\n\t\t// Now that we're done with the condition, we can unlock it to\n\t\t// allow any callers to append to the end of our target queue.\n\t\tswitch cType {\n\t\tcase wireCourier:\n\t\t\tm.wireCond.L.Unlock()\n\t\tcase pktCourier:\n\t\t\tm.pktCond.L.Unlock()\n\t\t}\n\n\t\t// With the next message obtained, we'll now select to attempt\n\t\t// to deliver the message. If we receive a kill signal, then\n\t\t// we'll bail out.\n\t\tswitch cType {\n\t\tcase wireCourier:\n\t\t\tselect {\n\t\t\tcase m.messageOutbox <- nextMsg:\n\t\t\tcase msgDone := <-m.msgReset:\n\t\t\t\tm.wireCond.L.Lock()\n\t\t\t\tm.wireMessages.Init()\n\t\t\t\tm.wireCond.L.Unlock()\n\n\t\t\t\tclose(msgDone)\n\t\t\tcase <-m.quit:\n\t\t\t\treturn\n\t\t\t}\n\n\t\tcase pktCourier:\n\t\t\tvar (\n\t\t\t\tpktOutbox chan *htlcPacket\n\t\t\t\taddOutbox chan *htlcPacket\n\t\t\t\tadd       *htlcPacket\n\t\t\t\tdeadline  <-chan time.Time\n\t\t\t)\n\n\t\t\t// Prioritize delivery of Settle/Fail packets over Adds.\n\t\t\t// This ensures that we actively clear the commitment of\n\t\t\t// existing HTLCs before trying to add new ones. This\n\t\t\t// can help to improve forwarding performance since the\n\t\t\t// time to sign a commitment is linear in the number of\n\t\t\t// HTLCs manifested on the commitments.\n\t\t\t//\n\t\t\t// NOTE: Both types are eventually delivered over the\n\t\t\t// same channel, but we can control which is delivered\n\t\t\t// by exclusively making one nil and the other non-nil.\n\t\t\t// We know from our loop condition that at least one\n\t\t\t// nextRep and nextAdd are non-nil.\n\t\t\tif nextRep != nil {\n\t\t\t\tpktOutbox = m.pktOutbox\n\t\t\t} else {\n\t\t\t\taddOutbox = m.pktOutbox\n\t\t\t}\n\n\t\t\t// If we have a pending Add, we'll also construct the\n\t\t\t// deadline so we can fail it back if we are unable to\n\t\t\t// deliver any message in time. We also dereference the\n\t\t\t// nextAdd's packet, since we will need access to it in\n\t\t\t// the case we are delivering it and/or if the deadline\n\t\t\t// expires.\n\t\t\t//\n\t\t\t// NOTE: It's possible after this point for add to be\n\t\t\t// nil, but this can only occur when addOutbox is also\n\t\t\t// nil, hence we won't accidentally deliver a nil\n\t\t\t// packet.\n\t\t\tif nextAdd != nil {\n\t\t\t\tadd = nextAdd.pkt\n\t\t\t\tdeadline = nextAdd.deadline(m.cfg.clock)\n\t\t\t}\n\n\t\t\tselect {\n\t\t\tcase pktOutbox <- nextRep:\n\t\t\t\tm.pktCond.L.Lock()\n\t\t\t\t// Only advance the repHead if this Settle or\n\t\t\t\t// Fail is still at the head of the queue.\n\t\t\t\tif m.repHead != nil && m.repHead == nextRepEl {\n\t\t\t\t\tm.repHead = m.repHead.Next()\n\t\t\t\t}\n\t\t\t\tm.pktCond.L.Unlock()\n\n\t\t\tcase addOutbox <- add:\n\t\t\t\tm.pktCond.L.Lock()\n\t\t\t\t// Only advance the addHead if this Add is still\n\t\t\t\t// at the head of the queue.\n\t\t\t\tif m.addHead != nil && m.addHead == nextAddEl {\n\t\t\t\t\tm.addHead = m.addHead.Next()\n\t\t\t\t}\n\t\t\t\tm.pktCond.L.Unlock()\n\n\t\t\tcase <-deadline:\n\t\t\t\tlog.Debugf(\"Expiring add htlc with \"+\n\t\t\t\t\t\"keystone=%v\", add.keystone())\n\t\t\t\tm.FailAdd(add)\n\n\t\t\tcase pktDone := <-m.pktReset:\n\t\t\t\tm.pktCond.L.Lock()\n\t\t\t\tm.repHead = m.repPkts.Front()\n\t\t\t\tm.addHead = m.addPkts.Front()\n\t\t\t\tm.pktCond.L.Unlock()\n\n\t\t\t\tclose(pktDone)\n\n\t\t\tcase <-m.quit:\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\n\t}\n}\n\n// AddMessage appends a new message to the end of the message queue.\n//\n// NOTE: This method is safe for concrete use and part of the MailBox\n// interface.",
+      "length": 5176,
+      "tokens": 764,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) AddMessage(msg lnwire.Message) error {",
+      "content": "func (m *memoryMailBox) AddMessage(msg lnwire.Message) error {\n\t// First, we'll lock the condition, and add the message to the end of\n\t// the wire message inbox.\n\tm.wireCond.L.Lock()\n\tm.wireMessages.PushBack(msg)\n\tm.wireCond.L.Unlock()\n\n\t// With the message added, we signal to the mailCourier that there are\n\t// additional messages to deliver.\n\tm.wireCond.Signal()\n\n\treturn nil\n}\n\n// AddPacket appends a new message to the end of the packet queue.\n//\n// NOTE: This method is safe for concrete use and part of the MailBox\n// interface.",
+      "length": 456,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) AddPacket(pkt *htlcPacket) error {",
+      "content": "func (m *memoryMailBox) AddPacket(pkt *htlcPacket) error {\n\tm.pktCond.L.Lock()\n\tswitch htlc := pkt.htlc.(type) {\n\t// Split off Settle/Fail packets into the repPkts queue.\n\tcase *lnwire.UpdateFulfillHTLC, *lnwire.UpdateFailHTLC:\n\t\tif _, ok := m.repIndex[pkt.inKey()]; ok {\n\t\t\tm.pktCond.L.Unlock()\n\t\t\treturn ErrPacketAlreadyExists\n\t\t}\n\n\t\tentry := m.repPkts.PushBack(pkt)\n\t\tm.repIndex[pkt.inKey()] = entry\n\t\tif m.repHead == nil {\n\t\t\tm.repHead = entry\n\t\t}\n\n\t// Split off Add packets into the addPkts queue.\n\tcase *lnwire.UpdateAddHTLC:\n\t\tif _, ok := m.addIndex[pkt.inKey()]; ok {\n\t\t\tm.pktCond.L.Unlock()\n\t\t\treturn ErrPacketAlreadyExists\n\t\t}\n\n\t\tentry := m.addPkts.PushBack(&pktWithExpiry{\n\t\t\tpkt:    pkt,\n\t\t\texpiry: m.cfg.clock.Now().Add(m.cfg.expiry),\n\t\t})\n\t\tm.addIndex[pkt.inKey()] = entry\n\t\tif m.addHead == nil {\n\t\t\tm.addHead = entry\n\t\t}\n\n\tdefault:\n\t\tm.pktCond.L.Unlock()\n\t\treturn fmt.Errorf(\"unknown htlc type: %T\", htlc)\n\t}\n\tm.pktCond.L.Unlock()\n\n\t// With the packet added, we signal to the mailCourier that there are\n\t// additional packets to consume.\n\tm.pktCond.Signal()\n\n\treturn nil\n}\n\n// SetFeeRate sets the memoryMailBox's feerate for use in DustPackets.",
+      "length": 1056,
+      "tokens": 128,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) SetFeeRate(feeRate chainfee.SatPerKWeight) {",
+      "content": "func (m *memoryMailBox) SetFeeRate(feeRate chainfee.SatPerKWeight) {\n\tm.pktCond.L.Lock()\n\tdefer m.pktCond.L.Unlock()\n\n\tm.feeRate = feeRate\n}\n\n// SetDustClosure sets the memoryMailBox's dustClosure for use in DustPackets.",
+      "length": 145,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) SetDustClosure(isDust dustClosure) {",
+      "content": "func (m *memoryMailBox) SetDustClosure(isDust dustClosure) {\n\tm.pktCond.L.Lock()\n\tdefer m.pktCond.L.Unlock()\n\n\tm.isDust = isDust\n}\n\n// DustPackets returns the dust sum for add packets in the mailbox. The first\n// return value is the local dust sum and the second is the remote dust sum.\n// This will keep track of a given dust HTLC from the time it is added via\n// AddPacket until it is removed via AckPacket.",
+      "length": 339,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) DustPackets() (lnwire.MilliSatoshi,",
+      "content": "func (m *memoryMailBox) DustPackets() (lnwire.MilliSatoshi,\n\tlnwire.MilliSatoshi) {\n\n\tm.pktCond.L.Lock()\n\tdefer m.pktCond.L.Unlock()\n\n\tvar (\n\t\tlocalDustSum  lnwire.MilliSatoshi\n\t\tremoteDustSum lnwire.MilliSatoshi\n\t)\n\n\t// Run through the map of HTLC's and determine the dust sum with calls\n\t// to the memoryMailBox's isDust closure. Note that all mailbox packets\n\t// are outgoing so the second argument to isDust will be false.\n\tfor _, e := range m.addIndex {\n\t\taddPkt := e.Value.(*pktWithExpiry).pkt\n\n\t\t// Evaluate whether this HTLC is dust on the local commitment.\n\t\tif m.isDust(\n\t\t\tm.feeRate, false, true, addPkt.amount.ToSatoshis(),\n\t\t) {\n\n\t\t\tlocalDustSum += addPkt.amount\n\t\t}\n\n\t\t// Evaluate whether this HTLC is dust on the remote commitment.\n\t\tif m.isDust(\n\t\t\tm.feeRate, false, false, addPkt.amount.ToSatoshis(),\n\t\t) {\n\n\t\t\tremoteDustSum += addPkt.amount\n\t\t}\n\t}\n\n\treturn localDustSum, remoteDustSum\n}\n\n// FailAdd fails an UpdateAddHTLC that exists within the mailbox, removing it\n// from the in-memory replay buffer. This will prevent the packet from being\n// delivered after the link restarts if the switch has remained online. The\n// generated LinkError will show an OutgoingFailureDownstreamHtlcAdd\n// FailureDetail.",
+      "length": 1123,
+      "tokens": 157,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) FailAdd(pkt *htlcPacket) {",
+      "content": "func (m *memoryMailBox) FailAdd(pkt *htlcPacket) {\n\t// First, remove the packet from mailbox. If we didn't find the packet\n\t// because it has already been acked, we'll exit early to avoid sending\n\t// a duplicate fail message through the switch.\n\tif !m.AckPacket(pkt.inKey()) {\n\t\treturn\n\t}\n\n\tvar (\n\t\tlocalFailure = false\n\t\treason       lnwire.OpaqueReason\n\t)\n\n\t// Create a temporary channel failure which we will send back to our\n\t// peer if this is a forward, or report to the user if the failed\n\t// payment was locally initiated.\n\tfailure := m.cfg.failMailboxUpdate(\n\t\tpkt.originalOutgoingChanID, m.cfg.shortChanID,\n\t)\n\n\t// If the payment was locally initiated (which is indicated by a nil\n\t// obfuscator), we do not need to encrypt it back to the sender.\n\tif pkt.obfuscator == nil {\n\t\tvar b bytes.Buffer\n\t\terr := lnwire.EncodeFailure(&b, failure, 0)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Unable to encode failure: %v\", err)\n\t\t\treturn\n\t\t}\n\t\treason = lnwire.OpaqueReason(b.Bytes())\n\t\tlocalFailure = true\n\t} else {\n\t\t// If the packet is part of a forward, (identified by a non-nil\n\t\t// obfuscator) we need to encrypt the error back to the source.\n\t\tvar err error\n\t\treason, err = pkt.obfuscator.EncryptFirstHop(failure)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Unable to obfuscate error: %v\", err)\n\t\t\treturn\n\t\t}\n\t}\n\n\t// Create a link error containing the temporary channel failure and a\n\t// detail which indicates the we failed to add the htlc.\n\tlinkError := NewDetailedLinkError(\n\t\tfailure, OutgoingFailureDownstreamHtlcAdd,\n\t)\n\n\tfailPkt := &htlcPacket{\n\t\tincomingChanID: pkt.incomingChanID,\n\t\tincomingHTLCID: pkt.incomingHTLCID,\n\t\tcircuit:        pkt.circuit,\n\t\tsourceRef:      pkt.sourceRef,\n\t\thasSource:      true,\n\t\tlocalFailure:   localFailure,\n\t\tlinkFailure:    linkError,\n\t\thtlc: &lnwire.UpdateFailHTLC{\n\t\t\tReason: reason,\n\t\t},\n\t}\n\n\tif err := m.cfg.forwardPackets(m.quit, failPkt); err != nil {\n\t\tlog.Errorf(\"Unhandled error while reforwarding packets \"+\n\t\t\t\"settle/fail over htlcswitch: %v\", err)\n\t}\n}\n\n// MessageOutBox returns a channel that any new messages ready for delivery\n// will be sent on.\n//\n// NOTE: This method is part of the MailBox interface.",
+      "length": 2030,
+      "tokens": 295,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) MessageOutBox() chan lnwire.Message {",
+      "content": "func (m *memoryMailBox) MessageOutBox() chan lnwire.Message {\n\treturn m.messageOutbox\n}\n\n// PacketOutBox returns a channel that any new packets ready for delivery will\n// be sent on.\n//\n// NOTE: This method is part of the MailBox interface.",
+      "length": 172,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *memoryMailBox) PacketOutBox() chan *htlcPacket {",
+      "content": "func (m *memoryMailBox) PacketOutBox() chan *htlcPacket {\n\treturn m.pktOutbox\n}\n\n// mailOrchestrator is responsible for coordinating the creation and lifecycle\n// of mailboxes used within the switch. It supports the ability to create\n// mailboxes, reassign their short channel id's, deliver htlc packets, and\n// queue packets for mailboxes that have not been created due to a link's late\n// registration.",
+      "length": 339,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "type mailOrchestrator struct {",
+      "content": "type mailOrchestrator struct {\n\tmu sync.RWMutex\n\n\tcfg *mailOrchConfig\n\n\t// mailboxes caches exactly one mailbox for all known channels.\n\tmailboxes map[lnwire.ChannelID]MailBox\n\n\t// liveIndex maps a live short chan id to the primary mailbox key.\n\t// An index in liveIndex map is only entered under two conditions:\n\t//   1. A link has a non-zero short channel id at time of AddLink.\n\t//   2. A link receives a non-zero short channel via UpdateShortChanID.\n\tliveIndex map[lnwire.ShortChannelID]lnwire.ChannelID\n\n\t// TODO(conner): add another pair of indexes:\n\t//   chan_id -> short_chan_id\n\t//   short_chan_id -> mailbox\n\t// so that Deliver can lookup mailbox directly once live,\n\t// but still queryable by channel_id.\n\n\t// unclaimedPackets maps a live short chan id to queue of packets if no\n\t// mailbox has been created.\n\tunclaimedPackets map[lnwire.ShortChannelID][]*htlcPacket\n}\n",
+      "length": 826,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "type mailOrchConfig struct {",
+      "content": "type mailOrchConfig struct {\n\t// forwardPackets send a varidic number of htlcPackets to the switch to\n\t// be routed. A quit channel should be provided so that the call can\n\t// properly exit during shutdown.\n\tforwardPackets func(chan struct{}, ...*htlcPacket) error\n\n\t// clock is a time source for the generated mailboxes.\n\tclock clock.Clock\n\n\t// expiry is the interval after which Adds will be cancelled if they\n\t// have not been yet been delivered. The computed deadline will expiry\n\t// this long after the Adds are added to a mailbox via AddPacket.\n\texpiry time.Duration\n\n\t// failMailboxUpdate is used to fail an expired HTLC and use the\n\t// correct SCID if the underlying channel uses aliases.\n\tfailMailboxUpdate func(outScid,\n\t\tmailboxScid lnwire.ShortChannelID) lnwire.FailureMessage\n}\n\n// newMailOrchestrator initializes a fresh mailOrchestrator.",
+      "length": 804,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func newMailOrchestrator(cfg *mailOrchConfig) *mailOrchestrator {",
+      "content": "func newMailOrchestrator(cfg *mailOrchConfig) *mailOrchestrator {\n\treturn &mailOrchestrator{\n\t\tcfg:              cfg,\n\t\tmailboxes:        make(map[lnwire.ChannelID]MailBox),\n\t\tliveIndex:        make(map[lnwire.ShortChannelID]lnwire.ChannelID),\n\t\tunclaimedPackets: make(map[lnwire.ShortChannelID][]*htlcPacket),\n\t}\n}\n\n// Stop instructs the orchestrator to stop all active mailboxes.",
+      "length": 307,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (mo *mailOrchestrator) Stop() {",
+      "content": "func (mo *mailOrchestrator) Stop() {\n\tfor _, mailbox := range mo.mailboxes {\n\t\tmailbox.Stop()\n\t}\n}\n\n// GetOrCreateMailBox returns an existing mailbox belonging to `chanID`, or\n// creates and returns a new mailbox if none is found.",
+      "length": 187,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (mo *mailOrchestrator) GetOrCreateMailBox(chanID lnwire.ChannelID,",
+      "content": "func (mo *mailOrchestrator) GetOrCreateMailBox(chanID lnwire.ChannelID,\n\tshortChanID lnwire.ShortChannelID) MailBox {\n\n\t// First, try lookup the mailbox directly using only the shared mutex.\n\tmo.mu.RLock()\n\tmailbox, ok := mo.mailboxes[chanID]\n\tif ok {\n\t\tmo.mu.RUnlock()\n\t\treturn mailbox\n\t}\n\tmo.mu.RUnlock()\n\n\t// Otherwise, we will try again with exclusive lock, creating a mailbox\n\t// if one still has not been created.\n\tmo.mu.Lock()\n\tmailbox = mo.exclusiveGetOrCreateMailBox(chanID, shortChanID)\n\tmo.mu.Unlock()\n\n\treturn mailbox\n}\n\n// exclusiveGetOrCreateMailBox checks for the existence of a mailbox for the\n// given channel id. If none is found, a new one is creates, started, and\n// recorded.\n//\n// NOTE: This method MUST be invoked with the mailOrchestrator's exclusive lock.",
+      "length": 684,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func (mo *mailOrchestrator) exclusiveGetOrCreateMailBox(",
+      "content": "func (mo *mailOrchestrator) exclusiveGetOrCreateMailBox(\n\tchanID lnwire.ChannelID, shortChanID lnwire.ShortChannelID) MailBox {\n\n\tmailbox, ok := mo.mailboxes[chanID]\n\tif !ok {\n\t\tmailbox = newMemoryMailBox(&mailBoxConfig{\n\t\t\tshortChanID:       shortChanID,\n\t\t\tforwardPackets:    mo.cfg.forwardPackets,\n\t\t\tclock:             mo.cfg.clock,\n\t\t\texpiry:            mo.cfg.expiry,\n\t\t\tfailMailboxUpdate: mo.cfg.failMailboxUpdate,\n\t\t})\n\t\tmailbox.Start()\n\t\tmo.mailboxes[chanID] = mailbox\n\t}\n\n\treturn mailbox\n}\n\n// BindLiveShortChanID registers that messages bound for a particular short\n// channel id should be forwarded to the mailbox corresponding to the given\n// channel id. This method also checks to see if there are any unclaimed\n// packets for this short_chan_id. If any are found, they are delivered to the\n// mailbox and removed (marked as claimed).",
+      "length": 769,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func (mo *mailOrchestrator) BindLiveShortChanID(mailbox MailBox,",
+      "content": "func (mo *mailOrchestrator) BindLiveShortChanID(mailbox MailBox,\n\tcid lnwire.ChannelID, sid lnwire.ShortChannelID) {\n\n\tmo.mu.Lock()\n\t// Update the mapping from short channel id to mailbox's channel id.\n\tmo.liveIndex[sid] = cid\n\n\t// Retrieve any unclaimed packets destined for this mailbox.\n\tpkts := mo.unclaimedPackets[sid]\n\tdelete(mo.unclaimedPackets, sid)\n\tmo.mu.Unlock()\n\n\t// Deliver the unclaimed packets.\n\tfor _, pkt := range pkts {\n\t\tmailbox.AddPacket(pkt)\n\t}\n}\n\n// Deliver lookups the target mailbox using the live index from short_chan_id\n// to channel_id. If the mailbox is found, the message is delivered directly.\n// Otherwise the packet is recorded as unclaimed, and will be delivered to the\n// mailbox upon the subsequent call to BindLiveShortChanID.",
+      "length": 678,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func (mo *mailOrchestrator) Deliver(",
+      "content": "func (mo *mailOrchestrator) Deliver(\n\tsid lnwire.ShortChannelID, pkt *htlcPacket) error {\n\n\tvar (\n\t\tmailbox MailBox\n\t\tfound   bool\n\t)\n\n\t// First, try to find the channel id for the target short_chan_id. If\n\t// the link is live, we will also look up the created mailbox.\n\tmo.mu.RLock()\n\tchanID, isLive := mo.liveIndex[sid]\n\tif isLive {\n\t\tmailbox, found = mo.mailboxes[chanID]\n\t}\n\tmo.mu.RUnlock()\n\n\t// The link is live and target mailbox was found, deliver immediately.\n\tif isLive && found {\n\t\treturn mailbox.AddPacket(pkt)\n\t}\n\n\t// If we detected that the link has not been made live, we will acquire\n\t// the exclusive lock preemptively in order to queue this packet in the\n\t// list of unclaimed packets.\n\tmo.mu.Lock()\n\n\t// Double check to see if the mailbox has been not made live since the\n\t// release of the shared lock.\n\t//\n\t// NOTE: Checking again with the exclusive lock held prevents a race\n\t// condition where BindLiveShortChanID is interleaved between the\n\t// release of the shared lock, and acquiring the exclusive lock. The\n\t// result would be stuck packets, as they wouldn't be redelivered until\n\t// the next call to BindLiveShortChanID, which is expected to occur\n\t// infrequently.\n\tchanID, isLive = mo.liveIndex[sid]\n\tif isLive {\n\t\t// Reaching this point indicates the mailbox is actually live.\n\t\t// We'll try to load the mailbox using the fresh channel id.\n\t\t//\n\t\t// NOTE: This should never create a new mailbox, as the live\n\t\t// index should only be set if the mailbox had been initialized\n\t\t// beforehand.  However, this does ensure that this case is\n\t\t// handled properly in the event that it could happen.\n\t\tmailbox = mo.exclusiveGetOrCreateMailBox(chanID, sid)\n\t\tmo.mu.Unlock()\n\n\t\t// Deliver the packet to the mailbox if it was found or created.\n\t\treturn mailbox.AddPacket(pkt)\n\t}\n\n\t// Finally, if the channel id is still not found in the live index,\n\t// we'll add this to the list of unclaimed packets. These will be\n\t// delivered upon the next call to BindLiveShortChanID.\n\tmo.unclaimedPackets[sid] = append(mo.unclaimedPackets[sid], pkt)\n\tmo.mu.Unlock()\n\n\treturn nil\n}\n",
+      "length": 1994,
+      "tokens": 324,
+      "embedding": []
+    }
+  ]
+}

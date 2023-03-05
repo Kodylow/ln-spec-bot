@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/healthcheck.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type HealthCheckConfig struct {",
+      "content": "type HealthCheckConfig struct {\n\tChainCheck *CheckConfig `group:\"chainbackend\" namespace:\"chainbackend\"`\n\n\tDiskCheck *DiskCheckConfig `group:\"diskspace\" namespace:\"diskspace\"`\n\n\tTLSCheck *CheckConfig `group:\"tls\" namespace:\"tls\"`\n\n\tTorConnection *CheckConfig `group:\"torconnection\" namespace:\"torconnection\"`\n\n\tRemoteSigner *CheckConfig `group:\"remotesigner\" namespace:\"remotesigner\"`\n}\n\n// Validate checks the values configured for our health checks.",
+      "length": 408,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *HealthCheckConfig) Validate() error {",
+      "content": "func (h *HealthCheckConfig) Validate() error {\n\tif err := h.ChainCheck.validate(\"chain backend\"); err != nil {\n\t\treturn err\n\t}\n\n\tif err := h.DiskCheck.validate(\"disk space\"); err != nil {\n\t\treturn err\n\t}\n\n\tif err := h.TLSCheck.validate(\"tls\"); err != nil {\n\t\treturn err\n\t}\n\n\tif h.DiskCheck.RequiredRemaining < 0 ||\n\t\th.DiskCheck.RequiredRemaining >= 1 {\n\n\t\treturn errors.New(\"disk required ratio must be in [0:1)\")\n\t}\n\n\tif err := h.TorConnection.validate(\"tor connection\"); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 447,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type CheckConfig struct {",
+      "content": "type CheckConfig struct {\n\tInterval time.Duration `long:\"interval\" description:\"How often to run a health check.\"`\n\n\tAttempts int `long:\"attempts\" description:\"The number of calls we will make for the check before failing. Set this value to 0 to disable a check.\"`\n\n\tTimeout time.Duration `long:\"timeout\" description:\"The amount of time we allow the health check to take before failing due to timeout.\"`\n\n\tBackoff time.Duration `long:\"backoff\" description:\"The amount of time to back-off between failed health checks.\"`\n}\n\n// validate checks the values in a health check config entry if it is enabled.",
+      "length": 566,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *CheckConfig) validate(name string) error {",
+      "content": "func (c *CheckConfig) validate(name string) error {\n\tif c.Attempts == 0 {\n\t\treturn nil\n\t}\n\n\tif c.Backoff < MinHealthCheckBackoff {\n\t\treturn fmt.Errorf(\"%v backoff: %v below minimum: %v\", name,\n\t\t\tc.Backoff, MinHealthCheckBackoff)\n\t}\n\n\tif c.Timeout < MinHealthCheckTimeout {\n\t\treturn fmt.Errorf(\"%v timeout: %v below minimum: %v\", name,\n\t\t\tc.Timeout, MinHealthCheckTimeout)\n\t}\n\n\tif c.Interval < MinHealthCheckInterval {\n\t\treturn fmt.Errorf(\"%v interval: %v below minimum: %v\", name,\n\t\t\tc.Interval, MinHealthCheckInterval)\n\t}\n\n\treturn nil\n}\n\n// DiskCheckConfig contains configuration for ensuring that our node has\n// sufficient disk space.",
+      "length": 563,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "type DiskCheckConfig struct {",
+      "content": "type DiskCheckConfig struct {\n\tRequiredRemaining float64 `long:\"diskrequired\" description:\"The minimum ratio of free disk space to total capacity that we allow before shutting lnd down safely.\"`\n\n\t*CheckConfig\n}\n",
+      "length": 178,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

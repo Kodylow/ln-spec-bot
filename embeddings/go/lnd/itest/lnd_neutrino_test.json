@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_neutrino_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testNeutrino(ht *lntest.HarnessTest) {",
+      "content": "func testNeutrino(ht *lntest.HarnessTest) {\n\tif !ht.IsNeutrinoBackend() {\n\t\tht.Skipf(\"skipping test for non neutrino backends\")\n\t}\n\n\t// Check if the neutrino sub server is running.\n\tstatusRes := ht.Alice.RPC.Status(nil)\n\trequire.True(ht, statusRes.Active)\n\trequire.Len(ht, statusRes.Peers, 1, \"unable to find a peer\")\n\n\t// Request the compact block filter of the best block.\n\tcFilterReq := &neutrinorpc.GetCFilterRequest{\n\t\tHash: statusRes.GetBlockHash(),\n\t}\n\tht.Alice.RPC.GetCFilter(cFilterReq)\n\n\t// Try to reconnect to a connected peer.\n\taddPeerReq := &neutrinorpc.AddPeerRequest{\n\t\tPeerAddrs: statusRes.Peers[0],\n\t}\n\tht.Alice.RPC.AddPeer(addPeerReq)\n}\n",
+      "length": 590,
+      "tokens": 65,
+      "embedding": []
+    }
+  ]
+}

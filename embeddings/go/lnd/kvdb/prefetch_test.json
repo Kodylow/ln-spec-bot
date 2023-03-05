@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/prefetch_test.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func fetchBucket(t *testing.T, bucket walletdb.ReadBucket) map[string]string {",
+      "content": "func fetchBucket(t *testing.T, bucket walletdb.ReadBucket) map[string]string {\n\titems := make(map[string]string)\n\terr := bucket.ForEach(func(k, v []byte) error {\n\t\tif v != nil {\n\t\t\titems[string(k)] = string(v)\n\t\t}\n\n\t\treturn nil\n\t})\n\trequire.NoError(t, err)\n\n\treturn items\n}\n",
+      "length": 183,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func alterBucket(t *testing.T, bucket walletdb.ReadWriteBucket,",
+      "content": "func alterBucket(t *testing.T, bucket walletdb.ReadWriteBucket,\n\tput map[string]string, remove []string) {\n\n\tfor k, v := range put {\n\t\trequire.NoError(t, bucket.Put([]byte(k), []byte(v)))\n\t}\n\n\tfor _, k := range remove {\n\t\trequire.NoError(t, bucket.Delete([]byte(k)))\n\t}\n}\n",
+      "length": 198,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func prefetchTest(t *testing.T, db walletdb.DB,",
+      "content": "func prefetchTest(t *testing.T, db walletdb.DB,\n\tprefetchAt []bool, put map[string]string, remove []string) {\n\n\tprefetch := func(i int, tx walletdb.ReadTx) {\n\t\trequire.Less(t, i, len(prefetchAt))\n\t\tif prefetchAt[i] {\n\t\t\tPrefetch(\n\t\t\t\tRootBucket(tx),\n\t\t\t\t[]string{\"top\"}, []string{\"top\", \"bucket\"},\n\t\t\t)\n\t\t}\n\t}\n\n\titems := map[string]string{\n\t\t\"a\": \"1\",\n\t\t\"b\": \"2\",\n\t\t\"c\": \"3\",\n\t\t\"d\": \"4\",\n\t\t\"e\": \"5\",\n\t}\n\n\terr := Update(db, func(tx walletdb.ReadWriteTx) error {\n\t\ttop, err := tx.CreateTopLevelBucket([]byte(\"top\"))\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, top)\n\n\t\tfor k, v := range items {\n\t\t\trequire.NoError(t, top.Put([]byte(k), []byte(v)))\n\t\t}\n\n\t\tbucket, err := top.CreateBucket([]byte(\"bucket\"))\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, bucket)\n\n\t\tfor k, v := range items {\n\t\t\trequire.NoError(t, bucket.Put([]byte(k), []byte(v)))\n\t\t}\n\n\t\treturn nil\n\t}, func() {})\n\trequire.NoError(t, err)\n\n\tfor k, v := range put {\n\t\titems[k] = v\n\t}\n\n\tfor _, k := range remove {\n\t\tdelete(items, k)\n\t}\n\n\terr = Update(db, func(tx walletdb.ReadWriteTx) error {\n\t\tprefetch(0, tx)\n\t\ttop := tx.ReadWriteBucket([]byte(\"top\"))\n\t\trequire.NotNil(t, top)\n\t\talterBucket(t, top, put, remove)\n\n\t\tprefetch(1, tx)\n\t\trequire.Equal(t, items, fetchBucket(t, top))\n\n\t\tprefetch(2, tx)\n\t\tbucket := top.NestedReadWriteBucket([]byte(\"bucket\"))\n\t\trequire.NotNil(t, bucket)\n\t\talterBucket(t, bucket, put, remove)\n\n\t\tprefetch(3, tx)\n\t\trequire.Equal(t, items, fetchBucket(t, bucket))\n\n\t\treturn nil\n\t}, func() {})\n\trequire.NoError(t, err)\n\n\terr = Update(db, func(tx walletdb.ReadWriteTx) error {\n\t\treturn tx.DeleteTopLevelBucket([]byte(\"top\"))\n\t}, func() {})\n\trequire.NoError(t, err)\n}\n\n// testPrefetch tests that prefetching buckets works as expected even when the\n// prefetch happens multiple times and the bucket contents change. Our expectation\n// is that with or without prefetches, the kvdb layer works accourding to the\n// interface specification.",
+      "length": 1792,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "func testPrefetch(t *testing.T, db walletdb.DB) {",
+      "content": "func testPrefetch(t *testing.T, db walletdb.DB) {\n\ttests := []struct {\n\t\tput    map[string]string\n\t\tremove []string\n\t}{\n\t\t{\n\t\t\tput:    nil,\n\t\t\tremove: nil,\n\t\t},\n\t\t{\n\t\t\tput: map[string]string{\n\t\t\t\t\"a\":   \"a\",\n\t\t\t\t\"aa\":  \"aa\",\n\t\t\t\t\"aaa\": \"aaa\",\n\t\t\t\t\"x\":   \"x\",\n\t\t\t\t\"y\":   \"y\",\n\t\t\t},\n\t\t\tremove: nil,\n\t\t},\n\t\t{\n\t\t\tput: map[string]string{\n\t\t\t\t\"a\":   \"a\",\n\t\t\t\t\"aa\":  \"aa\",\n\t\t\t\t\"aaa\": \"aaa\",\n\t\t\t\t\"x\":   \"x\",\n\t\t\t\t\"y\":   \"y\",\n\t\t\t},\n\t\t\tremove: []string{\"a\", \"c\", \"d\"},\n\t\t},\n\t\t{\n\t\t\tput:    nil,\n\t\t\tremove: []string{\"b\", \"d\"},\n\t\t},\n\t}\n\n\tprefetchAt := [][]bool{\n\t\t{false, false, false, false},\n\t\t{true, false, false, false},\n\t\t{false, true, false, false},\n\t\t{false, false, true, false},\n\t\t{false, false, false, true},\n\t\t{true, true, false, false},\n\t\t{true, true, true, false},\n\t\t{true, true, true, true},\n\t\t{true, false, true, true},\n\t\t{true, false, false, true},\n\t\t{true, false, true, false},\n\t}\n\n\tfor i, test := range tests {\n\t\ttest := test\n\n\t\tfor j := 0; j < len(prefetchAt); j++ {\n\t\t\tif !t.Run(\n\t\t\t\tfmt.Sprintf(\"prefetch %d %d\", i, j),\n\t\t\t\tfunc(t *testing.T) {\n\t\t\t\t\tprefetchTest(\n\t\t\t\t\t\tt, db, prefetchAt[j], test.put,\n\t\t\t\t\t\ttest.remove,\n\t\t\t\t\t)\n\t\t\t\t}) {\n\n\t\t\t\tfmt.Printf(\"Prefetch test (%d, %d) failed:\\n\"+\n\t\t\t\t\t\"testcase=%v\\n prefetch=%v\\n\",\n\t\t\t\t\ti, j, spew.Sdump(test),\n\t\t\t\t\tspew.Sdump(prefetchAt[j]))\n\t\t\t}\n\t\t}\n\t}\n}\n",
+      "length": 1187,
+      "tokens": 160,
+      "embedding": []
+    }
+  ]
+}

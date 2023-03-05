@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlite/driver.go",
+  "package": "kvdb_sqlite",
+  "sections": [
+    {
+      "slug": "func parseArgs(funcName string, args ...interface{}) (context.Context, *Config,",
+      "content": "func parseArgs(funcName string, args ...interface{}) (context.Context, *Config,\n\tstring, string, string, error) {\n\n\tif len(args) != 5 {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"invalid number of \"+\n\t\t\t\"arguments to %s.%s -- expected: context.Context, \"+\n\t\t\t\"sql.Config, string, string, string\", dbType, funcName)\n\t}\n\n\tctx, ok := args[0].(context.Context)\n\tif !ok {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"argument 0 to %s.%s \"+\n\t\t\t\"is invalid -- expected: context.Context\", dbType,\n\t\t\tfuncName)\n\t}\n\n\tconfig, ok := args[1].(*Config)\n\tif !ok {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"argument 1 to %s.%s \"+\n\t\t\t\"is invalid -- expected: sqlite.Config\", dbType,\n\t\t\tfuncName)\n\t}\n\n\tdbPath, ok := args[2].(string)\n\tif !ok {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"argument 2 to %s.%s \"+\n\t\t\t\"is invalid -- expected string\", dbType, dbPath)\n\t}\n\n\tfileName, ok := args[3].(string)\n\tif !ok {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"argument 3 to %s.%s \"+\n\t\t\t\"is invalid -- expected string\", dbType, funcName)\n\t}\n\n\tprefix, ok := args[4].(string)\n\tif !ok {\n\t\treturn nil, nil, \"\", \"\", \"\", fmt.Errorf(\"argument 4 to %s.%s \"+\n\t\t\t\"is invalid -- expected string\", dbType, funcName,\n\t\t)\n\t}\n\n\treturn ctx, config, dbPath, fileName, prefix, nil\n}\n\n// createDBDriver is the callback provided during driver registration that\n// creates, initializes, and opens a database for use.",
+      "length": 1242,
+      "tokens": 192,
+      "embedding": []
+    },
+    {
+      "slug": "func createDBDriver(args ...interface{}) (walletdb.DB, error) {",
+      "content": "func createDBDriver(args ...interface{}) (walletdb.DB, error) {\n\tctx, config, dbPath, filename, prefix, err := parseArgs(\n\t\t\"Create\", args...,\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn NewSqliteBackend(ctx, config, dbPath, filename, prefix)\n}\n\n// openDBDriver is the callback provided during driver registration that opens\n// an existing database for use.",
+      "length": 288,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func openDBDriver(args ...interface{}) (walletdb.DB, error) {",
+      "content": "func openDBDriver(args ...interface{}) (walletdb.DB, error) {\n\tctx, config, dbPath, filename, prefix, err := parseArgs(\"Open\", args...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn NewSqliteBackend(ctx, config, dbPath, filename, prefix)\n}\n",
+      "length": 172,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Register the driver.\n\tdriver := walletdb.Driver{\n\t\tDbType: dbType,\n\t\tCreate: createDBDriver,\n\t\tOpen:   openDBDriver,\n\t}\n\tif err := walletdb.RegisterDriver(driver); err != nil {\n\t\tpanic(fmt.Sprintf(\"Failed to regiser database driver '%s': %v\",\n\t\t\tdbType, err))\n\t}\n}\n",
+      "length": 258,
+      "tokens": 33,
+      "embedding": []
+    }
+  ]
+}

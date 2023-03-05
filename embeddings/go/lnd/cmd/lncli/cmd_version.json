@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/cmd_version.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func version(ctx *cli.Context) error {",
+      "content": "func version(ctx *cli.Context) error {\n\tctxc := getContext()\n\tconn := getClientConn(ctx, false)\n\tdefer conn.Close()\n\n\tversions := &lnclipb.VersionResponse{\n\t\tLncli: &verrpc.Version{\n\t\t\tCommit:        build.Commit,\n\t\t\tCommitHash:    build.CommitHash,\n\t\t\tVersion:       build.Version(),\n\t\t\tAppMajor:      uint32(build.AppMajor),\n\t\t\tAppMinor:      uint32(build.AppMinor),\n\t\t\tAppPatch:      uint32(build.AppPatch),\n\t\t\tAppPreRelease: build.AppPreRelease,\n\t\t\tBuildTags:     build.Tags(),\n\t\t\tGoVersion:     build.GoVersion,\n\t\t},\n\t}\n\n\tclient := verrpc.NewVersionerClient(conn)\n\n\tlndVersion, err := client.GetVersion(ctxc, &verrpc.VersionRequest{})\n\tif err != nil {\n\t\tprintRespJSON(versions)\n\t\treturn fmt.Errorf(\"unable fetch version from lnd: %v\", err)\n\t}\n\tversions.Lnd = lndVersion\n\n\tprintRespJSON(versions)\n\n\treturn nil\n}\n",
+      "length": 746,
+      "tokens": 64,
+      "embedding": []
+    }
+  ]
+}

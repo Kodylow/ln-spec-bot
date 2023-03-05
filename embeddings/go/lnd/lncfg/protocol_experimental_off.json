@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/protocol_experimental_off.go",
+  "package": "!dev",
+  "sections": [
+    {
+      "slug": "type ExperimentalProtocol struct {",
+      "content": "type ExperimentalProtocol struct {\n}\n\n// CustomMessageOverrides returns the set of protocol messages that we override\n// to allow custom handling.",
+      "length": 108,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (p ExperimentalProtocol) CustomMessageOverrides() []uint16 {",
+      "content": "func (p ExperimentalProtocol) CustomMessageOverrides() []uint16 {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/blob/type_test.go",
+  "package": "blob_test",
+  "sections": [
+    {
+      "slug": "type typeStringTest struct {",
+      "content": "type typeStringTest struct {\n\tname   string\n\ttyp    blob.Type\n\texpStr string\n}\n\nvar typeStringTests = []typeStringTest{\n\t{\n\t\tname:   \"commit no-reward\",\n\t\ttyp:    blob.TypeAltruistCommit,\n\t\texpStr: \"[No-FlagAnchorChannel|FlagCommitOutputs|No-FlagReward]\",\n\t},\n\t{\n\t\tname:   \"commit reward\",\n\t\ttyp:    blob.TypeRewardCommit,\n\t\texpStr: \"[No-FlagAnchorChannel|FlagCommitOutputs|FlagReward]\",\n\t},\n\t{\n\t\tname:   \"unknown flag\",\n\t\ttyp:    unknownFlag.Type(),\n\t\texpStr: \"0000000000010000[No-FlagAnchorChannel|No-FlagCommitOutputs|No-FlagReward]\",\n\t},\n}\n\n// TestTypeStrings asserts that the proper human-readable string is returned for\n// various blob.Types",
+      "length": 594,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTypeStrings(t *testing.T) {",
+      "content": "func TestTypeStrings(t *testing.T) {\n\tfor _, test := range typeStringTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttypeStr := test.typ.String()\n\t\t\tif typeStr != test.expStr {\n\t\t\t\tt.Fatalf(\"mismatched type string, want: %v, \"+\n\t\t\t\t\t\"got %v\", test.expStr, typeStr)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestUnknownFlagString asserts that the proper string is returned from\n// unallocated flags.",
+      "length": 329,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUnknownFlagString(t *testing.T) {",
+      "content": "func TestUnknownFlagString(t *testing.T) {\n\tif unknownFlag.String() != \"FlagUnknown\" {\n\t\tt.Fatalf(\"unknown flags should return FlagUnknown, instead \"+\n\t\t\t\"got: %v\", unknownFlag.String())\n\t}\n}\n",
+      "length": 144,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type typeFromFlagTest struct {",
+      "content": "type typeFromFlagTest struct {\n\tname    string\n\tflags   []blob.Flag\n\texpType blob.Type\n}\n\nvar typeFromFlagTests = []typeFromFlagTest{\n\t{\n\t\tname:    \"no flags\",\n\t\tflags:   nil,\n\t\texpType: blob.Type(0),\n\t},\n\t{\n\t\tname:    \"single flag\",\n\t\tflags:   []blob.Flag{blob.FlagReward},\n\t\texpType: blob.Type(blob.FlagReward),\n\t},\n\t{\n\t\tname:    \"multiple flags\",\n\t\tflags:   []blob.Flag{blob.FlagReward, blob.FlagCommitOutputs},\n\t\texpType: blob.TypeRewardCommit,\n\t},\n\t{\n\t\tname:    \"duplicate flag\",\n\t\tflags:   []blob.Flag{blob.FlagReward, blob.FlagReward},\n\t\texpType: blob.Type(blob.FlagReward),\n\t},\n}\n\n// TestTypeFromFlags asserts that blob.Types constructed using\n// blob.TypeFromFlags are correct, and properly deduplicate flags. We also\n// assert that Has returns true for the generated blob.Type for all of the flags\n// that were used to create it.",
+      "length": 777,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTypeFromFlags(t *testing.T) {",
+      "content": "func TestTypeFromFlags(t *testing.T) {\n\tfor _, test := range typeFromFlagTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tblobType := blob.TypeFromFlags(test.flags...)\n\n\t\t\t// Assert that the constructed type matches our\n\t\t\t// expectation.\n\t\t\tif blobType != test.expType {\n\t\t\t\tt.Fatalf(\"mismatch, expected blob type %s, \"+\n\t\t\t\t\t\"got %s\", test.expType, blobType)\n\t\t\t}\n\n\t\t\t// Assert that Has returns true for all flags used to\n\t\t\t// construct the type.\n\t\t\tfor _, flag := range test.flags {\n\t\t\t\tif blobType.Has(flag) {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tt.Fatalf(\"expected type to have flag %s, \"+\n\t\t\t\t\t\"but didn't\", flag)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestSupportedTypes verifies that blob.IsSupported returns true for all\n// blob.Types returned from blob.SupportedTypes. It also asserts that the\n// blob.DefaultType returns true.",
+      "length": 742,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSupportedTypes(t *testing.T) {",
+      "content": "func TestSupportedTypes(t *testing.T) {\n\t// Assert that the package's default type is supported.\n\tif !blob.IsSupportedType(blob.TypeAltruistCommit) {\n\t\tt.Fatalf(\"default type %s is not supported\", blob.TypeAltruistCommit)\n\t}\n\n\t// Assert that the altruist anchor commit types are supported.\n\tif !blob.IsSupportedType(blob.TypeAltruistAnchorCommit) {\n\t\tt.Fatalf(\"default type %s is not supported\",\n\t\t\tblob.TypeAltruistAnchorCommit)\n\t}\n\n\t// Assert that all claimed supported types are actually supported.\n\tfor _, supType := range blob.SupportedTypes() {\n\t\tif blob.IsSupportedType(supType) {\n\t\t\tcontinue\n\t\t}\n\n\t\tt.Fatalf(\"supposedly supported type %s is not supported\",\n\t\t\tsupType)\n\t}\n}\n",
+      "length": 621,
+      "tokens": 73,
+      "embedding": []
+    }
+  ]
+}

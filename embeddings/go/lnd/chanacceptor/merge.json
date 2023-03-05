@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/merge.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "func fieldMismatchError(name string, current, newValue interface{}) error {",
+      "content": "func fieldMismatchError(name string, current, newValue interface{}) error {\n\treturn fmt.Errorf(\"multiple values set for: %v, %v and %v\",\n\t\tname, current, newValue)\n}\n\n// mergeBool merges two boolean values.",
+      "length": 126,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func mergeBool(current, newValue bool) bool {",
+      "content": "func mergeBool(current, newValue bool) bool {\n\t// If either is true, return true. It is not possible to have different\n\t// \"non-zero\" values like the other cases.\n\treturn current || newValue\n}\n\n// mergeInt64 merges two int64 values, failing if they have different non-zero\n// values.",
+      "length": 231,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func mergeInt64(name string, current, newValue int64) (int64, error) {",
+      "content": "func mergeInt64(name string, current, newValue int64) (int64, error) {\n\tswitch {\n\tcase current == 0:\n\t\treturn newValue, nil\n\n\tcase newValue == 0:\n\t\treturn current, nil\n\n\tcase current != newValue:\n\t\treturn 0, fieldMismatchError(name, current, newValue)\n\n\tdefault:\n\t\treturn newValue, nil\n\t}\n}\n\n// mergeMillisatoshi merges two msat values, failing if they have different\n// non-zero values.",
+      "length": 300,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func mergeMillisatoshi(name string, current,",
+      "content": "func mergeMillisatoshi(name string, current,\n\tnewValue lnwire.MilliSatoshi) (lnwire.MilliSatoshi, error) {\n\n\tswitch {\n\tcase current == 0:\n\t\treturn newValue, nil\n\n\tcase newValue == 0:\n\t\treturn current, nil\n\n\tcase current != newValue:\n\t\treturn 0, fieldMismatchError(name, current, newValue)\n\n\tdefault:\n\t\treturn newValue, nil\n\t}\n}\n\n// mergeDeliveryAddress merges two delivery address values, failing if they have\n// different non-zero values.",
+      "length": 376,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func mergeDeliveryAddress(name string, current,",
+      "content": "func mergeDeliveryAddress(name string, current,\n\tnewValue lnwire.DeliveryAddress) (lnwire.DeliveryAddress, error) {\n\n\tswitch {\n\tcase current == nil:\n\t\treturn newValue, nil\n\n\tcase newValue == nil:\n\t\treturn current, nil\n\n\tcase !bytes.Equal(current, newValue):\n\t\treturn nil, fieldMismatchError(name, current, newValue)\n\n\tdefault:\n\t\treturn newValue, nil\n\t}\n}\n\n// mergeResponse takes two channel accept responses, and attempts to merge their\n// fields, failing if any fields conflict (are non-zero and not equal). It\n// returns a new response that has all the merged fields in it.",
+      "length": 508,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func mergeResponse(current,",
+      "content": "func mergeResponse(current,\n\tnewValue ChannelAcceptResponse) (ChannelAcceptResponse, error) {\n\n\tcsv, err := mergeInt64(\n\t\tfieldCSV, int64(current.CSVDelay), int64(newValue.CSVDelay),\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\tcurrent.CSVDelay = uint16(csv)\n\n\thtlcLimit, err := mergeInt64(\n\t\tfieldHtlcLimit, int64(current.HtlcLimit),\n\t\tint64(newValue.HtlcLimit),\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\tcurrent.HtlcLimit = uint16(htlcLimit)\n\n\tminDepth, err := mergeInt64(\n\t\tfieldMinDep, int64(current.MinAcceptDepth),\n\t\tint64(newValue.MinAcceptDepth),\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\tcurrent.MinAcceptDepth = uint16(minDepth)\n\n\tcurrent.ZeroConf = mergeBool(current.ZeroConf, newValue.ZeroConf)\n\n\t// Assert that if zero-conf is set, min-depth is zero.\n\tif current.ZeroConf && current.MinAcceptDepth != 0 {\n\t\treturn current, errZeroConf\n\t}\n\n\treserve, err := mergeInt64(\n\t\tfieldReserve, int64(current.Reserve), int64(newValue.Reserve),\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\tcurrent.Reserve = btcutil.Amount(reserve)\n\n\tcurrent.MinHtlcIn, err = mergeMillisatoshi(\n\t\tfieldMinIn, current.MinHtlcIn, newValue.MinHtlcIn,\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\n\tcurrent.InFlightTotal, err = mergeMillisatoshi(\n\t\tfieldInFlightTotal, current.InFlightTotal,\n\t\tnewValue.InFlightTotal,\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\n\tcurrent.UpfrontShutdown, err = mergeDeliveryAddress(\n\t\tfieldUpfrontShutdown, current.UpfrontShutdown,\n\t\tnewValue.UpfrontShutdown,\n\t)\n\tif err != nil {\n\t\treturn current, err\n\t}\n\n\treturn current, nil\n}\n",
+      "length": 1458,
+      "tokens": 165,
+      "embedding": []
+    }
+  ]
+}

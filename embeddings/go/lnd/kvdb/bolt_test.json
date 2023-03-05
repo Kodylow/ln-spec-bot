@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/bolt_test.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func TestBolt(t *testing.T) {",
+      "content": "func TestBolt(t *testing.T) {\n\ttests := []struct {\n\t\tname string\n\t\ttest func(*testing.T, walletdb.DB)\n\t}{\n\t\t{\n\t\t\tname: \"read cursor empty interval\",\n\t\t\ttest: testReadCursorEmptyInterval,\n\t\t},\n\t\t{\n\t\t\tname: \"read cursor non empty interval\",\n\t\t\ttest: testReadCursorNonEmptyInterval,\n\t\t},\n\t\t{\n\t\t\tname: \"read write cursor\",\n\t\t\ttest: testReadWriteCursor,\n\t\t},\n\t\t{\n\t\t\tname: \"read write cursor with bucket and value\",\n\t\t\ttest: testReadWriteCursorWithBucketAndValue,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket creation\",\n\t\t\ttest: testBucketCreation,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket deletion\",\n\t\t\ttest: testBucketDeletion,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket for each\",\n\t\t\ttest: testBucketForEach,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket for each with error\",\n\t\t\ttest: testBucketForEachWithError,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket sequence\",\n\t\t\ttest: testBucketSequence,\n\t\t},\n\t\t{\n\t\t\tname: \"key clash\",\n\t\t\ttest: testKeyClash,\n\t\t},\n\t\t{\n\t\t\tname: \"bucket create delete\",\n\t\t\ttest: testBucketCreateDelete,\n\t\t},\n\t\t{\n\t\t\tname: \"tx manual commit\",\n\t\t\ttest: testTxManualCommit,\n\t\t},\n\t\t{\n\t\t\tname: \"tx rollback\",\n\t\t\ttest: testTxRollback,\n\t\t},\n\t\t{\n\t\t\tname: \"prefetch\",\n\t\t\ttest: testPrefetch,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tf := NewBoltFixture(t)\n\n\t\t\ttest.test(t, f.NewBackend())\n\t\t})\n\t}\n}\n",
+      "length": 1190,
+      "tokens": 148,
+      "embedding": []
+    }
+  ]
+}

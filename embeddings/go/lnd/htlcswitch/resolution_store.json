@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/resolution_store.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type resolutionStore struct {",
+      "content": "type resolutionStore struct {\n\tbackend kvdb.Backend\n}\n",
+      "length": 22,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func newResolutionStore(db kvdb.Backend) *resolutionStore {",
+      "content": "func newResolutionStore(db kvdb.Backend) *resolutionStore {\n\treturn &resolutionStore{\n\t\tbackend: db,\n\t}\n}\n\n// addResolutionMsg persists a ResolutionMsg to the resolutionStore.",
+      "length": 110,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *resolutionStore) addResolutionMsg(",
+      "content": "func (r *resolutionStore) addResolutionMsg(\n\tresMsg *contractcourt.ResolutionMsg) error {\n\n\t// The outKey will be the database key.\n\toutKey := &CircuitKey{\n\t\tChanID: resMsg.SourceChan,\n\t\tHtlcID: resMsg.HtlcIndex,\n\t}\n\n\tvar resBuf bytes.Buffer\n\tif err := serializeResolutionMsg(&resBuf, resMsg); err != nil {\n\t\treturn err\n\t}\n\n\terr := kvdb.Update(r.backend, func(tx kvdb.RwTx) error {\n\t\tresBucket, err := tx.CreateTopLevelBucket(resBucketKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn resBucket.Put(outKey.Bytes(), resBuf.Bytes())\n\t}, func() {})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// checkResolutionMsg returns nil if the resolution message is found in the\n// store. It returns an error if no resolution message was found for the\n// passed outKey or if a database error occurred.",
+      "length": 720,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *resolutionStore) checkResolutionMsg(outKey *CircuitKey) error {",
+      "content": "func (r *resolutionStore) checkResolutionMsg(outKey *CircuitKey) error {\n\terr := kvdb.View(r.backend, func(tx kvdb.RTx) error {\n\t\tresBucket := tx.ReadBucket(resBucketKey)\n\t\tif resBucket == nil {\n\t\t\t// Return an error if the bucket doesn't exist.\n\t\t\treturn errResMsgNotFound\n\t\t}\n\n\t\tmsg := resBucket.Get(outKey.Bytes())\n\t\tif msg == nil {\n\t\t\t// Return the not found error since no message exists\n\t\t\t// for this CircuitKey.\n\t\t\treturn errResMsgNotFound\n\t\t}\n\n\t\t// Return nil to indicate that the message was found.\n\t\treturn nil\n\t}, func() {})\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// fetchAllResolutionMsg returns a slice of all stored ResolutionMsgs. This is\n// used by the Switch on start-up.",
+      "length": 601,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *resolutionStore) fetchAllResolutionMsg() (",
+      "content": "func (r *resolutionStore) fetchAllResolutionMsg() (\n\t[]*contractcourt.ResolutionMsg, error) {\n\n\tvar msgs []*contractcourt.ResolutionMsg\n\n\terr := kvdb.View(r.backend, func(tx kvdb.RTx) error {\n\t\tresBucket := tx.ReadBucket(resBucketKey)\n\t\tif resBucket == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn resBucket.ForEach(func(k, v []byte) error {\n\t\t\tkr := bytes.NewReader(k)\n\t\t\toutKey := &CircuitKey{}\n\t\t\tif err := outKey.Decode(kr); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tvr := bytes.NewReader(v)\n\t\t\tresMsg, err := deserializeResolutionMsg(vr)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// Set the CircuitKey values on the ResolutionMsg.\n\t\t\tresMsg.SourceChan = outKey.ChanID\n\t\t\tresMsg.HtlcIndex = outKey.HtlcID\n\n\t\t\tmsgs = append(msgs, resMsg)\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\tmsgs = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msgs, nil\n}\n\n// deleteResolutionMsg removes a ResolutionMsg with the passed-in CircuitKey.",
+      "length": 820,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *resolutionStore) deleteResolutionMsg(outKey *CircuitKey) error {",
+      "content": "func (r *resolutionStore) deleteResolutionMsg(outKey *CircuitKey) error {\n\terr := kvdb.Update(r.backend, func(tx kvdb.RwTx) error {\n\t\tresBucket, err := tx.CreateTopLevelBucket(resBucketKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\treturn resBucket.Delete(outKey.Bytes())\n\t}, func() {})\n\treturn err\n}\n\n// serializeResolutionMsg writes part of a ResolutionMsg to the passed\n// io.Writer.",
+      "length": 297,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func serializeResolutionMsg(w io.Writer,",
+      "content": "func serializeResolutionMsg(w io.Writer,\n\tresMsg *contractcourt.ResolutionMsg) error {\n\n\tisFail := resMsg.Failure != nil\n\n\tif err := channeldb.WriteElement(w, isFail); err != nil {\n\t\treturn err\n\t}\n\n\t// If this is a failure message, then we're done serializing.\n\tif isFail {\n\t\treturn nil\n\t}\n\n\t// Else this is a settle message, and we need to write the preimage.\n\treturn channeldb.WriteElement(w, *resMsg.PreImage)\n}\n\n// deserializeResolutionMsg reads part of a ResolutionMsg from the passed\n// io.Reader.",
+      "length": 444,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func deserializeResolutionMsg(r io.Reader) (*contractcourt.ResolutionMsg,",
+      "content": "func deserializeResolutionMsg(r io.Reader) (*contractcourt.ResolutionMsg,\n\terror) {\n\n\tresMsg := &contractcourt.ResolutionMsg{}\n\tvar isFail bool\n\n\tif err := channeldb.ReadElements(r, &isFail); err != nil {\n\t\treturn nil, err\n\t}\n\n\t// If a failure resolution msg was stored, set the Failure field.\n\tif isFail {\n\t\tfailureMsg := &lnwire.FailPermanentChannelFailure{}\n\t\tresMsg.Failure = failureMsg\n\t\treturn resMsg, nil\n\t}\n\n\tvar preimage [32]byte\n\tresMsg.PreImage = &preimage\n\n\t// Else this is a settle resolution msg and we will read the preimage.\n\tif err := channeldb.ReadElement(r, resMsg.PreImage); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn resMsg, nil\n}\n",
+      "length": 552,
+      "tokens": 83,
+      "embedding": []
+    }
+  ]
+}

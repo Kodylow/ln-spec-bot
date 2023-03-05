@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/hodl/flags.go",
+  "package": "hodl",
+  "sections": [
+    {
+      "slug": "type (",
+      "content": "type (\n\t// Flag represents a single breakpoint where an HTLC should be dropped\n\t// during forwarding. Flags can be composed into a Mask to express more\n\t// complex combinations.\n\tFlag uint32\n\n\t// Mask is a bitvector combining multiple Flags that can be queried to\n\t// see which breakpoints are active.\n\tMask uint32\n)\n\nconst (\n\t// ExitSettle drops an incoming ADD for which we are the exit node,\n\t// before processing in the link.\n\tExitSettle Flag = 1 << iota\n\n\t// AddIncoming drops an incoming ADD before processing if we are not\n\t// the exit node.\n\tAddIncoming\n\n\t// SettleIncoming drops an incoming SETTLE before processing if we\n\t// are not the exit node.\n\tSettleIncoming\n\n\t// FailIncoming drops an incoming FAIL before processing if we are\n\t// not the exit node.\n\tFailIncoming\n\n\t// TODO(conner): add  modes for switch breakpoints\n\n\t// AddOutgoing drops an outgoing ADD before it is added to the\n\t// in-memory commitment state of the link.\n\tAddOutgoing\n\n\t// SettleOutgoing drops an SETTLE before it is added to the\n\t// in-memory commitment state of the link.\n\tSettleOutgoing\n\n\t// FailOutgoing drops an outgoing FAIL before is is added to the\n\t// in-memory commitment state of the link.\n\tFailOutgoing\n\n\t// Commit drops all HTLC after any outgoing circuits have been\n\t// opened, but before the in-memory commitment state is persisted.\n\tCommit\n\n\t// BogusSettle attempts to settle back any incoming HTLC for which we\n\t// are the exit node with a bogus preimage.\n\tBogusSettle\n)\n\n// String returns a human-readable identifier for a given Flag.",
+      "length": 1482,
+      "tokens": 251,
+      "embedding": []
+    },
+    {
+      "slug": "func (f Flag) String() string {",
+      "content": "func (f Flag) String() string {\n\tswitch f {\n\tcase ExitSettle:\n\t\treturn \"ExitSettle\"\n\tcase AddIncoming:\n\t\treturn \"AddIncoming\"\n\tcase SettleIncoming:\n\t\treturn \"SettleIncoming\"\n\tcase FailIncoming:\n\t\treturn \"FailIncoming\"\n\tcase AddOutgoing:\n\t\treturn \"AddOutgoing\"\n\tcase SettleOutgoing:\n\t\treturn \"SettleOutgoing\"\n\tcase FailOutgoing:\n\t\treturn \"FailOutgoing\"\n\tcase Commit:\n\t\treturn \"Commit\"\n\tcase BogusSettle:\n\t\treturn \"BogusSettle\"\n\tdefault:\n\t\treturn \"UnknownHodlFlag\"\n\t}\n}\n\n// Warning generates a warning message to log if a particular breakpoint is\n// triggered during execution.",
+      "length": 518,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (f Flag) Warning() string {",
+      "content": "func (f Flag) Warning() string {\n\tvar msg string\n\tswitch f {\n\tcase ExitSettle:\n\t\tmsg = \"will not attempt to settle ADD with sender\"\n\tcase AddIncoming:\n\t\tmsg = \"will not attempt to forward ADD to switch\"\n\tcase SettleIncoming:\n\t\tmsg = \"will not attempt to forward SETTLE to switch\"\n\tcase FailIncoming:\n\t\tmsg = \"will not attempt to forward FAIL to switch\"\n\tcase AddOutgoing:\n\t\tmsg = \"will not update channel state with downstream ADD\"\n\tcase SettleOutgoing:\n\t\tmsg = \"will not update channel state with downstream SETTLE\"\n\tcase FailOutgoing:\n\t\tmsg = \"will not update channel state with downstream FAIL\"\n\tcase Commit:\n\t\tmsg = \"will not commit pending channel updates\"\n\tcase BogusSettle:\n\t\tmsg = \"will settle HTLC with bogus preimage\"\n\tdefault:\n\t\tmsg = \"incorrect hodl flag usage\"\n\t}\n\n\treturn fmt.Sprintf(\"%s mode enabled -- %s\", f, msg)\n}\n\n// Mask returns the Mask consisting solely of this Flag.",
+      "length": 830,
+      "tokens": 137,
+      "embedding": []
+    },
+    {
+      "slug": "func (f Flag) Mask() Mask {",
+      "content": "func (f Flag) Mask() Mask {\n\treturn Mask(f)\n}\n",
+      "length": 16,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

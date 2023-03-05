@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/extra_bytes.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ExtraOpaqueData []byte",
+      "content": "type ExtraOpaqueData []byte\n\n// Encode attempts to encode the raw extra bytes into the passed io.Writer.",
+      "length": 75,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ExtraOpaqueData) Encode(w *bytes.Buffer) error {",
+      "content": "func (e *ExtraOpaqueData) Encode(w *bytes.Buffer) error {\n\teBytes := []byte((*e)[:])\n\tif err := WriteBytes(w, eBytes); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// Decode attempts to unpack the raw bytes encoded in the passed io.Reader as a\n// set of extra opaque data.",
+      "length": 205,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ExtraOpaqueData) Decode(r io.Reader) error {",
+      "content": "func (e *ExtraOpaqueData) Decode(r io.Reader) error {\n\t// First, we'll attempt to read a set of bytes contained within the\n\t// passed io.Reader (if any exist).\n\trawBytes, err := ioutil.ReadAll(r)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// If we _do_ have some bytes, then we'll swap out our backing pointer.\n\t// This ensures that any struct that embeds this type will properly\n\t// store the bytes once this method exits.\n\tif len(rawBytes) > 0 {\n\t\t*e = ExtraOpaqueData(rawBytes)\n\t} else {\n\t\t*e = make([]byte, 0)\n\t}\n\n\treturn nil\n}\n\n// PackRecords attempts to encode the set of tlv records into the target\n// ExtraOpaqueData instance. The records will be encoded as a raw TLV stream\n// and stored within the backing slice pointer.",
+      "length": 647,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ExtraOpaqueData) PackRecords(recordProducers ...tlv.RecordProducer) error {",
+      "content": "func (e *ExtraOpaqueData) PackRecords(recordProducers ...tlv.RecordProducer) error {\n\t// First, assemble all the records passed in in series.\n\trecords := make([]tlv.Record, 0, len(recordProducers))\n\tfor _, producer := range recordProducers {\n\t\trecords = append(records, producer.Record())\n\t}\n\n\t// Ensure that the set of records are sorted before we encode them into\n\t// the stream, to ensure they're canonical.\n\ttlv.SortRecords(records)\n\n\ttlvStream, err := tlv.NewStream(records...)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tvar extraBytesWriter bytes.Buffer\n\tif err := tlvStream.Encode(&extraBytesWriter); err != nil {\n\t\treturn err\n\t}\n\n\t*e = ExtraOpaqueData(extraBytesWriter.Bytes())\n\n\treturn nil\n}\n\n// ExtractRecords attempts to decode any types in the internal raw bytes as if\n// it were a tlv stream. The set of raw parsed types is returned, and any\n// passed records (if found in the stream) will be parsed into the proper\n// tlv.Record.",
+      "length": 822,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *ExtraOpaqueData) ExtractRecords(recordProducers ...tlv.RecordProducer) (",
+      "content": "func (e *ExtraOpaqueData) ExtractRecords(recordProducers ...tlv.RecordProducer) (\n\ttlv.TypeMap, error) {\n\n\t// First, assemble all the records passed in in series.\n\trecords := make([]tlv.Record, 0, len(recordProducers))\n\tfor _, producer := range recordProducers {\n\t\trecords = append(records, producer.Record())\n\t}\n\n\textraBytesReader := bytes.NewReader(*e)\n\n\ttlvStream, err := tlv.NewStream(records...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Since ExtraOpaqueData is provided by a potentially malicious peer,\n\t// pass it into the P2P decoding variant.\n\treturn tlvStream.DecodeWithParsedTypesP2P(extraBytesReader)\n}\n\n// EncodeMessageExtraData encodes the given recordProducers into the given\n// extraData.",
+      "length": 603,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func EncodeMessageExtraData(extraData *ExtraOpaqueData,",
+      "content": "func EncodeMessageExtraData(extraData *ExtraOpaqueData,\n\trecordProducers ...tlv.RecordProducer) error {\n\n\t// Treat extraData as a mutable reference.\n\tif extraData == nil {\n\t\treturn fmt.Errorf(\"extra data cannot be nil\")\n\t}\n\n\t// Pack in the series of TLV records into this message. The order we\n\t// pass them in doesn't matter, as the method will ensure that things\n\t// are all properly sorted.\n\treturn extraData.PackRecords(recordProducers...)\n}\n",
+      "length": 378,
+      "tokens": 58,
+      "embedding": []
+    }
+  ]
+}

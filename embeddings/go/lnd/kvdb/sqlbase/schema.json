@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/schema.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "type SQLiteCmdReplacements map[string]string",
+      "content": "type SQLiteCmdReplacements map[string]string\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func newKVSchemaCreationCmd(table, schema string,",
+      "content": "func newKVSchemaCreationCmd(table, schema string,\n\treplacements SQLiteCmdReplacements) string {\n\n\tvar (\n\t\ttableInSchema = table\n\t\tfinalCmd      string\n\t)\n\tif schema != \"\" {\n\t\tfinalCmd = fmt.Sprintf(\n\t\t\t`CREATE SCHEMA IF NOT EXISTS ` + schema + `;`,\n\t\t)\n\n\t\ttableInSchema = fmt.Sprintf(\"%s.%s\", schema, table)\n\t}\n\n\t// Construct the sql statements to set up a kv table in postgres. Every\n\t// row points to the bucket that it is one via its parent_id field. A\n\t// NULL parent_id means that the key belongs to the uppermost bucket in\n\t// this table. A constraint on parent_id is enforcing referential\n\t// integrity.\n\t//\n\t// Furthermore, there is a <table>_p index on parent_id that is required\n\t// for the foreign key constraint.\n\t//\n\t// Finally, there are unique indices on (parent_id, key) to prevent the\n\t// same key being present in a bucket more than once (<table>_up and\n\t// <table>_unp). In postgres, a single index wouldn't enforce the unique\n\t// constraint on rows with a NULL parent_id. Therefore, two indices are\n\t// defined.\n\t//\n\t// The replacements map can be used to replace any sqlite keywords.\n\t// Callers should note that the sqlite keywords are case-sensitive.\n\tfinalCmd += fmt.Sprintf(`\nCREATE TABLE IF NOT EXISTS ` + tableInSchema + `\n(\n    key BLOB NOT NULL,\n    value BLOB,\n    parent_id BIGINT,\n    id INTEGER PRIMARY KEY,\n    sequence BIGINT,\n    CONSTRAINT ` + table + `_parent FOREIGN KEY (parent_id)\n        REFERENCES ` + tableInSchema + ` (id)\n        ON UPDATE NO ACTION\n        ON DELETE CASCADE\n);\nCREATE INDEX IF NOT EXISTS ` + table + `_p\n    ON ` + tableInSchema + ` (parent_id);\nCREATE UNIQUE INDEX IF NOT EXISTS ` + table + `_up\n    ON ` + tableInSchema + `\n    (parent_id, key) WHERE parent_id IS NOT NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS ` + table + `_unp \n    ON ` + tableInSchema + ` (key) WHERE parent_id IS NULL;\n`)\n\n\tfor from, to := range replacements {\n\t\tfinalCmd = strings.Replace(finalCmd, from, to, -1)\n\t}\n\n\treturn finalCmd\n}\n",
+      "length": 1862,
+      "tokens": 317,
+      "embedding": []
+    }
+  ]
+}

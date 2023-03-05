@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/netann/channel_state.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type ChanStatus uint8",
+      "content": "type ChanStatus uint8\n\nconst (\n\t// ChanStatusEnabled indicates that the channel's last announcement has\n\t// the disabled bit cleared.\n\tChanStatusEnabled ChanStatus = iota\n\n\t// ChanStatusPendingDisabled indicates that the channel's last\n\t// announcement has the disabled bit cleared, but that the channel was\n\t// detected in an inactive state. Channels in this state will have a\n\t// disabling announcement sent after the ChanInactiveTimeout expires\n\t// from the time of the first detection--unless the channel is\n\t// explicitly re-enabled before the disabling occurs.\n\tChanStatusPendingDisabled\n\n\t// ChanStatusDisabled indicates that the channel's last announcement has\n\t// the disabled bit set.\n\tChanStatusDisabled\n\n\t// ChanStatusManuallyDisabled indicates that the channel's last\n\t// announcement had the disabled bit set, and that a user manually\n\t// requested disabling the channel. Channels in this state will ignore\n\t// automatic / background attempts to re-enable the channel.\n\t//\n\t// Note that there's no corresponding ChanStatusManuallyEnabled state\n\t// because even if a user manually requests enabling a channel, we still\n\t// DO want to allow automatic / background processes to disable it.\n\t// Otherwise, the network might be cluttered with channels that are\n\t// advertised as enabled, but don't actually work or even exist.\n\tChanStatusManuallyDisabled\n)\n\n// ChannelState describes the ChanStatusManager's view of a channel, and\n// describes the current state the channel's disabled status on the network.",
+      "length": 1462,
+      "tokens": 213,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelState struct {",
+      "content": "type ChannelState struct {\n\t// Status is the channel's current ChanStatus from the POV of the\n\t// ChanStatusManager.\n\tStatus ChanStatus\n\n\t// SendDisableTime is the earliest time at which the ChanStatusManager\n\t// will passively send a new disable announcement on behalf of this\n\t// channel.\n\t//\n\t// NOTE: This field is only non-zero if status is\n\t// ChanStatusPendingDisabled.\n\tSendDisableTime time.Time\n}\n\n// channelStates is a map of channel outpoints to their channelState. All\n// changes made after setting an entry initially should be made using receiver\n// methods below.",
+      "length": 535,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "type channelStates map[wire.OutPoint]ChannelState",
+      "content": "type channelStates map[wire.OutPoint]ChannelState\n\n// markEnabled creates a channelState using ChanStatusEnabled.",
+      "length": 62,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *channelStates) markEnabled(outpoint wire.OutPoint) {",
+      "content": "func (s *channelStates) markEnabled(outpoint wire.OutPoint) {\n\t(*s)[outpoint] = ChannelState{\n\t\tStatus: ChanStatusEnabled,\n\t}\n}\n\n// markDisabled creates a channelState using ChanStatusDisabled.",
+      "length": 126,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *channelStates) markDisabled(outpoint wire.OutPoint) {",
+      "content": "func (s *channelStates) markDisabled(outpoint wire.OutPoint) {\n\t(*s)[outpoint] = ChannelState{\n\t\tStatus: ChanStatusDisabled,\n\t}\n}\n\n// markManuallyDisabled creates a channelState using\n// ChanStatusManuallyDisabled.",
+      "length": 145,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *channelStates) markManuallyDisabled(outpoint wire.OutPoint) {",
+      "content": "func (s *channelStates) markManuallyDisabled(outpoint wire.OutPoint) {\n\t(*s)[outpoint] = ChannelState{\n\t\tStatus: ChanStatusManuallyDisabled,\n\t}\n}\n\n// markPendingDisabled creates a channelState using ChanStatusPendingDisabled\n// and sets the ChannelState's SendDisableTime to sendDisableTime.",
+      "length": 214,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *channelStates) markPendingDisabled(outpoint wire.OutPoint,",
+      "content": "func (s *channelStates) markPendingDisabled(outpoint wire.OutPoint,\n\tsendDisableTime time.Time) {\n\n\t(*s)[outpoint] = ChannelState{\n\t\tStatus:          ChanStatusPendingDisabled,\n\t\tSendDisableTime: sendDisableTime,\n\t}\n}\n",
+      "length": 143,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

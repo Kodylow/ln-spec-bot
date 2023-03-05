@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/linkfailure.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type errorCode uint8",
+      "content": "type errorCode uint8\n\nconst (\n\t// ErrInternalError indicates that something internal in the link\n\t// failed. In this case we will send a generic error to our peer.\n\tErrInternalError errorCode = iota\n\n\t// ErrRemoteError indicates that our peer sent an error, prompting up\n\t// to fail the link.\n\tErrRemoteError\n\n\t// ErrRemoteUnresponsive indicates that our peer took too long to\n\t// complete a commitment dance.\n\tErrRemoteUnresponsive\n\n\t// ErrSyncError indicates that we failed synchronizing the state of the\n\t// channel with our peer.\n\tErrSyncError\n\n\t// ErrInvalidUpdate indicates that the peer send us an invalid update.\n\tErrInvalidUpdate\n\n\t// ErrInvalidCommitment indicates that the remote peer sent us an\n\t// invalid commitment signature.\n\tErrInvalidCommitment\n\n\t// ErrInvalidRevocation indicates that the remote peer send us an\n\t// invalid revocation message.\n\tErrInvalidRevocation\n\n\t// ErrRecoveryError the channel was unable to be resumed, we need the\n\t// remote party to force close the channel out on chain now as a\n\t// result.\n\tErrRecoveryError\n\n\t// ErrCircuitError indicates a duplicate keystone error was hit in the\n\t// circuit map. This is non-fatal and will resolve itself (usually\n\t// within several minutes).\n\tErrCircuitError\n)\n\n// LinkFailureError encapsulates an error that will make us fail the current\n// link. It contains the necessary information needed to determine if we should\n// force close the channel in the process, and if any error data should be sent\n// to the peer.",
+      "length": 1431,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "type LinkFailureError struct {",
+      "content": "type LinkFailureError struct {\n\t// code is the type of error this LinkFailureError encapsulates.\n\tcode errorCode\n\n\t// ForceClose indicates whether we should force close the channel\n\t// because of this error.\n\tForceClose bool\n\n\t// PermanentFailure indicates whether this failure is permanent, and\n\t// the channel should not be attempted loaded again.\n\tPermanentFailure bool\n\n\t// SendData is a byte slice that will be sent to the peer. If nil a\n\t// generic error will be sent.\n\tSendData []byte\n}\n\n// A compile time check to ensure LinkFailureError implements the error\n// interface.\nvar _ error = (*LinkFailureError)(nil)\n\n// Error returns a generic error for the LinkFailureError.\n//\n// NOTE: Part of the error interface.",
+      "length": 667,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (e LinkFailureError) Error() string {",
+      "content": "func (e LinkFailureError) Error() string {\n\tswitch e.code {\n\tcase ErrInternalError:\n\t\treturn \"internal error\"\n\tcase ErrRemoteError:\n\t\treturn \"remote error\"\n\tcase ErrRemoteUnresponsive:\n\t\treturn \"remote unresponsive\"\n\tcase ErrSyncError:\n\t\treturn \"sync error\"\n\tcase ErrInvalidUpdate:\n\t\treturn \"invalid update\"\n\tcase ErrInvalidCommitment:\n\t\treturn \"invalid commitment\"\n\tcase ErrInvalidRevocation:\n\t\treturn \"invalid revocation\"\n\tcase ErrRecoveryError:\n\t\treturn \"unable to resume channel, recovery required\"\n\tcase ErrCircuitError:\n\t\treturn \"non-fatal circuit map error\"\n\tdefault:\n\t\treturn \"unknown error\"\n\t}\n}\n\n// ShouldSendToPeer indicates whether we should send an error to the peer if\n// the link fails with this LinkFailureError.",
+      "length": 660,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func (e LinkFailureError) ShouldSendToPeer() bool {",
+      "content": "func (e LinkFailureError) ShouldSendToPeer() bool {\n\tswitch e.code {\n\n\t// Since sending an error can lead some nodes to force close the\n\t// channel, create a whitelist of the failures we want to send so that\n\t// newly added error codes aren't automatically sent to the remote peer.\n\tcase\n\t\tErrInternalError,\n\t\tErrRemoteError,\n\t\tErrSyncError,\n\t\tErrInvalidUpdate,\n\t\tErrInvalidCommitment,\n\t\tErrInvalidRevocation,\n\t\tErrRecoveryError:\n\n\t\treturn true\n\n\t// In all other cases we will not attempt to send our peer an error.\n\tdefault:\n\t\treturn false\n\t}\n}\n",
+      "length": 473,
+      "tokens": 72,
+      "embedding": []
+    }
+  ]
+}

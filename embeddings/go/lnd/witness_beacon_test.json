@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/witness_beacon_test.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "func TestWitnessBeaconIntercept(t *testing.T) {",
+      "content": "func TestWitnessBeaconIntercept(t *testing.T) {\n\tvar interceptedFwd htlcswitch.InterceptedForward\n\tinterceptor := func(fwd htlcswitch.InterceptedForward) error {\n\t\tinterceptedFwd = fwd\n\n\t\treturn nil\n\t}\n\n\tp := newPreimageBeacon(\n\t\t&mockWitnessCache{}, interceptor,\n\t)\n\n\tpreimage := lntypes.Preimage{1, 2, 3}\n\thash := preimage.Hash()\n\n\tsubscription, err := p.SubscribeUpdates(\n\t\tlnwire.NewShortChanIDFromInt(1),\n\t\t&channeldb.HTLC{\n\t\t\tRHash: hash,\n\t\t},\n\t\t&hop.Payload{},\n\t\t[]byte{2},\n\t)\n\trequire.NoError(t, err)\n\tt.Cleanup(subscription.CancelSubscription)\n\n\trequire.NoError(t, interceptedFwd.Settle(preimage))\n\n\tupdate := <-subscription.WitnessUpdates\n\trequire.Equal(t, preimage, update)\n}\n",
+      "length": 609,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type mockWitnessCache struct {",
+      "content": "type mockWitnessCache struct {\n\twitnessCache\n}\n",
+      "length": 14,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *mockWitnessCache) AddSha256Witnesses(",
+      "content": "func (w *mockWitnessCache) AddSha256Witnesses(\n\tpreimages ...lntypes.Preimage) error {\n\n\treturn nil\n}\n",
+      "length": 51,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

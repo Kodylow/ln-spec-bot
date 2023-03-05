@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/chanacceptor/acceptor_test.go",
+  "package": "chanacceptor",
+  "sections": [
+    {
+      "slug": "type channelAcceptorCtx struct {",
+      "content": "type channelAcceptorCtx struct {\n\tt *testing.T\n\n\t// extRequests is the channel that we send our channel accept requests\n\t// into, this channel mocks sending of a request to the rpc acceptor.\n\t// This channel should be buffered with the number of requests we want\n\t// to send so that it does not block (like a rpc stream).\n\textRequests chan []byte\n\n\t// responses is a map of pending channel IDs to the response which we\n\t// wish to mock the remote channel acceptor sending.\n\tresponses map[[32]byte]*lnrpc.ChannelAcceptResponse\n\n\t// acceptor is the channel acceptor we create for the test.\n\tacceptor *RPCAcceptor\n\n\t// errChan is a channel that the error the channel acceptor exits with\n\t// is sent into.\n\terrChan chan error\n\n\t// quit is a channel that can be used to shutdown the channel acceptor\n\t// and return errShuttingDown.\n\tquit chan struct{}\n}\n",
+      "length": 793,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func newChanAcceptorCtx(t *testing.T, acceptCallCount int,",
+      "content": "func newChanAcceptorCtx(t *testing.T, acceptCallCount int,\n\tresponses map[[32]byte]*lnrpc.ChannelAcceptResponse) *channelAcceptorCtx {\n\n\ttestCtx := &channelAcceptorCtx{\n\t\tt:           t,\n\t\textRequests: make(chan []byte, acceptCallCount),\n\t\tresponses:   responses,\n\t\terrChan:     make(chan error),\n\t\tquit:        make(chan struct{}),\n\t}\n\n\ttestCtx.acceptor = NewRPCAcceptor(\n\t\ttestCtx.receiveResponse, testCtx.sendRequest, testTimeout*5,\n\t\t&chaincfg.RegressionNetParams, testCtx.quit,\n\t)\n\n\treturn testCtx\n}\n\n// sendRequest mocks sending a request to the channel acceptor.",
+      "length": 492,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *channelAcceptorCtx) sendRequest(request *lnrpc.ChannelAcceptRequest) error {",
+      "content": "func (c *channelAcceptorCtx) sendRequest(request *lnrpc.ChannelAcceptRequest) error {\n\tselect {\n\tcase c.extRequests <- request.PendingChanId:\n\n\tcase <-time.After(testTimeout):\n\t\tc.t.Fatalf(\"timeout sending request: %v\", request.PendingChanId)\n\t}\n\n\treturn nil\n}\n\n// receiveResponse mocks sending of a response from the channel acceptor.",
+      "length": 239,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *channelAcceptorCtx) receiveResponse() (*lnrpc.ChannelAcceptResponse,",
+      "content": "func (c *channelAcceptorCtx) receiveResponse() (*lnrpc.ChannelAcceptResponse,\n\terror) {\n\n\tselect {\n\tcase id := <-c.extRequests:\n\t\tscratch := [32]byte{}\n\t\tcopy(scratch[:], id)\n\n\t\tresp, ok := c.responses[scratch]\n\t\tassert.True(c.t, ok)\n\n\t\treturn resp, nil\n\n\tcase <-time.After(testTimeout):\n\t\tc.t.Fatalf(\"timeout receiving request\")\n\t\treturn nil, errors.New(\"receiveResponse timeout\")\n\n\t// Exit if our test acceptor closes the done channel, which indicates\n\t// that the acceptor is shutting down.\n\tcase <-c.acceptor.done:\n\t\treturn nil, errors.New(\"acceptor shutting down\")\n\t}\n}\n\n// start runs our channel acceptor in a goroutine which sends its exit error\n// into our test error channel.",
+      "length": 582,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *channelAcceptorCtx) start() {",
+      "content": "func (c *channelAcceptorCtx) start() {\n\tgo func() {\n\t\tc.errChan <- c.acceptor.Run()\n\t}()\n}\n\n// stop shuts down the test's channel acceptor and asserts that it exits with\n// our expected error.",
+      "length": 147,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *channelAcceptorCtx) stop() {",
+      "content": "func (c *channelAcceptorCtx) stop() {\n\tclose(c.quit)\n\n\tselect {\n\tcase actual := <-c.errChan:\n\t\tassert.Equal(c.t, errShuttingDown, actual)\n\n\tcase <-time.After(testTimeout):\n\t\tc.t.Fatal(\"timeout waiting for acceptor to exit\")\n\t}\n}\n\n// queryAndAssert takes a map of open channel requests which we want to call\n// Accept for to the outcome we expect from the acceptor, dispatches each\n// request in a goroutine and then asserts that we get the outcome we expect.",
+      "length": 407,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *channelAcceptorCtx) queryAndAssert(queries map[*lnwire.OpenChannel]*ChannelAcceptResponse) {",
+      "content": "func (c *channelAcceptorCtx) queryAndAssert(queries map[*lnwire.OpenChannel]*ChannelAcceptResponse) {\n\tvar (\n\t\tnode = btcec.NewPublicKey(\n\t\t\tnew(btcec.FieldVal).SetInt(1),\n\t\t\tnew(btcec.FieldVal).SetInt(1),\n\t\t)\n\n\t\tresponses = make(chan struct{})\n\t)\n\n\tfor request, expected := range queries {\n\t\trequest := request\n\t\texpected := expected\n\n\t\tgo func() {\n\t\t\tresp := c.acceptor.Accept(&ChannelAcceptRequest{\n\t\t\t\tNode:        node,\n\t\t\t\tOpenChanMsg: request,\n\t\t\t})\n\t\t\tassert.Equal(c.t, expected, resp)\n\t\t\tresponses <- struct{}{}\n\t\t}()\n\t}\n\n\t// Wait for each of our requests to return a response before we exit.\n\tfor i := 0; i < len(queries); i++ {\n\t\tselect {\n\t\tcase <-responses:\n\t\tcase <-time.After(testTimeout):\n\t\t\tc.t.Fatalf(\"did not receive response\")\n\t\t}\n\t}\n}\n\n// TestMultipleAcceptClients tests that the RPC acceptor is capable of handling\n// multiple requests to its Accept function and responding to them correctly.",
+      "length": 777,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMultipleAcceptClients(t *testing.T) {",
+      "content": "func TestMultipleAcceptClients(t *testing.T) {\n\ttestAddr := \"bcrt1qwrmq9uca0t3dy9t9wtuq5tm4405r7tfzyqn9pp\"\n\ttestUpfront, err := chancloser.ParseUpfrontShutdownAddress(\n\t\ttestAddr, &chaincfg.RegressionNetParams,\n\t)\n\trequire.NoError(t, err)\n\n\tvar (\n\t\tchan1 = &lnwire.OpenChannel{\n\t\t\tPendingChannelID: [32]byte{1},\n\t\t}\n\t\tchan2 = &lnwire.OpenChannel{\n\t\t\tPendingChannelID: [32]byte{2},\n\t\t}\n\t\tchan3 = &lnwire.OpenChannel{\n\t\t\tPendingChannelID: [32]byte{3},\n\t\t}\n\n\t\tcustomError = errors.New(\"go away\")\n\n\t\t// Queries is a map of the channel IDs we will query Accept\n\t\t// with, and the set of outcomes we expect.\n\t\tqueries = map[*lnwire.OpenChannel]*ChannelAcceptResponse{\n\t\t\tchan1: NewChannelAcceptResponse(\n\t\t\t\ttrue, nil, testUpfront, 1, 2, 3, 4, 5, 6,\n\t\t\t\tfalse,\n\t\t\t),\n\t\t\tchan2: NewChannelAcceptResponse(\n\t\t\t\tfalse, errChannelRejected, nil, 0, 0, 0,\n\t\t\t\t0, 0, 0, false,\n\t\t\t),\n\t\t\tchan3: NewChannelAcceptResponse(\n\t\t\t\tfalse, customError, nil, 0, 0, 0, 0, 0, 0,\n\t\t\t\tfalse,\n\t\t\t),\n\t\t}\n\n\t\t// Responses is a mocked set of responses from the remote\n\t\t// channel acceptor.\n\t\tresponses = map[[32]byte]*lnrpc.ChannelAcceptResponse{\n\t\t\tchan1.PendingChannelID: {\n\t\t\t\tPendingChanId:   chan1.PendingChannelID[:],\n\t\t\t\tAccept:          true,\n\t\t\t\tUpfrontShutdown: testAddr,\n\t\t\t\tCsvDelay:        1,\n\t\t\t\tMaxHtlcCount:    2,\n\t\t\t\tMinAcceptDepth:  3,\n\t\t\t\tReserveSat:      4,\n\t\t\t\tInFlightMaxMsat: 5,\n\t\t\t\tMinHtlcIn:       6,\n\t\t\t},\n\t\t\tchan2.PendingChannelID: {\n\t\t\t\tPendingChanId: chan2.PendingChannelID[:],\n\t\t\t\tAccept:        false,\n\t\t\t},\n\t\t\tchan3.PendingChannelID: {\n\t\t\t\tPendingChanId: chan3.PendingChannelID[:],\n\t\t\t\tAccept:        false,\n\t\t\t\tError:         customError.Error(),\n\t\t\t},\n\t\t}\n\t)\n\n\t// Create and start our channel acceptor.\n\ttestCtx := newChanAcceptorCtx(t, len(queries), responses)\n\ttestCtx.start()\n\n\t// Dispatch three queries and assert that we get our expected response.\n\t// for each.\n\ttestCtx.queryAndAssert(queries)\n\n\t// Shutdown our acceptor.\n\ttestCtx.stop()\n}\n\n// TestInvalidResponse tests the case where our remote channel acceptor sends us\n// an invalid response, so the channel acceptor stream terminates.",
+      "length": 1972,
+      "tokens": 214,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvalidResponse(t *testing.T) {",
+      "content": "func TestInvalidResponse(t *testing.T) {\n\tvar (\n\t\tchan1 = [32]byte{1}\n\n\t\t// We make a single query, and expect it to fail with our\n\t\t// generic error because our response is invalid.\n\t\tqueries = map[*lnwire.OpenChannel]*ChannelAcceptResponse{\n\t\t\t{\n\t\t\t\tPendingChannelID: chan1,\n\t\t\t}: NewChannelAcceptResponse(\n\t\t\t\tfalse, errChannelRejected, nil, 0, 0,\n\t\t\t\t0, 0, 0, 0, false,\n\t\t\t),\n\t\t}\n\n\t\t// Create a single response which is invalid because it accepts\n\t\t// the channel but also contains an error message.\n\t\tresponses = map[[32]byte]*lnrpc.ChannelAcceptResponse{\n\t\t\tchan1: {\n\t\t\t\tPendingChanId: chan1[:],\n\t\t\t\tAccept:        true,\n\t\t\t\tError:         \"has an error as well\",\n\t\t\t},\n\t\t}\n\t)\n\n\t// Create and start our channel acceptor.\n\ttestCtx := newChanAcceptorCtx(t, len(queries), responses)\n\ttestCtx.start()\n\n\ttestCtx.queryAndAssert(queries)\n\n\t// We do not expect our channel acceptor to exit because of one invalid\n\t// response, so we shutdown and assert here.\n\ttestCtx.stop()\n}\n\n// TestInvalidReserve tests validation of the channel reserve proposed by the\n// acceptor against the dust limit that was proposed by the remote peer.",
+      "length": 1048,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func TestInvalidReserve(t *testing.T) {",
+      "content": "func TestInvalidReserve(t *testing.T) {\n\tvar (\n\t\tchan1 = [32]byte{1}\n\n\t\tdustLimit = btcutil.Amount(1000)\n\t\treserve   = dustLimit / 2\n\n\t\t// We make a single query, and expect it to fail with our\n\t\t// generic error because channel reserve is too low.\n\t\tqueries = map[*lnwire.OpenChannel]*ChannelAcceptResponse{\n\t\t\t{\n\t\t\t\tPendingChannelID: chan1,\n\t\t\t\tDustLimit:        dustLimit,\n\t\t\t}: NewChannelAcceptResponse(\n\t\t\t\tfalse, errChannelRejected, nil, 0, 0,\n\t\t\t\t0, reserve, 0, 0, false,\n\t\t\t),\n\t\t}\n\n\t\t// Create a single response which is invalid because the\n\t\t// proposed reserve is below our dust limit.\n\t\tresponses = map[[32]byte]*lnrpc.ChannelAcceptResponse{\n\t\t\tchan1: {\n\t\t\t\tPendingChanId: chan1[:],\n\t\t\t\tAccept:        true,\n\t\t\t\tReserveSat:    uint64(reserve),\n\t\t\t},\n\t\t}\n\t)\n\n\t// Create and start our channel acceptor.\n\ttestCtx := newChanAcceptorCtx(t, len(queries), responses)\n\ttestCtx.start()\n\n\ttestCtx.queryAndAssert(queries)\n\n\t// We do not expect our channel acceptor to exit because of one invalid\n\t// response, so we shutdown and assert here.\n\ttestCtx.stop()\n}\n",
+      "length": 981,
+      "tokens": 127,
+      "embedding": []
+    }
+  ]
+}

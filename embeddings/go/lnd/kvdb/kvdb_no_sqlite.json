@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/kvdb_no_sqlite.go",
+  "package": "!kvdb_sqlite",
+  "sections": [
+    {
+      "slug": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {",
+      "content": "func StartSqliteTestBackend(path, name, table string) (walletdb.DB, error) {\n\treturn nil, errSqliteNotAvailable\n}\n",
+      "length": 35,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/session_info.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type SessionInfo struct {",
+      "content": "type SessionInfo struct {\n\t// ID is the remote public key of the watchtower client.\n\tID SessionID\n\n\t// Policy holds the negotiated session parameters.\n\tPolicy wtpolicy.Policy\n\n\t// LastApplied the sequence number of the last successful state update.\n\tLastApplied uint16\n\n\t// ClientLastApplied the last last-applied the client has echoed back.\n\tClientLastApplied uint16\n\n\t// RewardAddress the address that the tower's reward will be deposited\n\t// to if a sweep transaction confirms.\n\tRewardAddress []byte\n\n\t// TODO(conner): store client metrics, DOS score, etc\n}\n\n// Encode serializes the session info to the given io.Writer.",
+      "length": 578,
+      "tokens": 86,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SessionInfo) Encode(w io.Writer) error {",
+      "content": "func (s *SessionInfo) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\ts.ID,\n\t\ts.Policy,\n\t\ts.LastApplied,\n\t\ts.ClientLastApplied,\n\t\ts.RewardAddress,\n\t)\n}\n\n// Decode deserializes the session info from the given io.Reader.",
+      "length": 166,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SessionInfo) Decode(r io.Reader) error {",
+      "content": "func (s *SessionInfo) Decode(r io.Reader) error {\n\treturn ReadElements(r,\n\t\t&s.ID,\n\t\t&s.Policy,\n\t\t&s.LastApplied,\n\t\t&s.ClientLastApplied,\n\t\t&s.RewardAddress,\n\t)\n}\n\n// AcceptUpdateSequence validates that a state update's sequence number and last\n// applied are valid given our past history with the client. These checks ensure\n// that clients are properly in sync and following the update protocol properly.\n// If validation is successful, the receiver's LastApplied and ClientLastApplied\n// are updated with the latest values presented by the client. Any errors\n// returned from this method are converted into an appropriate\n// wtwire.StateUpdateCode.",
+      "length": 586,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SessionInfo) AcceptUpdateSequence(seqNum, lastApplied uint16) error {",
+      "content": "func (s *SessionInfo) AcceptUpdateSequence(seqNum, lastApplied uint16) error {\n\tswitch {\n\n\t// Client already claims to have an ACK for this seqnum.\n\tcase seqNum <= lastApplied:\n\t\treturn ErrSeqNumAlreadyApplied\n\n\t// Client echos a last applied that is lower than previously sent.\n\tcase lastApplied < s.ClientLastApplied:\n\t\treturn ErrLastAppliedReversion\n\n\t// Client update exceeds capacity of session.\n\tcase seqNum > s.Policy.MaxUpdates:\n\t\treturn ErrSessionConsumed\n\n\t// Client update does not match our expected next seqnum.\n\tcase seqNum != s.LastApplied && seqNum != s.LastApplied+1:\n\t\treturn ErrUpdateOutOfOrder\n\t}\n\n\ts.LastApplied = seqNum\n\ts.ClientLastApplied = lastApplied\n\n\treturn nil\n}\n\n// Match is returned in response to a database query for a breach hints\n// contained in a particular block. The match encapsulates all data required to\n// properly decrypt a client's encrypted blob, and pursue action on behalf of\n// the victim by reconstructing the justice transaction and broadcasting it to\n// the network.\n//\n// NOTE: It is possible for a match to cause a false positive, since they are\n// matched on a prefix of the txid. In such an event, the likely behavior is\n// that the payload will fail to decrypt.",
+      "length": 1105,
+      "tokens": 176,
+      "embedding": []
+    },
+    {
+      "slug": "type Match struct {",
+      "content": "type Match struct {\n\t// ID is the session id of the client who uploaded the state update.\n\tID SessionID\n\n\t// SeqNum is the session sequence number occupied by the client's state\n\t// update. Together with ID, this allows the tower to derive the\n\t// appropriate nonce for decryption.\n\tSeqNum uint16\n\n\t// Hint is the breach hint that triggered the match.\n\tHint blob.BreachHint\n\n\t// EncryptedBlob is the encrypted payload containing the justice kit\n\t// uploaded by the client.\n\tEncryptedBlob []byte\n\n\t// SessionInfo is the contract negotiated between tower and client, that\n\t// provides input parameters such as fee rate, reward rate, and reward\n\t// address when attempting to reconstruct the justice transaction.\n\tSessionInfo *SessionInfo\n}\n",
+      "length": 698,
+      "tokens": 111,
+      "embedding": []
+    }
+  ]
+}

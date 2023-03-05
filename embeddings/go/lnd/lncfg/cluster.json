@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/cluster.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Cluster struct {",
+      "content": "type Cluster struct {\n\tEnableLeaderElection bool `long:\"enable-leader-election\" description:\"Enables leader election if set.\"`\n\n\tLeaderElector string `long:\"leader-elector\" choice:\"etcd\" description:\"Leader elector to use. Valid values: \\\"etcd\\\".\"`\n\n\tEtcdElectionPrefix string `long:\"etcd-election-prefix\" description:\"Election key prefix when using etcd leader elector.\"`\n\n\tID string `long:\"id\" description:\"Identifier for this node inside the cluster (used in leader election). Defaults to the hostname.\"`\n\n\tLeaderSessionTTL int `long:\"leader-session-ttl\" description:\"The TTL in seconds to use for the leader election session.\"`\n}\n\n// DefaultCluster creates and returns a new default DB config.",
+      "length": 664,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultCluster() *Cluster {",
+      "content": "func DefaultCluster() *Cluster {\n\thostname, _ := os.Hostname()\n\treturn &Cluster{\n\t\tLeaderElector:      cluster.EtcdLeaderElector,\n\t\tEtcdElectionPrefix: DefaultEtcdElectionPrefix,\n\t\tLeaderSessionTTL:   60,\n\t\tID:                 hostname,\n\t}\n}\n\n// MakeLeaderElector is a helper method to construct the concrete leader elector\n// based on the current configuration.",
+      "length": 319,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Cluster) MakeLeaderElector(electionCtx context.Context, db *DB) (",
+      "content": "func (c *Cluster) MakeLeaderElector(electionCtx context.Context, db *DB) (\n\tcluster.LeaderElector, error) {\n\n\tif c.LeaderElector == cluster.EtcdLeaderElector {\n\t\treturn cluster.MakeLeaderElector(\n\t\t\telectionCtx, c.LeaderElector, c.ID,\n\t\t\tc.EtcdElectionPrefix, c.LeaderSessionTTL, db.Etcd,\n\t\t)\n\t}\n\n\treturn nil, fmt.Errorf(\"unsupported leader elector\")\n}\n\n// Validate validates the Cluster config.",
+      "length": 308,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Cluster) Validate() error {",
+      "content": "func (c *Cluster) Validate() error {\n\tif !c.EnableLeaderElection {\n\t\treturn nil\n\t}\n\n\tswitch c.LeaderElector {\n\tcase cluster.EtcdLeaderElector:\n\t\tif c.EtcdElectionPrefix == \"\" {\n\t\t\treturn fmt.Errorf(\"etcd-election-prefix must be set\")\n\t\t}\n\t\treturn nil\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unknown leader elector, valid values are: \"+\n\t\t\t\"\\\"%v\\\"\", cluster.EtcdLeaderElector)\n\t}\n}\n\n// Compile-time constraint to ensure Workers implements the Validator interface.\nvar _ Validator = (*Cluster)(nil)\n",
+      "length": 433,
+      "tokens": 52,
+      "embedding": []
+    }
+  ]
+}

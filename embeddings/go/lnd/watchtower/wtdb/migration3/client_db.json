@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration3/client_db.go",
+  "package": "migration3",
+  "sections": [
+    {
+      "slug": "func MigrateChannelIDIndex(tx kvdb.RwTx) error {",
+      "content": "func MigrateChannelIDIndex(tx kvdb.RwTx) error {\n\tlog.Infof(\"Migrating the tower client db to add a new channel ID \" +\n\t\t\"index which stores a mapping from db-assigned ID to real \" +\n\t\t\"channel ID\")\n\n\t// Create a new top-level bucket for the new index.\n\tindexBkt, err := tx.CreateTopLevelBucket(cChanIDIndexBkt)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Get the top-level channel-details bucket. The keys of this bucket\n\t// are the real channel IDs.\n\tchanDetailsBkt := tx.ReadWriteBucket(cChanDetailsBkt)\n\tif chanDetailsBkt == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\t// Iterate over the keys of the channel-details bucket.\n\treturn chanDetailsBkt.ForEach(func(chanID, _ []byte) error {\n\t\t// Ask the db for a new, unique, ID for the index bucket.\n\t\tnextSeq, err := indexBkt.NextSequence()\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Encode the sequence number using BigSize encoding.\n\t\tvar newIndex bytes.Buffer\n\t\terr = tlv.WriteVarInt(&newIndex, nextSeq, &[8]byte{})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Add the mapping from the db-assigned ID to the channel ID\n\t\t// to the new index.\n\t\tnewIndexBytes := newIndex.Bytes()\n\t\terr = indexBkt.Put(newIndexBytes, chanID)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tchanDetails := chanDetailsBkt.NestedReadWriteBucket(chanID)\n\t\tif chanDetails == nil {\n\t\t\treturn ErrCorruptChanDetails\n\t\t}\n\n\t\t// Here we ensure that the channel-details bucket includes a\n\t\t// channel summary. The only reason we do this is so that we can\n\t\t// simulate a migration fail in a test to ensure that a\n\t\t// migration fail results in an untouched db.\n\t\tchanSummaryBytes := chanDetails.Get(cChannelSummary)\n\t\tif chanSummaryBytes == nil {\n\t\t\treturn ErrCorruptChanDetails\n\t\t}\n\n\t\t// In the channel-details sub-bucket for this channel, add the\n\t\t// new DB-assigned ID for this channel under the cChanDBID key.\n\t\treturn chanDetails.Put(cChanDBID, newIndexBytes)\n\t})\n}\n",
+      "length": 1763,
+      "tokens": 265,
+      "embedding": []
+    }
+  ]
+}

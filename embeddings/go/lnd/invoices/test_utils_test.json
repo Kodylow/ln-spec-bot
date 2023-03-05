@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/test_utils_test.go",
+  "package": "invoices_test",
+  "sections": [
+    {
+      "slug": "type mockPayload struct {",
+      "content": "type mockPayload struct {\n\tmpp           *record.MPP\n\tamp           *record.AMP\n\tcustomRecords record.CustomSet\n\tmetadata      []byte\n}\n",
+      "length": 105,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPayload) MultiPath() *record.MPP {",
+      "content": "func (p *mockPayload) MultiPath() *record.MPP {\n\treturn p.mpp\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPayload) AMPRecord() *record.AMP {",
+      "content": "func (p *mockPayload) AMPRecord() *record.AMP {\n\treturn p.amp\n}\n",
+      "length": 14,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPayload) CustomRecords() record.CustomSet {",
+      "content": "func (p *mockPayload) CustomRecords() record.CustomSet {\n\t// This function should always return a map instance, but for mock\n\t// configuration we do accept nil.\n\tif p.customRecords == nil {\n\t\treturn make(record.CustomSet)\n\t}\n\n\treturn p.customRecords\n}\n",
+      "length": 187,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *mockPayload) Metadata() []byte {",
+      "content": "func (p *mockPayload) Metadata() []byte {\n\treturn p.metadata\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type mockChainNotifier struct {",
+      "content": "type mockChainNotifier struct {\n\tchainntnfs.ChainNotifier\n\n\tblockChan chan *chainntnfs.BlockEpoch\n}\n",
+      "length": 64,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockNotifier() *mockChainNotifier {",
+      "content": "func newMockNotifier() *mockChainNotifier {\n\treturn &mockChainNotifier{\n\t\tblockChan: make(chan *chainntnfs.BlockEpoch),\n\t}\n}\n\n// RegisterBlockEpochNtfn mocks a block epoch notification, using the mock's\n// block channel to deliver blocks to the client.",
+      "length": 202,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (",
+      "content": "func (m *mockChainNotifier) RegisterBlockEpochNtfn(*chainntnfs.BlockEpoch) (\n\t*chainntnfs.BlockEpochEvent, error) {\n\n\treturn &chainntnfs.BlockEpochEvent{\n\t\tEpochs: m.blockChan,\n\t\tCancel: func() {},\n\t}, nil\n}\n\nconst (\n\ttestHtlcExpiry = uint32(5)\n\n\ttestInvoiceCltvDelta = uint32(4)\n\n\ttestFinalCltvRejectDelta = int32(4)\n\n\ttestCurrentHeight = int32(1)\n)\n\nvar (\n\ttestTimeout = 5 * time.Second\n\n\ttestTime = time.Date(2018, time.February, 2, 14, 0, 0, 0, time.UTC)\n\n\ttestInvoicePreimage = lntypes.Preimage{1}\n\n\ttestInvoicePaymentHash = testInvoicePreimage.Hash()\n\n\ttestPrivKeyBytes, _ = hex.DecodeString(\n\t\t\"e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2d\" +\n\t\t\t\"b734\",\n\t)\n\n\ttestPrivKey, _ = btcec.PrivKeyFromBytes(testPrivKeyBytes)\n\n\ttestInvoiceDescription = \"coffee\"\n\n\ttestInvoiceAmount = lnwire.MilliSatoshi(100000)\n\n\ttestNetParams = &chaincfg.MainNetParams\n\n\ttestMessageSigner = zpay32.MessageSigner{\n\t\tSignCompact: func(msg []byte) ([]byte, error) {\n\t\t\thash := chainhash.HashB(msg)\n\t\t\tsig, err := ecdsa.SignCompact(testPrivKey, hash, true)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, fmt.Errorf(\"can't sign the \"+\n\t\t\t\t\t\"message: %v\", err)\n\t\t\t}\n\t\t\treturn sig, nil\n\t\t},\n\t}\n\n\ttestFeatures = lnwire.NewFeatureVector(\n\t\tnil, lnwire.Features,\n\t)\n\n\ttestPayload = &mockPayload{}\n\n\ttestInvoiceCreationDate = testTime\n)\n\nvar (\n\ttestInvoiceAmt = lnwire.MilliSatoshi(100000)\n\ttestInvoice    = &invpkg.Invoice{\n\t\tTerms: invpkg.ContractTerm{\n\t\t\tPaymentPreimage: &testInvoicePreimage,\n\t\t\tValue:           testInvoiceAmt,\n\t\t\tExpiry:          time.Hour,\n\t\t\tFeatures:        testFeatures,\n\t\t},\n\t\tCreationDate: testInvoiceCreationDate,\n\t}\n\n\ttestPayAddrReqInvoice = &invpkg.Invoice{\n\t\tTerms: invpkg.ContractTerm{\n\t\t\tPaymentPreimage: &testInvoicePreimage,\n\t\t\tValue:           testInvoiceAmt,\n\t\t\tExpiry:          time.Hour,\n\t\t\tFeatures: lnwire.NewFeatureVector(\n\t\t\t\tlnwire.NewRawFeatureVector(\n\t\t\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\t\t\tlnwire.PaymentAddrRequired,\n\t\t\t\t),\n\t\t\t\tlnwire.Features,\n\t\t\t),\n\t\t},\n\t\tCreationDate: testInvoiceCreationDate,\n\t}\n\n\ttestPayAddrOptionalInvoice = &invpkg.Invoice{\n\t\tTerms: invpkg.ContractTerm{\n\t\t\tPaymentPreimage: &testInvoicePreimage,\n\t\t\tValue:           testInvoiceAmt,\n\t\t\tExpiry:          time.Hour,\n\t\t\tFeatures: lnwire.NewFeatureVector(\n\t\t\t\tlnwire.NewRawFeatureVector(\n\t\t\t\t\tlnwire.TLVOnionPayloadOptional,\n\t\t\t\t\tlnwire.PaymentAddrOptional,\n\t\t\t\t),\n\t\t\t\tlnwire.Features,\n\t\t\t),\n\t\t},\n\t\tCreationDate: testInvoiceCreationDate,\n\t}\n\n\ttestHodlInvoice = &invpkg.Invoice{\n\t\tTerms: invpkg.ContractTerm{\n\t\t\tValue:    testInvoiceAmt,\n\t\t\tExpiry:   time.Hour,\n\t\t\tFeatures: testFeatures,\n\t\t},\n\t\tCreationDate: testInvoiceCreationDate,\n\t\tHodlInvoice:  true,\n\t}\n)\n",
+      "length": 2466,
+      "tokens": 209,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestChannelDB(t *testing.T, clock clock.Clock) (*channeldb.DB, error) {",
+      "content": "func newTestChannelDB(t *testing.T, clock clock.Clock) (*channeldb.DB, error) {\n\tt.Helper()\n\n\t// Create channeldb for the first time.\n\tcdb, err := channeldb.Open(\n\t\tt.TempDir(), channeldb.OptionClock(clock),\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tt.Cleanup(func() {\n\t\tcdb.Close()\n\t})\n\n\treturn cdb, nil\n}\n",
+      "length": 212,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type testContext struct {",
+      "content": "type testContext struct {\n\tidb      *channeldb.DB\n\tregistry *invpkg.InvoiceRegistry\n\tnotifier *mockChainNotifier\n\tclock    *clock.TestClock\n\n\tt *testing.T\n}\n",
+      "length": 124,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultRegistryConfig() invpkg.RegistryConfig {",
+      "content": "func defaultRegistryConfig() invpkg.RegistryConfig {\n\treturn invpkg.RegistryConfig{\n\t\tFinalCltvRejectDelta: testFinalCltvRejectDelta,\n\t\tHtlcHoldDuration:     30 * time.Second,\n\t}\n}\n",
+      "length": 123,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestContext(t *testing.T,",
+      "content": "func newTestContext(t *testing.T,\n\tregistryCfg *invpkg.RegistryConfig) *testContext {\n\n\tt.Helper()\n\n\tclock := clock.NewTestClock(testTime)\n\n\tidb, err := newTestChannelDB(t, clock)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tnotifier := newMockNotifier()\n\n\texpiryWatcher := invpkg.NewInvoiceExpiryWatcher(\n\t\tclock, 0, uint32(testCurrentHeight), nil, notifier,\n\t)\n\n\tcfg := defaultRegistryConfig()\n\tif registryCfg != nil {\n\t\tcfg = *registryCfg\n\t}\n\tcfg.Clock = clock\n\n\t// Instantiate and start the invoice ctx.registry.\n\tregistry := invpkg.NewRegistry(idb, expiryWatcher, &cfg)\n\n\terr = registry.Start()\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, registry.Stop())\n\t})\n\n\tctx := testContext{\n\t\tidb:      idb,\n\t\tregistry: registry,\n\t\tnotifier: notifier,\n\t\tclock:    clock,\n\t\tt:        t,\n\t}\n\n\treturn &ctx\n}\n",
+      "length": 747,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func getCircuitKey(htlcID uint64) invpkg.CircuitKey {",
+      "content": "func getCircuitKey(htlcID uint64) invpkg.CircuitKey {\n\treturn invpkg.CircuitKey{\n\t\tChanID: lnwire.ShortChannelID{\n\t\t\tBlockHeight: 1, TxIndex: 2, TxPosition: 3,\n\t\t},\n\t\tHtlcID: htlcID,\n\t}\n}\n",
+      "length": 127,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestInvoice(t *testing.T, preimage lntypes.Preimage,",
+      "content": "func newTestInvoice(t *testing.T, preimage lntypes.Preimage,\n\ttimestamp time.Time, expiry time.Duration) *invpkg.Invoice {\n\n\tif expiry == 0 {\n\t\texpiry = time.Hour\n\t}\n\n\tvar payAddr [32]byte\n\tif _, err := rand.Read(payAddr[:]); err != nil {\n\t\tt.Fatalf(\"unable to generate payment addr: %v\", err)\n\t}\n\n\trawInvoice, err := zpay32.NewInvoice(\n\t\ttestNetParams,\n\t\tpreimage.Hash(),\n\t\ttimestamp,\n\t\tzpay32.Amount(testInvoiceAmount),\n\t\tzpay32.Description(testInvoiceDescription),\n\t\tzpay32.Expiry(expiry),\n\t\tzpay32.PaymentAddr(payAddr),\n\t)\n\trequire.NoError(t, err, \"Error while creating new invoice\")\n\n\tpaymentRequest, err := rawInvoice.Encode(testMessageSigner)\n\n\trequire.NoError(t, err, \"Error while encoding payment request\")\n\n\treturn &invpkg.Invoice{\n\t\tTerms: invpkg.ContractTerm{\n\t\t\tPaymentPreimage: &preimage,\n\t\t\tPaymentAddr:     payAddr,\n\t\t\tValue:           testInvoiceAmount,\n\t\t\tExpiry:          expiry,\n\t\t\tFeatures:        testFeatures,\n\t\t},\n\t\tPaymentRequest: []byte(paymentRequest),\n\t\tCreationDate:   timestamp,\n\t}\n}\n\n// timeout implements a test level timeout.",
+      "length": 958,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func timeout() func() {",
+      "content": "func timeout() func() {\n\tdone := make(chan struct{})\n\n\tgo func() {\n\t\tselect {\n\t\tcase <-time.After(5 * time.Second):\n\t\t\terr := pprof.Lookup(\"goroutine\").WriteTo(os.Stdout, 1)\n\t\t\tif err != nil {\n\t\t\t\tpanic(fmt.Sprintf(\"error writing to std out \"+\n\t\t\t\t\t\"after timeout: %v\", err))\n\t\t\t}\n\t\t\tpanic(\"timeout\")\n\t\tcase <-done:\n\t\t}\n\t}()\n\n\treturn func() {\n\t\tclose(done)\n\t}\n}\n\n// invoiceExpiryTestData simply holds generated expired and pending invoices.",
+      "length": 396,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type invoiceExpiryTestData struct {",
+      "content": "type invoiceExpiryTestData struct {\n\texpiredInvoices map[lntypes.Hash]*invpkg.Invoice\n\tpendingInvoices map[lntypes.Hash]*invpkg.Invoice\n}\n\n// generateInvoiceExpiryTestData generates the specified number of fake expired\n// and pending invoices anchored to the passed now timestamp.",
+      "length": 239,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func generateInvoiceExpiryTestData(",
+      "content": "func generateInvoiceExpiryTestData(\n\tt *testing.T, now time.Time,\n\toffset, numExpired, numPending int) invoiceExpiryTestData {\n\n\tvar testData invoiceExpiryTestData\n\n\ttestData.expiredInvoices = make(map[lntypes.Hash]*invpkg.Invoice)\n\ttestData.pendingInvoices = make(map[lntypes.Hash]*invpkg.Invoice)\n\n\texpiredCreationDate := now.Add(-24 * time.Hour)\n\n\tfor i := 1; i <= numExpired; i++ {\n\t\tvar preimage lntypes.Preimage\n\t\tbinary.BigEndian.PutUint32(preimage[:4], uint32(offset+i))\n\t\texpiry := time.Duration((i+offset)%24) * time.Hour\n\t\tinvoice := newTestInvoice(\n\t\t\tt, preimage, expiredCreationDate, expiry,\n\t\t)\n\t\ttestData.expiredInvoices[preimage.Hash()] = invoice\n\t}\n\n\tfor i := 1; i <= numPending; i++ {\n\t\tvar preimage lntypes.Preimage\n\t\tbinary.BigEndian.PutUint32(preimage[4:], uint32(offset+i))\n\t\texpiry := time.Duration((i+offset)%24) * time.Hour\n\t\tinvoice := newTestInvoice(t, preimage, now, expiry)\n\t\ttestData.pendingInvoices[preimage.Hash()] = invoice\n\t}\n\n\treturn testData\n}\n\n// checkSettleResolution asserts the resolution is a settle with the correct\n// preimage. If successful, the HtlcSettleResolution is returned in case further\n// checks are desired.",
+      "length": 1093,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func checkSettleResolution(t *testing.T, res invpkg.HtlcResolution,",
+      "content": "func checkSettleResolution(t *testing.T, res invpkg.HtlcResolution,\n\texpPreimage lntypes.Preimage) *invpkg.HtlcSettleResolution {\n\n\tt.Helper()\n\n\tsettleResolution, ok := res.(*invpkg.HtlcSettleResolution)\n\trequire.True(t, ok)\n\trequire.Equal(t, expPreimage, settleResolution.Preimage)\n\n\treturn settleResolution\n}\n\n// checkFailResolution asserts the resolution is a fail with the correct reason.\n// If successful, the HtlcFailResolution is returned in case further checks are\n// desired.",
+      "length": 403,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func checkFailResolution(t *testing.T, res invpkg.HtlcResolution,",
+      "content": "func checkFailResolution(t *testing.T, res invpkg.HtlcResolution,\n\texpOutcome invpkg.FailResolutionResult) *invpkg.HtlcFailResolution {\n\n\tt.Helper()\n\tfailResolution, ok := res.(*invpkg.HtlcFailResolution)\n\trequire.True(t, ok)\n\trequire.Equal(t, expOutcome, failResolution.Outcome)\n\n\treturn failResolution\n}\n",
+      "length": 231,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "type hodlExpiryTest struct {",
+      "content": "type hodlExpiryTest struct {\n\thash         lntypes.Hash\n\tstate        invpkg.ContractState\n\tstateLock    sync.Mutex\n\tmockNotifier *mockChainNotifier\n\tmockClock    *clock.TestClock\n\tcancelChan   chan lntypes.Hash\n\twatcher      *invpkg.InvoiceExpiryWatcher\n}\n",
+      "length": 220,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *hodlExpiryTest) announceBlock(t *testing.T, height uint32) {",
+      "content": "func (h *hodlExpiryTest) announceBlock(t *testing.T, height uint32) {\n\tt.Helper()\n\n\tselect {\n\tcase h.mockNotifier.blockChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: int32(height),\n\t}:\n\n\tcase <-time.After(testTimeout):\n\t\tt.Fatalf(\"block %v not consumed\", height)\n\t}\n}\n",
+      "length": 182,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *hodlExpiryTest) assertCanceled(t *testing.T, expected lntypes.Hash) {",
+      "content": "func (h *hodlExpiryTest) assertCanceled(t *testing.T, expected lntypes.Hash) {\n\tselect {\n\tcase actual := <-h.cancelChan:\n\t\trequire.Equal(t, expected, actual)\n\n\tcase <-time.After(testTimeout):\n\t\tt.Fatalf(\"invoice: %v not canceled\", h.hash)\n\t}\n}\n",
+      "length": 157,
+      "tokens": 18,
+      "embedding": []
+    }
+  ]
+}

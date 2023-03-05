@@ -1,0 +1,223 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/writer_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestWriteBytes(t *testing.T) {",
+      "content": "func TestWriteBytes(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := []byte{1, 2, 3}\n\n\terr := WriteBytes(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, data, buf.Bytes())\n}\n",
+      "length": 139,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteUint8(t *testing.T) {",
+      "content": "func TestWriteUint8(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := uint8(1)\n\texpectedBytes := []byte{1}\n\n\terr := WriteUint8(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 168,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteUint16(t *testing.T) {",
+      "content": "func TestWriteUint16(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := uint16(1)\n\texpectedBytes := []byte{0, 1}\n\n\terr := WriteUint16(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 173,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteUint32(t *testing.T) {",
+      "content": "func TestWriteUint32(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := uint32(1)\n\texpectedBytes := []byte{0, 0, 0, 1}\n\n\terr := WriteUint32(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 179,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteUint64(t *testing.T) {",
+      "content": "func TestWriteUint64(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := uint64(1)\n\texpectedBytes := []byte{0, 0, 0, 0, 0, 0, 0, 1}\n\n\terr := WriteUint64(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 191,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteSatoshi(t *testing.T) {",
+      "content": "func TestWriteSatoshi(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := btcutil.Amount(1)\n\texpectedBytes := []byte{0, 0, 0, 0, 0, 0, 0, 1}\n\n\terr := WriteSatoshi(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 200,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteMilliSatoshi(t *testing.T) {",
+      "content": "func TestWriteMilliSatoshi(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := MilliSatoshi(1)\n\texpectedBytes := []byte{0, 0, 0, 0, 0, 0, 0, 1}\n\n\terr := WriteMilliSatoshi(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 203,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWritePublicKey(t *testing.T) {",
+      "content": "func TestWritePublicKey(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\t// Check that when nil pubkey is used, an error will return.\n\terr := WritePublicKey(buf, nil)\n\trequire.Equal(t, ErrNilPublicKey, err)\n\n\tpub, err := randPubKey()\n\trequire.NoError(t, err)\n\texpectedBytes := pub.SerializeCompressed()\n\n\terr = WritePublicKey(buf, pub)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 350,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteChannelID(t *testing.T) {",
+      "content": "func TestWriteChannelID(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ChannelID{1}\n\texpectedBytes := [32]byte{1}\n\n\terr := WriteChannelID(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes[:], buf.Bytes())\n}\n",
+      "length": 181,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteNodeAlias(t *testing.T) {",
+      "content": "func TestWriteNodeAlias(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := NodeAlias{1}\n\texpectedBytes := [32]byte{1}\n\n\terr := WriteNodeAlias(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes[:], buf.Bytes())\n}\n",
+      "length": 181,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteShortChannelID(t *testing.T) {",
+      "content": "func TestWriteShortChannelID(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ShortChannelID{BlockHeight: 1, TxIndex: 2, TxPosition: 3}\n\texpectedBytes := []byte{\n\t\t0, 0, 1, // First three bytes encodes BlockHeight.\n\t\t0, 0, 2, // Second three bytes encodes TxIndex.\n\t\t0, 3, // Final two bytes encodes TxPosition.\n\t}\n\n\terr := WriteShortChannelID(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 373,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteSig(t *testing.T) {",
+      "content": "func TestWriteSig(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := Sig{1, 2, 3}\n\texpectedBytes := [64]byte{1, 2, 3}\n\n\terr := WriteSig(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes[:], buf.Bytes())\n}\n",
+      "length": 181,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteSigs(t *testing.T) {",
+      "content": "func TestWriteSigs(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tsig1, sig2, sig3 := Sig{1}, Sig{2}, Sig{3}\n\tdata := []Sig{sig1, sig2, sig3}\n\n\t// First two bytes encode the length of the slice.\n\texpectedBytes := []byte{0, 3}\n\texpectedBytes = append(expectedBytes, sig1[:]...)\n\texpectedBytes = append(expectedBytes, sig2[:]...)\n\texpectedBytes = append(expectedBytes, sig3[:]...)\n\n\terr := WriteSigs(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 429,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteFailCode(t *testing.T) {",
+      "content": "func TestWriteFailCode(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := FailCode(1)\n\texpectedBytes := []byte{0, 1}\n\n\terr := WriteFailCode(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n\n// TODO(yy): expand the test to cover more encoding scenarios.",
+      "length": 239,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteRawFeatureVector(t *testing.T) {",
+      "content": "func TestWriteRawFeatureVector(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\t// Check that when nil feature is used, an error will return.\n\terr := WriteRawFeatureVector(buf, nil)\n\trequire.Equal(t, ErrNilFeatureVector, err)\n\n\t// Create a raw feature vector.\n\tfeature := &RawFeatureVector{\n\t\tfeatures: map[FeatureBit]struct{}{\n\t\t\tInitialRoutingSync: {}, // FeatureBit 3.\n\t\t},\n\t}\n\texpectedBytes := []byte{\n\t\t0, 1, // First two bytes encode the length.\n\t\t8, // Last byte encodes the feature bit (1 << 3).\n\t}\n\n\terr = WriteRawFeatureVector(buf, feature)\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 551,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteColorRGBA(t *testing.T) {",
+      "content": "func TestWriteColorRGBA(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := color.RGBA{R: 1, G: 2, B: 3}\n\texpectedBytes := []byte{1, 2, 3}\n\n\terr := WriteColorRGBA(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 198,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteShortChanIDEncoding(t *testing.T) {",
+      "content": "func TestWriteShortChanIDEncoding(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ShortChanIDEncoding(1)\n\texpectedBytes := []byte{1}\n\n\terr := WriteShortChanIDEncoding(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 196,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteFundingFlag(t *testing.T) {",
+      "content": "func TestWriteFundingFlag(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := FundingFlag(1)\n\texpectedBytes := []byte{1}\n\n\terr := WriteFundingFlag(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 180,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteChanUpdateMsgFlags(t *testing.T) {",
+      "content": "func TestWriteChanUpdateMsgFlags(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ChanUpdateMsgFlags(1)\n\texpectedBytes := []byte{1}\n\n\terr := WriteChanUpdateMsgFlags(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 194,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteChanUpdateChanFlags(t *testing.T) {",
+      "content": "func TestWriteChanUpdateChanFlags(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ChanUpdateChanFlags(1)\n\texpectedBytes := []byte{1}\n\n\terr := WriteChanUpdateChanFlags(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 196,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteDeliveryAddress(t *testing.T) {",
+      "content": "func TestWriteDeliveryAddress(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := DeliveryAddress{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t0, 3, // First two bytes encode the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr := WriteDeliveryAddress(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 269,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWritePingPayload(t *testing.T) {",
+      "content": "func TestWritePingPayload(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := PingPayload{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t0, 3, // First two bytes encode the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr := WritePingPayload(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 261,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWritePongPayload(t *testing.T) {",
+      "content": "func TestWritePongPayload(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := PongPayload{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t0, 3, // First two bytes encode the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr := WritePongPayload(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 261,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteErrorData(t *testing.T) {",
+      "content": "func TestWriteErrorData(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := ErrorData{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t0, 3, // First two bytes encode the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr := WriteErrorData(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 257,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteOpaqueReason(t *testing.T) {",
+      "content": "func TestWriteOpaqueReason(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\tdata := OpaqueReason{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t0, 3, // First two bytes encode the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr := WriteOpaqueReason(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 263,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteBool(t *testing.T) {",
+      "content": "func TestWriteBool(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\t// Test write true.\n\tdata := true\n\texpectedBytes := []byte{1}\n\n\terr := WriteBool(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n\n\t// Test write false.\n\tdata = false\n\texpectedBytes = append(expectedBytes, 0)\n\n\terr = WriteBool(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 354,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWritePkScript(t *testing.T) {",
+      "content": "func TestWritePkScript(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\t// Write a very long script to check the error is returned as expected.\n\tscript := PkScript{}\n\tzeros := [35]byte{}\n\tscript = append(script, zeros[:]...)\n\terr := WritePkScript(buf, script)\n\trequire.Equal(t, ErrPkScriptTooLong, err)\n\n\tdata := PkScript{1, 1, 1}\n\texpectedBytes := []byte{\n\t\t3,       // First byte encodes the length.\n\t\t1, 1, 1, // The actual data.\n\t}\n\n\terr = WritePkScript(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 479,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteOutPoint(t *testing.T) {",
+      "content": "func TestWriteOutPoint(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\t// Create an outpoint with very large index to check the error is\n\t// returned as expected.\n\toutpointWrong := wire.OutPoint{Index: math.MaxUint16 + 1}\n\terr := WriteOutPoint(buf, outpointWrong)\n\trequire.Equal(t, ErrOutpointIndexTooBig(outpointWrong.Index), err)\n\n\t// Now check the normal write succeeds.\n\thash := chainhash.Hash{1}\n\tdata := wire.OutPoint{Index: 2, Hash: hash}\n\texpectedBytes := []byte{}\n\texpectedBytes = append(expectedBytes, hash[:]...)\n\texpectedBytes = append(expectedBytes, []byte{0, 2}...)\n\n\terr = WriteOutPoint(buf, data)\n\n\trequire.NoError(t, err)\n\trequire.Equal(t, expectedBytes, buf.Bytes())\n}\n",
+      "length": 624,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteTCPAddr(t *testing.T) {",
+      "content": "func TestWriteTCPAddr(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\ttestCases := []struct {\n\t\tname string\n\t\taddr *net.TCPAddr\n\n\t\texpectedErr   error\n\t\texpectedBytes []byte\n\t}{\n\t\t{\n\t\t\t// Check that the error is returned when nil address is\n\t\t\t// used.\n\t\t\tname:          \"nil address err\",\n\t\t\taddr:          nil,\n\t\t\texpectedErr:   ErrNilTCPAddress,\n\t\t\texpectedBytes: nil,\n\t\t},\n\t\t{\n\t\t\t// Check write IPv4.\n\t\t\tname: \"write ipv4\",\n\t\t\taddr: &net.TCPAddr{\n\t\t\t\tIP:   net.IP{127, 0, 0, 1},\n\t\t\t\tPort: 8080,\n\t\t\t},\n\t\t\texpectedErr: nil,\n\t\t\texpectedBytes: []byte{\n\t\t\t\t0x1,                 // The addressType.\n\t\t\t\t0x7f, 0x0, 0x0, 0x1, // The IP.\n\t\t\t\t0x1f, 0x90, // The port (31 * 256 + 144).\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\t// Check write IPv6.\n\t\t\tname: \"write ipv6\",\n\t\t\taddr: &net.TCPAddr{\n\t\t\t\tIP: net.IP{\n\t\t\t\t\t1, 1, 1, 1, 1, 1, 1, 1,\n\t\t\t\t\t1, 1, 1, 1, 1, 1, 1, 1,\n\t\t\t\t},\n\t\t\t\tPort: 8080,\n\t\t\t},\n\t\t\texpectedErr: nil,\n\t\t\texpectedBytes: []byte{\n\t\t\t\t0x2, // The addressType.\n\t\t\t\t// The IP.\n\t\t\t\t0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,\n\t\t\t\t0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,\n\t\t\t\t0x1f, 0x90, // The port (31 * 256 + 144).\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\toldLen := buf.Len()\n\n\t\t\terr := WriteTCPAddr(buf, tc.addr)\n\t\t\trequire.Equal(t, tc.expectedErr, err)\n\n\t\t\tbytesWritten := buf.Bytes()[oldLen:buf.Len()]\n\t\t\trequire.Equal(t, tc.expectedBytes, bytesWritten)\n\t\t})\n\t}\n}\n",
+      "length": 1295,
+      "tokens": 191,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteOnionAddr(t *testing.T) {",
+      "content": "func TestWriteOnionAddr(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\n\ttestCases := []struct {\n\t\tname string\n\t\taddr *tor.OnionAddr\n\n\t\texpectedErr   error\n\t\texpectedBytes []byte\n\t}{\n\t\t{\n\t\t\t// Check that the error is returned when nil address is\n\t\t\t// used.\n\t\t\tname:          \"nil address err\",\n\t\t\taddr:          nil,\n\t\t\texpectedErr:   ErrNilOnionAddress,\n\t\t\texpectedBytes: nil,\n\t\t},\n\t\t{\n\t\t\t// Check the error is returned when an invalid onion\n\t\t\t// address is used.\n\t\t\tname:          \"wrong onion service length\",\n\t\t\taddr:          &tor.OnionAddr{OnionService: \"wrong\"},\n\t\t\texpectedErr:   ErrUnknownServiceLength,\n\t\t\texpectedBytes: nil,\n\t\t},\n\t\t{\n\t\t\t// Check when the address has invalid base32 encoding,\n\t\t\t// the error is returned.\n\t\t\tname: \"invalid base32 encoding\",\n\t\t\taddr: &tor.OnionAddr{\n\t\t\t\tOnionService: \"1234567890123456.onion\",\n\t\t\t},\n\t\t\texpectedErr:   base32.CorruptInputError(0),\n\t\t\texpectedBytes: nil,\n\t\t},\n\t\t{\n\t\t\t// Check write onion v2.\n\t\t\tname: \"onion address v2\",\n\t\t\taddr: &tor.OnionAddr{\n\t\t\t\tOnionService: \"abcdefghijklmnop.onion\",\n\t\t\t\tPort:         9065,\n\t\t\t},\n\t\t\texpectedErr: nil,\n\t\t\texpectedBytes: []byte{\n\t\t\t\t0x3,                         // The descriptor.\n\t\t\t\t0x0, 0x44, 0x32, 0x14, 0xc7, // The host.\n\t\t\t\t0x42, 0x54, 0xb6, 0x35, 0xcf,\n\t\t\t\t0x23, 0x69, // The port.\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\t// Check write onion v3.\n\t\t\tname: \"onion address v3\",\n\t\t\taddr: &tor.OnionAddr{\n\t\t\t\tOnionService: \"abcdefghij\" +\n\t\t\t\t\t\"abcdefghijabcdefghij\" +\n\t\t\t\t\t\"abcdefghijabcdefghij\" +\n\t\t\t\t\t\"234567.onion\",\n\t\t\t\tPort: 9065,\n\t\t\t},\n\t\t\texpectedErr: nil,\n\t\t\texpectedBytes: []byte{\n\t\t\t\t0x4, // The descriptor.\n\t\t\t\t0x0, 0x44, 0x32, 0x14, 0xc7, 0x42, 0x40,\n\t\t\t\t0x11, 0xc, 0x85, 0x31, 0xd0, 0x90, 0x4,\n\t\t\t\t0x43, 0x21, 0x4c, 0x74, 0x24, 0x1, 0x10,\n\t\t\t\t0xc8, 0x53, 0x1d, 0x9, 0x0, 0x44, 0x32,\n\t\t\t\t0x14, 0xc7, 0x42, 0x75, 0xbe, 0x77, 0xdf,\n\t\t\t\t0x23, 0x69, // The port.\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\toldLen := buf.Len()\n\n\t\t\terr := WriteOnionAddr(buf, tc.addr)\n\t\t\trequire.Equal(t, tc.expectedErr, err)\n\n\t\t\tbytesWritten := buf.Bytes()[oldLen:buf.Len()]\n\t\t\trequire.Equal(t, tc.expectedBytes, bytesWritten)\n\t\t})\n\t}\n}\n",
+      "length": 2030,
+      "tokens": 250,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteNetAddrs(t *testing.T) {",
+      "content": "func TestWriteNetAddrs(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\ttcpAddr := &net.TCPAddr{\n\t\tIP:   net.IP{127, 0, 0, 1},\n\t\tPort: 8080,\n\t}\n\tonionAddr := &tor.OnionAddr{\n\t\tOnionService: \"abcdefghijklmnop.onion\",\n\t\tPort:         9065,\n\t}\n\n\ttestCases := []struct {\n\t\tname string\n\t\taddr []net.Addr\n\n\t\texpectedErr   error\n\t\texpectedBytes []byte\n\t}{\n\t\t{\n\t\t\t// Check that the error is returned when nil address is\n\t\t\t// used.\n\t\t\tname:          \"nil address err\",\n\t\t\taddr:          []net.Addr{nil, tcpAddr, onionAddr},\n\t\t\texpectedErr:   ErrNilNetAddress,\n\t\t\texpectedBytes: nil,\n\t\t},\n\t\t{\n\t\t\t// Check empty address slice.\n\t\t\tname:        \"empty address slice\",\n\t\t\taddr:        []net.Addr{},\n\t\t\texpectedErr: nil,\n\t\t\t// Use two bytes to encode the address size.\n\t\t\texpectedBytes: []byte{0, 0},\n\t\t},\n\t\t{\n\t\t\t// Check a successful writes of a slice of addresses.\n\t\t\tname:        \"two addresses\",\n\t\t\taddr:        []net.Addr{tcpAddr, onionAddr},\n\t\t\texpectedErr: nil,\n\t\t\texpectedBytes: []byte{\n\t\t\t\t// 7 bytes for TCP and 13 bytes for onion.\n\t\t\t\t0x0, 0x14,\n\t\t\t\t// TCP address.\n\t\t\t\t0x1, 0x7f, 0x0, 0x0, 0x1, 0x1f, 0x90,\n\t\t\t\t// Onion address.\n\t\t\t\t0x3, 0x0, 0x44, 0x32, 0x14, 0xc7, 0x42,\n\t\t\t\t0x54, 0xb6, 0x35, 0xcf, 0x23, 0x69,\n\t\t\t},\n\t\t},\n\t}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\toldLen := buf.Len()\n\n\t\t\terr := WriteNetAddrs(buf, tc.addr)\n\t\t\trequire.Equal(t, tc.expectedErr, err)\n\n\t\t\tbytesWritten := buf.Bytes()[oldLen:buf.Len()]\n\t\t\trequire.Equal(t, tc.expectedBytes, bytesWritten)\n\t\t})\n\t}\n}\n",
+      "length": 1414,
+      "tokens": 184,
+      "embedding": []
+    }
+  ]
+}

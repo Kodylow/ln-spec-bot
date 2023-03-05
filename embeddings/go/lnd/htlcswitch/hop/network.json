@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/hop/network.go",
+  "package": "hop",
+  "sections": [
+    {
+      "slug": "type Network uint8",
+      "content": "type Network uint8\n\nconst (\n\t// BitcoinNetwork denotes that an HTLC is to be forwarded along the\n\t// Bitcoin link with the specified short channel ID.\n\tBitcoinNetwork Network = iota\n\n\t// LitecoinNetwork denotes that an HTLC is to be forwarded along the\n\t// Litecoin link with the specified short channel ID.\n\tLitecoinNetwork\n)\n\n// String returns the string representation of the target Network.",
+      "length": 364,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func (c Network) String() string {",
+      "content": "func (c Network) String() string {\n\tswitch c {\n\tcase BitcoinNetwork:\n\t\treturn \"Bitcoin\"\n\tcase LitecoinNetwork:\n\t\treturn \"Litecoin\"\n\tdefault:\n\t\treturn \"Kekcoin\"\n\t}\n}\n",
+      "length": 121,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/update.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type invoiceUpdateCtx struct {",
+      "content": "type invoiceUpdateCtx struct {\n\thash                 lntypes.Hash\n\tcircuitKey           CircuitKey\n\tamtPaid              lnwire.MilliSatoshi\n\texpiry               uint32\n\tcurrentHeight        int32\n\tfinalCltvRejectDelta int32\n\tcustomRecords        record.CustomSet\n\tmpp                  *record.MPP\n\tamp                  *record.AMP\n\tmetadata             []byte\n}\n\n// invoiceRef returns an identifier that can be used to lookup or update the\n// invoice this HTLC is targeting.",
+      "length": 432,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *invoiceUpdateCtx) invoiceRef() InvoiceRef {",
+      "content": "func (i *invoiceUpdateCtx) invoiceRef() InvoiceRef {\n\tswitch {\n\tcase i.amp != nil && i.mpp != nil:\n\t\tpayAddr := i.mpp.PaymentAddr()\n\t\treturn InvoiceRefByAddr(payAddr)\n\n\tcase i.mpp != nil:\n\t\tpayAddr := i.mpp.PaymentAddr()\n\t\treturn InvoiceRefByHashAndAddr(i.hash, payAddr)\n\n\tdefault:\n\t\treturn InvoiceRefByHash(i.hash)\n\t}\n}\n\n// setID returns an identifier that identifies other possible HTLCs that this\n// particular one is related to. If nil is returned this means the HTLC is an\n// MPP or legacy payment, otherwise the HTLC belongs AMP payment.",
+      "length": 474,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func (i invoiceUpdateCtx) setID() *[32]byte {",
+      "content": "func (i invoiceUpdateCtx) setID() *[32]byte {\n\tif i.amp != nil {\n\t\tsetID := i.amp.SetID()\n\t\treturn &setID\n\t}\n\treturn nil\n}\n\n// log logs a message specific to this update context.",
+      "length": 125,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *invoiceUpdateCtx) log(s string) {",
+      "content": "func (i *invoiceUpdateCtx) log(s string) {\n\t// Don't use %x in the log statement below, because it doesn't\n\t// distinguish between nil and empty metadata.\n\tmetadata := \"<nil>\"\n\tif i.metadata != nil {\n\t\tmetadata = hex.EncodeToString(i.metadata)\n\t}\n\n\tlog.Debugf(\"Invoice%v: %v, amt=%v, expiry=%v, circuit=%v, mpp=%v, \"+\n\t\t\"amp=%v, metadata=%v\", i.invoiceRef(), s, i.amtPaid, i.expiry,\n\t\ti.circuitKey, i.mpp, i.amp, metadata)\n}\n\n// failRes is a helper function which creates a failure resolution with\n// the information contained in the invoiceUpdateCtx and the fail resolution\n// result provided.",
+      "length": 537,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (i invoiceUpdateCtx) failRes(outcome FailResolutionResult) *HtlcFailResolution {",
+      "content": "func (i invoiceUpdateCtx) failRes(outcome FailResolutionResult) *HtlcFailResolution {\n\treturn NewFailResolution(i.circuitKey, i.currentHeight, outcome)\n}\n\n// settleRes is a helper function which creates a settle resolution with\n// the information contained in the invoiceUpdateCtx and the preimage and\n// the settle resolution result provided.",
+      "length": 252,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (i invoiceUpdateCtx) settleRes(preimage lntypes.Preimage,",
+      "content": "func (i invoiceUpdateCtx) settleRes(preimage lntypes.Preimage,\n\toutcome SettleResolutionResult) *HtlcSettleResolution {\n\n\treturn NewSettleResolution(\n\t\tpreimage, i.circuitKey, i.currentHeight, outcome,\n\t)\n}\n\n// acceptRes is a helper function which creates an accept resolution with\n// the information contained in the invoiceUpdateCtx and the accept resolution\n// result provided.",
+      "length": 308,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (i invoiceUpdateCtx) acceptRes(outcome acceptResolutionResult) *htlcAcceptResolution {",
+      "content": "func (i invoiceUpdateCtx) acceptRes(outcome acceptResolutionResult) *htlcAcceptResolution {\n\treturn newAcceptResolution(i.circuitKey, outcome)\n}\n\n// updateInvoice is a callback for DB.UpdateInvoice that contains the invoice\n// settlement logic. It returns a hltc resolution that indicates what the\n// outcome of the update was.",
+      "length": 230,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func updateInvoice(ctx *invoiceUpdateCtx, inv *Invoice) (",
+      "content": "func updateInvoice(ctx *invoiceUpdateCtx, inv *Invoice) (\n\t*InvoiceUpdateDesc, HtlcResolution, error) {\n\n\t// Don't update the invoice when this is a replayed htlc.\n\thtlc, ok := inv.Htlcs[ctx.circuitKey]\n\tif ok {\n\t\tswitch htlc.State {\n\t\tcase HtlcStateCanceled:\n\t\t\treturn nil, ctx.failRes(ResultReplayToCanceled), nil\n\n\t\tcase HtlcStateAccepted:\n\t\t\treturn nil, ctx.acceptRes(resultReplayToAccepted), nil\n\n\t\tcase HtlcStateSettled:\n\t\t\tpre := inv.Terms.PaymentPreimage\n\n\t\t\t// Terms.PaymentPreimage will be nil for AMP invoices.\n\t\t\t// Set it to the HTLC's AMP Preimage instead.\n\t\t\tif pre == nil {\n\t\t\t\tpre = htlc.AMP.Preimage\n\t\t\t}\n\n\t\t\treturn nil, ctx.settleRes(\n\t\t\t\t*pre,\n\t\t\t\tResultReplayToSettled,\n\t\t\t), nil\n\n\t\tdefault:\n\t\t\treturn nil, nil, errors.New(\"unknown htlc state\")\n\t\t}\n\t}\n\n\t// If no MPP payload was provided, then we expect this to be a keysend,\n\t// or a payment to an invoice created before we started to require the\n\t// MPP payload.\n\tif ctx.mpp == nil {\n\t\treturn updateLegacy(ctx, inv)\n\t}\n\n\treturn updateMpp(ctx, inv)\n}\n\n// updateMpp is a callback for DB.UpdateInvoice that contains the invoice\n// settlement logic for mpp payments.",
+      "length": 1035,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func updateMpp(ctx *invoiceUpdateCtx, inv *Invoice) (*InvoiceUpdateDesc,",
+      "content": "func updateMpp(ctx *invoiceUpdateCtx, inv *Invoice) (*InvoiceUpdateDesc,\n\tHtlcResolution, error) {\n\n\t// Reject HTLCs to AMP invoices if they are missing an AMP payload, and\n\t// HTLCs to MPP invoices if they have an AMP payload.\n\tswitch {\n\tcase inv.Terms.Features.RequiresFeature(lnwire.AMPRequired) &&\n\t\tctx.amp == nil:\n\n\t\treturn nil, ctx.failRes(ResultHtlcInvoiceTypeMismatch), nil\n\n\tcase !inv.Terms.Features.RequiresFeature(lnwire.AMPRequired) &&\n\t\tctx.amp != nil:\n\n\t\treturn nil, ctx.failRes(ResultHtlcInvoiceTypeMismatch), nil\n\t}\n\n\tsetID := ctx.setID()\n\n\t// Start building the accept descriptor.\n\tacceptDesc := &HtlcAcceptDesc{\n\t\tAmt:           ctx.amtPaid,\n\t\tExpiry:        ctx.expiry,\n\t\tAcceptHeight:  ctx.currentHeight,\n\t\tMppTotalAmt:   ctx.mpp.TotalMsat(),\n\t\tCustomRecords: ctx.customRecords,\n\t}\n\n\tif ctx.amp != nil {\n\t\tacceptDesc.AMP = &InvoiceHtlcAMPData{\n\t\t\tRecord:   *ctx.amp,\n\t\t\tHash:     ctx.hash,\n\t\t\tPreimage: nil,\n\t\t}\n\t}\n\n\t// Only accept payments to open invoices. This behaviour differs from\n\t// non-mpp payments that are accepted even after the invoice is settled.\n\t// Because non-mpp payments don't have a payment address, this is needed\n\t// to thwart probing.\n\tif inv.State != ContractOpen {\n\t\treturn nil, ctx.failRes(ResultInvoiceNotOpen), nil\n\t}\n\n\t// Check the payment address that authorizes the payment.\n\tif ctx.mpp.PaymentAddr() != inv.Terms.PaymentAddr {\n\t\treturn nil, ctx.failRes(ResultAddressMismatch), nil\n\t}\n\n\t// Don't accept zero-valued sets.\n\tif ctx.mpp.TotalMsat() == 0 {\n\t\treturn nil, ctx.failRes(ResultHtlcSetTotalTooLow), nil\n\t}\n\n\t// Check that the total amt of the htlc set is high enough. In case this\n\t// is a zero-valued invoice, it will always be enough.\n\tif ctx.mpp.TotalMsat() < inv.Terms.Value {\n\t\treturn nil, ctx.failRes(ResultHtlcSetTotalTooLow), nil\n\t}\n\n\thtlcSet := inv.HTLCSet(setID, HtlcStateAccepted)\n\n\t// Check whether total amt matches other htlcs in the set.\n\tvar newSetTotal lnwire.MilliSatoshi\n\tfor _, htlc := range htlcSet {\n\t\tif ctx.mpp.TotalMsat() != htlc.MppTotalAmt {\n\t\t\treturn nil, ctx.failRes(ResultHtlcSetTotalMismatch), nil\n\t\t}\n\n\t\tnewSetTotal += htlc.Amt\n\t}\n\n\t// Add amount of new htlc.\n\tnewSetTotal += ctx.amtPaid\n\n\t// Make sure the communicated set total isn't overpaid.\n\tif newSetTotal > ctx.mpp.TotalMsat() {\n\t\treturn nil, ctx.failRes(ResultHtlcSetOverpayment), nil\n\t}\n\n\t// The invoice is still open. Check the expiry.\n\tif ctx.expiry < uint32(ctx.currentHeight+ctx.finalCltvRejectDelta) {\n\t\treturn nil, ctx.failRes(ResultExpiryTooSoon), nil\n\t}\n\n\tif ctx.expiry < uint32(ctx.currentHeight+inv.Terms.FinalCltvDelta) {\n\t\treturn nil, ctx.failRes(ResultExpiryTooSoon), nil\n\t}\n\n\tif setID != nil && *setID == BlankPayAddr {\n\t\treturn nil, ctx.failRes(ResultAmpError), nil\n\t}\n\n\t// Record HTLC in the invoice database.\n\tnewHtlcs := map[CircuitKey]*HtlcAcceptDesc{\n\t\tctx.circuitKey: acceptDesc,\n\t}\n\n\tupdate := InvoiceUpdateDesc{\n\t\tAddHtlcs: newHtlcs,\n\t}\n\n\t// If the invoice cannot be settled yet, only record the htlc.\n\tsetComplete := newSetTotal == ctx.mpp.TotalMsat()\n\tif !setComplete {\n\t\treturn &update, ctx.acceptRes(resultPartialAccepted), nil\n\t}\n\n\t// Check to see if we can settle or this is an hold invoice and\n\t// we need to wait for the preimage.\n\tif inv.HodlInvoice {\n\t\tupdate.State = &InvoiceStateUpdateDesc{\n\t\t\tNewState: ContractAccepted,\n\t\t\tSetID:    setID,\n\t\t}\n\t\treturn &update, ctx.acceptRes(resultAccepted), nil\n\t}\n\n\tvar (\n\t\thtlcPreimages map[CircuitKey]lntypes.Preimage\n\t\thtlcPreimage  lntypes.Preimage\n\t)\n\tif ctx.amp != nil {\n\t\tvar failRes *HtlcFailResolution\n\t\thtlcPreimages, failRes = reconstructAMPPreimages(ctx, htlcSet)\n\t\tif failRes != nil {\n\t\t\tupdate.State = &InvoiceStateUpdateDesc{\n\t\t\t\tNewState: ContractCanceled,\n\t\t\t\tSetID:    setID,\n\t\t\t}\n\t\t\treturn &update, failRes, nil\n\t\t}\n\n\t\t// The preimage for _this_ HTLC will be the one with context's\n\t\t// circuit key.\n\t\thtlcPreimage = htlcPreimages[ctx.circuitKey]\n\t} else {\n\t\thtlcPreimage = *inv.Terms.PaymentPreimage\n\t}\n\n\tupdate.State = &InvoiceStateUpdateDesc{\n\t\tNewState:      ContractSettled,\n\t\tPreimage:      inv.Terms.PaymentPreimage,\n\t\tHTLCPreimages: htlcPreimages,\n\t\tSetID:         setID,\n\t}\n\n\treturn &update, ctx.settleRes(htlcPreimage, ResultSettled), nil\n}\n\n// HTLCSet is a map of CircuitKey to InvoiceHTLC.",
+      "length": 4020,
+      "tokens": 492,
+      "embedding": []
+    },
+    {
+      "slug": "type HTLCSet = map[CircuitKey]*InvoiceHTLC",
+      "content": "type HTLCSet = map[CircuitKey]*InvoiceHTLC\n\n// HTLCPreimages is a map of CircuitKey to preimage.",
+      "length": 52,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "type HTLCPreimages = map[CircuitKey]lntypes.Preimage",
+      "content": "type HTLCPreimages = map[CircuitKey]lntypes.Preimage\n\n// reconstructAMPPreimages reconstructs the root seed for an AMP HTLC set and\n// verifies that all derived child hashes match the payment hashes of the HTLCs\n// in the set. This method is meant to be called after receiving the full amount\n// committed to via mpp_total_msat. This method will return a fail resolution if\n// any of the child hashes fail to match their corresponding HTLCs.",
+      "length": 383,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func reconstructAMPPreimages(ctx *invoiceUpdateCtx,",
+      "content": "func reconstructAMPPreimages(ctx *invoiceUpdateCtx,\n\thtlcSet HTLCSet) (HTLCPreimages, *HtlcFailResolution) {\n\n\t// Create a slice containing all the child descriptors to be used for\n\t// reconstruction. This should include all HTLCs currently in the HTLC\n\t// set, plus the incoming HTLC.\n\tchildDescs := make([]amp.ChildDesc, 0, 1+len(htlcSet))\n\n\t// Add the new HTLC's child descriptor at index 0.\n\tchildDescs = append(childDescs, amp.ChildDesc{\n\t\tShare: ctx.amp.RootShare(),\n\t\tIndex: ctx.amp.ChildIndex(),\n\t})\n\n\t// Next, construct an index mapping the position in childDescs to a\n\t// circuit key for all preexisting HTLCs.\n\tindexToCircuitKey := make(map[int]CircuitKey)\n\n\t// Add the child descriptor for each HTLC in the HTLC set, recording\n\t// it's position within the slice.\n\tvar htlcSetIndex int\n\tfor circuitKey, htlc := range htlcSet {\n\t\tchildDescs = append(childDescs, amp.ChildDesc{\n\t\t\tShare: htlc.AMP.Record.RootShare(),\n\t\t\tIndex: htlc.AMP.Record.ChildIndex(),\n\t\t})\n\t\tindexToCircuitKey[htlcSetIndex] = circuitKey\n\t\thtlcSetIndex++\n\t}\n\n\t// Using the child descriptors, reconstruct the root seed and derive the\n\t// child hash/preimage pairs for each of the HTLCs.\n\tchildren := amp.ReconstructChildren(childDescs...)\n\n\t// Validate that the derived child preimages match the hash of each\n\t// HTLC's respective hash.\n\tif ctx.hash != children[0].Hash {\n\t\treturn nil, ctx.failRes(ResultAmpReconstruction)\n\t}\n\tfor idx, child := range children[1:] {\n\t\tcircuitKey := indexToCircuitKey[idx]\n\t\thtlc := htlcSet[circuitKey]\n\t\tif htlc.AMP.Hash != child.Hash {\n\t\t\treturn nil, ctx.failRes(ResultAmpReconstruction)\n\t\t}\n\t}\n\n\t// Finally, construct the map of learned preimages indexed by circuit\n\t// key, so that they can be persisted along with each HTLC when updating\n\t// the invoice.\n\thtlcPreimages := make(map[CircuitKey]lntypes.Preimage)\n\thtlcPreimages[ctx.circuitKey] = children[0].Preimage\n\tfor idx, child := range children[1:] {\n\t\tcircuitKey := indexToCircuitKey[idx]\n\t\thtlcPreimages[circuitKey] = child.Preimage\n\t}\n\n\treturn htlcPreimages, nil\n}\n\n// updateLegacy is a callback for DB.UpdateInvoice that contains the invoice\n// settlement logic for legacy payments.\n//\n// NOTE: This function is only kept in place in order to be able to handle key\n// send payments and any invoices we created in the past that are valid and\n// still had the optional mpp bit set.",
+      "length": 2237,
+      "tokens": 306,
+      "embedding": []
+    },
+    {
+      "slug": "func updateLegacy(ctx *invoiceUpdateCtx,",
+      "content": "func updateLegacy(ctx *invoiceUpdateCtx,\n\tinv *Invoice) (*InvoiceUpdateDesc, HtlcResolution, error) {\n\n\t// If the invoice is already canceled, there is no further\n\t// checking to do.\n\tif inv.State == ContractCanceled {\n\t\treturn nil, ctx.failRes(ResultInvoiceAlreadyCanceled), nil\n\t}\n\n\t// If an invoice amount is specified, check that enough is paid. Also\n\t// check this for duplicate payments if the invoice is already settled\n\t// or accepted. In case this is a zero-valued invoice, it will always be\n\t// enough.\n\tif ctx.amtPaid < inv.Terms.Value {\n\t\treturn nil, ctx.failRes(ResultAmountTooLow), nil\n\t}\n\n\t// If the invoice had the required feature bit set at this point, then\n\t// if we're in this method it means that the remote party didn't supply\n\t// the expected payload. However if this is a keysend payment, then\n\t// we'll permit it to pass.\n\t_, isKeySend := ctx.customRecords[record.KeySendType]\n\tinvoiceFeatures := inv.Terms.Features\n\tpaymentAddrRequired := invoiceFeatures.RequiresFeature(\n\t\tlnwire.PaymentAddrRequired,\n\t)\n\tif !isKeySend && paymentAddrRequired {\n\t\tlog.Warnf(\"Payment to pay_hash=%v doesn't include MPP \"+\n\t\t\t\"payload, rejecting\", ctx.hash)\n\t\treturn nil, ctx.failRes(ResultAddressMismatch), nil\n\t}\n\n\t// Don't allow settling the invoice with an old style\n\t// htlc if we are already in the process of gathering an\n\t// mpp set.\n\tfor _, htlc := range inv.HTLCSet(nil, HtlcStateAccepted) {\n\t\tif htlc.MppTotalAmt > 0 {\n\t\t\treturn nil, ctx.failRes(ResultMppInProgress), nil\n\t\t}\n\t}\n\n\t// The invoice is still open. Check the expiry.\n\tif ctx.expiry < uint32(ctx.currentHeight+ctx.finalCltvRejectDelta) {\n\t\treturn nil, ctx.failRes(ResultExpiryTooSoon), nil\n\t}\n\n\tif ctx.expiry < uint32(ctx.currentHeight+inv.Terms.FinalCltvDelta) {\n\t\treturn nil, ctx.failRes(ResultExpiryTooSoon), nil\n\t}\n\n\t// Record HTLC in the invoice database.\n\tnewHtlcs := map[CircuitKey]*HtlcAcceptDesc{\n\t\tctx.circuitKey: {\n\t\t\tAmt:           ctx.amtPaid,\n\t\t\tExpiry:        ctx.expiry,\n\t\t\tAcceptHeight:  ctx.currentHeight,\n\t\t\tCustomRecords: ctx.customRecords,\n\t\t},\n\t}\n\n\tupdate := InvoiceUpdateDesc{\n\t\tAddHtlcs: newHtlcs,\n\t}\n\n\t// Don't update invoice state if we are accepting a duplicate payment.\n\t// We do accept or settle the HTLC.\n\tswitch inv.State {\n\tcase ContractAccepted:\n\t\treturn &update, ctx.acceptRes(resultDuplicateToAccepted), nil\n\n\tcase ContractSettled:\n\t\treturn &update, ctx.settleRes(\n\t\t\t*inv.Terms.PaymentPreimage, ResultDuplicateToSettled,\n\t\t), nil\n\t}\n\n\t// Check to see if we can settle or this is an hold invoice and we need\n\t// to wait for the preimage.\n\tif inv.HodlInvoice {\n\t\tupdate.State = &InvoiceStateUpdateDesc{\n\t\t\tNewState: ContractAccepted,\n\t\t}\n\n\t\treturn &update, ctx.acceptRes(resultAccepted), nil\n\t}\n\n\tupdate.State = &InvoiceStateUpdateDesc{\n\t\tNewState: ContractSettled,\n\t\tPreimage: inv.Terms.PaymentPreimage,\n\t}\n\n\treturn &update, ctx.settleRes(\n\t\t*inv.Terms.PaymentPreimage, ResultSettled,\n\t), nil\n}\n",
+      "length": 2774,
+      "tokens": 353,
+      "embedding": []
+    }
+  ]
+}

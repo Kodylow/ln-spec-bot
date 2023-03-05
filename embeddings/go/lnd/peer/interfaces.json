@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/peer/interfaces.go",
+  "package": "peer",
+  "sections": [
+    {
+      "slug": "type messageSwitch interface {",
+      "content": "type messageSwitch interface {\n\t// BestHeight returns the best height known to the messageSwitch.\n\tBestHeight() uint32\n\n\t// CircuitModifier returns a reference to the messageSwitch's internal\n\t// CircuitModifier which abstracts the paths payments take and allows\n\t// modifying them.\n\tCircuitModifier() htlcswitch.CircuitModifier\n\n\t// RemoveLink removes an abstract link given a ChannelID.\n\tRemoveLink(cid lnwire.ChannelID)\n\n\t// CreateAndAddLink creates an abstract link in the messageSwitch given\n\t// a ChannelLinkConfig and raw LightningChannel pointer.\n\tCreateAndAddLink(cfg htlcswitch.ChannelLinkConfig,\n\t\tlnChan *lnwallet.LightningChannel) error\n\n\t// GetLinksByInterface retrieves abstract links (represented by the\n\t// ChannelUpdateHandler interface) based on the provided public key.\n\tGetLinksByInterface(pub [33]byte) ([]htlcswitch.ChannelUpdateHandler,\n\t\terror)\n}\n\n// LinkUpdater is an interface implemented by most messages in BOLT 2 that are\n// allowed to update the channel state.",
+      "length": 937,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "type LinkUpdater interface {",
+      "content": "type LinkUpdater interface {\n\t// TargetChanID returns the channel id of the link for which this message\n\t// is intended.\n\tTargetChanID() lnwire.ChannelID\n}\n\n// MessageConn is an interface implemented by anything that delivers\n// an lnwire.Message using a net.Conn interface.",
+      "length": 239,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type MessageConn interface {",
+      "content": "type MessageConn interface {\n\t// RemoteAddr returns the remote address on the other end of the connection.\n\tRemoteAddr() net.Addr\n\n\t// LocalAddr returns the local address on our end of the connection.\n\tLocalAddr() net.Addr\n\n\t// Read reads bytes from the connection.\n\tRead([]byte) (int, error)\n\n\t// Write writes bytes to the connection.\n\tWrite([]byte) (int, error)\n\n\t// SetDeadline sets the deadline for the connection.\n\tSetDeadline(time.Time) error\n\n\t// SetReadDeadline sets the read deadline.\n\tSetReadDeadline(time.Time) error\n\n\t// SetWriteDeadline sets the write deadline.\n\tSetWriteDeadline(time.Time) error\n\n\t// Close closes the connection.\n\tClose() error\n\n\t// Flush attempts a flush.\n\tFlush() (int, error)\n\n\t// WriteMessage writes the message.\n\tWriteMessage([]byte) error\n\n\t// ReadNextHeader reads the next header.\n\tReadNextHeader() (uint32, error)\n\n\t// ReadNextBody reads the next body.\n\tReadNextBody([]byte) ([]byte, error)\n}\n",
+      "length": 867,
+      "tokens": 116,
+      "embedding": []
+    }
+  ]
+}

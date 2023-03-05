@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/db_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestDump(t *testing.T) {",
+      "content": "func TestDump(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tdb, err := newEtcdBackend(context.TODO(), f.BackendConfig())\n\trequire.NoError(t, err)\n\n\terr = db.Update(func(tx walletdb.ReadWriteTx) error {\n\t\t// \"apple\"\n\t\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, apple)\n\n\t\trequire.NoError(t, apple.Put([]byte(\"key\"), []byte(\"val\")))\n\t\treturn nil\n\t}, func() {})\n\n\t// Expect non-zero copy.\n\tvar buf bytes.Buffer\n\n\trequire.NoError(t, db.Copy(&buf))\n\trequire.Greater(t, buf.Len(), 0)\n\trequire.Nil(t, err)\n\n\texpected := map[string]string{\n\t\tBucketKey(\"apple\"):       BucketVal(\"apple\"),\n\t\tValueKey(\"key\", \"apple\"): \"val\",\n\t}\n\trequire.Equal(t, expected, f.Dump())\n}\n\n// TestAbortContext tests that an update on the database is aborted if the\n// database's main context in cancelled.",
+      "length": 784,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAbortContext(t *testing.T) {",
+      "content": "func TestAbortContext(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tctx, cancel := context.WithCancel(context.Background())\n\n\tconfig := f.BackendConfig()\n\n\t// Pass abort context and abort right away.\n\tdb, err := newEtcdBackend(ctx, config)\n\trequire.NoError(t, err)\n\tcancel()\n\n\t// Expect that the update will fail.\n\terr = db.Update(func(tx walletdb.ReadWriteTx) error {\n\t\t_, err := tx.CreateTopLevelBucket([]byte(\"bucket\"))\n\t\trequire.Error(t, err, \"context canceled\")\n\n\t\treturn nil\n\t}, func() {})\n\n\trequire.Error(t, err, \"context canceled\")\n\n\t// No changes in the DB.\n\trequire.Equal(t, map[string]string{}, f.Dump())\n}\n\n// TestNewEtcdClient tests that an etcd v3 client can be created correctly.",
+      "length": 644,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func TestNewEtcdClient(t *testing.T) {",
+      "content": "func TestNewEtcdClient(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tclient, ctx, cancel, err := NewEtcdClient(\n\t\tcontext.Background(), f.BackendConfig(),\n\t)\n\trequire.NoError(t, err)\n\tt.Cleanup(cancel)\n\n\t_, err = client.Put(ctx, \"foo/bar\", \"baz\")\n\trequire.NoError(t, err)\n\n\tresp, err := client.Get(ctx, \"foo/bar\")\n\trequire.NoError(t, err)\n\n\trequire.Len(t, resp.Kvs, 1)\n\trequire.Equal(t, \"baz\", string(resp.Kvs[0].Value))\n}\n",
+      "length": 380,
+      "tokens": 38,
+      "embedding": []
+    }
+  ]
+}

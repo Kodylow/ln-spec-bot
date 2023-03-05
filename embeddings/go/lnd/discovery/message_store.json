@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/message_store.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "type GossipMessageStore interface {",
+      "content": "type GossipMessageStore interface {\n\t// AddMessage adds a message to the store for this peer.\n\tAddMessage(lnwire.Message, [33]byte) error\n\n\t// DeleteMessage deletes a message from the store for this peer.\n\tDeleteMessage(lnwire.Message, [33]byte) error\n\n\t// Messages returns the total set of messages that exist within the\n\t// store for all peers.\n\tMessages() (map[[33]byte][]lnwire.Message, error)\n\n\t// Peers returns the public key of all peers with messages within the\n\t// store.\n\tPeers() (map[[33]byte]struct{}, error)\n\n\t// MessagesForPeer returns the set of messages that exists within the\n\t// store for the given peer.\n\tMessagesForPeer([33]byte) ([]lnwire.Message, error)\n}\n\n// MessageStore is an implementation of the GossipMessageStore interface backed\n// by a channeldb instance. By design, this store will only keep the latest\n// version of a message (like in the case of multiple ChannelUpdate's) for a\n// channel with a peer.",
+      "length": 877,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "type MessageStore struct {",
+      "content": "type MessageStore struct {\n\tdb kvdb.Backend\n}\n\n// A compile-time assertion to ensure messageStore implements the\n// GossipMessageStore interface.\nvar _ GossipMessageStore = (*MessageStore)(nil)\n\n// NewMessageStore creates a new message store backed by a channeldb instance.",
+      "length": 239,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func NewMessageStore(db kvdb.Backend) (*MessageStore, error) {",
+      "content": "func NewMessageStore(db kvdb.Backend) (*MessageStore, error) {\n\terr := kvdb.Batch(db, func(tx kvdb.RwTx) error {\n\t\t_, err := tx.CreateTopLevelBucket(messageStoreBucket)\n\t\treturn err\n\t})\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to create required buckets: %v\",\n\t\t\terr)\n\t}\n\n\treturn &MessageStore{db}, nil\n}\n\n// msgShortChanID retrieves the short channel ID of the message.",
+      "length": 304,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func msgShortChanID(msg lnwire.Message) (lnwire.ShortChannelID, error) {",
+      "content": "func msgShortChanID(msg lnwire.Message) (lnwire.ShortChannelID, error) {\n\tvar shortChanID lnwire.ShortChannelID\n\tswitch msg := msg.(type) {\n\tcase *lnwire.AnnounceSignatures:\n\t\tshortChanID = msg.ShortChannelID\n\tcase *lnwire.ChannelUpdate:\n\t\tshortChanID = msg.ShortChannelID\n\tdefault:\n\t\treturn shortChanID, ErrUnsupportedMessage\n\t}\n\n\treturn shortChanID, nil\n}\n\n// messageStoreKey constructs the database key for the message to be stored.",
+      "length": 349,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func messageStoreKey(msg lnwire.Message, peerPubKey [33]byte) ([]byte, error) {",
+      "content": "func messageStoreKey(msg lnwire.Message, peerPubKey [33]byte) ([]byte, error) {\n\tshortChanID, err := msgShortChanID(msg)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar k [33 + 8 + 2]byte\n\tcopy(k[:33], peerPubKey[:])\n\tbinary.BigEndian.PutUint64(k[33:41], shortChanID.ToUint64())\n\tbinary.BigEndian.PutUint16(k[41:43], uint16(msg.MsgType()))\n\n\treturn k[:], nil\n}\n\n// AddMessage adds a message to the store for this peer.",
+      "length": 321,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MessageStore) AddMessage(msg lnwire.Message, peerPubKey [33]byte) error {",
+      "content": "func (s *MessageStore) AddMessage(msg lnwire.Message, peerPubKey [33]byte) error {\n\t// Construct the key for which we'll find this message with in the store.\n\tmsgKey, err := messageStoreKey(msg, peerPubKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Serialize the message with its wire encoding.\n\tvar b bytes.Buffer\n\tif _, err := lnwire.WriteMessage(&b, msg, 0); err != nil {\n\t\treturn err\n\t}\n\n\treturn kvdb.Batch(s.db, func(tx kvdb.RwTx) error {\n\t\tmessageStore := tx.ReadWriteBucket(messageStoreBucket)\n\t\tif messageStore == nil {\n\t\t\treturn ErrCorruptedMessageStore\n\t\t}\n\n\t\treturn messageStore.Put(msgKey, b.Bytes())\n\t})\n}\n\n// DeleteMessage deletes a message from the store for this peer.",
+      "length": 575,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MessageStore) DeleteMessage(msg lnwire.Message,",
+      "content": "func (s *MessageStore) DeleteMessage(msg lnwire.Message,\n\tpeerPubKey [33]byte) error {\n\n\t// Construct the key for which we'll find this message with in the\n\t// store.\n\tmsgKey, err := messageStoreKey(msg, peerPubKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn kvdb.Batch(s.db, func(tx kvdb.RwTx) error {\n\t\tmessageStore := tx.ReadWriteBucket(messageStoreBucket)\n\t\tif messageStore == nil {\n\t\t\treturn ErrCorruptedMessageStore\n\t\t}\n\n\t\t// In the event that we're attempting to delete a ChannelUpdate\n\t\t// from the store, we'll make sure that we're actually deleting\n\t\t// the correct one as it can be overwritten.\n\t\tif msg, ok := msg.(*lnwire.ChannelUpdate); ok {\n\t\t\t// Deleting a value from a bucket that doesn't exist\n\t\t\t// acts as a NOP, so we'll return if a message doesn't\n\t\t\t// exist under this key.\n\t\t\tv := messageStore.Get(msgKey)\n\t\t\tif v == nil {\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\tdbMsg, err := lnwire.ReadMessage(bytes.NewReader(v), 0)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// If the timestamps don't match, then the update stored\n\t\t\t// should be the latest one, so we'll avoid deleting it.\n\t\t\tif msg.Timestamp != dbMsg.(*lnwire.ChannelUpdate).Timestamp {\n\t\t\t\treturn nil\n\t\t\t}\n\t\t}\n\n\t\treturn messageStore.Delete(msgKey)\n\t})\n}\n\n// readMessage reads a message from its serialized form and ensures its\n// supported by the current version of the message store.",
+      "length": 1249,
+      "tokens": 194,
+      "embedding": []
+    },
+    {
+      "slug": "func readMessage(msgBytes []byte) (lnwire.Message, error) {",
+      "content": "func readMessage(msgBytes []byte) (lnwire.Message, error) {\n\tmsg, err := lnwire.ReadMessage(bytes.NewReader(msgBytes), 0)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Check if the message is supported by the store. We can reuse the\n\t// check for ShortChannelID as its a dependency on messages stored.\n\tif _, err := msgShortChanID(msg); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msg, nil\n}\n\n// Messages returns the total set of messages that exist within the store for\n// all peers.",
+      "length": 405,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MessageStore) Messages() (map[[33]byte][]lnwire.Message, error) {",
+      "content": "func (s *MessageStore) Messages() (map[[33]byte][]lnwire.Message, error) {\n\tvar msgs map[[33]byte][]lnwire.Message\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tmessageStore := tx.ReadBucket(messageStoreBucket)\n\t\tif messageStore == nil {\n\t\t\treturn ErrCorruptedMessageStore\n\t\t}\n\n\t\treturn messageStore.ForEach(func(k, v []byte) error {\n\t\t\tvar pubKey [33]byte\n\t\t\tcopy(pubKey[:], k[:33])\n\n\t\t\t// Deserialize the message from its raw bytes and filter\n\t\t\t// out any which are not currently supported by the\n\t\t\t// store.\n\t\t\tmsg, err := readMessage(v)\n\t\t\tif err == ErrUnsupportedMessage {\n\t\t\t\treturn nil\n\t\t\t}\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tmsgs[pubKey] = append(msgs[pubKey], msg)\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\tmsgs = make(map[[33]byte][]lnwire.Message)\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msgs, nil\n}\n\n// MessagesForPeer returns the set of messages that exists within the store for\n// the given peer.",
+      "length": 818,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MessageStore) MessagesForPeer(",
+      "content": "func (s *MessageStore) MessagesForPeer(\n\tpeerPubKey [33]byte) ([]lnwire.Message, error) {\n\n\tvar msgs []lnwire.Message\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tmessageStore := tx.ReadBucket(messageStoreBucket)\n\t\tif messageStore == nil {\n\t\t\treturn ErrCorruptedMessageStore\n\t\t}\n\n\t\tc := messageStore.ReadCursor()\n\t\tk, v := c.Seek(peerPubKey[:])\n\t\tfor ; bytes.HasPrefix(k, peerPubKey[:]); k, v = c.Next() {\n\t\t\t// Deserialize the message from its raw bytes and filter\n\t\t\t// out any which are not currently supported by the\n\t\t\t// store.\n\t\t\tmsg, err := readMessage(v)\n\t\t\tif err == ErrUnsupportedMessage {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tmsgs = append(msgs, msg)\n\t\t}\n\n\t\treturn nil\n\t}, func() {\n\t\tmsgs = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msgs, nil\n}\n\n// Peers returns the public key of all peers with messages within the store.",
+      "length": 801,
+      "tokens": 124,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *MessageStore) Peers() (map[[33]byte]struct{}, error) {",
+      "content": "func (s *MessageStore) Peers() (map[[33]byte]struct{}, error) {\n\tvar peers map[[33]byte]struct{}\n\terr := kvdb.View(s.db, func(tx kvdb.RTx) error {\n\t\tmessageStore := tx.ReadBucket(messageStoreBucket)\n\t\tif messageStore == nil {\n\t\t\treturn ErrCorruptedMessageStore\n\t\t}\n\n\t\treturn messageStore.ForEach(func(k, _ []byte) error {\n\t\t\tvar pubKey [33]byte\n\t\t\tcopy(pubKey[:], k[:33])\n\t\t\tpeers[pubKey] = struct{}{}\n\t\t\treturn nil\n\t\t})\n\t}, func() {\n\t\tpeers = make(map[[33]byte]struct{})\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn peers, nil\n}\n",
+      "length": 450,
+      "tokens": 58,
+      "embedding": []
+    }
+  ]
+}

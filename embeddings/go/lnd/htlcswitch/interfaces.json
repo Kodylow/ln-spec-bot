@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/interfaces.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type InvoiceDatabase interface {",
+      "content": "type InvoiceDatabase interface {\n\t// LookupInvoice attempts to look up an invoice according to its 32\n\t// byte payment hash.\n\tLookupInvoice(lntypes.Hash) (invoices.Invoice, error)\n\n\t// NotifyExitHopHtlc attempts to mark an invoice as settled. If the\n\t// invoice is a debug invoice, then this method is a noop as debug\n\t// invoices are never fully settled. The return value describes how the\n\t// htlc should be resolved. If the htlc cannot be resolved immediately,\n\t// the resolution is sent on the passed in hodlChan later. The eob\n\t// field passes the entire onion hop payload into the invoice registry\n\t// for decoding purposes.\n\tNotifyExitHopHtlc(payHash lntypes.Hash, paidAmount lnwire.MilliSatoshi,\n\t\texpiry uint32, currentHeight int32,\n\t\tcircuitKey models.CircuitKey, hodlChan chan<- interface{},\n\t\tpayload invoices.Payload) (invoices.HtlcResolution, error)\n\n\t// CancelInvoice attempts to cancel the invoice corresponding to the\n\t// passed payment hash.\n\tCancelInvoice(payHash lntypes.Hash) error\n\n\t// SettleHodlInvoice settles a hold invoice.\n\tSettleHodlInvoice(preimage lntypes.Preimage) error\n\n\t// HodlUnsubscribeAll unsubscribes from all htlc resolutions.\n\tHodlUnsubscribeAll(subscriber chan<- interface{})\n}\n\n// packetHandler is an interface used exclusively by the Switch to handle\n// htlcPacket and pass them to the link implementation.",
+      "length": 1288,
+      "tokens": 172,
+      "embedding": []
+    },
+    {
+      "slug": "type packetHandler interface {",
+      "content": "type packetHandler interface {\n\t// handleSwitchPacket handles the switch packets. These packets might\n\t// be forwarded to us from another channel link in case the htlc\n\t// update came from another peer or if the update was created by user\n\t// initially.\n\t//\n\t// NOTE: This function should block as little as possible.\n\thandleSwitchPacket(*htlcPacket) error\n}\n\n// dustHandler is an interface used exclusively by the Switch to evaluate\n// whether a link has too much dust exposure.",
+      "length": 438,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "type dustHandler interface {",
+      "content": "type dustHandler interface {\n\t// getDustSum returns the dust sum on either the local or remote\n\t// commitment.\n\tgetDustSum(remote bool) lnwire.MilliSatoshi\n\n\t// getFeeRate returns the current channel feerate.\n\tgetFeeRate() chainfee.SatPerKWeight\n\n\t// getDustClosure returns a closure that can evaluate whether a passed\n\t// HTLC is dust.\n\tgetDustClosure() dustClosure\n}\n\n// scidAliasHandler is an interface that the ChannelLink implements so it can\n// properly handle option_scid_alias channels.",
+      "length": 452,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "type scidAliasHandler interface {",
+      "content": "type scidAliasHandler interface {\n\t// attachFailAliasUpdate allows the link to properly fail incoming\n\t// HTLCs on option_scid_alias channels.\n\tattachFailAliasUpdate(failClosure func(\n\t\tsid lnwire.ShortChannelID,\n\t\tincoming bool) *lnwire.ChannelUpdate)\n\n\t// getAliases fetches the link's underlying aliases. This is used by\n\t// the Switch to determine whether to forward an HTLC and where to\n\t// forward an HTLC.\n\tgetAliases() []lnwire.ShortChannelID\n\n\t// isZeroConf returns whether or not the underlying channel is a\n\t// zero-conf channel.\n\tisZeroConf() bool\n\n\t// negotiatedAliasFeature returns whether the option-scid-alias feature\n\t// bit was negotiated.\n\tnegotiatedAliasFeature() bool\n\n\t// confirmedScid returns the confirmed SCID for a zero-conf channel.\n\tconfirmedScid() lnwire.ShortChannelID\n\n\t// zeroConfConfirmed returns whether or not the zero-conf channel has\n\t// confirmed.\n\tzeroConfConfirmed() bool\n}\n\n// ChannelUpdateHandler is an interface that provides methods that allow\n// sending lnwire.Message to the underlying link as well as querying state.",
+      "length": 1001,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelUpdateHandler interface {",
+      "content": "type ChannelUpdateHandler interface {\n\t// HandleChannelUpdate handles the htlc requests as settle/add/fail\n\t// which sent to us from remote peer we have a channel with.\n\t//\n\t// NOTE: This function MUST be non-blocking (or block as little as\n\t// possible).\n\tHandleChannelUpdate(lnwire.Message)\n\n\t// ChanID returns the channel ID for the channel link. The channel ID\n\t// is a more compact representation of a channel's full outpoint.\n\tChanID() lnwire.ChannelID\n\n\t// Bandwidth returns the amount of milli-satoshis which current link\n\t// might pass through channel link. The value returned from this method\n\t// represents the up to date available flow through the channel. This\n\t// takes into account any forwarded but un-cleared HTLC's, and any\n\t// HTLC's which have been set to the over flow queue.\n\tBandwidth() lnwire.MilliSatoshi\n\n\t// EligibleToForward returns a bool indicating if the channel is able\n\t// to actively accept requests to forward HTLC's. A channel may be\n\t// active, but not able to forward HTLC's if it hasn't yet finalized\n\t// the pre-channel operation protocol with the remote peer. The switch\n\t// will use this function in forwarding decisions accordingly.\n\tEligibleToForward() bool\n\n\t// MayAddOutgoingHtlc returns an error if we may not add an outgoing\n\t// htlc to the channel, taking the amount of the htlc to add as a\n\t// parameter.\n\tMayAddOutgoingHtlc(lnwire.MilliSatoshi) error\n\n\t// ShutdownIfChannelClean shuts the link down if the channel state is\n\t// clean. This can be used with dynamic commitment negotiation or coop\n\t// close negotiation which require a clean channel state.\n\tShutdownIfChannelClean() error\n}\n\n// ChannelLink is an interface which represents the subsystem for managing the\n// incoming htlc requests, applying the changes to the channel, and also\n// propagating/forwarding it to htlc switch.\n//\n//\tabstraction level\n//\t     ^\n//\t     |\n//\t     | - - - - - - - - - - - - Lightning - - - - - - - - - - - - -\n//\t     |\n//\t     | (Switch)\t\t     (Switch)\t\t       (Switch)\n//\t     |  Alice <-- channel link --> Bob <-- channel link --> Carol\n//\t     |\n//\t     | - - - - - - - - - - - - - TCP - - - - - - - - - - - - - - -\n//\t     |\n//\t     |  (Peer) \t\t     (Peer)\t                (Peer)\n//\t     |  Alice <----- tcp conn --> Bob <---- tcp conn -----> Carol\n//\t     |",
+      "length": 2214,
+      "tokens": 386,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelLink interface {",
+      "content": "type ChannelLink interface {\n\t// TODO(roasbeef): modify interface to embed mail boxes?\n\n\t// Embed the packetHandler interface.\n\tpacketHandler\n\n\t// Embed the ChannelUpdateHandler interface.\n\tChannelUpdateHandler\n\n\t// Embed the dustHandler interface.\n\tdustHandler\n\n\t// Embed the scidAliasHandler interface.\n\tscidAliasHandler\n\n\t// IsUnadvertised returns true if the underlying channel is\n\t// unadvertised.\n\tIsUnadvertised() bool\n\n\t// ChannelPoint returns the channel outpoint for the channel link.\n\tChannelPoint() *wire.OutPoint\n\n\t// ShortChanID returns the short channel ID for the channel link. The\n\t// short channel ID encodes the exact location in the main chain that\n\t// the original funding output can be found.\n\tShortChanID() lnwire.ShortChannelID\n\n\t// UpdateShortChanID updates the short channel ID for a link. This may\n\t// be required in the event that a link is created before the short\n\t// chan ID for it is known, or a re-org occurs, and the funding\n\t// transaction changes location within the chain.\n\tUpdateShortChanID() (lnwire.ShortChannelID, error)\n\n\t// UpdateForwardingPolicy updates the forwarding policy for the target\n\t// ChannelLink. Once updated, the link will use the new forwarding\n\t// policy to govern if it an incoming HTLC should be forwarded or not.\n\tUpdateForwardingPolicy(ForwardingPolicy)\n\n\t// CheckHtlcForward should return a nil error if the passed HTLC details\n\t// satisfy the current forwarding policy fo the target link. Otherwise,\n\t// a LinkError with a valid protocol failure message should be returned\n\t// in order to signal to the source of the HTLC, the policy consistency\n\t// issue.\n\tCheckHtlcForward(payHash [32]byte, incomingAmt lnwire.MilliSatoshi,\n\t\tamtToForward lnwire.MilliSatoshi,\n\t\tincomingTimeout, outgoingTimeout uint32,\n\t\theightNow uint32, scid lnwire.ShortChannelID) *LinkError\n\n\t// CheckHtlcTransit should return a nil error if the passed HTLC details\n\t// satisfy the current channel policy.  Otherwise, a LinkError with a\n\t// valid protocol failure message should be returned in order to signal\n\t// the violation. This call is intended to be used for locally initiated\n\t// payments for which there is no corresponding incoming htlc.\n\tCheckHtlcTransit(payHash [32]byte, amt lnwire.MilliSatoshi,\n\t\ttimeout uint32, heightNow uint32) *LinkError\n\n\t// Stats return the statistics of channel link. Number of updates,\n\t// total sent/received milli-satoshis.\n\tStats() (uint64, lnwire.MilliSatoshi, lnwire.MilliSatoshi)\n\n\t// Peer returns the representation of remote peer with which we have\n\t// the channel link opened.\n\tPeer() lnpeer.Peer\n\n\t// AttachMailBox delivers an active MailBox to the link. The MailBox may\n\t// have buffered messages.\n\tAttachMailBox(MailBox)\n\n\t// Start/Stop are used to initiate the start/stop of the channel link\n\t// functioning.\n\tStart() error\n\tStop()\n}\n\n// ForwardingLog is an interface that represents a time series database which\n// keep track of all successfully completed payment circuits. Every few\n// seconds, the switch will collate and flush out all the successful payment\n// circuits during the last interval.",
+      "length": 2984,
+      "tokens": 424,
+      "embedding": []
+    },
+    {
+      "slug": "type ForwardingLog interface {",
+      "content": "type ForwardingLog interface {\n\t// AddForwardingEvents is a method that should write out the set of\n\t// forwarding events in a batch to persistent storage. Outside\n\t// sub-systems can then query the contents of the log for analysis,\n\t// visualizations, etc.\n\tAddForwardingEvents([]channeldb.ForwardingEvent) error\n}\n\n// TowerClient is the primary interface used by the daemon to backup pre-signed\n// justice transactions to watchtowers.",
+      "length": 397,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "type TowerClient interface {",
+      "content": "type TowerClient interface {\n\t// RegisterChannel persistently initializes any channel-dependent\n\t// parameters within the client. This should be called during link\n\t// startup to ensure that the client is able to support the link during\n\t// operation.\n\tRegisterChannel(lnwire.ChannelID) error\n\n\t// BackupState initiates a request to back up a particular revoked\n\t// state. If the method returns nil, the backup is guaranteed to be\n\t// successful unless the tower is unavailable and client is force quit,\n\t// or the justice transaction would create dust outputs when trying to\n\t// abide by the negotiated policy. If the channel we're trying to back\n\t// up doesn't have a tweak for the remote party's output, then\n\t// isTweakless should be true.\n\tBackupState(*lnwire.ChannelID, *lnwallet.BreachRetribution,\n\t\tchanneldb.ChannelType) error\n}\n\n// InterceptableHtlcForwarder is the interface to set the interceptor\n// implementation that intercepts htlc forwards.",
+      "length": 910,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptableHtlcForwarder interface {",
+      "content": "type InterceptableHtlcForwarder interface {\n\t// SetInterceptor sets a ForwardInterceptor.\n\tSetInterceptor(interceptor ForwardInterceptor)\n\n\t// Resolve resolves an intercepted packet.\n\tResolve(res *FwdResolution) error\n}\n\n// ForwardInterceptor is a function that is invoked from the switch for every\n// incoming htlc that is intended to be forwarded. It is passed with the\n// InterceptedForward that contains the information about the packet and a way\n// to resolve it manually later in case it is held.\n// The return value indicates if this handler will take control of this forward\n// and resolve it later or let the switch execute its default behavior.",
+      "length": 598,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "type ForwardInterceptor func(InterceptedPacket) error",
+      "content": "type ForwardInterceptor func(InterceptedPacket) error\n\n// InterceptedPacket contains the relevant information for the interceptor about\n// an htlc.",
+      "length": 91,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptedPacket struct {",
+      "content": "type InterceptedPacket struct {\n\t// IncomingCircuit contains the incoming channel and htlc id of the\n\t// packet.\n\tIncomingCircuit models.CircuitKey\n\n\t// OutgoingChanID is the destination channel for this packet.\n\tOutgoingChanID lnwire.ShortChannelID\n\n\t// Hash is the payment hash of the htlc.\n\tHash lntypes.Hash\n\n\t// OutgoingExpiry is the absolute block height at which the outgoing\n\t// htlc expires.\n\tOutgoingExpiry uint32\n\n\t// OutgoingAmount is the amount to forward.\n\tOutgoingAmount lnwire.MilliSatoshi\n\n\t// IncomingExpiry is the absolute block height at which the incoming\n\t// htlc expires.\n\tIncomingExpiry uint32\n\n\t// IncomingAmount is the amount of the accepted htlc.\n\tIncomingAmount lnwire.MilliSatoshi\n\n\t// CustomRecords are user-defined records in the custom type range that\n\t// were included in the payload.\n\tCustomRecords record.CustomSet\n\n\t// OnionBlob is the onion packet for the next hop\n\tOnionBlob [lnwire.OnionPacketSize]byte\n\n\t// AutoFailHeight is the block height at which this intercept will be\n\t// failed back automatically.\n\tAutoFailHeight int32\n}\n\n// InterceptedForward is passed to the ForwardInterceptor for every forwarded\n// htlc. It contains all the information about the packet which accordingly\n// the interceptor decides if to hold or not.\n// In addition this interface allows a later resolution by calling either\n// Resume, Settle or Fail.",
+      "length": 1298,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptedForward interface {",
+      "content": "type InterceptedForward interface {\n\t// Packet returns the intercepted packet.\n\tPacket() InterceptedPacket\n\n\t// Resume notifies the intention to resume an existing hold forward. This\n\t// basically means the caller wants to resume with the default behavior for\n\t// this htlc which usually means forward it.\n\tResume() error\n\n\t// Settle notifies the intention to settle an existing hold\n\t// forward with a given preimage.\n\tSettle(lntypes.Preimage) error\n\n\t// Fail notifies the intention to fail an existing hold forward with an\n\t// encrypted failure reason.\n\tFail(reason []byte) error\n\n\t// FailWithCode notifies the intention to fail an existing hold forward\n\t// with the specified failure code.\n\tFailWithCode(code lnwire.FailCode) error\n}\n\n// htlcNotifier is an interface which represents the input side of the\n// HtlcNotifier which htlc events are piped through. This interface is intended\n// to allow for mocking of the htlcNotifier in tests, so is unexported because\n// it is not needed outside of the htlcSwitch package.",
+      "length": 962,
+      "tokens": 150,
+      "embedding": []
+    },
+    {
+      "slug": "type htlcNotifier interface {",
+      "content": "type htlcNotifier interface {\n\t// NotifyForwardingEvent notifies the HtlcNotifier than a htlc has been\n\t// forwarded.\n\tNotifyForwardingEvent(key HtlcKey, info HtlcInfo,\n\t\teventType HtlcEventType)\n\n\t// NotifyIncomingLinkFailEvent notifies that a htlc has failed on our\n\t// incoming link. It takes an isReceive bool to differentiate between\n\t// our node's receives and forwards.\n\tNotifyLinkFailEvent(key HtlcKey, info HtlcInfo,\n\t\teventType HtlcEventType, linkErr *LinkError, incoming bool)\n\n\t// NotifyForwardingFailEvent notifies the HtlcNotifier that a htlc we\n\t// forwarded has failed down the line.\n\tNotifyForwardingFailEvent(key HtlcKey, eventType HtlcEventType)\n\n\t// NotifySettleEvent notifies the HtlcNotifier that a htlc that we\n\t// committed to as part of a forward or a receive to our node has been\n\t// settled.\n\tNotifySettleEvent(key HtlcKey, preimage lntypes.Preimage,\n\t\teventType HtlcEventType)\n\n\t// NotifyFinalHtlcEvent notifies the HtlcNotifier that the final outcome\n\t// for an htlc has been determined.\n\tNotifyFinalHtlcEvent(key models.CircuitKey,\n\t\tinfo channeldb.FinalHtlcInfo)\n}\n",
+      "length": 1040,
+      "tokens": 130,
+      "embedding": []
+    }
+  ]
+}

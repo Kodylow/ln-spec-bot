@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/init_test.go",
+  "package": "wtwire_test",
+  "sections": [
+    {
+      "slug": "type checkRemoteInitTest struct {",
+      "content": "type checkRemoteInitTest struct {\n\tname      string\n\tlFeatures *lnwire.RawFeatureVector\n\tlHash     chainhash.Hash\n\trFeatures *lnwire.RawFeatureVector\n\trHash     chainhash.Hash\n\texpErr    error\n}\n\nvar checkRemoteInitTests = []checkRemoteInitTest{\n\t{\n\t\tname:      \"same chain, local-optional remote-required\",\n\t\tlFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsOptional),\n\t\tlHash:     testnetChainHash,\n\t\trFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsRequired),\n\t\trHash:     testnetChainHash,\n\t},\n\t{\n\t\tname:      \"same chain, local-required remote-optional\",\n\t\tlFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsRequired),\n\t\tlHash:     testnetChainHash,\n\t\trFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsOptional),\n\t\trHash:     testnetChainHash,\n\t},\n\t{\n\t\tname:      \"different chain, local-optional remote-required\",\n\t\tlFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsOptional),\n\t\tlHash:     testnetChainHash,\n\t\trFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsRequired),\n\t\trHash:     mainnetChainHash,\n\t\texpErr:    wtwire.NewErrUnknownChainHash(mainnetChainHash),\n\t},\n\t{\n\t\tname:      \"different chain, local-required remote-optional\",\n\t\tlFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsOptional),\n\t\tlHash:     testnetChainHash,\n\t\trFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsRequired),\n\t\trHash:     mainnetChainHash,\n\t\texpErr:    wtwire.NewErrUnknownChainHash(mainnetChainHash),\n\t},\n\t{\n\t\tname:      \"same chain, remote-unknown-required\",\n\t\tlFeatures: lnwire.NewRawFeatureVector(wtwire.AltruistSessionsOptional),\n\t\tlHash:     testnetChainHash,\n\t\trFeatures: lnwire.NewRawFeatureVector(lnwire.GossipQueriesRequired),\n\t\trHash:     testnetChainHash,\n\t\texpErr: feature.NewErrUnknownRequired(\n\t\t\t[]lnwire.FeatureBit{lnwire.GossipQueriesRequired},\n\t\t),\n\t},\n}\n\n// TestCheckRemoteInit asserts the behavior of CheckRemoteInit when called with\n// the remote party's Init message and the default wtwire.Features. We assert\n// the validity of advertised features from the perspective of both client and\n// server, as well as failure cases such as differing chain hashes or unknown\n// required features.",
+      "length": 2100,
+      "tokens": 152,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCheckRemoteInit(t *testing.T) {",
+      "content": "func TestCheckRemoteInit(t *testing.T) {\n\tfor _, test := range checkRemoteInitTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\ttestCheckRemoteInit(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 121,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func testCheckRemoteInit(t *testing.T, test checkRemoteInitTest) {",
+      "content": "func testCheckRemoteInit(t *testing.T, test checkRemoteInitTest) {\n\tlocalInit := wtwire.NewInitMessage(test.lFeatures, test.lHash)\n\tremoteInit := wtwire.NewInitMessage(test.rFeatures, test.rHash)\n\n\terr := localInit.CheckRemoteInit(remoteInit, wtwire.FeatureNames)\n\tswitch {\n\n\t// Both non-nil, pass.\n\tcase err == nil && test.expErr == nil:\n\t\treturn\n\n\t// One is nil and one is non-nil, fail.\n\tdefault:\n\t\tt.Fatalf(\"error mismatch, want: %v, got: %v\", test.expErr, err)\n\n\t// Both non-nil, assert same error type.\n\tcase err != nil && test.expErr != nil:\n\t}\n\n\t// Compare error strings to assert same type.\n\tif err.Error() != test.expErr.Error() {\n\t\tt.Fatalf(\"error mismatch, want: %v, got: %v\",\n\t\t\ttest.expErr.Error(), err.Error())\n\t}\n}\n",
+      "length": 640,
+      "tokens": 84,
+      "embedding": []
+    }
+  ]
+}

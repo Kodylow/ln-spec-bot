@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/standalone.go",
+  "package": "watchtower",
+  "sections": [
+    {
+      "slug": "type Standalone struct {",
+      "content": "type Standalone struct {\n\tstarted uint32 // to be used atomically\n\tstopped uint32 // to be used atomically\n\n\tcfg *Config\n\n\t// listeners is a reference to the wtserver's listeners.\n\tlisteners []net.Listener\n\n\t// server is the client endpoint, used for negotiating sessions and\n\t// uploading state updates.\n\tserver wtserver.Interface\n\n\t// lookout is a service that monitors the chain and inspects the\n\t// transactions found in new blocks against the state updates received\n\t// by the server.\n\tlookout lookout.Service\n}\n\n// New validates the passed Config and returns a fresh Standalone instance if\n// the tower's subsystems could be properly initialized.",
+      "length": 608,
+      "tokens": 95,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Standalone, error) {",
+      "content": "func New(cfg *Config) (*Standalone, error) {\n\t// The tower must have listening address in order to accept new updates\n\t// from clients.\n\tif len(cfg.ListenAddrs) == 0 {\n\t\treturn nil, ErrNoListeners\n\t}\n\n\t// Assign the default read timeout if none is provided.\n\tif cfg.ReadTimeout == 0 {\n\t\tcfg.ReadTimeout = DefaultReadTimeout\n\t}\n\n\t// Assign the default write timeout if none is provided.\n\tif cfg.WriteTimeout == 0 {\n\t\tcfg.WriteTimeout = DefaultWriteTimeout\n\t}\n\n\tpunisher := lookout.NewBreachPunisher(&lookout.PunisherConfig{\n\t\tPublishTx: cfg.PublishTx,\n\t})\n\n\t// Initialize the lookout service with its required resources.\n\tlookout := lookout.New(&lookout.Config{\n\t\tBlockFetcher:   cfg.BlockFetcher,\n\t\tDB:             cfg.DB,\n\t\tEpochRegistrar: cfg.EpochRegistrar,\n\t\tPunisher:       punisher,\n\t})\n\n\t// Create a brontide listener on each of the provided listening\n\t// addresses. Client should be able to connect to any of open ports to\n\t// communicate with this Standalone instance.\n\tlisteners := make([]net.Listener, 0, len(cfg.ListenAddrs))\n\tfor _, listenAddr := range cfg.ListenAddrs {\n\t\tlistener, err := brontide.NewListener(\n\t\t\tcfg.NodeKeyECDH, listenAddr.String(),\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tlisteners = append(listeners, listener)\n\t}\n\n\t// Initialize the server with its required resources.\n\tserver, err := wtserver.New(&wtserver.Config{\n\t\tChainHash:     cfg.ChainHash,\n\t\tDB:            cfg.DB,\n\t\tNodeKeyECDH:   cfg.NodeKeyECDH,\n\t\tListeners:     listeners,\n\t\tReadTimeout:   cfg.ReadTimeout,\n\t\tWriteTimeout:  cfg.WriteTimeout,\n\t\tNewAddress:    cfg.NewAddress,\n\t\tDisableReward: true,\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &Standalone{\n\t\tcfg:       cfg,\n\t\tlisteners: listeners,\n\t\tserver:    server,\n\t\tlookout:   lookout,\n\t}, nil\n}\n\n// Start idempotently starts the Standalone, an error is returned if the\n// subsystems could not be initialized.",
+      "length": 1764,
+      "tokens": 223,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) Start() error {",
+      "content": "func (w *Standalone) Start() error {\n\tif !atomic.CompareAndSwapUint32(&w.started, 0, 1) {\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"Starting watchtower\")\n\n\t// If a tor controller exists in the config, then automatically create a\n\t// hidden service for the watchtower to accept inbound connections from.\n\tif w.cfg.TorController != nil {\n\t\tlog.Infof(\"Creating watchtower hidden service\")\n\t\tif err := w.createNewHiddenService(); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\tif err := w.lookout.Start(); err != nil {\n\t\treturn err\n\t}\n\tif err := w.server.Start(); err != nil {\n\t\tw.lookout.Stop()\n\t\treturn err\n\t}\n\n\tlog.Infof(\"Watchtower started successfully\")\n\n\treturn nil\n}\n\n// Stop idempotently stops the Standalone and blocks until the subsystems have\n// completed their shutdown.",
+      "length": 688,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) Stop() error {",
+      "content": "func (w *Standalone) Stop() error {\n\tif !atomic.CompareAndSwapUint32(&w.stopped, 0, 1) {\n\t\treturn nil\n\t}\n\n\tlog.Infof(\"Stopping watchtower\")\n\n\tw.server.Stop()\n\tw.lookout.Stop()\n\n\tlog.Infof(\"Watchtower stopped successfully\")\n\n\treturn nil\n}\n\n// createNewHiddenService automatically sets up a v2 or v3 onion service in\n// order to listen for inbound connections over Tor.",
+      "length": 316,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) createNewHiddenService() error {",
+      "content": "func (w *Standalone) createNewHiddenService() error {\n\t// Get all the ports the watchtower is listening on. These will be used to\n\t// map the hidden service's virtual port.\n\tlistenPorts := make([]int, 0, len(w.listeners))\n\tfor _, listener := range w.listeners {\n\t\tport := listener.Addr().(*net.TCPAddr).Port\n\t\tlistenPorts = append(listenPorts, port)\n\t}\n\n\tencrypter, err := lnencrypt.KeyRingEncrypter(w.cfg.KeyRing)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Once we've created the port mapping, we can automatically create the\n\t// hidden service. The service's private key will be saved on disk in order\n\t// to persistently have access to this hidden service across restarts.\n\tonionCfg := tor.AddOnionConfig{\n\t\tVirtualPort: DefaultPeerPort,\n\t\tTargetPorts: listenPorts,\n\t\tStore: tor.NewOnionFile(\n\t\t\tw.cfg.WatchtowerKeyPath, 0600, w.cfg.EncryptKey,\n\t\t\tencrypter,\n\t\t),\n\t\tType: w.cfg.Type,\n\t}\n\n\taddr, err := w.cfg.TorController.AddOnion(onionCfg)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Append this address to ExternalIPs so that it will be exposed in\n\t// tower info calls.\n\tw.cfg.ExternalIPs = append(w.cfg.ExternalIPs, addr)\n\n\treturn nil\n}\n\n// PubKey returns the public key for the watchtower used to authentication and\n// encrypt traffic with clients.\n//\n// NOTE: Part of the watchtowerrpc.WatchtowerBackend interface.",
+      "length": 1216,
+      "tokens": 170,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) PubKey() *btcec.PublicKey {",
+      "content": "func (w *Standalone) PubKey() *btcec.PublicKey {\n\treturn w.cfg.NodeKeyECDH.PubKey()\n}\n\n// ListeningAddrs returns the listening addresses where the watchtower server\n// can accept client connections.\n//\n// NOTE: Part of the watchtowerrpc.WatchtowerBackend interface.",
+      "length": 210,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) ListeningAddrs() []net.Addr {",
+      "content": "func (w *Standalone) ListeningAddrs() []net.Addr {\n\taddrs := make([]net.Addr, 0, len(w.listeners))\n\tfor _, listener := range w.listeners {\n\t\taddrs = append(addrs, listener.Addr())\n\t}\n\n\treturn addrs\n}\n\n// ExternalIPs returns the addresses where the watchtower can be reached by\n// clients externally.\n//\n// NOTE: Part of the watchtowerrpc.WatchtowerBackend interface.",
+      "length": 304,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (w *Standalone) ExternalIPs() []net.Addr {",
+      "content": "func (w *Standalone) ExternalIPs() []net.Addr {\n\taddrs := make([]net.Addr, 0, len(w.cfg.ExternalIPs))\n\taddrs = append(addrs, w.cfg.ExternalIPs...)\n\n\treturn addrs\n}\n",
+      "length": 111,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

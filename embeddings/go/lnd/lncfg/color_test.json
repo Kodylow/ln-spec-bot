@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/color_test.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "func TestParseHexColor(t *testing.T) {",
+      "content": "func TestParseHexColor(t *testing.T) {\n\tvar colorTestCases = []struct {\n\t\ttest  string\n\t\tvalid bool // If valid format\n\t\tR     byte\n\t\tG     byte\n\t\tB     byte\n\t}{\n\t\t{\"#123\", false, 0, 0, 0},\n\t\t{\"#1234567\", false, 0, 0, 0},\n\t\t{\"$123456\", false, 0, 0, 0},\n\t\t{\"#12345+\", false, 0, 0, 0},\n\t\t{\"#fFGG00\", false, 0, 0, 0},\n\t\t{\"\", false, 0, 0, 0},\n\t\t{\"#123456\", true, 0x12, 0x34, 0x56},\n\t\t{\"#C0FfeE\", true, 0xc0, 0xff, 0xee},\n\t}\n\n\t// Perform the table driven tests.\n\tfor _, ct := range colorTestCases {\n\t\tcolor, err := ParseHexColor(ct.test)\n\t\tif !ct.valid && err == nil {\n\t\t\tt.Fatalf(\"Invalid color string: %s, should return \"+\n\t\t\t\t\"error, but did not\", ct.test)\n\t\t}\n\n\t\tif ct.valid && err != nil {\n\t\t\tt.Fatalf(\"Color %s valid to parse: %s\", ct.test, err)\n\t\t}\n\n\t\t// Ensure that the string to hex decoding is working properly.\n\t\tif color.R != ct.R || color.G != ct.G || color.B != ct.B {\n\t\t\tt.Fatalf(\"Color %s incorrectly parsed as %v\", ct.test, color)\n\t\t}\n\t}\n}\n",
+      "length": 878,
+      "tokens": 149,
+      "embedding": []
+    }
+  ]
+}

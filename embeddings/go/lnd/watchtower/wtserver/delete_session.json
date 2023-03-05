@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtserver/delete_session.go",
+  "package": "wtserver",
+  "sections": [
+    {
+      "slug": "func (s *Server) handleDeleteSession(peer Peer, id *wtdb.SessionID) error {",
+      "content": "func (s *Server) handleDeleteSession(peer Peer, id *wtdb.SessionID) error {\n\tvar failCode wtwire.DeleteSessionCode\n\n\t// Delete all session data associated with id.\n\terr := s.cfg.DB.DeleteSession(*id)\n\tswitch {\n\tcase err == nil:\n\t\tfailCode = wtwire.CodeOK\n\n\t\tlog.Debugf(\"Session %s deleted\", id)\n\n\tcase err == wtdb.ErrSessionNotFound:\n\t\tfailCode = wtwire.DeleteSessionCodeNotFound\n\n\tdefault:\n\t\tfailCode = wtwire.CodeTemporaryFailure\n\t}\n\n\treturn s.replyDeleteSession(peer, id, failCode)\n}\n\n// replyDeleteSession sends a DeleteSessionReply back to the peer containing the\n// error code resulting from processes a DeleteSession request.",
+      "length": 535,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) replyDeleteSession(peer Peer, id *wtdb.SessionID,",
+      "content": "func (s *Server) replyDeleteSession(peer Peer, id *wtdb.SessionID,\n\tcode wtwire.DeleteSessionCode) error {\n\n\tmsg := &wtwire.DeleteSessionReply{\n\t\tCode: code,\n\t}\n\n\terr := s.sendMessage(peer, msg)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to send DeleteSessionReply to %s\", id)\n\t}\n\n\t// Return the write error if the request succeeded.\n\tif code == wtwire.CodeOK {\n\t\treturn err\n\t}\n\n\t// Otherwise the request failed, return a connection failure to\n\t// disconnect the client.\n\treturn &connFailure{\n\t\tID:   *id,\n\t\tCode: code,\n\t}\n}\n",
+      "length": 430,
+      "tokens": 66,
+      "embedding": []
+    }
+  ]
+}

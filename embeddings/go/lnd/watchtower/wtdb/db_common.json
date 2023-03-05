@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/db_common.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "func isFirstInit(db kvdb.Backend) (bool, error) {",
+      "content": "func isFirstInit(db kvdb.Backend) (bool, error) {\n\tvar metadataExists bool\n\terr := kvdb.View(db, func(tx kvdb.RTx) error {\n\t\tmetadataExists = tx.ReadBucket(metadataBkt) != nil\n\t\treturn nil\n\t}, func() {\n\t\tmetadataExists = false\n\t})\n\tif err != nil {\n\t\treturn false, err\n\t}\n\n\treturn !metadataExists, nil\n}\n",
+      "length": 240,
+      "tokens": 37,
+      "embedding": []
+    }
+  ]
+}

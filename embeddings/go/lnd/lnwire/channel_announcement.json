@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/channel_announcement.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ChannelAnnouncement struct {",
+      "content": "type ChannelAnnouncement struct {\n\t// This signatures are used by nodes in order to create cross\n\t// references between node's channel and node. Requiring both nodes\n\t// to sign indicates they are both willing to route other payments via\n\t// this node.\n\tNodeSig1 Sig\n\tNodeSig2 Sig\n\n\t// This signatures are used by nodes in order to create cross\n\t// references between node's channel and node. Requiring the bitcoin\n\t// signatures proves they control the channel.\n\tBitcoinSig1 Sig\n\tBitcoinSig2 Sig\n\n\t// Features is the feature vector that encodes the features supported\n\t// by the target node. This field can be used to signal the type of the\n\t// channel, or modifications to the fields that would normally follow\n\t// this vector.\n\tFeatures *RawFeatureVector\n\n\t// ChainHash denotes the target chain that this channel was opened\n\t// within. This value should be the genesis hash of the target chain.\n\tChainHash chainhash.Hash\n\n\t// ShortChannelID is the unique description of the funding transaction,\n\t// or where exactly it's located within the target blockchain.\n\tShortChannelID ShortChannelID\n\n\t// The public keys of the two nodes who are operating the channel, such\n\t// that is NodeID1 the numerically-lesser than NodeID2 (ascending\n\t// numerical order).\n\tNodeID1 [33]byte\n\tNodeID2 [33]byte\n\n\t// Public keys which corresponds to the keys which was declared in\n\t// multisig funding transaction output.\n\tBitcoinKey1 [33]byte\n\tBitcoinKey2 [33]byte\n\n\t// ExtraOpaqueData is the set of data that was appended to this\n\t// message, some of which we may not actually know how to iterate or\n\t// parse. By holding onto this data, we ensure that we're able to\n\t// properly validate the set of signatures that cover these new fields,\n\t// and ensure we're able to make upgrades to the network in a forwards\n\t// compatible manner.\n\tExtraOpaqueData ExtraOpaqueData\n}\n\n// A compile time check to ensure ChannelAnnouncement implements the\n// lnwire.Message interface.\nvar _ Message = (*ChannelAnnouncement)(nil)\n\n// Decode deserializes a serialized ChannelAnnouncement stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 2091,
+      "tokens": 332,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelAnnouncement) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *ChannelAnnouncement) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&a.NodeSig1,\n\t\t&a.NodeSig2,\n\t\t&a.BitcoinSig1,\n\t\t&a.BitcoinSig2,\n\t\t&a.Features,\n\t\ta.ChainHash[:],\n\t\t&a.ShortChannelID,\n\t\t&a.NodeID1,\n\t\t&a.NodeID2,\n\t\t&a.BitcoinKey1,\n\t\t&a.BitcoinKey2,\n\t\t&a.ExtraOpaqueData,\n\t)\n}\n\n// Encode serializes the target ChannelAnnouncement into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 391,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelAnnouncement) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (a *ChannelAnnouncement) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteSig(w, a.NodeSig1); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteSig(w, a.NodeSig2); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteSig(w, a.BitcoinSig1); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteSig(w, a.BitcoinSig2); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteRawFeatureVector(w, a.Features); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.ChainHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteShortChannelID(w, a.ShortChannelID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.NodeID1[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.NodeID2[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.BitcoinKey1[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.BitcoinKey2[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, a.ExtraOpaqueData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 923,
+      "tokens": 159,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelAnnouncement) MsgType() MessageType {",
+      "content": "func (a *ChannelAnnouncement) MsgType() MessageType {\n\treturn MsgChannelAnnouncement\n}\n\n// DataToSign is used to retrieve part of the announcement message which should\n// be signed.",
+      "length": 123,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelAnnouncement) DataToSign() ([]byte, error) {",
+      "content": "func (a *ChannelAnnouncement) DataToSign() ([]byte, error) {\n\t// We should not include the signatures itself.\n\tb := make([]byte, 0, MaxMsgBody)\n\tbuf := bytes.NewBuffer(b)\n\n\tif err := WriteRawFeatureVector(buf, a.Features); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.ChainHash[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteShortChannelID(buf, a.ShortChannelID); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.NodeID1[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.NodeID2[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.BitcoinKey1[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.BitcoinKey2[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.ExtraOpaqueData); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn buf.Bytes(), nil\n}\n",
+      "length": 753,
+      "tokens": 124,
+      "embedding": []
+    }
+  ]
+}

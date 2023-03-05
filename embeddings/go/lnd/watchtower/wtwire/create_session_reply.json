@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/create_session_reply.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type CreateSessionCode = ErrorCode",
+      "content": "type CreateSessionCode = ErrorCode\n\nconst (\n\t// CreateSessionCodeAlreadyExists is returned when a session is already\n\t// active for the public key used to connect to the watchtower. The\n\t// response includes the serialized reward address in case the original\n\t// reply was never received and/or processed by the client.\n\tCreateSessionCodeAlreadyExists CreateSessionCode = 60\n\n\t// CreateSessionCodeRejectMaxUpdates the tower rejected the maximum\n\t// number of state updates proposed by the client.\n\tCreateSessionCodeRejectMaxUpdates CreateSessionCode = 61\n\n\t// CreateSessionCodeRejectRewardRate the tower rejected the reward rate\n\t// proposed by the client.\n\tCreateSessionCodeRejectRewardRate CreateSessionCode = 62\n\n\t// CreateSessionCodeRejectSweepFeeRate the tower rejected the sweep fee\n\t// rate proposed by the client.\n\tCreateSessionCodeRejectSweepFeeRate CreateSessionCode = 63\n\n\t// CreateSessionCodeRejectBlobType is returned when the tower does not\n\t// support the proposed blob type.\n\tCreateSessionCodeRejectBlobType CreateSessionCode = 64\n)\n\n// MaxCreateSessionReplyDataLength is the maximum size of the Data payload\n// returned in a CreateSessionReply message. This does not include the length of\n// the Data field, which is a varint up to 3 bytes in size.\nconst MaxCreateSessionReplyDataLength = 1024\n\n// CreateSessionReply is a message sent from watchtower to client in response to a\n// CreateSession message, and signals either an acceptance or rejection of the\n// proposed session parameters.",
+      "length": 1438,
+      "tokens": 195,
+      "embedding": []
+    },
+    {
+      "slug": "type CreateSessionReply struct {",
+      "content": "type CreateSessionReply struct {\n\t// Code will be non-zero if the watchtower rejected the session init.\n\tCode CreateSessionCode\n\n\t// LastApplied is the tower's last accepted sequence number for the\n\t// session. This is useful when the session already exists but the\n\t// client doesn't realize it's already used the session, such as after a\n\t// restoration.\n\tLastApplied uint16\n\n\t// Data is a byte slice returned the caller of the message, and is to be\n\t// interpreted according to the error Code. When the response is\n\t// CreateSessionCodeOK, data encodes the reward address to be included in\n\t// any sweep transactions if the reward is not dusty. Otherwise, it may\n\t// encode the watchtowers configured parameters for any policy\n\t// rejections.\n\tData []byte\n}\n\n// A compile time check to ensure CreateSessionReply implements the wtwire.Message\n// interface.\nvar _ Message = (*CreateSessionReply)(nil)\n\n// Decode deserializes a serialized CreateSessionReply message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 1035,
+      "tokens": 164,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSessionReply) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (m *CreateSessionReply) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&m.Code,\n\t\t&m.LastApplied,\n\t\t&m.Data,\n\t)\n}\n\n// Encode serializes the target CreateSessionReply into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 233,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSessionReply) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (m *CreateSessionReply) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tm.Code,\n\t\tm.LastApplied,\n\t\tm.Data,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 195,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSessionReply) MsgType() MessageType {",
+      "content": "func (m *CreateSessionReply) MsgType() MessageType {\n\treturn MsgCreateSessionReply\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a CreateSessionReply\n// complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 226,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *CreateSessionReply) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (m *CreateSessionReply) MaxPayloadLength(uint32) uint32 {\n\treturn 2 + 3 + MaxCreateSessionReplyDataLength\n}\n",
+      "length": 48,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

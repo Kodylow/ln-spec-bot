@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/varint_test.go",
+  "package": "tlv_test",
+  "sections": [
+    {
+      "slug": "type varIntTest struct {",
+      "content": "type varIntTest struct {\n\tName   string\n\tValue  uint64\n\tBytes  []byte\n\tExpErr error\n}\n\nvar writeVarIntTests = []varIntTest{\n\t{\n\t\tName:  \"zero\",\n\t\tValue: 0x00,\n\t\tBytes: []byte{0x00},\n\t},\n\t{\n\t\tName:  \"one byte high\",\n\t\tValue: 0xfc,\n\t\tBytes: []byte{0xfc},\n\t},\n\t{\n\t\tName:  \"two byte low\",\n\t\tValue: 0xfd,\n\t\tBytes: []byte{0xfd, 0x00, 0xfd},\n\t},\n\t{\n\t\tName:  \"two byte high\",\n\t\tValue: 0xffff,\n\t\tBytes: []byte{0xfd, 0xff, 0xff},\n\t},\n\t{\n\t\tName:  \"four byte low\",\n\t\tValue: 0x10000,\n\t\tBytes: []byte{0xfe, 0x00, 0x01, 0x00, 0x00},\n\t},\n\t{\n\t\tName:  \"four byte high\",\n\t\tValue: 0xffffffff,\n\t\tBytes: []byte{0xfe, 0xff, 0xff, 0xff, 0xff},\n\t},\n\t{\n\t\tName:  \"eight byte low\",\n\t\tValue: 0x100000000,\n\t\tBytes: []byte{0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00},\n\t},\n\t{\n\t\tName:  \"eight byte high\",\n\t\tValue: math.MaxUint64,\n\t\tBytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},\n\t},\n}\n\n// TestWriteVarInt asserts the behavior of tlv.WriteVarInt under various\n// positive and negative test cases.",
+      "length": 919,
+      "tokens": 135,
+      "embedding": []
+    },
+    {
+      "slug": "func TestWriteVarInt(t *testing.T) {",
+      "content": "func TestWriteVarInt(t *testing.T) {\n\tfor _, test := range writeVarIntTests {\n\t\tt.Run(test.Name, func(t *testing.T) {\n\t\t\ttestWriteVarInt(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 113,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func testWriteVarInt(t *testing.T, test varIntTest) {",
+      "content": "func testWriteVarInt(t *testing.T, test varIntTest) {\n\tvar (\n\t\tw   bytes.Buffer\n\t\tbuf [8]byte\n\t)\n\terr := tlv.WriteVarInt(&w, test.Value, &buf)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to encode %d as varint: %v\",\n\t\t\ttest.Value, err)\n\t}\n\n\tif !bytes.Equal(w.Bytes(), test.Bytes) {\n\t\tt.Fatalf(\"expected bytes: %v, got %v\",\n\t\t\ttest.Bytes, w.Bytes())\n\t}\n}\n\nvar readVarIntTests = []varIntTest{\n\t{\n\t\tName:  \"zero\",\n\t\tValue: 0x00,\n\t\tBytes: []byte{0x00},\n\t},\n\t{\n\t\tName:  \"one byte high\",\n\t\tValue: 0xfc,\n\t\tBytes: []byte{0xfc},\n\t},\n\t{\n\t\tName:  \"two byte low\",\n\t\tValue: 0xfd,\n\t\tBytes: []byte{0xfd, 0x00, 0xfd},\n\t},\n\t{\n\t\tName:  \"two byte high\",\n\t\tValue: 0xffff,\n\t\tBytes: []byte{0xfd, 0xff, 0xff},\n\t},\n\t{\n\t\tName:  \"four byte low\",\n\t\tValue: 0x10000,\n\t\tBytes: []byte{0xfe, 0x00, 0x01, 0x00, 0x00},\n\t},\n\t{\n\t\tName:  \"four byte high\",\n\t\tValue: 0xffffffff,\n\t\tBytes: []byte{0xfe, 0xff, 0xff, 0xff, 0xff},\n\t},\n\t{\n\t\tName:  \"eight byte low\",\n\t\tValue: 0x100000000,\n\t\tBytes: []byte{0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00},\n\t},\n\t{\n\t\tName:  \"eight byte high\",\n\t\tValue: math.MaxUint64,\n\t\tBytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},\n\t},\n\t{\n\t\tName:   \"two byte not canonical\",\n\t\tBytes:  []byte{0xfd, 0x00, 0xfc},\n\t\tExpErr: tlv.ErrVarIntNotCanonical,\n\t},\n\t{\n\t\tName:   \"four byte not canonical\",\n\t\tBytes:  []byte{0xfe, 0x00, 0x00, 0xff, 0xff},\n\t\tExpErr: tlv.ErrVarIntNotCanonical,\n\t},\n\t{\n\t\tName:   \"eight byte not canonical\",\n\t\tBytes:  []byte{0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff},\n\t\tExpErr: tlv.ErrVarIntNotCanonical,\n\t},\n\t{\n\t\tName:   \"two byte short read\",\n\t\tBytes:  []byte{0xfd, 0x00},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tName:   \"four byte short read\",\n\t\tBytes:  []byte{0xfe, 0xff, 0xff},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tName:   \"eight byte short read\",\n\t\tBytes:  []byte{0xff, 0xff, 0xff, 0xff, 0xff},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tName:   \"one byte no read\",\n\t\tBytes:  []byte{},\n\t\tExpErr: io.EOF,\n\t},\n\t// The following cases are the reason for needing to make a custom\n\t// version of the varint for the tlv package. For the varint encodings\n\t// in btcd's wire package these would return io.EOF, since it is\n\t// actually a composite of two calls to io.ReadFull. In TLV, we need to\n\t// be able to distinguish whether no bytes were read at all from no\n\t// Bytes being read on the second read as the latter is not a proper TLV\n\t// stream. We handle this by returning io.ErrUnexpectedEOF if we\n\t// encounter io.EOF on any of these secondary reads for larger values.\n\t{\n\t\tName:   \"two byte no read\",\n\t\tBytes:  []byte{0xfd},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tName:   \"four byte no read\",\n\t\tBytes:  []byte{0xfe},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tName:   \"eight byte no read\",\n\t\tBytes:  []byte{0xff},\n\t\tExpErr: io.ErrUnexpectedEOF,\n\t},\n}\n\n// TestReadVarInt asserts the behavior of tlv.ReadVarInt under various positive\n// and negative test cases.",
+      "length": 2722,
+      "tokens": 401,
+      "embedding": []
+    },
+    {
+      "slug": "func TestReadVarInt(t *testing.T) {",
+      "content": "func TestReadVarInt(t *testing.T) {\n\tfor _, test := range readVarIntTests {\n\t\tt.Run(test.Name, func(t *testing.T) {\n\t\t\ttestReadVarInt(t, test)\n\t\t})\n\t}\n}\n",
+      "length": 111,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func testReadVarInt(t *testing.T, test varIntTest) {",
+      "content": "func testReadVarInt(t *testing.T, test varIntTest) {\n\tvar buf [8]byte\n\tr := bytes.NewReader(test.Bytes)\n\tval, err := tlv.ReadVarInt(r, &buf)\n\tif err != nil && err != test.ExpErr {\n\t\tt.Fatalf(\"expected decoding error: %v, got: %v\",\n\t\t\ttest.ExpErr, err)\n\t}\n\n\t// If we expected a decoding error, there's no point checking the value.\n\tif test.ExpErr != nil {\n\t\treturn\n\t}\n\n\tif val != test.Value {\n\t\tt.Fatalf(\"expected value: %d, got %d\", test.Value, val)\n\t}\n}\n",
+      "length": 385,
+      "tokens": 63,
+      "embedding": []
+    }
+  ]
+}

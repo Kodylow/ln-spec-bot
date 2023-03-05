@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/channel_id.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ChannelID [32]byte",
+      "content": "type ChannelID [32]byte\n\n// ConnectionWideID is an all-zero ChannelID, which is used to represent a\n// message intended for all channels to specific peer.\nvar ConnectionWideID = ChannelID{}\n\n// String returns the string representation of the ChannelID. This is just the\n// hex string encoding of the ChannelID itself.",
+      "length": 287,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChannelID) String() string {",
+      "content": "func (c ChannelID) String() string {\n\treturn hex.EncodeToString(c[:])\n}\n\n// NewChanIDFromOutPoint converts a target OutPoint into a ChannelID that is\n// usable within the network. In order to convert the OutPoint into a ChannelID,\n// we XOR the lower 2-bytes of the txid within the OutPoint with the big-endian\n// serialization of the Index of the OutPoint, truncated to 2-bytes.",
+      "length": 336,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChanIDFromOutPoint(op *wire.OutPoint) ChannelID {",
+      "content": "func NewChanIDFromOutPoint(op *wire.OutPoint) ChannelID {\n\t// First we'll copy the txid of the outpoint into our channel ID slice.\n\tvar cid ChannelID\n\tcopy(cid[:], op.Hash[:])\n\n\t// With the txid copied over, we'll now XOR the lower 2-bytes of the\n\t// partial channelID with big-endian serialization of output index.\n\txorTxid(&cid, uint16(op.Index))\n\n\treturn cid\n}\n\n// xorTxid performs the transformation needed to transform an OutPoint into a\n// ChannelID. To do this, we expect the cid parameter to contain the txid\n// unaltered and the outputIndex to be the output index",
+      "length": 501,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func xorTxid(cid *ChannelID, outputIndex uint16) {",
+      "content": "func xorTxid(cid *ChannelID, outputIndex uint16) {\n\tvar buf [2]byte\n\tbinary.BigEndian.PutUint16(buf[:], outputIndex)\n\n\tcid[30] ^= buf[0]\n\tcid[31] ^= buf[1]\n}\n\n// GenPossibleOutPoints generates all the possible outputs given a channel ID.\n// In order to generate these possible outpoints, we perform a brute-force\n// search through the candidate output index space, performing a reverse\n// mapping from channelID back to OutPoint.",
+      "length": 368,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelID) GenPossibleOutPoints() [MaxFundingTxOutputs]wire.OutPoint {",
+      "content": "func (c *ChannelID) GenPossibleOutPoints() [MaxFundingTxOutputs]wire.OutPoint {\n\tvar possiblePoints [MaxFundingTxOutputs]wire.OutPoint\n\tfor i := uint16(0); i < MaxFundingTxOutputs; i++ {\n\t\tcidCopy := *c\n\t\txorTxid(&cidCopy, i)\n\n\t\tpossiblePoints[i] = wire.OutPoint{\n\t\t\tHash:  chainhash.Hash(cidCopy),\n\t\t\tIndex: uint32(i),\n\t\t}\n\t}\n\n\treturn possiblePoints\n}\n\n// IsChanPoint returns true if the OutPoint passed corresponds to the target\n// ChannelID.",
+      "length": 349,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChannelID) IsChanPoint(op *wire.OutPoint) bool {",
+      "content": "func (c ChannelID) IsChanPoint(op *wire.OutPoint) bool {\n\tcandidateCid := NewChanIDFromOutPoint(op)\n\n\treturn candidateCid == c\n}\n",
+      "length": 68,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

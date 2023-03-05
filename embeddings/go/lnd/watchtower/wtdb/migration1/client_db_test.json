@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration1/client_db_test.go",
+  "package": "migration1",
+  "sections": [
+    {
+      "slug": "func TestMigrateTowerToSessionIndex(t *testing.T) {",
+      "content": "func TestMigrateTowerToSessionIndex(t *testing.T) {\n\ttests := []struct {\n\t\tname       string\n\t\tshouldFail bool\n\t\tpre        map[string]interface{}\n\t\tpost       map[string]interface{}\n\t}{\n\t\t{\n\t\t\tname:       \"migration ok\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        pre,\n\t\t\tpost:       post,\n\t\t},\n\t\t{\n\t\t\tname:       \"fail due to corrupt db\",\n\t\t\tshouldFail: true,\n\t\t\tpre:        preFailNoSessionBody,\n\t\t\tpost:       nil,\n\t\t},\n\t\t{\n\t\t\tname:       \"no sessions\",\n\t\t\tshouldFail: false,\n\t\t\tpre:        nil,\n\t\t\tpost:       nil,\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t// Before the migration we have a sessions bucket.\n\t\t\tbefore := func(tx kvdb.RwTx) error {\n\t\t\t\treturn migtest.RestoreDB(\n\t\t\t\t\ttx, cSessionBkt, test.pre,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\t// After the migration, we should have an untouched\n\t\t\t// sessions bucket and a new index bucket.\n\t\t\tafter := func(tx kvdb.RwTx) error {\n\t\t\t\tif err := migtest.VerifyDB(\n\t\t\t\t\ttx, cSessionBkt, test.pre,\n\t\t\t\t); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\t// If we expect our migration to fail, we don't\n\t\t\t\t// expect an index bucket.\n\t\t\t\tif test.shouldFail {\n\t\t\t\t\treturn nil\n\t\t\t\t}\n\n\t\t\t\treturn migtest.VerifyDB(\n\t\t\t\t\ttx, cTowerIDToSessionIDIndexBkt,\n\t\t\t\t\ttest.post,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\tmigtest.ApplyMigration(\n\t\t\t\tt, before, after, MigrateTowerToSessionIndex,\n\t\t\t\ttest.shouldFail,\n\t\t\t)\n\t\t})\n\t}\n}\n",
+      "length": 1246,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func sessionIDString(id string) string {",
+      "content": "func sessionIDString(id string) string {\n\tvar sessID SessionID\n\tcopy(sessID[:], id)\n\treturn string(sessID[:])\n}\n",
+      "length": 67,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func clientSessionString(s *ClientSessionBody) string {",
+      "content": "func clientSessionString(s *ClientSessionBody) string {\n\tvar b bytes.Buffer\n\terr := s.Encode(&b)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\n\treturn b.String()\n}\n",
+      "length": 88,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func towerIDString(id int) string {",
+      "content": "func towerIDString(id int) string {\n\ttowerID := TowerID(id)\n\treturn string(towerID.Bytes())\n}\n",
+      "length": 55,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

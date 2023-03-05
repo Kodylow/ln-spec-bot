@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/devrpc_default.go",
+  "package": "!dev",
+  "sections": [
+    {
+      "slug": "func devCommands() []cli.Command {",
+      "content": "func devCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

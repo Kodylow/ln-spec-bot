@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/netann/interface.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type DB interface {",
+      "content": "type DB interface {\n\t// FetchAllOpenChannels returns a slice of all open channels known to\n\t// the daemon. This may include private or pending channels.\n\tFetchAllOpenChannels() ([]*channeldb.OpenChannel, error)\n}\n\n// ChannelGraph abstracts the required channel graph queries used by the\n// ChanStatusManager.",
+      "length": 282,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelGraph interface {",
+      "content": "type ChannelGraph interface {\n\t// FetchChannelEdgesByOutpoint returns the channel edge info and most\n\t// recent channel edge policies for a given outpoint.\n\tFetchChannelEdgesByOutpoint(*wire.OutPoint) (*channeldb.ChannelEdgeInfo,\n\t\t*channeldb.ChannelEdgePolicy, *channeldb.ChannelEdgePolicy, error)\n}\n",
+      "length": 266,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

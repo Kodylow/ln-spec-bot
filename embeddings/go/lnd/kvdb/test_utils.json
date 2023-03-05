@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/test_utils.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func RunTests(m *testing.M) {",
+      "content": "func RunTests(m *testing.M) {\n\tvar close func() error\n\tif PostgresBackend {\n\t\tvar err error\n\t\tclose, err = StartEmbeddedPostgres()\n\t\tif err != nil {\n\t\t\tfmt.Printf(\"Error: %v\\n\", err)\n\t\t\tos.Exit(1)\n\t\t}\n\t}\n\n\t// os.Exit() does not respect defer statements\n\tcode := m.Run()\n\n\tif close != nil {\n\t\terr := close()\n\t\tif err != nil {\n\t\t\tfmt.Printf(\"Error: %v\\n\", err)\n\t\t}\n\t}\n\n\tos.Exit(code)\n\n}\n",
+      "length": 332,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

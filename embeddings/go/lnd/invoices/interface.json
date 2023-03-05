@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/interface.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type InvScanFunc func(lntypes.Hash, *Invoice) error",
+      "content": "type InvScanFunc func(lntypes.Hash, *Invoice) error\n\n// InvoiceDB is the database that stores the information about invoices.",
+      "length": 72,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceDB interface {",
+      "content": "type InvoiceDB interface {\n\t// AddInvoice inserts the targeted invoice into the database.\n\t// If the invoice has *any* payment hashes which already exists within\n\t// the database, then the insertion will be aborted and rejected due to\n\t// the strict policy banning any duplicate payment hashes.\n\t//\n\t// NOTE: A side effect of this function is that it sets AddIndex on\n\t// newInvoice.\n\tAddInvoice(invoice *Invoice, paymentHash lntypes.Hash) (uint64, error)\n\n\t// InvoicesAddedSince can be used by callers to seek into the event\n\t// time series of all the invoices added in the database. The specified\n\t// sinceAddIndex should be the highest add index that the caller knows\n\t// of. This method will return all invoices with an add index greater\n\t// than the specified sinceAddIndex.\n\t//\n\t// NOTE: The index starts from 1, as a result. We enforce that\n\t// specifying a value below the starting index value is a noop.\n\tInvoicesAddedSince(sinceAddIndex uint64) ([]Invoice, error)\n\n\t// LookupInvoice attempts to look up an invoice according to its 32 byte\n\t// payment hash. If an invoice which can settle the HTLC identified by\n\t// the passed payment hash isn't found, then an error is returned.\n\t// Otherwise, the full invoice is returned.\n\t// Before setting the incoming HTLC, the values SHOULD be checked to\n\t// ensure the payer meets the agreed upon contractual terms of the\n\t// payment.\n\tLookupInvoice(ref InvoiceRef) (Invoice, error)\n\n\t// ScanInvoices scans through all invoices and calls the passed scanFunc\n\t// for each invoice with its respective payment hash. Additionally a\n\t// reset() closure is passed which is used to reset/initialize partial\n\t// results and also to signal if the kvdb.View transaction has been\n\t// retried.\n\t//\n\t// TODO(positiveblue): abstract this functionality so it makes sense for\n\t// other backends like sql.\n\tScanInvoices(scanFunc InvScanFunc, reset func()) error\n\n\t// QueryInvoices allows a caller to query the invoice database for\n\t// invoices within the specified add index range.\n\tQueryInvoices(q InvoiceQuery) (InvoiceSlice, error)\n\n\t// UpdateInvoice attempts to update an invoice corresponding to the\n\t// passed payment hash. If an invoice matching the passed payment hash\n\t// doesn't exist within the database, then the action will fail with a\n\t// \"not found\" error.\n\t//\n\t// The update is performed inside the same database transaction that\n\t// fetches the invoice and is therefore atomic. The fields to update\n\t// are controlled by the supplied callback.\n\t//\n\t// TODO(positiveblue): abstract this functionality so it makes sense for\n\t// other backends like sql.\n\tUpdateInvoice(ref InvoiceRef, setIDHint *SetID,\n\t\tcallback InvoiceUpdateCallback) (*Invoice, error)\n\n\t// InvoicesSettledSince can be used by callers to catch up any settled\n\t// invoices they missed within the settled invoice time series. We'll\n\t// return all known settled invoice that have a settle index higher than\n\t// the passed sinceSettleIndex.\n\t//\n\t// NOTE: The index starts from 1, as a result. We enforce that\n\t// specifying a value below the starting index value is a noop.\n\tInvoicesSettledSince(sinceSettleIndex uint64) ([]Invoice, error)\n\n\t// DeleteInvoice attempts to delete the passed invoices from the\n\t// database in one transaction. The passed delete references hold all\n\t// keys required to delete the invoices without also needing to\n\t// deserialze them.\n\tDeleteInvoice(invoicesToDelete []InvoiceDeleteRef) error\n}\n\n// Payload abstracts access to any additional fields provided in the final hop's\n// TLV onion payload.",
+      "length": 3439,
+      "tokens": 537,
+      "embedding": []
+    },
+    {
+      "slug": "type Payload interface {",
+      "content": "type Payload interface {\n\t// MultiPath returns the record corresponding the option_mpp parsed from\n\t// the onion payload.\n\tMultiPath() *record.MPP\n\n\t// AMPRecord returns the record corresponding to the option_amp record\n\t// parsed from the onion payload.\n\tAMPRecord() *record.AMP\n\n\t// CustomRecords returns the custom tlv type records that were parsed\n\t// from the payload.\n\tCustomRecords() record.CustomSet\n\n\t// Metadata returns the additional data that is sent along with the\n\t// payment to the payee.\n\tMetadata() []byte\n}\n\n// InvoiceQuery represents a query to the invoice database. The query allows a\n// caller to retrieve all invoices starting from a particular add index and\n// limit the number of results returned.",
+      "length": 677,
+      "tokens": 104,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceQuery struct {",
+      "content": "type InvoiceQuery struct {\n\t// IndexOffset is the offset within the add indices to start at. This\n\t// can be used to start the response at a particular invoice.\n\tIndexOffset uint64\n\n\t// NumMaxInvoices is the maximum number of invoices that should be\n\t// starting from the add index.\n\tNumMaxInvoices uint64\n\n\t// PendingOnly, if set, returns unsettled invoices starting from the\n\t// add index.\n\tPendingOnly bool\n\n\t// Reversed, if set, indicates that the invoices returned should start\n\t// from the IndexOffset and go backwards.\n\tReversed bool\n\n\t// CreationDateStart, if set, filters out all invoices with a creation\n\t// date greater than or euqal to it.\n\tCreationDateStart time.Time\n\n\t// CreationDateEnd, if set, filters out all invoices with a creation\n\t// date less than or euqal to it.\n\tCreationDateEnd time.Time\n}\n\n// InvoiceSlice is the response to a invoice query. It includes the original\n// query, the set of invoices that match the query, and an integer which\n// represents the offset index of the last item in the set of returned invoices.\n// This integer allows callers to resume their query using this offset in the\n// event that the query's response exceeds the maximum number of returnable\n// invoices.",
+      "length": 1157,
+      "tokens": 194,
+      "embedding": []
+    },
+    {
+      "slug": "type InvoiceSlice struct {",
+      "content": "type InvoiceSlice struct {\n\tInvoiceQuery\n\n\t// Invoices is the set of invoices that matched the query above.\n\tInvoices []Invoice\n\n\t// FirstIndexOffset is the index of the first element in the set of\n\t// returned Invoices above. Callers can use this to resume their query\n\t// in the event that the slice has too many events to fit into a single\n\t// response.\n\tFirstIndexOffset uint64\n\n\t// LastIndexOffset is the index of the last element in the set of\n\t// returned Invoices above. Callers can use this to resume their query\n\t// in the event that the slice has too many events to fit into a single\n\t// response.\n\tLastIndexOffset uint64\n}\n\n// CircuitKey is a tuple of channel ID and HTLC ID, used to uniquely identify\n// HTLCs in a circuit.",
+      "length": 690,
+      "tokens": 126,
+      "embedding": []
+    },
+    {
+      "slug": "type CircuitKey = models.CircuitKey",
+      "content": "type CircuitKey = models.CircuitKey\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

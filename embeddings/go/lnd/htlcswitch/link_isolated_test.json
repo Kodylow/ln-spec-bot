@@ -1,0 +1,97 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/link_isolated_test.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type linkTestContext struct {",
+      "content": "type linkTestContext struct {\n\tt *testing.T\n\n\taliceLink  ChannelLink\n\tbobChannel *lnwallet.LightningChannel\n\taliceMsgs  <-chan lnwire.Message\n}\n\n// sendHtlcBobToAlice sends an HTLC from Bob to Alice, that pays to a preimage\n// already in Alice's registry.",
+      "length": 217,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) sendHtlcBobToAlice(htlc *lnwire.UpdateAddHTLC) {",
+      "content": "func (l *linkTestContext) sendHtlcBobToAlice(htlc *lnwire.UpdateAddHTLC) {\n\tl.t.Helper()\n\n\t_, err := l.bobChannel.AddHTLC(htlc, nil)\n\tif err != nil {\n\t\tl.t.Fatalf(\"bob failed adding htlc: %v\", err)\n\t}\n\n\tl.aliceLink.HandleChannelUpdate(htlc)\n}\n\n// sendHtlcAliceToBob sends an HTLC from Alice to Bob, by first committing the\n// HTLC in the circuit map, then delivering the outgoing packet to Alice's link.\n// The HTLC will be sent to Bob via Alice's message stream.",
+      "length": 376,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) sendHtlcAliceToBob(htlcID int,",
+      "content": "func (l *linkTestContext) sendHtlcAliceToBob(htlcID int,\n\thtlc *lnwire.UpdateAddHTLC) {\n\n\tl.t.Helper()\n\n\tcircuitMap := l.aliceLink.(*channelLink).cfg.Switch.circuits\n\tfwdActions, err := circuitMap.CommitCircuits(\n\t\t&PaymentCircuit{\n\t\t\tIncoming: CircuitKey{\n\t\t\t\tHtlcID: uint64(htlcID),\n\t\t\t},\n\t\t\tPaymentHash: htlc.PaymentHash,\n\t\t},\n\t)\n\tif err != nil {\n\t\tl.t.Fatalf(\"unable to commit circuit: %v\", err)\n\t}\n\n\tif len(fwdActions.Adds) != 1 {\n\t\tl.t.Fatalf(\"expected 1 adds, found %d\", len(fwdActions.Adds))\n\t}\n\n\terr = l.aliceLink.handleSwitchPacket(&htlcPacket{\n\t\tincomingHTLCID: uint64(htlcID),\n\t\thtlc:           htlc,\n\t})\n\tif err != nil {\n\t\tl.t.Fatal(err)\n\t}\n}\n\n// receiveHtlcAliceToBob pulls the next message from Alice's message stream,\n// asserts that it is an UpdateAddHTLC, then applies it to Bob's state machine.",
+      "length": 725,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveHtlcAliceToBob() {",
+      "content": "func (l *linkTestContext) receiveHtlcAliceToBob() {\n\tl.t.Helper()\n\n\tvar msg lnwire.Message\n\tselect {\n\tcase msg = <-l.aliceMsgs:\n\tcase <-time.After(15 * time.Second):\n\t\tl.t.Fatalf(\"did not received htlc from alice\")\n\t}\n\n\thtlcAdd, ok := msg.(*lnwire.UpdateAddHTLC)\n\tif !ok {\n\t\tl.t.Fatalf(\"expected UpdateAddHTLC, got %T\", msg)\n\t}\n\n\t_, err := l.bobChannel.ReceiveHTLC(htlcAdd)\n\tif err != nil {\n\t\tl.t.Fatalf(\"bob failed receiving htlc: %v\", err)\n\t}\n}\n\n// sendCommitSigBobToAlice makes Bob sign a new commitment and send it to\n// Alice, asserting that it signs expHtlcs number of HTLCs.",
+      "length": 508,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) sendCommitSigBobToAlice(expHtlcs int) {",
+      "content": "func (l *linkTestContext) sendCommitSigBobToAlice(expHtlcs int) {\n\tl.t.Helper()\n\n\tsig, htlcSigs, _, err := l.bobChannel.SignNextCommitment()\n\tif err != nil {\n\t\tl.t.Fatalf(\"error signing commitment: %v\", err)\n\t}\n\n\tcommitSig := &lnwire.CommitSig{\n\t\tCommitSig: sig,\n\t\tHtlcSigs:  htlcSigs,\n\t}\n\n\tif len(commitSig.HtlcSigs) != expHtlcs {\n\t\tl.t.Fatalf(\"Expected %d htlc sigs, got %d\", expHtlcs,\n\t\t\tlen(commitSig.HtlcSigs))\n\t}\n\n\tl.aliceLink.HandleChannelUpdate(commitSig)\n}\n\n// receiveRevAndAckAliceToBob waits for Alice to send a RevAndAck to Bob, then\n// hands this to Bob.",
+      "length": 480,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveRevAndAckAliceToBob() {",
+      "content": "func (l *linkTestContext) receiveRevAndAckAliceToBob() {\n\tl.t.Helper()\n\n\tvar msg lnwire.Message\n\tselect {\n\tcase msg = <-l.aliceMsgs:\n\tcase <-time.After(15 * time.Second):\n\t\tl.t.Fatalf(\"did not receive message\")\n\t}\n\n\trev, ok := msg.(*lnwire.RevokeAndAck)\n\tif !ok {\n\t\tl.t.Fatalf(\"expected RevokeAndAck, got %T\", msg)\n\t}\n\n\t_, _, _, _, err := l.bobChannel.ReceiveRevocation(rev)\n\tif err != nil {\n\t\tl.t.Fatalf(\"bob failed receiving revocation: %v\", err)\n\t}\n}\n\n// receiveCommitSigAliceToBob waits for Alice to send a CommitSig to Bob,\n// signing expHtlcs numbers of HTLCs, then hands this to Bob.",
+      "length": 512,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveCommitSigAliceToBob(expHtlcs int) {",
+      "content": "func (l *linkTestContext) receiveCommitSigAliceToBob(expHtlcs int) {\n\tl.t.Helper()\n\n\tcomSig := l.receiveCommitSigAlice(expHtlcs)\n\n\terr := l.bobChannel.ReceiveNewCommitment(\n\t\tcomSig.CommitSig, comSig.HtlcSigs,\n\t)\n\tif err != nil {\n\t\tl.t.Fatalf(\"bob failed receiving commitment: %v\", err)\n\t}\n}\n\n// receiveCommitSigAlice waits for Alice to send a CommitSig, signing expHtlcs\n// numbers of HTLCs.",
+      "length": 310,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveCommitSigAlice(expHtlcs int) *lnwire.CommitSig {",
+      "content": "func (l *linkTestContext) receiveCommitSigAlice(expHtlcs int) *lnwire.CommitSig {\n\tl.t.Helper()\n\n\tvar msg lnwire.Message\n\tselect {\n\tcase msg = <-l.aliceMsgs:\n\tcase <-time.After(15 * time.Second):\n\t\tl.t.Fatalf(\"did not receive message\")\n\t}\n\n\tcomSig, ok := msg.(*lnwire.CommitSig)\n\tif !ok {\n\t\tl.t.Fatalf(\"expected CommitSig, got %T\", msg)\n\t}\n\n\tif len(comSig.HtlcSigs) != expHtlcs {\n\t\tl.t.Fatalf(\"expected %d htlc sigs, got %d\", expHtlcs,\n\t\t\tlen(comSig.HtlcSigs))\n\t}\n\n\treturn comSig\n}\n\n// sendRevAndAckBobToAlice make Bob revoke his current commitment, then hand\n// the RevokeAndAck to Alice.",
+      "length": 484,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) sendRevAndAckBobToAlice() {",
+      "content": "func (l *linkTestContext) sendRevAndAckBobToAlice() {\n\tl.t.Helper()\n\n\trev, _, _, err := l.bobChannel.RevokeCurrentCommitment()\n\tif err != nil {\n\t\tl.t.Fatalf(\"unable to revoke commitment: %v\", err)\n\t}\n\n\tl.aliceLink.HandleChannelUpdate(rev)\n}\n\n// receiveSettleAliceToBob waits for Alice to send a HTLC settle message to\n// Bob, then hands this to Bob.",
+      "length": 284,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveSettleAliceToBob() {",
+      "content": "func (l *linkTestContext) receiveSettleAliceToBob() {\n\tl.t.Helper()\n\n\tvar msg lnwire.Message\n\tselect {\n\tcase msg = <-l.aliceMsgs:\n\tcase <-time.After(15 * time.Second):\n\t\tl.t.Fatalf(\"did not receive message\")\n\t}\n\n\tsettleMsg, ok := msg.(*lnwire.UpdateFulfillHTLC)\n\tif !ok {\n\t\tl.t.Fatalf(\"expected UpdateFulfillHTLC, got %T\", msg)\n\t}\n\n\terr := l.bobChannel.ReceiveHTLCSettle(settleMsg.PaymentPreimage,\n\t\tsettleMsg.ID)\n\tif err != nil {\n\t\tl.t.Fatalf(\"failed settling htlc: %v\", err)\n\t}\n}\n\n// sendSettleBobToAlice settles an HTLC on Bob's state machine, then sends an\n// UpdateFulfillHTLC message to Alice's upstream inbox.",
+      "length": 540,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) sendSettleBobToAlice(htlcID uint64,",
+      "content": "func (l *linkTestContext) sendSettleBobToAlice(htlcID uint64,\n\tpreimage lntypes.Preimage) {\n\n\tl.t.Helper()\n\n\terr := l.bobChannel.SettleHTLC(preimage, htlcID, nil, nil, nil)\n\tif err != nil {\n\t\tl.t.Fatalf(\"alice failed settling htlc id=%d hash=%x\",\n\t\t\thtlcID, sha256.Sum256(preimage[:]))\n\t}\n\n\tsettle := &lnwire.UpdateFulfillHTLC{\n\t\tID:              htlcID,\n\t\tPaymentPreimage: preimage,\n\t}\n\n\tl.aliceLink.HandleChannelUpdate(settle)\n}\n\n// receiveSettleAliceToBob waits for Alice to send a HTLC settle message to\n// Bob, then hands this to Bob.",
+      "length": 458,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) receiveFailAliceToBob() {",
+      "content": "func (l *linkTestContext) receiveFailAliceToBob() {\n\tl.t.Helper()\n\n\tvar msg lnwire.Message\n\tselect {\n\tcase msg = <-l.aliceMsgs:\n\tcase <-time.After(15 * time.Second):\n\t\tl.t.Fatalf(\"did not receive message\")\n\t}\n\n\tfailMsg, ok := msg.(*lnwire.UpdateFailHTLC)\n\tif !ok {\n\t\tl.t.Fatalf(\"expected UpdateFailHTLC, got %T\", msg)\n\t}\n\n\terr := l.bobChannel.ReceiveFailHTLC(failMsg.ID, failMsg.Reason)\n\tif err != nil {\n\t\tl.t.Fatalf(\"unable to apply received fail htlc: %v\", err)\n\t}\n}\n\n// assertNoMsgFromAlice asserts that Alice hasn't sent a message. Before\n// calling, make sure that Alice has had the opportunity to send the message.",
+      "length": 547,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *linkTestContext) assertNoMsgFromAlice(timeout time.Duration) {",
+      "content": "func (l *linkTestContext) assertNoMsgFromAlice(timeout time.Duration) {\n\tl.t.Helper()\n\n\tselect {\n\tcase msg := <-l.aliceMsgs:\n\t\tl.t.Fatalf(\"unexpected message from Alice: %v\", msg)\n\tcase <-time.After(timeout):\n\t}\n}\n",
+      "length": 134,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

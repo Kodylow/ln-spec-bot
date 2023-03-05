@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/gossip_timestamp_range.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type GossipTimestampRange struct {",
+      "content": "type GossipTimestampRange struct {\n\t// ChainHash denotes the chain that the sender wishes to restrict the\n\t// set of received announcements of.\n\tChainHash chainhash.Hash\n\n\t// FirstTimestamp is the timestamp of the earliest announcement message\n\t// that should be sent by the receiver.\n\tFirstTimestamp uint32\n\n\t// TimestampRange is the horizon beyond the FirstTimestamp that any\n\t// announcement messages should be sent for. The receiving node MUST\n\t// NOT send any announcements that have a timestamp greater than\n\t// FirstTimestamp + TimestampRange.\n\tTimestampRange uint32\n\n\t// ExtraData is the set of data that was appended to this message to\n\t// fill out the full maximum transport message size. These fields can\n\t// be used to specify optional data such as custom TLV fields.\n\tExtraData ExtraOpaqueData\n}\n\n// NewGossipTimestampRange creates a new empty GossipTimestampRange message.",
+      "length": 831,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func NewGossipTimestampRange() *GossipTimestampRange {",
+      "content": "func NewGossipTimestampRange() *GossipTimestampRange {\n\treturn &GossipTimestampRange{}\n}\n\n// A compile time check to ensure GossipTimestampRange implements the\n// lnwire.Message interface.\nvar _ Message = (*GossipTimestampRange)(nil)\n\n// Decode deserializes a serialized GossipTimestampRange message stored in the\n// passed io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 362,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *GossipTimestampRange) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (g *GossipTimestampRange) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\tg.ChainHash[:],\n\t\t&g.FirstTimestamp,\n\t\t&g.TimestampRange,\n\t\t&g.ExtraData,\n\t)\n}\n\n// Encode serializes the target GossipTimestampRange into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 270,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *GossipTimestampRange) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (g *GossipTimestampRange) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteBytes(w, g.ChainHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint32(w, g.FirstTimestamp); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint32(w, g.TimestampRange); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, g.ExtraData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 379,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func (g *GossipTimestampRange) MsgType() MessageType {",
+      "content": "func (g *GossipTimestampRange) MsgType() MessageType {\n\treturn MsgGossipTimestampRange\n}\n",
+      "length": 32,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/interface.go",
+  "package": "chanfitness",
+  "sections": [
+    {
+      "slug": "type peerMonitor interface {",
+      "content": "type peerMonitor interface {\n\t// event adds an online or offline event.\n\tonlineEvent(online bool)\n\n\t// addChannel adds a new channel.\n\taddChannel(channelPoint wire.OutPoint) error\n\n\t// removeChannel removes a channel.\n\tremoveChannel(channelPoint wire.OutPoint) error\n\n\t// channelCount returns the number of channels that we currently have\n\t// with the peer.\n\tchannelCount() int\n\n\t// channelUptime looks up a channel and returns the amount of time that\n\t// the channel has been monitored for and its uptime over this period.\n\tchannelUptime(channelPoint wire.OutPoint) (time.Duration,\n\t\ttime.Duration, error)\n\n\t// getFlapCount returns the peer's flap count and the timestamp that we\n\t// last recorded a flap, which may be nil if we have never recorded a\n\t// flap for this peer.\n\tgetFlapCount() (int, *time.Time)\n}\n",
+      "length": 760,
+      "tokens": 111,
+      "embedding": []
+    }
+  ]
+}

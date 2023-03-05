@@ -1,0 +1,139 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration4/range_index.go",
+  "package": "migration4",
+  "sections": [
+    {
+      "slug": "type rangeItem struct {",
+      "content": "type rangeItem struct {\n\tstart uint64\n\tend   uint64\n}\n\n// RangeIndexOption describes the signature of a functional option that can be\n// used to modify the behaviour of a RangeIndex.",
+      "length": 153,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type RangeIndexOption func(*RangeIndex)",
+      "content": "type RangeIndexOption func(*RangeIndex)\n\n// WithSerializeUint64Fn is a functional option that can be used to set the\n// function to be used to do the serialization of a uint64 into a byte slice.",
+      "length": 152,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func WithSerializeUint64Fn(fn func(uint64) ([]byte, error)) RangeIndexOption {",
+      "content": "func WithSerializeUint64Fn(fn func(uint64) ([]byte, error)) RangeIndexOption {\n\treturn func(index *RangeIndex) {\n\t\tindex.serializeUint64 = fn\n\t}\n}\n\n// RangeIndex can be used to keep track of which numbers have been added to a\n// set. It does so by keeping track of a sorted list of rangeItems. Each\n// rangeItem has a start and end value of a range where all values in-between\n// have been added to the set. It works well in situations where it is expected\n// numbers in the set are not sparse.",
+      "length": 406,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "type RangeIndex struct {",
+      "content": "type RangeIndex struct {\n\t// set is a sorted list of rangeItem.\n\tset []rangeItem\n\n\t// mu is used to ensure safe access to set.\n\tmu sync.Mutex\n\n\t// serializeUint64 is the function that can be used to convert a uint64\n\t// to a byte slice.\n\tserializeUint64 func(uint64) ([]byte, error)\n}\n\n// NewRangeIndex constructs a new RangeIndex. An initial set of ranges may be\n// passed to the function in the form of a map.",
+      "length": 374,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRangeIndex(ranges map[uint64]uint64,",
+      "content": "func NewRangeIndex(ranges map[uint64]uint64,\n\topts ...RangeIndexOption) (*RangeIndex, error) {\n\n\tindex := &RangeIndex{\n\t\tserializeUint64: defaultSerializeUint64,\n\t\tset:             make([]rangeItem, 0),\n\t}\n\n\t// Apply any functional options.\n\tfor _, o := range opts {\n\t\to(index)\n\t}\n\n\tfor s, e := range ranges {\n\t\tif err := index.addRange(s, e); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\treturn index, nil\n}\n\n// addRange can be used to add an entire new range to the set. This method\n// should only ever be called by NewRangeIndex to initialise the in-memory\n// structure and so the RangeIndex mutex is not held during this method.",
+      "length": 560,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) addRange(start, end uint64) error {",
+      "content": "func (a *RangeIndex) addRange(start, end uint64) error {\n\t// Check that the given range is valid.\n\tif start > end {\n\t\treturn fmt.Errorf(\"invalid range. Start height %d is larger \"+\n\t\t\t\"than end height %d\", start, end)\n\t}\n\n\t// min is a helper closure that will return the minimum of two uint64s.\n\tmin := func(a, b uint64) uint64 {\n\t\tif a < b {\n\t\t\treturn a\n\t\t}\n\n\t\treturn b\n\t}\n\n\t// max is a helper closure that will return the maximum of two uint64s.\n\tmax := func(a, b uint64) uint64 {\n\t\tif a > b {\n\t\t\treturn a\n\t\t}\n\n\t\treturn b\n\t}\n\n\t// Collect the ranges that fall before and after the new range along\n\t// with the start and end values of the new range.\n\tvar before, after []rangeItem\n\tfor _, x := range a.set {\n\t\t// If the new start value can't extend the current ranges end\n\t\t// value, then the two cannot be merged. The range is added to\n\t\t// the group of ranges that fall before the new range.\n\t\tif x.end+1 < start {\n\t\t\tbefore = append(before, x)\n\t\t\tcontinue\n\t\t}\n\n\t\t// If the current ranges start value does not follow on directly\n\t\t// from the new end value, then the two cannot be merged. The\n\t\t// range is added to the group of ranges that fall after the new\n\t\t// range.\n\t\tif end+1 < x.start {\n\t\t\tafter = append(after, x)\n\t\t\tcontinue\n\t\t}\n\n\t\t// Otherwise, there is an overlap and so the two can be merged.\n\t\tstart = min(start, x.start)\n\t\tend = max(end, x.end)\n\t}\n\n\t// Re-construct the range index set.\n\ta.set = append(append(before, rangeItem{\n\t\tstart: start,\n\t\tend:   end,\n\t}), after...)\n\n\treturn nil\n}\n\n// IsInIndex returns true if the given number is in the range set.",
+      "length": 1457,
+      "tokens": 281,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) IsInIndex(n uint64) bool {",
+      "content": "func (a *RangeIndex) IsInIndex(n uint64) bool {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\t_, isCovered := a.lowerBoundIndex(n)\n\n\treturn isCovered\n}\n\n// NumInSet returns the number of items covered by the range set.",
+      "length": 152,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) NumInSet() uint64 {",
+      "content": "func (a *RangeIndex) NumInSet() uint64 {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tvar numItems uint64\n\tfor _, r := range a.set {\n\t\tnumItems += r.end - r.start + 1\n\t}\n\n\treturn numItems\n}\n\n// MaxHeight returns the highest number covered in the range.",
+      "length": 191,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) MaxHeight() uint64 {",
+      "content": "func (a *RangeIndex) MaxHeight() uint64 {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tif len(a.set) == 0 {\n\t\treturn 0\n\t}\n\n\treturn a.set[len(a.set)-1].end\n}\n\n// GetAllRanges returns a copy of the range set in the form of a map.",
+      "length": 166,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) GetAllRanges() map[uint64]uint64 {",
+      "content": "func (a *RangeIndex) GetAllRanges() map[uint64]uint64 {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tcp := make(map[uint64]uint64, len(a.set))\n\tfor _, item := range a.set {\n\t\tcp[item.start] = item.end\n\t}\n\n\treturn cp\n}\n\n// lowerBoundIndex returns the index of the RangeIndex that is most appropriate\n// for the new value, n. In other words, it returns the index of the rangeItem\n// set of the range where the start value is the highest start value in the set\n// that is still lower than or equal to the given number, n. The returned\n// boolean is true if the given number is already covered in the RangeIndex.\n// A returned index of -1 indicates that no lower bound range exists in the set.\n// Since the most likely case is that the new number will just extend the\n// highest range, a check is first done to see if this is the case which will\n// make the methods' computational complexity O(1). Otherwise, a binary search\n// is done which brings the computational complexity to O(log N).",
+      "length": 901,
+      "tokens": 165,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) lowerBoundIndex(n uint64) (int, bool) {",
+      "content": "func (a *RangeIndex) lowerBoundIndex(n uint64) (int, bool) {\n\t// If the set is empty, then there is no such index and the value\n\t// definitely is not in the set.\n\tif len(a.set) == 0 {\n\t\treturn -1, false\n\t}\n\n\t// In most cases, the last index item will be the one we want. So just\n\t// do a quick check on that index first to avoid doing the binary\n\t// search.\n\tlastIndex := len(a.set) - 1\n\tlastRange := a.set[lastIndex]\n\tif lastRange.start <= n {\n\t\treturn lastIndex, lastRange.end >= n\n\t}\n\n\t// Otherwise, do a binary search to find the index of interest.\n\tvar (\n\t\tlow        = 0\n\t\thigh       = len(a.set) - 1\n\t\trangeIndex = -1\n\t)\n\tfor {\n\t\tmid := (low + high) / 2\n\t\tcurrentRange := a.set[mid]\n\n\t\tswitch {\n\t\tcase currentRange.start > n:\n\t\t\t// If the start of the range is greater than n, we can\n\t\t\t// completely cut out that entire part of the array.\n\t\t\thigh = mid\n\n\t\tcase currentRange.start < n:\n\t\t\t// If the range already includes the given height, we\n\t\t\t// can stop searching now.\n\t\t\tif currentRange.end >= n {\n\t\t\t\treturn mid, true\n\t\t\t}\n\n\t\t\t// If the start of the range is smaller than n, we can\n\t\t\t// store this as the new best index to return.\n\t\t\trangeIndex = mid\n\n\t\t\t// If low and mid are already equal, then increment low\n\t\t\t// by 1. Exit if this means that low is now greater than\n\t\t\t// high.\n\t\t\tif low == mid {\n\t\t\t\tlow = mid + 1\n\t\t\t\tif low > high {\n\t\t\t\t\treturn rangeIndex, false\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\tlow = mid\n\t\t\t}\n\n\t\t\tcontinue\n\n\t\tdefault:\n\t\t\t// If the height is equal to the start value of the\n\t\t\t// current range that mid is pointing to, then the\n\t\t\t// height is already covered.\n\t\t\treturn mid, true\n\t\t}\n\n\t\t// Exit if we have checked all the ranges.\n\t\tif low == high {\n\t\t\tbreak\n\t\t}\n\t}\n\n\treturn rangeIndex, false\n}\n\n// KVStore is an interface representing a key-value store.",
+      "length": 1648,
+      "tokens": 321,
+      "embedding": []
+    },
+    {
+      "slug": "type KVStore interface {",
+      "content": "type KVStore interface {\n\t// Put saves the specified key/value pair to the store. Keys that do not\n\t// already exist are added and keys that already exist are overwritten.\n\tPut(key, value []byte) error\n\n\t// Delete removes the specified key from the bucket. Deleting a key that\n\t// does not exist does not return an error.\n\tDelete(key []byte) error\n}\n\n// Add adds a single number to the range set. It first attempts to apply the\n// necessary changes to the passed KV store and then only if this succeeds, will\n// the changes be applied to the in-memory structure.",
+      "length": 526,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) Add(newHeight uint64, kv KVStore) error {",
+      "content": "func (a *RangeIndex) Add(newHeight uint64, kv KVStore) error {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\t// Compute the changes that will need to be applied to both the sorted\n\t// rangeItem array representation and the key-value store representation\n\t// of the range index.\n\tarrayChanges, kvStoreChanges := a.getChanges(newHeight)\n\n\t// First attempt to apply the KV store changes. Only if this succeeds\n\t// will we apply the changes to our in-memory range index structure.\n\terr := a.applyKVChanges(kv, kvStoreChanges)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Since the DB changes were successful, we can now commit the\n\t// changes to our in-memory representation of the range set.\n\ta.applyArrayChanges(arrayChanges)\n\n\treturn nil\n}\n\n// applyKVChanges applies the given set of kvChanges to a KV store. It is\n// assumed that a transaction is being held on the kv store so that if any\n// of the actions of the function fails, the changes will be reverted.",
+      "length": 855,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) applyKVChanges(kv KVStore, changes *kvChanges) error {",
+      "content": "func (a *RangeIndex) applyKVChanges(kv KVStore, changes *kvChanges) error {\n\t// Exit early if there are no changes to apply.\n\tif kv == nil || changes == nil {\n\t\treturn nil\n\t}\n\n\t// Check if any range pair needs to be deleted.\n\tif changes.deleteKVKey != nil {\n\t\tdel, err := a.serializeUint64(*changes.deleteKVKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif err := kv.Delete(del); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\tstart, err := a.serializeUint64(changes.key)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tend, err := a.serializeUint64(changes.value)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn kv.Put(start, end)\n}\n\n// applyArrayChanges applies the given arrayChanges to the in-memory RangeIndex\n// itself. This should only be done once the persisted kv store changes have\n// already been applied.",
+      "length": 675,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) applyArrayChanges(changes *arrayChanges) {",
+      "content": "func (a *RangeIndex) applyArrayChanges(changes *arrayChanges) {\n\tif changes == nil {\n\t\treturn\n\t}\n\n\tif changes.indexToDelete != nil {\n\t\ta.set = append(\n\t\t\ta.set[:*changes.indexToDelete],\n\t\t\ta.set[*changes.indexToDelete+1:]...,\n\t\t)\n\t}\n\n\tif changes.newIndex != nil {\n\t\tswitch {\n\t\tcase *changes.newIndex == 0:\n\t\t\ta.set = append([]rangeItem{{\n\t\t\t\tstart: changes.start,\n\t\t\t\tend:   changes.end,\n\t\t\t}}, a.set...)\n\n\t\tcase *changes.newIndex == len(a.set):\n\t\t\ta.set = append(a.set, rangeItem{\n\t\t\t\tstart: changes.start,\n\t\t\t\tend:   changes.end,\n\t\t\t})\n\n\t\tdefault:\n\t\t\ta.set = append(\n\t\t\t\ta.set[:*changes.newIndex+1],\n\t\t\t\ta.set[*changes.newIndex:]...,\n\t\t\t)\n\t\t\ta.set[*changes.newIndex] = rangeItem{\n\t\t\t\tstart: changes.start,\n\t\t\t\tend:   changes.end,\n\t\t\t}\n\t\t}\n\n\t\treturn\n\t}\n\n\tif changes.indexToEdit != nil {\n\t\ta.set[*changes.indexToEdit] = rangeItem{\n\t\t\tstart: changes.start,\n\t\t\tend:   changes.end,\n\t\t}\n\t}\n}\n\n// arrayChanges encompasses the diff to apply to the sorted rangeItem array\n// representation of a range index. Such a diff will either include adding a\n// new range or editing an existing range. If an existing range is edited, then\n// the diff might also include deleting an index (this will be the case if the\n// editing of the one range results in the merge of another range).",
+      "length": 1153,
+      "tokens": 155,
+      "embedding": []
+    },
+    {
+      "slug": "type arrayChanges struct {",
+      "content": "type arrayChanges struct {\n\tstart uint64\n\tend   uint64\n\n\t// newIndex, if set, is the index of the in-memory range array where a\n\t// new range, [start:end], should be added. newIndex should never be\n\t// set at the same time as indexToEdit or indexToDelete.\n\tnewIndex *int\n\n\t// indexToDelete, if set, is the index of the sorted rangeItem array\n\t// that should be deleted. This should be applied before reading the\n\t// index value of indexToEdit. This should not be set at the same time\n\t// as newIndex.\n\tindexToDelete *int\n\n\t// indexToEdit is the index of the in-memory range array that should be\n\t// edited. The range at this index will be changed to [start:end]. This\n\t// should only be read after indexToDelete index has been deleted.\n\tindexToEdit *int\n}\n\n// kvChanges encompasses the diff to apply to a KV-store representation of a\n// range index. A kv-store diff for the addition of a single number to the range\n// index will include either a brand new key-value pair or the altering of the\n// value of an existing key. Optionally, the diff may also include the deletion\n// of an existing key. A deletion will be required if the addition of the new\n// number results in the merge of two ranges.",
+      "length": 1145,
+      "tokens": 207,
+      "embedding": []
+    },
+    {
+      "slug": "type kvChanges struct {",
+      "content": "type kvChanges struct {\n\tkey   uint64\n\tvalue uint64\n\n\t// deleteKVKey, if set, is the key of the kv store representation that\n\t// should be deleted.\n\tdeleteKVKey *uint64\n}\n\n// getChanges will calculate and return the changes that need to be applied to\n// both the sorted-rangeItem-array representation and the key-value store\n// representation of the range index.",
+      "length": 328,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *RangeIndex) getChanges(n uint64) (*arrayChanges, *kvChanges) {",
+      "content": "func (a *RangeIndex) getChanges(n uint64) (*arrayChanges, *kvChanges) {\n\t// If the set is empty then a new range item is added.\n\tif len(a.set) == 0 {\n\t\t// For the array representation, a new range [n:n] is added to\n\t\t// the first index of the array.\n\t\tfirstIndex := 0\n\t\tac := &arrayChanges{\n\t\t\tnewIndex: &firstIndex,\n\t\t\tstart:    n,\n\t\t\tend:      n,\n\t\t}\n\n\t\t// For the KV representation, a new [n:n] pair is added.\n\t\tkvc := &kvChanges{\n\t\t\tkey:   n,\n\t\t\tvalue: n,\n\t\t}\n\n\t\treturn ac, kvc\n\t}\n\n\t// Find the index of the lower bound range to the new number.\n\tindexOfRangeBelow, alreadyCovered := a.lowerBoundIndex(n)\n\n\tswitch {\n\t// The new number is already covered by the range index. No changes are\n\t// required.\n\tcase alreadyCovered:\n\t\treturn nil, nil\n\n\t// No lower bound index exists.\n\tcase indexOfRangeBelow < 0:\n\t\t// Check if the very first range can be merged into this new\n\t\t// one.\n\t\tif n+1 == a.set[0].start {\n\t\t\t// If so, the two ranges can be merged and so the start\n\t\t\t// value of the range is n and the end value is the end\n\t\t\t// of the existing first range.\n\t\t\tstart := n\n\t\t\tend := a.set[0].end\n\n\t\t\t// For the array representation, we can just edit the\n\t\t\t// first entry of the array\n\t\t\teditIndex := 0\n\t\t\tac := &arrayChanges{\n\t\t\t\tindexToEdit: &editIndex,\n\t\t\t\tstart:       start,\n\t\t\t\tend:         end,\n\t\t\t}\n\n\t\t\t// For the KV store representation, we add a new kv pair\n\t\t\t// and delete the range with the key equal to the start\n\t\t\t// value of the range we are merging.\n\t\t\tkvKeyToDelete := a.set[0].start\n\t\t\tkvc := &kvChanges{\n\t\t\t\tkey:         start,\n\t\t\t\tvalue:       end,\n\t\t\t\tdeleteKVKey: &kvKeyToDelete,\n\t\t\t}\n\n\t\t\treturn ac, kvc\n\t\t}\n\n\t\t// Otherwise, we add a new index.\n\n\t\t// For the array representation, a new range [n:n] is added to\n\t\t// the first index of the array.\n\t\tnewIndex := 0\n\t\tac := &arrayChanges{\n\t\t\tnewIndex: &newIndex,\n\t\t\tstart:    n,\n\t\t\tend:      n,\n\t\t}\n\n\t\t// For the KV representation, a new [n:n] pair is added.\n\t\tkvc := &kvChanges{\n\t\t\tkey:   n,\n\t\t\tvalue: n,\n\t\t}\n\n\t\treturn ac, kvc\n\n\t// A lower range does exist, and it can be extended to include this new\n\t// number.\n\tcase a.set[indexOfRangeBelow].end+1 == n:\n\t\tstart := a.set[indexOfRangeBelow].start\n\t\tend := n\n\t\tindexToChange := indexOfRangeBelow\n\n\t\t// If there are no intervals above this one or if there are, but\n\t\t// they can't be merged into this one then we just need to edit\n\t\t// this interval.\n\t\tif indexOfRangeBelow == len(a.set)-1 ||\n\t\t\ta.set[indexOfRangeBelow+1].start != n+1 {\n\n\t\t\t// For the array representation, we just edit the index.\n\t\t\tac := &arrayChanges{\n\t\t\t\tindexToEdit: &indexToChange,\n\t\t\t\tstart:       start,\n\t\t\t\tend:         end,\n\t\t\t}\n\n\t\t\t// For the key-value representation, we just overwrite\n\t\t\t// the end value at the existing start key.\n\t\t\tkvc := &kvChanges{\n\t\t\t\tkey:   start,\n\t\t\t\tvalue: end,\n\t\t\t}\n\n\t\t\treturn ac, kvc\n\t\t}\n\n\t\t// There is a range above this one that we need to merge into\n\t\t// this one.\n\t\tdelIndex := indexOfRangeBelow + 1\n\t\tend = a.set[delIndex].end\n\n\t\t// For the array representation, we delete the range above this\n\t\t// one and edit this range to include the end value of the range\n\t\t// above.\n\t\tac := &arrayChanges{\n\t\t\tindexToDelete: &delIndex,\n\t\t\tindexToEdit:   &indexToChange,\n\t\t\tstart:         start,\n\t\t\tend:           end,\n\t\t}\n\n\t\t// For the kv representation, we tweak the end value of an\n\t\t// existing key and delete the key of the range we are deleting.\n\t\tdeleteKey := a.set[delIndex].start\n\t\tkvc := &kvChanges{\n\t\t\tkey:         start,\n\t\t\tvalue:       end,\n\t\t\tdeleteKVKey: &deleteKey,\n\t\t}\n\n\t\treturn ac, kvc\n\n\t// A lower range does exist, but it can't be extended to include this\n\t// new number, and so we need to add a new range after the lower bound\n\t// range.\n\tdefault:\n\t\tnewIndex := indexOfRangeBelow + 1\n\n\t\t// If there are no ranges above this new one or if there are,\n\t\t// but they can't be merged into this new one, then we can just\n\t\t// add the new one as is.\n\t\tif newIndex == len(a.set) || a.set[newIndex].start != n+1 {\n\t\t\tac := &arrayChanges{\n\t\t\t\tnewIndex: &newIndex,\n\t\t\t\tstart:    n,\n\t\t\t\tend:      n,\n\t\t\t}\n\n\t\t\tkvc := &kvChanges{\n\t\t\t\tkey:   n,\n\t\t\t\tvalue: n,\n\t\t\t}\n\n\t\t\treturn ac, kvc\n\t\t}\n\n\t\t// Else, we merge the above index.\n\t\tstart := n\n\t\tend := a.set[newIndex].end\n\t\ttoEdit := newIndex\n\n\t\t// For the array representation, we edit the range above to\n\t\t// include the new start value.\n\t\tac := &arrayChanges{\n\t\t\tindexToEdit: &toEdit,\n\t\t\tstart:       start,\n\t\t\tend:         end,\n\t\t}\n\n\t\t// For the kv representation, we insert the new start-end key\n\t\t// value pair and delete the key using the old start value.\n\t\tdelKey := a.set[newIndex].start\n\t\tkvc := &kvChanges{\n\t\t\tkey:         start,\n\t\t\tvalue:       end,\n\t\t\tdeleteKVKey: &delKey,\n\t\t}\n\n\t\treturn ac, kvc\n\t}\n}\n",
+      "length": 4434,
+      "tokens": 733,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultSerializeUint64(i uint64) ([]byte, error) {",
+      "content": "func defaultSerializeUint64(i uint64) ([]byte, error) {\n\tvar b [8]byte\n\tbyteOrder.PutUint64(b[:], i)\n\treturn b[:], nil\n}\n",
+      "length": 61,
+      "tokens": 9,
+      "embedding": []
+    }
+  ]
+}

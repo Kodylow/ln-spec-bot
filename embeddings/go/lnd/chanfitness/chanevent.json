@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/chanevent.go",
+  "package": "chanfitness",
+  "sections": [
+    {
+      "slug": "type eventType int",
+      "content": "type eventType int\n\nconst (\n\tpeerOnlineEvent eventType = iota\n\tpeerOfflineEvent\n)\n\n// String provides string representations of channel events.",
+      "length": 118,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (e eventType) String() string {",
+      "content": "func (e eventType) String() string {\n\tswitch e {\n\tcase peerOnlineEvent:\n\t\treturn \"peer_online\"\n\n\tcase peerOfflineEvent:\n\t\treturn \"peer_offline\"\n\t}\n\n\treturn \"unknown\"\n}\n",
+      "length": 121,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "type event struct {",
+      "content": "type event struct {\n\ttimestamp time.Time\n\teventType eventType\n}\n\n// peerLog tracks events for a peer and its channels. If we currently have no\n// channels with the peer, it will simply track its current online state. If we\n// do have channels open with the peer, it will track the peer's online and\n// offline events so that we can calculate uptime for our channels. A single\n// event log is used for these online and offline events, and uptime for a\n// channel is calculated by examining a subsection of this log.",
+      "length": 485,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "type peerLog struct {",
+      "content": "type peerLog struct {\n\t// online stores whether the peer is currently online.\n\tonline bool\n\n\t// onlineEvents is a log of timestamped events observed for the peer\n\t// that we have committed to allocating memory to.\n\tonlineEvents []*event\n\n\t// stagedEvent represents an event that is pending addition to the\n\t// events list. It has not yet been added because we rate limit the\n\t// frequency that we store events at. We need to store this value\n\t// in the log (rather than just ignore events) so that we can flush the\n\t// aggregate outcome to our event log once the rate limiting period has\n\t// ended.\n\t//\n\t// Take the following example:\n\t// - Peer online event recorded\n\t// - Peer offline event, not recorded due to rate limit\n\t// - No more events, we incorrectly believe our peer to be online\n\t// Instead of skipping events, we stage the most recent event during the\n\t// rate limited period so that we know what happened (on aggregate)\n\t// while we were rate limiting events.\n\t//\n\t// Note that we currently only store offline/online events so we can\n\t// use this field to track our online state. With the addition of other\n\t// event types, we need to only stage online/offline events, or split\n\t// them out.\n\tstagedEvent *event\n\n\t// flapCount is the number of times this peer has been observed as\n\t// going offline.\n\tflapCount int\n\n\t// lastFlap is the timestamp of the last flap we recorded for the peer.\n\t// This value will be nil if we have never recorded a flap for the peer.\n\tlastFlap *time.Time\n\n\t// clock allows creation of deterministic unit tests.\n\tclock clock.Clock\n\n\t// channels contains a set of currently open channels. Channels will be\n\t// added and removed from this map as they are opened and closed.\n\tchannels map[wire.OutPoint]*channelInfo\n}\n\n// newPeerLog creates a log for a peer, taking its historical flap count and\n// last flap time as parameters. These values may be zero/nil if we have no\n// record of historical flap count for the peer.",
+      "length": 1892,
+      "tokens": 340,
+      "embedding": []
+    },
+    {
+      "slug": "func newPeerLog(clock clock.Clock, flapCount int,",
+      "content": "func newPeerLog(clock clock.Clock, flapCount int,\n\tlastFlap *time.Time) *peerLog {\n\n\treturn &peerLog{\n\t\tclock:     clock,\n\t\tflapCount: flapCount,\n\t\tlastFlap:  lastFlap,\n\t\tchannels:  make(map[wire.OutPoint]*channelInfo),\n\t}\n}\n\n// channelInfo contains information about a channel.",
+      "length": 218,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type channelInfo struct {",
+      "content": "type channelInfo struct {\n\t// openedAt tracks the first time this channel was seen. This is not\n\t// necessarily the time that it confirmed on chain because channel\n\t// events are not persisted at present.\n\topenedAt time.Time\n}\n",
+      "length": 196,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func newChannelInfo(openedAt time.Time) *channelInfo {",
+      "content": "func newChannelInfo(openedAt time.Time) *channelInfo {\n\treturn &channelInfo{\n\t\topenedAt: openedAt,\n\t}\n}\n\n// onlineEvent records a peer online or offline event in the log and increments\n// the peer's flap count.",
+      "length": 149,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) onlineEvent(online bool) {",
+      "content": "func (p *peerLog) onlineEvent(online bool) {\n\teventTime := p.clock.Now()\n\n\t// If we have a non-nil last flap time, potentially apply a cooldown\n\t// factor to the peer's flap count before we rate limit it. This allows\n\t// us to decrease the penalty for historical flaps over time, provided\n\t// the peer has not flapped for a while.\n\tif p.lastFlap != nil {\n\t\tp.flapCount = cooldownFlapCount(\n\t\t\tp.clock.Now(), p.flapCount, *p.lastFlap,\n\t\t)\n\t}\n\n\t// Record flap count information and online state regardless of whether\n\t// we have any channels open with this peer.\n\tp.flapCount++\n\tp.lastFlap = &eventTime\n\tp.online = online\n\n\t// If we have no channels currently open with the peer, we do not want\n\t// to commit resources to tracking their online state beyond a simple\n\t// online boolean, so we exit early.\n\tif p.channelCount() == 0 {\n\t\treturn\n\t}\n\n\tp.addEvent(online, eventTime)\n}\n\n// addEvent records an online or offline event in our event log. and increments\n// the peer's flap count.",
+      "length": 908,
+      "tokens": 154,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) addEvent(online bool, time time.Time) {",
+      "content": "func (p *peerLog) addEvent(online bool, time time.Time) {\n\teventType := peerOnlineEvent\n\tif !online {\n\t\teventType = peerOfflineEvent\n\t}\n\n\tevent := &event{\n\t\ttimestamp: time,\n\t\teventType: eventType,\n\t}\n\n\t// If we have no staged events, we can just stage this event and return.\n\tif p.stagedEvent == nil {\n\t\tp.stagedEvent = event\n\t\treturn\n\t}\n\n\t// We get the amount of time we require between events according to\n\t// peer flap count.\n\taggregation := getRateLimit(p.flapCount)\n\tnextRecordTime := p.stagedEvent.timestamp.Add(aggregation)\n\tflushEvent := nextRecordTime.Before(event.timestamp)\n\n\t// If enough time has passed since our last staged event, we add our\n\t// event to our in-memory list.\n\tif flushEvent {\n\t\tp.onlineEvents = append(p.onlineEvents, p.stagedEvent)\n\t}\n\n\t// Finally, we replace our staged event with the new event we received.\n\tp.stagedEvent = event\n}\n\n// addChannel adds a channel to our log. If we have not tracked any online\n// events for our peer yet, we create one with our peer's current online state\n// so that we know the state that the peer had at channel start, which is\n// required to calculate uptime over the channel's lifetime.",
+      "length": 1062,
+      "tokens": 169,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) addChannel(channelPoint wire.OutPoint) error {",
+      "content": "func (p *peerLog) addChannel(channelPoint wire.OutPoint) error {\n\t_, ok := p.channels[channelPoint]\n\tif ok {\n\t\treturn fmt.Errorf(\"channel: %v already present\", channelPoint)\n\t}\n\n\topenTime := p.clock.Now()\n\tp.channels[channelPoint] = newChannelInfo(openTime)\n\n\t// If we do not have any online events tracked for our peer (which is\n\t// the case when we have no other channels open with the peer), we add\n\t// an event with the peer's current online state so that we know that\n\t// starting state for this peer when a channel was connected (which\n\t// allows us to calculate uptime over the lifetime of the channel).\n\tif len(p.onlineEvents) == 0 {\n\t\tp.addEvent(p.online, openTime)\n\t}\n\n\treturn nil\n}\n\n// removeChannel removes a channel from our log. If we have no more channels\n// with the peer after removing this one, we clear our list of events.",
+      "length": 755,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) removeChannel(channelPoint wire.OutPoint) error {",
+      "content": "func (p *peerLog) removeChannel(channelPoint wire.OutPoint) error {\n\t_, ok := p.channels[channelPoint]\n\tif !ok {\n\t\treturn fmt.Errorf(\"channel: %v not present\", channelPoint)\n\t}\n\n\tdelete(p.channels, channelPoint)\n\n\t// If we have no more channels in our event log, we can discard all of\n\t// our online events in memory, since we don't need them anymore.\n\t// TODO(carla): this could be done on a per channel basis.\n\tif p.channelCount() == 0 {\n\t\tp.onlineEvents = nil\n\t\tp.stagedEvent = nil\n\t}\n\n\treturn nil\n}\n\n// channelCount returns the number of channels that we currently have\n// with the peer.",
+      "length": 504,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) channelCount() int {",
+      "content": "func (p *peerLog) channelCount() int {\n\treturn len(p.channels)\n}\n\n// channelUptime looks up a channel and returns the amount of time that the\n// channel has been monitored for and its uptime over this period.",
+      "length": 165,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) channelUptime(channelPoint wire.OutPoint) (time.Duration,",
+      "content": "func (p *peerLog) channelUptime(channelPoint wire.OutPoint) (time.Duration,\n\ttime.Duration, error) {\n\n\tchannel, ok := p.channels[channelPoint]\n\tif !ok {\n\t\treturn 0, 0, ErrChannelNotFound\n\t}\n\n\tnow := p.clock.Now()\n\n\tuptime, err := p.uptime(channel.openedAt, now)\n\tif err != nil {\n\t\treturn 0, 0, err\n\t}\n\n\treturn now.Sub(channel.openedAt), uptime, nil\n}\n\n// getFlapCount returns the peer's flap count and the timestamp that we last\n// recorded a flap.",
+      "length": 354,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) getFlapCount() (int, *time.Time) {",
+      "content": "func (p *peerLog) getFlapCount() (int, *time.Time) {\n\treturn p.flapCount, p.lastFlap\n}\n\n// listEvents returns all of the events that our event log has tracked,\n// including events that are staged for addition to our set of events but have\n// not yet been committed to (because we rate limit and store only the aggregate\n// outcome over a period).",
+      "length": 287,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) listEvents() []*event {",
+      "content": "func (p *peerLog) listEvents() []*event {\n\tif p.stagedEvent == nil {\n\t\treturn p.onlineEvents\n\t}\n\n\treturn append(p.onlineEvents, p.stagedEvent)\n}\n\n// onlinePeriod represents a period of time over which a peer was online.",
+      "length": 170,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "type onlinePeriod struct {",
+      "content": "type onlinePeriod struct {\n\tstart, end time.Time\n}\n\n// getOnlinePeriods returns a list of all the periods that the event log has\n// recorded the remote peer as being online. In the unexpected case where there\n// are no events, the function returns early. Online periods are defined as a\n// peer online event which is terminated by a peer offline event. If the event\n// log ends on a peer online event, it appends a final period which is\n// calculated until the present. This function expects the event log provided\n// to be ordered by ascending timestamp, and can tolerate multiple consecutive\n// online or offline events.",
+      "length": 585,
+      "tokens": 105,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) getOnlinePeriods() []*onlinePeriod {",
+      "content": "func (p *peerLog) getOnlinePeriods() []*onlinePeriod {\n\tevents := p.listEvents()\n\n\t// Return early if there are no events, there are no online periods.\n\tif len(events) == 0 {\n\t\treturn nil\n\t}\n\n\tvar (\n\t\t// lastEvent tracks the last event that we had that was of\n\t\t// a different type to our own. It is used to determine the\n\t\t// start time of our online periods when we experience an\n\t\t// offline event, and to track our last recorded state.\n\t\tlastEvent     *event\n\t\tonlinePeriods []*onlinePeriod\n\t)\n\n\t// Loop through all events to build a list of periods that the peer was\n\t// online. Online periods are added when they are terminated with a peer\n\t// offline event. If the log ends on an online event, the period between\n\t// the online event and the present is not tracked. The type of the most\n\t// recent event is tracked using the offline bool so that we can add a\n\t// final online period if necessary.\n\tfor _, event := range events {\n\t\tswitch event.eventType {\n\t\tcase peerOnlineEvent:\n\t\t\t// If our previous event is nil, we just set it and\n\t\t\t// break out of the switch.\n\t\t\tif lastEvent == nil {\n\t\t\t\tlastEvent = event\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\t// If our previous event was an offline event, we update\n\t\t\t// it to this event. We do not do this if it was an\n\t\t\t// online event because duplicate online events would\n\t\t\t// progress our online timestamp forward (rather than\n\t\t\t// keep it at our earliest online event timestamp).\n\t\t\tif lastEvent.eventType == peerOfflineEvent {\n\t\t\t\tlastEvent = event\n\t\t\t}\n\n\t\tcase peerOfflineEvent:\n\t\t\t// If our previous event is nil, we just set it and\n\t\t\t// break out of the switch since we cannot record an\n\t\t\t// online period from this single event.\n\t\t\tif lastEvent == nil {\n\t\t\t\tlastEvent = event\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\t// If the last event we saw was an online event, we\n\t\t\t// add an online period to our set and progress our\n\t\t\t// previous event to this offline event. We do not\n\t\t\t// do this if we have had duplicate offline events\n\t\t\t// because we would be tracking the most recent offline\n\t\t\t// event (rather than keep it at our earliest offline\n\t\t\t// event timestamp).\n\t\t\tif lastEvent.eventType == peerOnlineEvent {\n\t\t\t\tonlinePeriods = append(\n\t\t\t\t\tonlinePeriods, &onlinePeriod{\n\t\t\t\t\t\tstart: lastEvent.timestamp,\n\t\t\t\t\t\tend:   event.timestamp,\n\t\t\t\t\t},\n\t\t\t\t)\n\n\t\t\t\tlastEvent = event\n\t\t\t}\n\t\t}\n\t}\n\n\t// If the last event was an peer offline event, we do not need to\n\t// calculate a final online period and can return online periods as is.\n\tif lastEvent.eventType == peerOfflineEvent {\n\t\treturn onlinePeriods\n\t}\n\n\t// The log ended on an online event, so we need to add a final online\n\t// period which terminates at the present.\n\tfinalEvent := &onlinePeriod{\n\t\tstart: lastEvent.timestamp,\n\t\tend:   p.clock.Now(),\n\t}\n\n\t// Add the final online period to the set and return.\n\treturn append(onlinePeriods, finalEvent)\n}\n\n// uptime calculates the total uptime we have recorded for a peer over the\n// inclusive range specified. An error is returned if the end of the range is\n// before the start or a zero end time is returned.",
+      "length": 2897,
+      "tokens": 506,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *peerLog) uptime(start, end time.Time) (time.Duration, error) {",
+      "content": "func (p *peerLog) uptime(start, end time.Time) (time.Duration, error) {\n\t// Error if we are provided with an invalid range to calculate uptime\n\t// for.\n\tif end.Before(start) {\n\t\treturn 0, fmt.Errorf(\"end time: %v before start time: %v\",\n\t\t\tend, start)\n\t}\n\tif end.IsZero() {\n\t\treturn 0, fmt.Errorf(\"zero end time\")\n\t}\n\n\tvar uptime time.Duration\n\n\tfor _, p := range p.getOnlinePeriods() {\n\t\t// The online period ends before the range we're looking at, so\n\t\t// we can skip over it.\n\t\tif p.end.Before(start) {\n\t\t\tcontinue\n\t\t}\n\t\t// The online period starts after the range we're looking at, so\n\t\t// can stop calculating uptime.\n\t\tif p.start.After(end) {\n\t\t\tbreak\n\t\t}\n\n\t\t// If the online period starts before our range, shift the start\n\t\t// time up so that we only calculate uptime from the start of\n\t\t// our range.\n\t\tif p.start.Before(start) {\n\t\t\tp.start = start\n\t\t}\n\n\t\t// If the online period ends after our range, shift the end\n\t\t// time forward so that we only calculate uptime until the end\n\t\t// of the range.\n\t\tif p.end.After(end) {\n\t\t\tp.end = end\n\t\t}\n\n\t\tuptime += p.end.Sub(p.start)\n\t}\n\n\treturn uptime, nil\n}\n",
+      "length": 995,
+      "tokens": 172,
+      "embedding": []
+    }
+  ]
+}

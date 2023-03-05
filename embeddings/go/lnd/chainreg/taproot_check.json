@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/chainreg/taproot_check.go",
+  "package": "chainreg",
+  "sections": [
+    {
+      "slug": "func backendSupportsTaproot(rpc *rpcclient.Client) bool {",
+      "content": "func backendSupportsTaproot(rpc *rpcclient.Client) bool {\n\t// First, we'll try to access the normal getblockchaininfo call.\n\tchainInfo, err := rpc.GetBlockChainInfo()\n\tif err == nil {\n\t\t// If this call worked, then we'll check that the taproot\n\t\t// deployment is defined.\n\t\tswitch {\n\t\t// Bitcoind versions before 0.19 and also btcd use the\n\t\t// SoftForks fields.\n\t\tcase chainInfo.SoftForks != nil:\n\t\t\t_, ok := chainInfo.SoftForks.Bip9SoftForks[\"taproot\"]\n\t\t\tif ok {\n\t\t\t\treturn ok\n\t\t\t}\n\n\t\t// Bitcoind versions after 0.19 will use the UnifiedSoftForks\n\t\t// field that factors in the set of \"buried\" soft forks.\n\t\tcase chainInfo.UnifiedSoftForks != nil:\n\t\t\t_, ok := chainInfo.UnifiedSoftForks.SoftForks[\"taproot\"]\n\t\t\tif ok {\n\t\t\t\treturn ok\n\t\t\t}\n\t\t}\n\t}\n\n\t// The user might be running a newer version of bitcoind that doesn't\n\t// implement the getblockchaininfo call any longer, so we'll fall back\n\t// here.\n\t//\n\t// Alternatively, the fork wasn't specified, but the user might be\n\t// running a newer version of bitcoind that still has the\n\t// getblockchaininfo call, but doesn't populate the data, so we'll hit\n\t// the new getdeploymentinfo call.\n\tresp, err := rpc.RawRequest(\"getdeploymentinfo\", nil)\n\tif err != nil {\n\t\tlog.Warnf(\"unable to make getdeploymentinfo request: %v\", err)\n\t\treturn false\n\t}\n\n\tinfo := struct {\n\t\tDeployments map[string]struct {\n\t\t\tType   string `json:\"type\"`\n\t\t\tActive bool   `json:\"active\"`\n\t\t\tHeight int32  `json:\"height\"`\n\t\t} `json:\"deployments\"`\n\t}{}\n\tif err := json.Unmarshal(resp, &info); err != nil {\n\t\tlog.Warnf(\"unable to decode getdeploymentinfo resp: %v\", err)\n\t\treturn false\n\t}\n\n\t_, ok := info.Deployments[\"taproot\"]\n\treturn ok\n}\n",
+      "length": 1552,
+      "tokens": 229,
+      "embedding": []
+    }
+  ]
+}

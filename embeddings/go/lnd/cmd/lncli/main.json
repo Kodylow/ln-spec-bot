@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/main.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "func fatal(err error) {",
+      "content": "func fatal(err error) {\n\tfmt.Fprintf(os.Stderr, \"[lncli] %v\\n\", err)\n\tos.Exit(1)\n}\n",
+      "length": 56,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func getWalletUnlockerClient(ctx *cli.Context) (lnrpc.WalletUnlockerClient, func()) {",
+      "content": "func getWalletUnlockerClient(ctx *cli.Context) (lnrpc.WalletUnlockerClient, func()) {\n\tconn := getClientConn(ctx, true)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn lnrpc.NewWalletUnlockerClient(conn), cleanUp\n}\n",
+      "length": 122,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func getStateServiceClient(ctx *cli.Context) (lnrpc.StateClient, func()) {",
+      "content": "func getStateServiceClient(ctx *cli.Context) (lnrpc.StateClient, func()) {\n\tconn := getClientConn(ctx, true)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn lnrpc.NewStateClient(conn), cleanUp\n}\n",
+      "length": 113,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func getClient(ctx *cli.Context) (lnrpc.LightningClient, func()) {",
+      "content": "func getClient(ctx *cli.Context) (lnrpc.LightningClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn lnrpc.NewLightningClient(conn), cleanUp\n}\n",
+      "length": 118,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func getClientConn(ctx *cli.Context, skipMacaroons bool) *grpc.ClientConn {",
+      "content": "func getClientConn(ctx *cli.Context, skipMacaroons bool) *grpc.ClientConn {\n\t// First, we'll get the selected stored profile or an ephemeral one\n\t// created from the global options in the CLI context.\n\tprofile, err := getGlobalOptions(ctx, skipMacaroons)\n\tif err != nil {\n\t\tfatal(fmt.Errorf(\"could not load global options: %v\", err))\n\t}\n\n\t// Create a dial options array.\n\topts := []grpc.DialOption{\n\t\tgrpc.WithUnaryInterceptor(\n\t\t\taddMetadataUnaryInterceptor(profile.Metadata),\n\t\t),\n\t\tgrpc.WithStreamInterceptor(\n\t\t\taddMetaDataStreamInterceptor(profile.Metadata),\n\t\t),\n\t}\n\n\tif profile.Insecure {\n\t\topts = append(opts, grpc.WithInsecure())\n\t} else {\n\t\t// Load the specified TLS certificate.\n\t\tcertPool, err := profile.cert()\n\t\tif err != nil {\n\t\t\tfatal(fmt.Errorf(\"could not create cert pool: %v\", err))\n\t\t}\n\n\t\t// Build transport credentials from the certificate pool. If\n\t\t// there is no certificate pool, we expect the server to use a\n\t\t// non-self-signed certificate such as a certificate obtained\n\t\t// from Let's Encrypt.\n\t\tvar creds credentials.TransportCredentials\n\t\tif certPool != nil {\n\t\t\tcreds = credentials.NewClientTLSFromCert(certPool, \"\")\n\t\t} else {\n\t\t\t// Fallback to the system pool. Using an empty tls\n\t\t\t// config is an alternative to x509.SystemCertPool().\n\t\t\t// That call is not supported on Windows.\n\t\t\tcreds = credentials.NewTLS(&tls.Config{})\n\t\t}\n\n\t\topts = append(opts, grpc.WithTransportCredentials(creds))\n\t}\n\n\t// Only process macaroon credentials if --no-macaroons isn't set and\n\t// if we're not skipping macaroon processing.\n\tif !profile.NoMacaroons && !skipMacaroons {\n\t\t// Find out which macaroon to load.\n\t\tmacName := profile.Macaroons.Default\n\t\tif ctx.GlobalIsSet(\"macfromjar\") {\n\t\t\tmacName = ctx.GlobalString(\"macfromjar\")\n\t\t}\n\t\tvar macEntry *macaroonEntry\n\t\tfor _, entry := range profile.Macaroons.Jar {\n\t\t\tif entry.Name == macName {\n\t\t\t\tmacEntry = entry\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\t\tif macEntry == nil {\n\t\t\tfatal(fmt.Errorf(\"macaroon with name '%s' not found \"+\n\t\t\t\t\"in profile\", macName))\n\t\t}\n\n\t\t// Get and possibly decrypt the specified macaroon.\n\t\t//\n\t\t// TODO(guggero): Make it possible to cache the password so we\n\t\t// don't need to ask for it every time.\n\t\tmac, err := macEntry.loadMacaroon(readPassword)\n\t\tif err != nil {\n\t\t\tfatal(fmt.Errorf(\"could not load macaroon: %v\", err))\n\t\t}\n\n\t\tmacConstraints := []macaroons.Constraint{\n\t\t\t// We add a time-based constraint to prevent replay of\n\t\t\t// the macaroon. It's good for 60 seconds by default to\n\t\t\t// make up for any discrepancy between client and server\n\t\t\t// clocks, but leaking the macaroon before it becomes\n\t\t\t// invalid makes it possible for an attacker to reuse\n\t\t\t// the macaroon. In addition, the validity time of the\n\t\t\t// macaroon is extended by the time the server clock is\n\t\t\t// behind the client clock, or shortened by the time the\n\t\t\t// server clock is ahead of the client clock (or invalid\n\t\t\t// altogether if, in the latter case, this time is more\n\t\t\t// than 60 seconds).\n\t\t\t// TODO(aakselrod): add better anti-replay protection.\n\t\t\tmacaroons.TimeoutConstraint(profile.Macaroons.Timeout),\n\n\t\t\t// Lock macaroon down to a specific IP address.\n\t\t\tmacaroons.IPLockConstraint(profile.Macaroons.IP),\n\n\t\t\t// ... Add more constraints if needed.\n\t\t}\n\n\t\t// Apply constraints to the macaroon.\n\t\tconstrainedMac, err := macaroons.AddConstraints(\n\t\t\tmac, macConstraints...,\n\t\t)\n\t\tif err != nil {\n\t\t\tfatal(err)\n\t\t}\n\n\t\t// Now we append the macaroon credentials to the dial options.\n\t\tcred, err := macaroons.NewMacaroonCredential(constrainedMac)\n\t\tif err != nil {\n\t\t\tfatal(fmt.Errorf(\"error cloning mac: %v\", err))\n\t\t}\n\t\topts = append(opts, grpc.WithPerRPCCredentials(cred))\n\t}\n\n\t// If a socksproxy server is specified we use a tor dialer\n\t// to connect to the grpc server.\n\tif ctx.GlobalIsSet(\"socksproxy\") {\n\t\tsocksProxy := ctx.GlobalString(\"socksproxy\")\n\t\ttorDialer := func(_ context.Context, addr string) (net.Conn,\n\t\t\terror) {\n\n\t\t\treturn tor.Dial(\n\t\t\t\taddr, socksProxy, false, false,\n\t\t\t\ttor.DefaultConnTimeout,\n\t\t\t)\n\t\t}\n\t\topts = append(opts, grpc.WithContextDialer(torDialer))\n\t} else {\n\t\t// We need to use a custom dialer so we can also connect to\n\t\t// unix sockets and not just TCP addresses.\n\t\tgenericDialer := lncfg.ClientAddressDialer(defaultRPCPort)\n\t\topts = append(opts, grpc.WithContextDialer(genericDialer))\n\t}\n\n\topts = append(opts, grpc.WithDefaultCallOptions(maxMsgRecvSize))\n\n\tconn, err := grpc.Dial(profile.RPCServer, opts...)\n\tif err != nil {\n\t\tfatal(fmt.Errorf(\"unable to connect to RPC server: %v\", err))\n\t}\n\n\treturn conn\n}\n\n// addMetadataUnaryInterceptor returns a grpc client side interceptor that\n// appends any key-value metadata strings to the outgoing context of a grpc\n// unary call.",
+      "length": 4474,
+      "tokens": 611,
+      "embedding": []
+    },
+    {
+      "slug": "func addMetadataUnaryInterceptor(",
+      "content": "func addMetadataUnaryInterceptor(\n\tmd map[string]string) grpc.UnaryClientInterceptor {\n\n\treturn func(ctx context.Context, method string, req, reply interface{},\n\t\tcc *grpc.ClientConn, invoker grpc.UnaryInvoker,\n\t\topts ...grpc.CallOption) error {\n\n\t\toutCtx := contextWithMetadata(ctx, md)\n\t\treturn invoker(outCtx, method, req, reply, cc, opts...)\n\t}\n}\n\n// addMetaDataStreamInterceptor returns a grpc client side interceptor that\n// appends any key-value metadata strings to the outgoing context of a grpc\n// stream call.",
+      "length": 472,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func addMetaDataStreamInterceptor(",
+      "content": "func addMetaDataStreamInterceptor(\n\tmd map[string]string) grpc.StreamClientInterceptor {\n\n\treturn func(ctx context.Context, desc *grpc.StreamDesc,\n\t\tcc *grpc.ClientConn, method string, streamer grpc.Streamer,\n\t\topts ...grpc.CallOption) (grpc.ClientStream, error) {\n\n\t\toutCtx := contextWithMetadata(ctx, md)\n\t\treturn streamer(outCtx, desc, cc, method, opts...)\n\t}\n}\n\n// contextWithMetaData appends the given metadata key-value pairs to the given\n// context.",
+      "length": 409,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func contextWithMetadata(ctx context.Context,",
+      "content": "func contextWithMetadata(ctx context.Context,\n\tmd map[string]string) context.Context {\n\n\tkvPairs := make([]string, 0, 2*len(md))\n\tfor k, v := range md {\n\t\tkvPairs = append(kvPairs, k, v)\n\t}\n\n\treturn metadata.AppendToOutgoingContext(ctx, kvPairs...)\n}\n\n// extractPathArgs parses the TLS certificate and macaroon paths from the\n// command.",
+      "length": 280,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func extractPathArgs(ctx *cli.Context) (string, string, error) {",
+      "content": "func extractPathArgs(ctx *cli.Context) (string, string, error) {\n\t// We'll start off by parsing the active chain and network. These are\n\t// needed to determine the correct path to the macaroon when not\n\t// specified.\n\tchain := strings.ToLower(ctx.GlobalString(\"chain\"))\n\tswitch chain {\n\tcase \"bitcoin\", \"litecoin\":\n\tdefault:\n\t\treturn \"\", \"\", fmt.Errorf(\"unknown chain: %v\", chain)\n\t}\n\n\tnetwork := strings.ToLower(ctx.GlobalString(\"network\"))\n\tswitch network {\n\tcase \"mainnet\", \"testnet\", \"regtest\", \"simnet\", \"signet\":\n\tdefault:\n\t\treturn \"\", \"\", fmt.Errorf(\"unknown network: %v\", network)\n\t}\n\n\t// We'll now fetch the lnddir so we can make a decision  on how to\n\t// properly read the macaroons (if needed) and also the cert. This will\n\t// either be the default, or will have been overwritten by the end\n\t// user.\n\tlndDir := lncfg.CleanAndExpandPath(ctx.GlobalString(\"lnddir\"))\n\n\t// If the macaroon path as been manually provided, then we'll only\n\t// target the specified file.\n\tvar macPath string\n\tif ctx.GlobalString(\"macaroonpath\") != \"\" {\n\t\tmacPath = lncfg.CleanAndExpandPath(ctx.GlobalString(\"macaroonpath\"))\n\t} else {\n\t\t// Otherwise, we'll go into the path:\n\t\t// lnddir/data/chain/<chain>/<network> in order to fetch the\n\t\t// macaroon that we need.\n\t\tmacPath = filepath.Join(\n\t\t\tlndDir, defaultDataDir, defaultChainSubDir, chain,\n\t\t\tnetwork, defaultMacaroonFilename,\n\t\t)\n\t}\n\n\ttlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(\"tlscertpath\"))\n\n\t// If a custom lnd directory was set, we'll also check if custom paths\n\t// for the TLS cert and macaroon file were set as well. If not, we'll\n\t// override their paths so they can be found within the custom lnd\n\t// directory set. This allows us to set a custom lnd directory, along\n\t// with custom paths to the TLS cert and macaroon file.\n\tif lndDir != defaultLndDir {\n\t\ttlsCertPath = filepath.Join(lndDir, defaultTLSCertFilename)\n\t}\n\n\treturn tlsCertPath, macPath, nil\n}\n\n// checkNotBothSet accepts two flag names, a and b, and checks that only flag a\n// or flag b can be set, but not both. It returns the name of the flag or an\n// error.",
+      "length": 1973,
+      "tokens": 293,
+      "embedding": []
+    },
+    {
+      "slug": "func checkNotBothSet(ctx *cli.Context, a, b string) (string, error) {",
+      "content": "func checkNotBothSet(ctx *cli.Context, a, b string) (string, error) {\n\tif ctx.IsSet(a) && ctx.IsSet(b) {\n\t\treturn \"\", fmt.Errorf(\n\t\t\t\"either %s or %s should be set, but not both\", a, b,\n\t\t)\n\t}\n\n\tif ctx.IsSet(a) {\n\t\treturn a, nil\n\t}\n\n\treturn b, nil\n}\n",
+      "length": 168,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func main() {",
+      "content": "func main() {\n\tapp := cli.NewApp()\n\tapp.Name = \"lncli\"\n\tapp.Version = build.Version() + \" commit=\" + build.Commit\n\tapp.Usage = \"control plane for your Lightning Network Daemon (lnd)\"\n\tapp.Flags = []cli.Flag{\n\t\tcli.StringFlag{\n\t\t\tName:  \"rpcserver\",\n\t\t\tValue: defaultRPCHostPort,\n\t\t\tUsage: \"The host:port of LN daemon.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:      \"lnddir\",\n\t\t\tValue:     defaultLndDir,\n\t\t\tUsage:     \"The path to lnd's base directory.\",\n\t\t\tTakesFile: true,\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"socksproxy\",\n\t\t\tUsage: \"The host:port of a SOCKS proxy through \" +\n\t\t\t\t\"which all connections to the LN \" +\n\t\t\t\t\"daemon will be established over.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:      \"tlscertpath\",\n\t\t\tValue:     defaultTLSCertPath,\n\t\t\tUsage:     \"The path to lnd's TLS certificate.\",\n\t\t\tTakesFile: true,\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:  \"chain, c\",\n\t\t\tUsage: \"The chain lnd is running on, e.g. bitcoin.\",\n\t\t\tValue: \"bitcoin\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"network, n\",\n\t\t\tUsage: \"The network lnd is running on, e.g. mainnet, \" +\n\t\t\t\t\"testnet, etc.\",\n\t\t\tValue: \"mainnet\",\n\t\t},\n\t\tcli.BoolFlag{\n\t\t\tName:  \"no-macaroons\",\n\t\t\tUsage: \"Disable macaroon authentication.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:      \"macaroonpath\",\n\t\t\tUsage:     \"The path to macaroon file.\",\n\t\t\tTakesFile: true,\n\t\t},\n\t\tcli.Int64Flag{\n\t\t\tName:  \"macaroontimeout\",\n\t\t\tValue: 60,\n\t\t\tUsage: \"Anti-replay macaroon validity time in seconds.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName:  \"macaroonip\",\n\t\t\tUsage: \"If set, lock macaroon to specific IP address.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"profile, p\",\n\t\t\tUsage: \"Instead of reading settings from command \" +\n\t\t\t\t\"line parameters or using the default \" +\n\t\t\t\t\"profile, use a specific profile. If \" +\n\t\t\t\t\"a default profile is set, this flag can be \" +\n\t\t\t\t\"set to an empty string to disable reading \" +\n\t\t\t\t\"values from the profiles file.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"macfromjar\",\n\t\t\tUsage: \"Use this macaroon from the profile's \" +\n\t\t\t\t\"macaroon jar instead of the default one. \" +\n\t\t\t\t\"Can only be used if profiles are defined.\",\n\t\t},\n\t\tcli.StringSliceFlag{\n\t\t\tName: \"metadata\",\n\t\t\tUsage: \"This flag can be used to specify a key-value \" +\n\t\t\t\t\"pair that should be appended to the \" +\n\t\t\t\t\"outgoing context before the request is sent \" +\n\t\t\t\t\"to lnd. This flag may be specified multiple \" +\n\t\t\t\t\"times. The format is: \\\"key:value\\\".\",\n\t\t},\n\t\tcli.BoolFlag{\n\t\t\tName: \"insecure\",\n\t\t\tUsage: \"Connect to the rpc server without TLS \" +\n\t\t\t\t\"authentication\",\n\t\t\tHidden: true,\n\t\t},\n\t}\n\tapp.Commands = []cli.Command{\n\t\tcreateCommand,\n\t\tcreateWatchOnlyCommand,\n\t\tunlockCommand,\n\t\tchangePasswordCommand,\n\t\tnewAddressCommand,\n\t\testimateFeeCommand,\n\t\tsendManyCommand,\n\t\tsendCoinsCommand,\n\t\tlistUnspentCommand,\n\t\tconnectCommand,\n\t\tdisconnectCommand,\n\t\topenChannelCommand,\n\t\tbatchOpenChannelCommand,\n\t\tcloseChannelCommand,\n\t\tcloseAllChannelsCommand,\n\t\tabandonChannelCommand,\n\t\tlistPeersCommand,\n\t\twalletBalanceCommand,\n\t\tchannelBalanceCommand,\n\t\tgetInfoCommand,\n\t\tgetRecoveryInfoCommand,\n\t\tpendingChannelsCommand,\n\t\tsendPaymentCommand,\n\t\tpayInvoiceCommand,\n\t\tsendToRouteCommand,\n\t\taddInvoiceCommand,\n\t\tlookupInvoiceCommand,\n\t\tlistInvoicesCommand,\n\t\tlistChannelsCommand,\n\t\tclosedChannelsCommand,\n\t\tlistPaymentsCommand,\n\t\tdescribeGraphCommand,\n\t\tgetNodeMetricsCommand,\n\t\tgetChanInfoCommand,\n\t\tgetNodeInfoCommand,\n\t\tqueryRoutesCommand,\n\t\tgetNetworkInfoCommand,\n\t\tdebugLevelCommand,\n\t\tdecodePayReqCommand,\n\t\tlistChainTxnsCommand,\n\t\tstopCommand,\n\t\tsignMessageCommand,\n\t\tverifyMessageCommand,\n\t\tfeeReportCommand,\n\t\tupdateChannelPolicyCommand,\n\t\tforwardingHistoryCommand,\n\t\texportChanBackupCommand,\n\t\tverifyChanBackupCommand,\n\t\trestoreChanBackupCommand,\n\t\tbakeMacaroonCommand,\n\t\tlistMacaroonIDsCommand,\n\t\tdeleteMacaroonIDCommand,\n\t\tlistPermissionsCommand,\n\t\tprintMacaroonCommand,\n\t\tconstrainMacaroonCommand,\n\t\ttrackPaymentCommand,\n\t\tversionCommand,\n\t\tprofileSubCommand,\n\t\tgetStateCommand,\n\t\tdeletePaymentsCommand,\n\t\tsendCustomCommand,\n\t\tsubscribeCustomCommand,\n\t\tfishCompletionCommand,\n\t\tlistAliasesCommand,\n\t}\n\n\t// Add any extra commands determined by build flags.\n\tapp.Commands = append(app.Commands, autopilotCommands()...)\n\tapp.Commands = append(app.Commands, invoicesCommands()...)\n\tapp.Commands = append(app.Commands, neutrinoCommands()...)\n\tapp.Commands = append(app.Commands, routerCommands()...)\n\tapp.Commands = append(app.Commands, walletCommands()...)\n\tapp.Commands = append(app.Commands, watchtowerCommands()...)\n\tapp.Commands = append(app.Commands, wtclientCommands()...)\n\tapp.Commands = append(app.Commands, devCommands()...)\n\tapp.Commands = append(app.Commands, peersCommands()...)\n\tapp.Commands = append(app.Commands, chainCommands()...)\n\n\tif err := app.Run(os.Args); err != nil {\n\t\tfatal(err)\n\t}\n}\n\n// readPassword reads a password from the terminal. This requires there to be an\n// actual TTY so passing in a password from stdin won't work.",
+      "length": 4667,
+      "tokens": 485,
+      "embedding": []
+    },
+    {
+      "slug": "func readPassword(text string) ([]byte, error) {",
+      "content": "func readPassword(text string) ([]byte, error) {\n\tfmt.Print(text)\n\n\t// The variable syscall.Stdin is of a different type in the Windows API\n\t// that's why we need the explicit cast. And of course the linter\n\t// doesn't like it either.\n\tpw, err := term.ReadPassword(int(syscall.Stdin)) // nolint:unconvert\n\tfmt.Println()\n\treturn pw, err\n}\n",
+      "length": 280,
+      "tokens": 43,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtmock/keyring.go",
+  "package": "wtmock",
+  "sections": [
+    {
+      "slug": "type SecretKeyRing struct {",
+      "content": "type SecretKeyRing struct {\n\tmu   sync.Mutex\n\tkeys map[keychain.KeyLocator]*btcec.PrivateKey\n}\n\n// NewSecretKeyRing creates a new mock SecretKeyRing.",
+      "length": 117,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSecretKeyRing() *SecretKeyRing {",
+      "content": "func NewSecretKeyRing() *SecretKeyRing {\n\treturn &SecretKeyRing{\n\t\tkeys: make(map[keychain.KeyLocator]*btcec.PrivateKey),\n\t}\n}\n\n// DeriveKey attempts to derive an arbitrary key specified by the\n// passed KeyLocator. This may be used in several recovery scenarios,\n// or when manually rotating something like our current default node\n// key.\n//\n// NOTE: This is part of the wtclient.ECDHKeyRing interface.",
+      "length": 353,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SecretKeyRing) DeriveKey(",
+      "content": "func (m *SecretKeyRing) DeriveKey(\n\tkeyLoc keychain.KeyLocator) (keychain.KeyDescriptor, error) {\n\n\tm.mu.Lock()\n\tdefer m.mu.Unlock()\n\n\tif key, ok := m.keys[keyLoc]; ok {\n\t\treturn keychain.KeyDescriptor{\n\t\t\tKeyLocator: keyLoc,\n\t\t\tPubKey:     key.PubKey(),\n\t\t}, nil\n\t}\n\n\tprivKey, err := btcec.NewPrivateKey()\n\tif err != nil {\n\t\treturn keychain.KeyDescriptor{}, err\n\t}\n\n\tm.keys[keyLoc] = privKey\n\n\treturn keychain.KeyDescriptor{\n\t\tKeyLocator: keyLoc,\n\t\tPubKey:     privKey.PubKey(),\n\t}, nil\n}\n\n// ECDH performs a scalar multiplication (ECDH-like operation) between the\n// target key descriptor and remote public key. The output returned will be the\n// sha256 of the resulting shared point serialized in compressed format. If k is\n// our private key, and P is the public key, we perform the following operation:\n//\n//\tsx := k*P\n//\ts := sha256(sx.SerializeCompressed())\n//\n// NOTE: This is part of the wtclient.ECDHKeyRing interface.",
+      "length": 860,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *SecretKeyRing) ECDH(keyDesc keychain.KeyDescriptor,",
+      "content": "func (m *SecretKeyRing) ECDH(keyDesc keychain.KeyDescriptor,\n\tpub *btcec.PublicKey) ([32]byte, error) {\n\n\t_, err := m.DeriveKey(keyDesc.KeyLocator)\n\tif err != nil {\n\t\treturn [32]byte{}, err\n\t}\n\n\tprivKey := m.keys[keyDesc.KeyLocator]\n\tecdh := &keychain.PrivKeyECDH{PrivKey: privKey}\n\treturn ecdh.ECDH(pub)\n}\n",
+      "length": 235,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

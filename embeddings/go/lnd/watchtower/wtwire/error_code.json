@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/error_code.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type ErrorCode uint16",
+      "content": "type ErrorCode uint16\n\nconst (\n\t// CodeOK signals that the request was successfully processed by the\n\t// watchtower.\n\tCodeOK ErrorCode = 0\n\n\t// CodeTemporaryFailure alerts the client that the watchtower is\n\t// temporarily unavailable, but that it may try again at a later time.\n\tCodeTemporaryFailure ErrorCode = 40\n\n\t// CodePermanentFailure alerts the client that the watchtower has\n\t// permanently failed, and further communication should be avoided.\n\tCodePermanentFailure ErrorCode = 50\n)\n\n// String returns a human-readable description of an ErrorCode.",
+      "length": 518,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ErrorCode) String() string {",
+      "content": "func (c ErrorCode) String() string {\n\tswitch c {\n\tcase CodeOK:\n\t\treturn \"CodeOK\"\n\tcase CodeTemporaryFailure:\n\t\treturn \"CodeTemporaryFailure\"\n\tcase CodePermanentFailure:\n\t\treturn \"CodePermanentFailure\"\n\tcase CreateSessionCodeAlreadyExists:\n\t\treturn \"CreateSessionCodeAlreadyExists\"\n\tcase CreateSessionCodeRejectMaxUpdates:\n\t\treturn \"CreateSessionCodeRejectMaxUpdates\"\n\tcase CreateSessionCodeRejectRewardRate:\n\t\treturn \"CreateSessionCodeRejectRewardRate\"\n\tcase CreateSessionCodeRejectSweepFeeRate:\n\t\treturn \"CreateSessionCodeRejectSweepFeeRate\"\n\tcase CreateSessionCodeRejectBlobType:\n\t\treturn \"CreateSessionCodeRejectBlobType\"\n\tcase StateUpdateCodeClientBehind:\n\t\treturn \"StateUpdateCodeClientBehind\"\n\tcase StateUpdateCodeMaxUpdatesExceeded:\n\t\treturn \"StateUpdateCodeMaxUpdatesExceeded\"\n\tcase StateUpdateCodeSeqNumOutOfOrder:\n\t\treturn \"StateUpdateCodeSeqNumOutOfOrder\"\n\tcase DeleteSessionCodeNotFound:\n\t\treturn \"DeleteSessionCodeNotFound\"\n\tdefault:\n\t\treturn fmt.Sprintf(\"UnknownErrorCode: %d\", c)\n\t}\n}\n",
+      "length": 934,
+      "tokens": 58,
+      "embedding": []
+    }
+  ]
+}

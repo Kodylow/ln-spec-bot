@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/typed_lease_expiry.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type LeaseExpiry uint32",
+      "content": "type LeaseExpiry uint32\n\n// Record returns a TLV record that can be used to encode/decode the LeaseExpiry\n// type from a given TLV stream.",
+      "length": 112,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LeaseExpiry) Record() tlv.Record {",
+      "content": "func (l *LeaseExpiry) Record() tlv.Record {\n\treturn tlv.MakeStaticRecord(\n\t\tLeaseExpiryRecordType, l, 4, leaseExpiryEncoder, leaseExpiryDecoder,\n\t)\n}\n\n// leaseExpiryEncoder is a custom TLV encoder for the LeaseExpiry record.",
+      "length": 175,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func leaseExpiryEncoder(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func leaseExpiryEncoder(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif v, ok := val.(*LeaseExpiry); ok {\n\t\treturn tlv.EUint32T(w, uint32(*v), buf)\n\t}\n\n\treturn tlv.NewTypeForEncodingErr(val, \"lnwire.LeaseExpiry\")\n}\n\n// leaseExpiryDecoder is a custom TLV decoder for the LeaseExpiry record.",
+      "length": 214,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func leaseExpiryDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func leaseExpiryDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tif v, ok := val.(*LeaseExpiry); ok {\n\t\tvar leaseExpiry uint32\n\t\tif err := tlv.DUint32(r, &leaseExpiry, buf, l); err != nil {\n\t\t\treturn err\n\t\t}\n\t\t*v = LeaseExpiry(leaseExpiry)\n\t\treturn nil\n\t}\n\n\treturn tlv.NewTypeForEncodingErr(val, \"lnwire.LeaseExpiry\")\n}\n",
+      "length": 245,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

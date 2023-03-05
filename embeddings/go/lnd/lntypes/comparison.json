@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lntypes/comparison.go",
+  "package": "lntypes",
+  "sections": [
+    {
+      "slug": "type Number interface {",
+      "content": "type Number interface {\n\tconstraints.Integer | constraints.Float\n}\n\n// Max returns the greater of the two inputs.",
+      "length": 86,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func Max[N Number](op1 N, op2 N) N {",
+      "content": "func Max[N Number](op1 N, op2 N) N {\n\tif op1 > op2 {\n\t\treturn op1\n\t}\n\n\treturn op2\n}\n\n// Min returns the lesser of the two inputs.",
+      "length": 85,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func Min[N Number](op1 N, op2 N) N {",
+      "content": "func Min[N Number](op1 N, op2 N) N {\n\tif op1 < op2 {\n\t\treturn op1\n\t}\n\n\treturn op2\n}\n",
+      "length": 41,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

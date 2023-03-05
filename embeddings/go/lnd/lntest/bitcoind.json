@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lntest/bitcoind.go",
+  "package": "bitcoind",
+  "sections": [
+    {
+      "slug": "func NewBackend(miner string, netParams *chaincfg.Params) (",
+      "content": "func NewBackend(miner string, netParams *chaincfg.Params) (\n\t*BitcoindBackendConfig, func() error, error) {\n\n\textraArgs := []string{\n\t\t\"-debug\",\n\t\t\"-regtest\",\n\t\t\"-txindex\",\n\t\t\"-disablewallet\",\n\t}\n\n\treturn newBackend(miner, netParams, extraArgs, false)\n}\n",
+      "length": 183,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

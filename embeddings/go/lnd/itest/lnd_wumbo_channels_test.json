@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_wumbo_channels_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testWumboChannels(ht *lntest.HarnessTest) {",
+      "content": "func testWumboChannels(ht *lntest.HarnessTest) {\n\t// With all the channel types exercised, we'll now make sure the wumbo\n\t// signalling support works properly.\n\t//\n\t// We'll make two new nodes, with one of them signalling support for\n\t// wumbo channels while the other doesn't.\n\twumboNode := ht.NewNode(\"wumbo\", []string{\"--protocol.wumbo-channels\"})\n\tminiNode := ht.NewNode(\"mini\", nil)\n\n\t// We'll send coins to the wumbo node, as it'll be the one imitating\n\t// the channel funding.\n\tht.FundCoins(btcutil.SatoshiPerBitcoin, wumboNode)\n\n\t// Next we'll connect both nodes, then attempt to make a wumbo channel\n\t// funding request to the mini node we created above. The wumbo request\n\t// should fail as the node isn't advertising wumbo channels.\n\tht.EnsureConnected(wumboNode, miniNode)\n\n\tchanAmt := funding.MaxBtcFundingAmount + 1\n\t// The test should indicate a failure due to the channel being too\n\t// large.\n\tht.OpenChannelAssertErr(\n\t\twumboNode, miniNode, lntest.OpenChannelParams{Amt: chanAmt},\n\t\tlnwallet.ErrChanTooLarge(chanAmt, funding.MaxBtcFundingAmount),\n\t)\n\n\t// We'll now make another wumbo node to accept our wumbo channel\n\t// funding.\n\twumboNode2 := ht.NewNode(\n\t\t\"wumbo2\", []string{\"--protocol.wumbo-channels\"},\n\t)\n\n\t// Creating a wumbo channel between these two nodes should succeed.\n\tht.EnsureConnected(wumboNode, wumboNode2)\n\tchanPoint := ht.OpenChannel(\n\t\twumboNode, wumboNode2, lntest.OpenChannelParams{Amt: chanAmt},\n\t)\n\tht.CloseChannel(wumboNode, chanPoint)\n}\n",
+      "length": 1393,
+      "tokens": 177,
+      "embedding": []
+    }
+  ]
+}

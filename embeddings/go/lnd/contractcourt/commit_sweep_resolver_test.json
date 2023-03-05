@@ -1,0 +1,104 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/commit_sweep_resolver_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type commitSweepResolverTestContext struct {",
+      "content": "type commitSweepResolverTestContext struct {\n\tresolver           *commitSweepResolver\n\tnotifier           *mock.ChainNotifier\n\tsweeper            *mockSweeper\n\tresolverResultChan chan resolveResult\n\tt                  *testing.T\n}\n",
+      "length": 180,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func newCommitSweepResolverTestContext(t *testing.T,",
+      "content": "func newCommitSweepResolverTestContext(t *testing.T,\n\tresolution *lnwallet.CommitOutputResolution) *commitSweepResolverTestContext {\n\n\tnotifier := &mock.ChainNotifier{\n\t\tEpochChan: make(chan *chainntnfs.BlockEpoch),\n\t\tSpendChan: make(chan *chainntnfs.SpendDetail),\n\t\tConfChan:  make(chan *chainntnfs.TxConfirmation),\n\t}\n\n\tsweeper := newMockSweeper()\n\n\tcheckPointChan := make(chan struct{}, 1)\n\n\tchainCfg := ChannelArbitratorConfig{\n\t\tChainArbitratorConfig: ChainArbitratorConfig{\n\t\t\tNotifier: notifier,\n\t\t\tSweeper:  sweeper,\n\t\t},\n\t\tPutResolverReport: func(_ kvdb.RwTx,\n\t\t\t_ *channeldb.ResolverReport) error {\n\n\t\t\treturn nil\n\t\t},\n\t}\n\n\tcfg := ResolverConfig{\n\t\tChannelArbitratorConfig: chainCfg,\n\t\tCheckpoint: func(_ ContractResolver,\n\t\t\t_ ...*channeldb.ResolverReport) error {\n\n\t\t\tcheckPointChan <- struct{}{}\n\t\t\treturn nil\n\t\t},\n\t}\n\n\tresolver := newCommitSweepResolver(\n\t\t*resolution, 0, wire.OutPoint{}, cfg,\n\t)\n\n\treturn &commitSweepResolverTestContext{\n\t\tresolver: resolver,\n\t\tnotifier: notifier,\n\t\tsweeper:  sweeper,\n\t\tt:        t,\n\t}\n}\n",
+      "length": 941,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *commitSweepResolverTestContext) resolve() {",
+      "content": "func (i *commitSweepResolverTestContext) resolve() {\n\t// Start resolver.\n\ti.resolverResultChan = make(chan resolveResult, 1)\n\tgo func() {\n\t\tnextResolver, err := i.resolver.Resolve()\n\t\ti.resolverResultChan <- resolveResult{\n\t\t\tnextResolver: nextResolver,\n\t\t\terr:          err,\n\t\t}\n\t}()\n}\n",
+      "length": 224,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *commitSweepResolverTestContext) notifyEpoch(height int32) {",
+      "content": "func (i *commitSweepResolverTestContext) notifyEpoch(height int32) {\n\ti.notifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: height,\n\t}\n}\n",
+      "length": 68,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (i *commitSweepResolverTestContext) waitForResult() {",
+      "content": "func (i *commitSweepResolverTestContext) waitForResult() {\n\ti.t.Helper()\n\n\tresult := <-i.resolverResultChan\n\tif result.err != nil {\n\t\ti.t.Fatal(result.err)\n\t}\n\n\tif result.nextResolver != nil {\n\t\ti.t.Fatal(\"expected no next resolver\")\n\t}\n}\n",
+      "length": 169,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type mockSweeper struct {",
+      "content": "type mockSweeper struct {\n\tsweptInputs       chan input.Input\n\tupdatedInputs     chan wire.OutPoint\n\tsweepTx           *wire.MsgTx\n\tsweepErr          error\n\tcreateSweepTxChan chan *wire.MsgTx\n\n\tdeadlines []int\n}\n",
+      "length": 178,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockSweeper() *mockSweeper {",
+      "content": "func newMockSweeper() *mockSweeper {\n\treturn &mockSweeper{\n\t\tsweptInputs:       make(chan input.Input, 3),\n\t\tupdatedInputs:     make(chan wire.OutPoint),\n\t\tsweepTx:           &wire.MsgTx{},\n\t\tcreateSweepTxChan: make(chan *wire.MsgTx),\n\t\tdeadlines:         []int{},\n\t}\n}\n",
+      "length": 225,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSweeper) SweepInput(input input.Input, params sweep.Params) (",
+      "content": "func (s *mockSweeper) SweepInput(input input.Input, params sweep.Params) (\n\tchan sweep.Result, error) {\n\n\ts.sweptInputs <- input\n\n\t// Update the deadlines used if it's set.\n\tif params.Fee.ConfTarget != 0 {\n\t\ts.deadlines = append(s.deadlines, int(params.Fee.ConfTarget))\n\t}\n\n\tresult := make(chan sweep.Result, 1)\n\tresult <- sweep.Result{\n\t\tTx:  s.sweepTx,\n\t\tErr: s.sweepErr,\n\t}\n\treturn result, nil\n}\n",
+      "length": 308,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSweeper) CreateSweepTx(inputs []input.Input, feePref sweep.FeePreference,",
+      "content": "func (s *mockSweeper) CreateSweepTx(inputs []input.Input, feePref sweep.FeePreference,\n\tcurrentBlockHeight uint32) (*wire.MsgTx, error) {\n\n\t// We will wait for the test to supply the sweep tx to return.\n\tsweepTx := <-s.createSweepTxChan\n\treturn sweepTx, nil\n}\n",
+      "length": 167,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSweeper) RelayFeePerKW() chainfee.SatPerKWeight {",
+      "content": "func (s *mockSweeper) RelayFeePerKW() chainfee.SatPerKWeight {\n\treturn 253\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *mockSweeper) UpdateParams(input wire.OutPoint,",
+      "content": "func (s *mockSweeper) UpdateParams(input wire.OutPoint,\n\tparams sweep.ParamsUpdate) (chan sweep.Result, error) {\n\n\ts.updatedInputs <- input\n\n\tresult := make(chan sweep.Result, 1)\n\tresult <- sweep.Result{\n\t\tTx: s.sweepTx,\n\t}\n\treturn result, nil\n}\n\nvar _ UtxoSweeper = &mockSweeper{}\n\n// TestCommitSweepResolverNoDelay tests resolution of a direct commitment output\n// unencumbered by a time lock.",
+      "length": 325,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCommitSweepResolverNoDelay(t *testing.T) {",
+      "content": "func TestCommitSweepResolverNoDelay(t *testing.T) {\n\tt.Parallel()\n\tdefer timeout()()\n\n\tres := lnwallet.CommitOutputResolution{\n\t\tSelfOutputSignDesc: input.SignDescriptor{\n\t\t\tOutput: &wire.TxOut{\n\t\t\t\tValue: 100,\n\t\t\t},\n\t\t\tWitnessScript: []byte{0},\n\t\t},\n\t}\n\n\tctx := newCommitSweepResolverTestContext(t, &res)\n\n\t// Replace our checkpoint with one which will push reports into a\n\t// channel for us to consume. We replace this function on the resolver\n\t// itself because it is created by the test context.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\tctx.resolve()\n\n\tspendTx := &wire.MsgTx{}\n\tspendHash := spendTx.TxHash()\n\tctx.notifier.ConfChan <- &chainntnfs.TxConfirmation{\n\t\tTx: spendTx,\n\t}\n\n\t// No csv delay, so the input should be swept immediately.\n\t<-ctx.sweeper.sweptInputs\n\n\tamt := btcutil.Amount(res.SelfOutputSignDesc.Output.Value)\n\texpectedReport := &channeldb.ResolverReport{\n\t\tOutPoint:        wire.OutPoint{},\n\t\tAmount:          amt,\n\t\tResolverType:    channeldb.ResolverTypeCommit,\n\t\tResolverOutcome: channeldb.ResolverOutcomeClaimed,\n\t\tSpendTxID:       &spendHash,\n\t}\n\n\tassertResolverReport(t, reportChan, expectedReport)\n\n\tctx.waitForResult()\n}\n\n// testCommitSweepResolverDelay tests resolution of a direct commitment output\n// that is encumbered by a time lock. sweepErr indicates whether the local node\n// fails to sweep the output.",
+      "length": 1476,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func testCommitSweepResolverDelay(t *testing.T, sweepErr error) {",
+      "content": "func testCommitSweepResolverDelay(t *testing.T, sweepErr error) {\n\tdefer timeout()()\n\n\tconst sweepProcessInterval = 100 * time.Millisecond\n\tamt := int64(100)\n\toutpoint := wire.OutPoint{\n\t\tIndex: 5,\n\t}\n\tres := lnwallet.CommitOutputResolution{\n\t\tSelfOutputSignDesc: input.SignDescriptor{\n\t\t\tOutput: &wire.TxOut{\n\t\t\t\tValue: amt,\n\t\t\t},\n\t\t\tWitnessScript: []byte{0},\n\t\t},\n\t\tMaturityDelay: 3,\n\t\tSelfOutPoint:  outpoint,\n\t}\n\n\tctx := newCommitSweepResolverTestContext(t, &res)\n\n\t// Replace our checkpoint with one which will push reports into a\n\t// channel for us to consume. We replace this function on the resolver\n\t// itself because it is created by the test context.\n\treportChan := make(chan *channeldb.ResolverReport)\n\tctx.resolver.Checkpoint = func(_ ContractResolver,\n\t\treports ...*channeldb.ResolverReport) error {\n\n\t\t// Send all of our reports into the channel.\n\t\tfor _, report := range reports {\n\t\t\treportChan <- report\n\t\t}\n\n\t\treturn nil\n\t}\n\n\t// Setup whether we expect the sweeper to receive a sweep error in this\n\t// test case.\n\tctx.sweeper.sweepErr = sweepErr\n\n\treport := ctx.resolver.report()\n\texpectedReport := ContractReport{\n\t\tOutpoint:     outpoint,\n\t\tType:         ReportOutputUnencumbered,\n\t\tAmount:       btcutil.Amount(amt),\n\t\tLimboBalance: btcutil.Amount(amt),\n\t}\n\tif *report != expectedReport {\n\t\tt.Fatalf(\"unexpected resolver report. want=%v got=%v\",\n\t\t\texpectedReport, report)\n\t}\n\n\tctx.resolve()\n\n\tctx.notifier.ConfChan <- &chainntnfs.TxConfirmation{\n\t\tBlockHeight: testInitialBlockHeight - 1,\n\t}\n\n\t// Allow resolver to process confirmation.\n\ttime.Sleep(sweepProcessInterval)\n\n\t// Expect report to be updated.\n\treport = ctx.resolver.report()\n\tif report.MaturityHeight != testInitialBlockHeight+2 {\n\t\tt.Fatal(\"report maturity height incorrect\")\n\t}\n\n\t// Notify initial block height. The csv lock is still in effect, so we\n\t// don't expect any sweep to happen yet.\n\tctx.notifyEpoch(testInitialBlockHeight)\n\n\tselect {\n\tcase <-ctx.sweeper.sweptInputs:\n\t\tt.Fatal(\"no sweep expected\")\n\tcase <-time.After(sweepProcessInterval):\n\t}\n\n\t// A new block arrives. The commit tx confirmed at height -1 and the csv\n\t// is 3, so a spend will be valid in the first block after height +1.\n\tctx.notifyEpoch(testInitialBlockHeight + 1)\n\n\t<-ctx.sweeper.sweptInputs\n\n\t// Set the resolution report outcome based on whether our sweep\n\t// succeeded.\n\toutcome := channeldb.ResolverOutcomeClaimed\n\tif sweepErr != nil {\n\t\toutcome = channeldb.ResolverOutcomeUnclaimed\n\t}\n\tsweepTx := ctx.sweeper.sweepTx.TxHash()\n\n\tassertResolverReport(t, reportChan, &channeldb.ResolverReport{\n\t\tOutPoint:        outpoint,\n\t\tResolverType:    channeldb.ResolverTypeCommit,\n\t\tResolverOutcome: outcome,\n\t\tAmount:          btcutil.Amount(amt),\n\t\tSpendTxID:       &sweepTx,\n\t})\n\n\tctx.waitForResult()\n\n\t// If this test case generates a sweep error, we don't expect to be\n\t// able to recover anything. This might happen if the local commitment\n\t// output was swept by a justice transaction by the remote party.\n\texpectedRecoveredBalance := btcutil.Amount(amt)\n\tif sweepErr != nil {\n\t\texpectedRecoveredBalance = 0\n\t}\n\n\treport = ctx.resolver.report()\n\texpectedReport = ContractReport{\n\t\tOutpoint:         outpoint,\n\t\tType:             ReportOutputUnencumbered,\n\t\tAmount:           btcutil.Amount(amt),\n\t\tMaturityHeight:   testInitialBlockHeight + 2,\n\t\tRecoveredBalance: expectedRecoveredBalance,\n\t}\n\tif *report != expectedReport {\n\t\tt.Fatalf(\"unexpected resolver report. want=%v got=%v\",\n\t\t\texpectedReport, report)\n\t}\n}\n\n// TestCommitSweepResolverDelay tests resolution of a direct commitment output\n// that is encumbered by a time lock.",
+      "length": 3408,
+      "tokens": 403,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCommitSweepResolverDelay(t *testing.T) {",
+      "content": "func TestCommitSweepResolverDelay(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tname     string\n\t\tsweepErr error\n\t}{{\n\t\tname:     \"success\",\n\t\tsweepErr: nil,\n\t}, {\n\t\tname:     \"remote spend\",\n\t\tsweepErr: sweep.ErrRemoteSpend,\n\t}}\n\n\tfor _, tc := range testCases {\n\t\ttc := tc\n\t\tok := t.Run(tc.name, func(t *testing.T) {\n\t\t\ttestCommitSweepResolverDelay(t, tc.sweepErr)\n\t\t})\n\t\tif !ok {\n\t\t\tbreak\n\t\t}\n\t}\n}\n",
+      "length": 339,
+      "tokens": 48,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,398 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/breacharbiter_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Ensure that breached outputs are initialized before starting tests.\n\tif err := initBreachedOutputs(); err != nil {\n\t\tpanic(err)\n\t}\n\n\t// Populate a retribution map to for convenience, to allow lookups by\n\t// channel point.\n\tfor i := range retributions {\n\t\tretInfo := &retributions[i]\n\t\tretInfo.breachedOutputs[0] = breachedOutputs[i]\n\t\tretInfo.breachedOutputs[1] = breachedOutputs[i+1]\n\n\t\tretributionMap[retInfo.chanPoint] = *retInfo\n\n\t}\n}\n\n// FailingRetributionStore wraps a RetributionStore and supports controlled\n// restarts of the persistent instance. This allows us to test (1) that no\n// modifications to the entries are made between calls or through side effects,\n// and (2) that the database is actually being persisted between actions.",
+      "length": 728,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "type FailingRetributionStore interface {",
+      "content": "type FailingRetributionStore interface {\n\tRetributionStorer\n\n\tRestart()\n}\n\n// failingRetributionStore is a concrete implementation of a\n// FailingRetributionStore. It wraps an underlying RetributionStore and is\n// parameterized entirely by a restart function, which is intended to simulate a\n// full stop/start of the store.",
+      "length": 275,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "type failingRetributionStore struct {",
+      "content": "type failingRetributionStore struct {\n\tmu sync.Mutex\n\n\trs RetributionStorer\n\n\tnextAddErr error\n\n\trestart func() RetributionStorer\n}\n\n// newFailingRetributionStore creates a new failing retribution store. The given\n// restart closure should ensure that it is reloading its contents from the\n// persistent source.",
+      "length": 262,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func newFailingRetributionStore(",
+      "content": "func newFailingRetributionStore(\n\trestart func() RetributionStorer) *failingRetributionStore {\n\n\treturn &failingRetributionStore{\n\t\tmu:      sync.Mutex{},\n\t\trs:      restart(),\n\t\trestart: restart,\n\t}\n}\n\n// FailNextAdd instructs the retribution store to return the provided error. If\n// the error is nil, a generic default will be used.",
+      "length": 292,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) FailNextAdd(err error) {",
+      "content": "func (frs *failingRetributionStore) FailNextAdd(err error) {\n\tif err == nil {\n\t\terr = errors.New(\"retribution store failed\")\n\t}\n\n\tfrs.mu.Lock()\n\tfrs.nextAddErr = err\n\tfrs.mu.Unlock()\n}\n",
+      "length": 116,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) Restart() {",
+      "content": "func (frs *failingRetributionStore) Restart() {\n\tfrs.mu.Lock()\n\tfrs.rs = frs.restart()\n\tfrs.mu.Unlock()\n}\n\n// Add forwards the call to the underlying retribution store, unless this Add\n// has been previously instructed to fail.",
+      "length": 173,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) Add(retInfo *retributionInfo) error {",
+      "content": "func (frs *failingRetributionStore) Add(retInfo *retributionInfo) error {\n\tfrs.mu.Lock()\n\tdefer frs.mu.Unlock()\n\n\tif frs.nextAddErr != nil {\n\t\terr := frs.nextAddErr\n\t\tfrs.nextAddErr = nil\n\t\treturn err\n\t}\n\n\treturn frs.rs.Add(retInfo)\n}\n",
+      "length": 150,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) IsBreached(chanPoint *wire.OutPoint) (bool, error) {",
+      "content": "func (frs *failingRetributionStore) IsBreached(chanPoint *wire.OutPoint) (bool, error) {\n\tfrs.mu.Lock()\n\tdefer frs.mu.Unlock()\n\n\treturn frs.rs.IsBreached(chanPoint)\n}\n",
+      "length": 73,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) Remove(key *wire.OutPoint) error {",
+      "content": "func (frs *failingRetributionStore) Remove(key *wire.OutPoint) error {\n\tfrs.mu.Lock()\n\tdefer frs.mu.Unlock()\n\n\treturn frs.rs.Remove(key)\n}\n",
+      "length": 63,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (frs *failingRetributionStore) ForAll(cb func(*retributionInfo) error,",
+      "content": "func (frs *failingRetributionStore) ForAll(cb func(*retributionInfo) error,\n\treset func()) error {\n\n\tfrs.mu.Lock()\n\tdefer frs.mu.Unlock()\n\n\treturn frs.rs.ForAll(cb, reset)\n}\n\n// Parse the pubkeys in the breached outputs.",
+      "length": 136,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func initBreachedOutputs() error {",
+      "content": "func initBreachedOutputs() error {\n\tfor i := range breachedOutputs {\n\t\tbo := &breachedOutputs[i]\n\n\t\t// Parse the sign descriptor's pubkey.\n\t\tpubkey, err := btcec.ParsePubKey(breachKeys[i])\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to parse pubkey: %v\",\n\t\t\t\tbreachKeys[i])\n\t\t}\n\t\tbo.signDesc.KeyDesc.PubKey = pubkey\n\t}\n\n\treturn nil\n}\n\n// Test that breachedOutput Encode/Decode works.",
+      "length": 336,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachedOutputSerialization(t *testing.T) {",
+      "content": "func TestBreachedOutputSerialization(t *testing.T) {\n\tfor i := range breachedOutputs {\n\t\tbo := &breachedOutputs[i]\n\n\t\tvar buf bytes.Buffer\n\n\t\tif err := bo.Encode(&buf); err != nil {\n\t\t\tt.Fatalf(\"unable to serialize breached output [%v]: %v\",\n\t\t\t\ti, err)\n\t\t}\n\n\t\tdesBo := &breachedOutput{}\n\t\tif err := desBo.Decode(&buf); err != nil {\n\t\t\tt.Fatalf(\"unable to deserialize \"+\n\t\t\t\t\"breached output [%v]: %v\", i, err)\n\t\t}\n\n\t\tif !reflect.DeepEqual(bo, desBo) {\n\t\t\tt.Fatalf(\"original and deserialized \"+\n\t\t\t\t\"breached outputs not equal:\\n\"+\n\t\t\t\t\"original     : %+v\\n\"+\n\t\t\t\t\"deserialized : %+v\\n\",\n\t\t\t\tbo, desBo)\n\t\t}\n\t}\n}\n\n// Test that retribution Encode/Decode works.",
+      "length": 579,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func TestRetributionSerialization(t *testing.T) {",
+      "content": "func TestRetributionSerialization(t *testing.T) {\n\tfor i := range retributions {\n\t\tret := &retributions[i]\n\n\t\tvar buf bytes.Buffer\n\n\t\tif err := ret.Encode(&buf); err != nil {\n\t\t\tt.Fatalf(\"unable to serialize retribution [%v]: %v\",\n\t\t\t\ti, err)\n\t\t}\n\n\t\tdesRet := &retributionInfo{}\n\t\tif err := desRet.Decode(&buf); err != nil {\n\t\t\tt.Fatalf(\"unable to deserialize retribution [%v]: %v\",\n\t\t\t\ti, err)\n\t\t}\n\n\t\tif !reflect.DeepEqual(ret, desRet) {\n\t\t\tt.Fatalf(\"original and deserialized \"+\n\t\t\t\t\"retribution infos not equal:\\n\"+\n\t\t\t\t\"original     : %+v\\n\"+\n\t\t\t\t\"deserialized : %+v\\n\",\n\t\t\t\tret, desRet)\n\t\t}\n\t}\n}\n\n// copyRetInfo creates a complete copy of the given retributionInfo.",
+      "length": 594,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func copyRetInfo(retInfo *retributionInfo) *retributionInfo {",
+      "content": "func copyRetInfo(retInfo *retributionInfo) *retributionInfo {\n\tnOutputs := len(retInfo.breachedOutputs)\n\n\tret := &retributionInfo{\n\t\tcommitHash:      retInfo.commitHash,\n\t\tchainHash:       retInfo.chainHash,\n\t\tchanPoint:       retInfo.chanPoint,\n\t\tbreachHeight:    retInfo.breachHeight,\n\t\tbreachedOutputs: make([]breachedOutput, nOutputs),\n\t}\n\n\tfor i := range retInfo.breachedOutputs {\n\t\tret.breachedOutputs[i] = retInfo.breachedOutputs[i]\n\t}\n\n\treturn ret\n}\n\n// mockRetributionStore implements the RetributionStore interface and is backed\n// by an in-memory map. Access to the internal state is provided by a mutex.\n// TODO(cfromknecht) extend to support and test controlled failures.",
+      "length": 603,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "type mockRetributionStore struct {",
+      "content": "type mockRetributionStore struct {\n\tmu       sync.Mutex\n\tstate    map[wire.OutPoint]*retributionInfo\n\tfinalTxs map[wire.OutPoint]*wire.MsgTx\n}\n",
+      "length": 104,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockRetributionStore() *mockRetributionStore {",
+      "content": "func newMockRetributionStore() *mockRetributionStore {\n\treturn &mockRetributionStore{\n\t\tmu:       sync.Mutex{},\n\t\tstate:    make(map[wire.OutPoint]*retributionInfo),\n\t\tfinalTxs: make(map[wire.OutPoint]*wire.MsgTx),\n\t}\n}\n",
+      "length": 159,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) Add(retInfo *retributionInfo) error {",
+      "content": "func (rs *mockRetributionStore) Add(retInfo *retributionInfo) error {\n\trs.mu.Lock()\n\trs.state[retInfo.chanPoint] = copyRetInfo(retInfo)\n\trs.mu.Unlock()\n\n\treturn nil\n}\n",
+      "length": 91,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) IsBreached(chanPoint *wire.OutPoint) (bool, error) {",
+      "content": "func (rs *mockRetributionStore) IsBreached(chanPoint *wire.OutPoint) (bool, error) {\n\trs.mu.Lock()\n\t_, ok := rs.state[*chanPoint]\n\trs.mu.Unlock()\n\n\treturn ok, nil\n}\n",
+      "length": 74,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) Finalize(chanPoint *wire.OutPoint,",
+      "content": "func (rs *mockRetributionStore) Finalize(chanPoint *wire.OutPoint,\n\tfinalTx *wire.MsgTx) error {\n\n\trs.mu.Lock()\n\trs.finalTxs[*chanPoint] = finalTx\n\trs.mu.Unlock()\n\n\treturn nil\n}\n",
+      "length": 103,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) GetFinalizedTxn(",
+      "content": "func (rs *mockRetributionStore) GetFinalizedTxn(\n\tchanPoint *wire.OutPoint) (*wire.MsgTx, error) {\n\n\trs.mu.Lock()\n\tfinalTx := rs.finalTxs[*chanPoint]\n\trs.mu.Unlock()\n\n\treturn finalTx, nil\n}\n",
+      "length": 133,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) Remove(key *wire.OutPoint) error {",
+      "content": "func (rs *mockRetributionStore) Remove(key *wire.OutPoint) error {\n\trs.mu.Lock()\n\tdelete(rs.state, *key)\n\tdelete(rs.finalTxs, *key)\n\trs.mu.Unlock()\n\n\treturn nil\n}\n",
+      "length": 89,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (rs *mockRetributionStore) ForAll(cb func(*retributionInfo) error,",
+      "content": "func (rs *mockRetributionStore) ForAll(cb func(*retributionInfo) error,\n\treset func()) error {\n\n\trs.mu.Lock()\n\tdefer rs.mu.Unlock()\n\n\treset()\n\tfor _, retInfo := range rs.state {\n\t\tif err := cb(copyRetInfo(retInfo)); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\nvar retributionStoreTestSuite = []struct {\n\tname string\n\ttest func(FailingRetributionStore, *testing.T)\n}{\n\t{\n\t\t\"Initialization\",\n\t\ttestRetributionStoreInit,\n\t},\n\t{\n\t\t\"Add/Remove\",\n\t\ttestRetributionStoreAddRemove,\n\t},\n\t{\n\t\t\"Persistence\",\n\t\ttestRetributionStorePersistence,\n\t},\n\t{\n\t\t\"Overwrite\",\n\t\ttestRetributionStoreOverwrite,\n\t},\n\t{\n\t\t\"RemoveEmpty\",\n\t\ttestRetributionStoreRemoveEmpty,\n\t},\n}\n\n// TestMockRetributionStore instantiates a mockRetributionStore and tests its\n// behavior using the general RetributionStore test suite.",
+      "length": 682,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func TestMockRetributionStore(t *testing.T) {",
+      "content": "func TestMockRetributionStore(t *testing.T) {\n\tfor _, test := range retributionStoreTestSuite {\n\t\tt.Run(\n\t\t\t\"mockRetributionStore.\"+test.name,\n\t\t\tfunc(tt *testing.T) {\n\t\t\t\tmrs := newMockRetributionStore()\n\t\t\t\tfrs := newFailingRetributionStore(\n\t\t\t\t\tfunc() RetributionStorer { return mrs },\n\t\t\t\t)\n\t\t\t\ttest.test(frs, tt)\n\t\t\t},\n\t\t)\n\t}\n}\n",
+      "length": 275,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func makeTestChannelDB(t *testing.T) (*channeldb.DB, error) {",
+      "content": "func makeTestChannelDB(t *testing.T) (*channeldb.DB, error) {\n\tdb, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn db, nil\n}\n\n// TestChannelDBRetributionStore instantiates a retributionStore backed by a\n// channeldb.DB, and tests its behavior using the general RetributionStore test\n// suite.",
+      "length": 254,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChannelDBRetributionStore(t *testing.T) {",
+      "content": "func TestChannelDBRetributionStore(t *testing.T) {\n\t// Finally, instantiate retribution store and execute RetributionStore\n\t// test suite.\n\tfor _, test := range retributionStoreTestSuite {\n\t\tt.Run(\n\t\t\t\"channeldbDBRetributionStore.\"+test.name,\n\t\t\tfunc(tt *testing.T) {\n\t\t\t\tdb, err := makeTestChannelDB(t)\n\t\t\t\tif err != nil {\n\t\t\t\t\tt.Fatalf(\"unable to open channeldb: %v\", err)\n\t\t\t\t}\n\t\t\t\tdefer db.Close()\n\n\t\t\t\trestartDb := func() RetributionStorer {\n\t\t\t\t\t// Close and reopen channeldb\n\t\t\t\t\tif err = db.Close(); err != nil {\n\t\t\t\t\t\tt.Fatalf(\"unable to close \"+\n\t\t\t\t\t\t\t\"channeldb during \"+\n\t\t\t\t\t\t\t\"restart: %v\",\n\t\t\t\t\t\t\terr)\n\t\t\t\t\t}\n\t\t\t\t\tdb, err = channeldb.Open(db.Path())\n\t\t\t\t\tif err != nil {\n\t\t\t\t\t\tt.Fatalf(\"unable to open \"+\n\t\t\t\t\t\t\t\"channeldb: %v\", err)\n\t\t\t\t\t}\n\n\t\t\t\t\treturn NewRetributionStore(db)\n\t\t\t\t}\n\n\t\t\t\tfrs := newFailingRetributionStore(restartDb)\n\t\t\t\ttest.test(frs, tt)\n\t\t\t},\n\t\t)\n\t}\n}\n\n// countRetributions uses a retribution store's ForAll to count the number of\n// elements emitted from the store.",
+      "length": 914,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func countRetributions(t *testing.T, rs RetributionStorer) int {",
+      "content": "func countRetributions(t *testing.T, rs RetributionStorer) int {\n\tcount := 0\n\terr := rs.ForAll(func(_ *retributionInfo) error {\n\t\tcount++\n\t\treturn nil\n\t}, func() {\n\t\tcount = 0\n\t})\n\trequire.NoError(t, err, \"unable to list retributions in db\")\n\treturn count\n}\n\n// testRetributionStoreAddRemove executes a generic test suite for any concrete\n// implementation of the RetributionStore interface. This test adds all\n// retributions to the store, confirms that they are all present, and then\n// removes each one individually.  Between each addition or removal, the number\n// of elements in the store is checked to ensure that it only changes by one.",
+      "length": 563,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreAddRemove(frs FailingRetributionStore, t *testing.T) {",
+      "content": "func testRetributionStoreAddRemove(frs FailingRetributionStore, t *testing.T) {\n\t// Make sure that a new retribution store is actually empty.\n\tif count := countRetributions(t, frs); count != 0 {\n\t\tt.Fatalf(\"expected 0 retributions, found %v\", count)\n\t}\n\n\t// Add all retributions, check that ForAll returns the correct\n\t// information, and then remove all retributions.\n\ttestRetributionStoreAdds(frs, t, false)\n\ttestRetributionStoreForAll(frs, t, false)\n\ttestRetributionStoreRemoves(frs, t, false)\n}\n\n// testRetributionStorePersistence executes the same general test as\n// testRetributionStoreAddRemove, except that it also restarts the store between\n// each operation to ensure that the results are properly persisted.",
+      "length": 624,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStorePersistence(frs FailingRetributionStore, t *testing.T) {",
+      "content": "func testRetributionStorePersistence(frs FailingRetributionStore, t *testing.T) {\n\t// Make sure that a new retribution store is still empty after failing\n\t// right off the bat.\n\tfrs.Restart()\n\tif count := countRetributions(t, frs); count != 0 {\n\t\tt.Fatalf(\"expected 1 retributions, found %v\", count)\n\t}\n\n\t// Insert all retributions into the database, restarting and checking\n\t// between subsequent calls to test that each intermediate additions are\n\t// persisted.\n\ttestRetributionStoreAdds(frs, t, true)\n\n\t// After all retributions have been inserted, verify that the store\n\t// emits a distinct set of retributions that are equivalent to the test\n\t// vector.\n\ttestRetributionStoreForAll(frs, t, true)\n\n\t// Remove all retributions from the database, restarting and checking\n\t// between subsequent calls to test that each intermediate removals are\n\t// persisted.\n\ttestRetributionStoreRemoves(frs, t, true)\n}\n\n// testRetributionStoreInit ensures that a retribution store is always\n// initialized with no retributions.",
+      "length": 908,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreInit(frs FailingRetributionStore, t *testing.T) {",
+      "content": "func testRetributionStoreInit(frs FailingRetributionStore, t *testing.T) {\n\t// Make sure that a new retribution store starts empty.\n\tif count := countRetributions(t, frs); count != 0 {\n\t\tt.Fatalf(\"expected 0 retributions, found %v\", count)\n\t}\n}\n\n// testRetributionStoreRemoveEmpty ensures that a retribution store will not\n// fail or panic if it is instructed to remove an entry while empty.",
+      "length": 309,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreRemoveEmpty(frs FailingRetributionStore, t *testing.T) {",
+      "content": "func testRetributionStoreRemoveEmpty(frs FailingRetributionStore, t *testing.T) {\n\ttestRetributionStoreRemoves(frs, t, false)\n}\n\n// testRetributionStoreOverwrite ensures that attempts to write retribution\n// information regarding a channel point that already exists does not change the\n// total number of entries held by the retribution store.",
+      "length": 256,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreOverwrite(frs FailingRetributionStore, t *testing.T) {",
+      "content": "func testRetributionStoreOverwrite(frs FailingRetributionStore, t *testing.T) {\n\t// Initially, add all retributions to store.\n\ttestRetributionStoreAdds(frs, t, false)\n\n\t// Overwrite the initial entries again.\n\tfor i, retInfo := range retributions {\n\t\tif err := frs.Add(&retInfo); err != nil {\n\t\t\tt.Fatalf(\"unable to add to retribution %v to store: %v\",\n\t\t\t\ti, err)\n\t\t}\n\t}\n\n\t// Check that retribution store still has 2 entries.\n\tif count := countRetributions(t, frs); count != 2 {\n\t\tt.Fatalf(\"expected 2 retributions, found %v\", count)\n\t}\n}\n\n// testRetributionStoreAdds adds all of the test retributions to the database,\n// ensuring that the total number of elements increases by exactly 1 after each\n// operation.  If the `failing` flag is provide, the test will restart the\n// database and confirm that the delta is still 1.",
+      "length": 725,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreAdds(",
+      "content": "func testRetributionStoreAdds(\n\tfrs FailingRetributionStore,\n\tt *testing.T,\n\tfailing bool) {\n\n\t// Iterate over retributions, adding each from the store. If we are\n\t// testing the store under failures, we restart the store and verify\n\t// that the contents are the same.\n\tfor i, retInfo := range retributions {\n\t\t// Snapshot number of entries before and after the addition.\n\t\tnbefore := countRetributions(t, frs)\n\t\tif err := frs.Add(&retInfo); err != nil {\n\t\t\tt.Fatalf(\"unable to add to retribution %v to store: %v\",\n\t\t\t\ti, err)\n\t\t}\n\t\tnafter := countRetributions(t, frs)\n\n\t\t// Check that only one retribution was added.\n\t\tif nafter-nbefore != 1 {\n\t\t\tt.Fatalf(\"expected %v retributions, found %v\",\n\t\t\t\tnbefore+1, nafter)\n\t\t}\n\n\t\tif failing {\n\t\t\tfrs.Restart()\n\n\t\t\t// Check that retribution store has persisted addition\n\t\t\t// after restarting.\n\t\t\tnrestart := countRetributions(t, frs)\n\t\t\tif nrestart-nbefore != 1 {\n\t\t\t\tt.Fatalf(\"expected %v retributions, found %v\",\n\t\t\t\t\tnbefore+1, nrestart)\n\t\t\t}\n\t\t}\n\t}\n}\n\n// testRetributionStoreRemoves removes all of the test retributions to the\n// database, ensuring that the total number of elements decreases by exactly 1\n// after each operation.  If the `failing` flag is provide, the test will\n// restart the database and confirm that the delta is the same.",
+      "length": 1222,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreRemoves(",
+      "content": "func testRetributionStoreRemoves(\n\tfrs FailingRetributionStore,\n\tt *testing.T,\n\tfailing bool) {\n\n\t// Iterate over retributions, removing each from the store. If we are\n\t// testing the store under failures, we restart the store and verify\n\t// that the contents are the same.\n\tfor i, retInfo := range retributions {\n\t\t// Snapshot number of entries before and after the removal.\n\t\tnbefore := countRetributions(t, frs)\n\t\terr := frs.Remove(&retInfo.chanPoint)\n\t\tswitch {\n\t\tcase nbefore == 0 && err == nil:\n\n\t\tcase nbefore > 0 && err != nil:\n\t\t\tt.Fatalf(\"unable to remove to retribution %v \"+\n\t\t\t\t\"from store: %v\", i, err)\n\t\t}\n\t\tnafter := countRetributions(t, frs)\n\n\t\t// If the store is empty, increment nbefore to simulate the\n\t\t// removal of one element.\n\t\tif nbefore == 0 {\n\t\t\tnbefore++\n\t\t}\n\n\t\t// Check that only one retribution was removed.\n\t\tif nbefore-nafter != 1 {\n\t\t\tt.Fatalf(\"expected %v retributions, found %v\",\n\t\t\t\tnbefore-1, nafter)\n\t\t}\n\n\t\tif failing {\n\t\t\tfrs.Restart()\n\n\t\t\t// Check that retribution store has persisted removal\n\t\t\t// after restarting.\n\t\t\tnrestart := countRetributions(t, frs)\n\t\t\tif nbefore-nrestart != 1 {\n\t\t\t\tt.Fatalf(\"expected %v retributions, found %v\",\n\t\t\t\t\tnbefore-1, nrestart)\n\t\t\t}\n\t\t}\n\t}\n}\n\n// testRetributionStoreForAll iterates over the current entries in the\n// retribution store, ensuring that each entry in the database is unique, and\n// corresponds to exactly one of the entries in the test vector. If the\n// `failing` flag is provide, the test will restart the database and confirm\n// that the entries again validate against the test vectors.",
+      "length": 1495,
+      "tokens": 235,
+      "embedding": []
+    },
+    {
+      "slug": "func testRetributionStoreForAll(",
+      "content": "func testRetributionStoreForAll(\n\tfrs FailingRetributionStore,\n\tt *testing.T,\n\tfailing bool) {\n\n\t// nrets is the number of retributions in the test vector\n\tnrets := len(retributions)\n\n\t// isRestart indicates whether or not the database has been restarted.\n\t// When testing for failures, this allows the test case to make a second\n\t// attempt without causing a subsequent restart on the second pass.\n\tvar isRestart bool\n\nrestartCheck:\n\t// Construct a set of all channel points presented by the store. Entries\n\t// are only be added to the set if their corresponding retribution\n\t// information matches the test vector.\n\tvar foundSet map[wire.OutPoint]struct{}\n\n\t// Iterate through the stored retributions, checking to see if we have\n\t// an equivalent retribution in the test vector. This will return an\n\t// error unless all persisted retributions exist in the test vector.\n\tif err := frs.ForAll(func(ret *retributionInfo) error {\n\t\t// Fetch the retribution information from the test vector. If\n\t\t// the entry does not exist, the test returns an error.\n\t\tif exRetInfo, ok := retributionMap[ret.chanPoint]; ok {\n\t\t\t// Compare the presented retribution information with\n\t\t\t// the expected value, fail if they are inconsistent.\n\t\t\tif !reflect.DeepEqual(ret, &exRetInfo) {\n\t\t\t\treturn fmt.Errorf(\"unexpected retribution \"+\n\t\t\t\t\t\"retrieved from db --\\n\"+\n\t\t\t\t\t\"want: %#v\\ngot: %#v\", exRetInfo, ret,\n\t\t\t\t)\n\t\t\t}\n\n\t\t\t// Retribution information from database matches the\n\t\t\t// test vector, record the channel point in the found\n\t\t\t// map.\n\t\t\tfoundSet[ret.chanPoint] = struct{}{}\n\n\t\t} else {\n\t\t\treturn fmt.Errorf(\"unknown retribution retrieved \"+\n\t\t\t\t\"from db: %v\", ret)\n\t\t}\n\n\t\treturn nil\n\t}, func() {\n\t\tfoundSet = make(map[wire.OutPoint]struct{})\n\t}); err != nil {\n\t\tt.Fatalf(\"failed to iterate over persistent retributions: %v\",\n\t\t\terr)\n\t}\n\n\t// Check that retribution store emits nrets entries\n\tif count := countRetributions(t, frs); count != nrets {\n\t\tt.Fatalf(\"expected %v retributions, found %v\", nrets, count)\n\t}\n\n\t// Confirm that all of the retributions emitted from the iteration\n\t// correspond to unique channel points.\n\tnunique := len(foundSet)\n\tif nunique != nrets {\n\t\tt.Fatalf(\"expected %v unique retributions, only found %v\",\n\t\t\tnrets, nunique)\n\t}\n\n\t// If in failure mode on only on first pass, restart the database and\n\t// rexecute the test.\n\tif failing && !isRestart {\n\t\tfrs.Restart()\n\t\tisRestart = true\n\n\t\tgoto restartCheck\n\t}\n}\n",
+      "length": 2324,
+      "tokens": 348,
+      "embedding": []
+    },
+    {
+      "slug": "func initBreachedState(t *testing.T) (*BreachArbiter,",
+      "content": "func initBreachedState(t *testing.T) (*BreachArbiter,\n\t*lnwallet.LightningChannel, *lnwallet.LightningChannel,\n\t*lnwallet.LocalForceCloseSummary, chan *ContractBreachEvent) {\n\n\t// Create a pair of channels using a notifier that allows us to signal\n\t// a spend of the funding transaction. Alice's channel will be the on\n\t// observing a breach.\n\talice, bob, err := createInitChannels(t, 1)\n\trequire.NoError(t, err, \"unable to create test channels\")\n\n\t// Instantiate a breach arbiter to handle the breach of alice's channel.\n\tcontractBreaches := make(chan *ContractBreachEvent)\n\n\tbrar, err := createTestArbiter(\n\t\tt, contractBreaches, alice.State().Db.GetParentDB(),\n\t)\n\trequire.NoError(t, err, \"unable to initialize test breach arbiter\")\n\n\t// Send one HTLC to Bob and perform a state transition to lock it in.\n\thtlcAmount := lnwire.NewMSatFromSatoshis(20000)\n\thtlc, _ := createHTLC(0, htlcAmount)\n\tif _, err := alice.AddHTLC(htlc, nil); err != nil {\n\t\tt.Fatalf(\"alice unable to add htlc: %v\", err)\n\t}\n\tif _, err := bob.ReceiveHTLC(htlc); err != nil {\n\t\tt.Fatalf(\"bob unable to recv add htlc: %v\", err)\n\t}\n\tif err := forceStateTransition(alice, bob); err != nil {\n\t\tt.Fatalf(\"Can't update the channel state: %v\", err)\n\t}\n\n\t// Generate the force close summary at this point in time, this will\n\t// serve as the old state bob will broadcast.\n\tbobClose, err := bob.ForceClose()\n\trequire.NoError(t, err, \"unable to force close bob's channel\")\n\n\t// Now send another HTLC and perform a state transition, this ensures\n\t// Alice is ahead of the state Bob will broadcast.\n\thtlc2, _ := createHTLC(1, htlcAmount)\n\tif _, err := alice.AddHTLC(htlc2, nil); err != nil {\n\t\tt.Fatalf(\"alice unable to add htlc: %v\", err)\n\t}\n\tif _, err := bob.ReceiveHTLC(htlc2); err != nil {\n\t\tt.Fatalf(\"bob unable to recv add htlc: %v\", err)\n\t}\n\tif err := forceStateTransition(alice, bob); err != nil {\n\t\tt.Fatalf(\"Can't update the channel state: %v\", err)\n\t}\n\n\treturn brar, alice, bob, bobClose, contractBreaches\n}\n\n// TestBreachHandoffSuccess tests that a channel's close observer properly\n// delivers retribution information to the breach arbiter in response to a\n// breach close. This test verifies correctness in the event that the handoff\n// experiences no interruptions.",
+      "length": 2132,
+      "tokens": 317,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachHandoffSuccess(t *testing.T) {",
+      "content": "func TestBreachHandoffSuccess(t *testing.T) {\n\tbrar, alice, _, bobClose, contractBreaches := initBreachedState(t)\n\n\tchanPoint := alice.ChanPoint\n\n\t// Signal a spend of the funding transaction and wait for the close\n\t// observer to exit.\n\tprocessACK := make(chan error)\n\tbreach := &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: &lnwallet.BreachRetribution{\n\t\t\tBreachTxHash: bobClose.CloseTx.TxHash(),\n\t\t\tLocalOutputSignDesc: &input.SignDescriptor{\n\t\t\t\tOutput: &wire.TxOut{\n\t\t\t\t\tPkScript: breachKeys[0],\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\tcontractBreaches <- breach\n\n\t// We'll also wait to consume the ACK back from the breach arbiter.\n\tselect {\n\tcase err := <-processACK:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"handoff failed: %v\", err)\n\t\t}\n\tcase <-time.After(time.Second * 15):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\t// After exiting, the breach arbiter should have persisted the\n\t// retribution information and the channel should be shown as pending\n\t// force closed.\n\tassertArbiterBreach(t, brar, chanPoint)\n\n\t// Send another breach event. Since the handoff for this channel was\n\t// already ACKed, the breach arbiter should immediately ACK and ignore\n\t// this event.\n\tbreach = &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: &lnwallet.BreachRetribution{\n\t\t\tBreachTxHash: bobClose.CloseTx.TxHash(),\n\t\t\tLocalOutputSignDesc: &input.SignDescriptor{\n\t\t\t\tOutput: &wire.TxOut{\n\t\t\t\t\tPkScript: breachKeys[0],\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\n\tcontractBreaches <- breach\n\n\t// We'll also wait to consume the ACK back from the breach arbiter.\n\tselect {\n\tcase err := <-processACK:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"handoff failed: %v\", err)\n\t\t}\n\tcase <-time.After(time.Second * 15):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\t// State should not have changed.\n\tassertArbiterBreach(t, brar, chanPoint)\n}\n\n// TestBreachHandoffFail tests that a channel's close observer properly\n// delivers retribution information to the breach arbiter in response to a\n// breach close. This test verifies correctness in the event that the breach\n// arbiter fails to write the information to disk, and that a subsequent attempt\n// at the handoff succeeds.",
+      "length": 2169,
+      "tokens": 287,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachHandoffFail(t *testing.T) {",
+      "content": "func TestBreachHandoffFail(t *testing.T) {\n\tbrar, alice, _, bobClose, contractBreaches := initBreachedState(t)\n\n\t// Before alerting Alice of the breach, instruct our failing retribution\n\t// store to fail the next database operation, which we expect to write\n\t// the information handed off by the channel's close observer.\n\tfstore := brar.cfg.Store.(*failingRetributionStore)\n\tfstore.FailNextAdd(nil)\n\n\t// Signal the notifier to dispatch spend notifications of the funding\n\t// transaction using the transaction from bob's closing summary.\n\tchanPoint := alice.ChanPoint\n\tprocessACK := make(chan error)\n\tbreach := &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: &lnwallet.BreachRetribution{\n\t\t\tBreachTxHash: bobClose.CloseTx.TxHash(),\n\t\t\tLocalOutputSignDesc: &input.SignDescriptor{\n\t\t\t\tOutput: &wire.TxOut{\n\t\t\t\t\tPkScript: breachKeys[0],\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\tcontractBreaches <- breach\n\n\t// We'll also wait to consume the ACK back from the breach arbiter.\n\tselect {\n\tcase err := <-processACK:\n\t\tif err == nil {\n\t\t\tt.Fatalf(\"breach write should have failed\")\n\t\t}\n\tcase <-time.After(time.Second * 15):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\t// Since the handoff failed, the breach arbiter should not show the\n\t// channel as breached, and the channel should also not have been marked\n\t// pending closed.\n\tassertNoArbiterBreach(t, brar, chanPoint)\n\tassertNotPendingClosed(t, alice)\n\n\tbrar, err := createTestArbiter(\n\t\tt, contractBreaches, alice.State().Db.GetParentDB(),\n\t)\n\trequire.NoError(t, err, \"unable to initialize test breach arbiter\")\n\n\t// Signal a spend of the funding transaction and wait for the close\n\t// observer to exit. This time we are allowing the handoff to succeed.\n\tbreach = &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: &lnwallet.BreachRetribution{\n\t\t\tBreachTxHash: bobClose.CloseTx.TxHash(),\n\t\t\tLocalOutputSignDesc: &input.SignDescriptor{\n\t\t\t\tOutput: &wire.TxOut{\n\t\t\t\t\tPkScript: breachKeys[0],\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}\n\n\tcontractBreaches <- breach\n\n\tselect {\n\tcase err := <-processACK:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"handoff failed: %v\", err)\n\t\t}\n\tcase <-time.After(time.Second * 15):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\t// Check that the breach was properly recorded in the breach arbiter,\n\t// and that the close observer marked the channel as pending closed\n\t// before exiting.\n\tassertArbiterBreach(t, brar, chanPoint)\n}\n\n// TestBreachCreateJusticeTx tests that we create three different variants of\n// the justice tx.",
+      "length": 2513,
+      "tokens": 320,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachCreateJusticeTx(t *testing.T) {",
+      "content": "func TestBreachCreateJusticeTx(t *testing.T) {\n\tbrar, _, _, _, _ := initBreachedState(t)\n\n\t// In this test we just want to check that the correct inputs are added\n\t// to the justice tx, not that we create a valid spend, so we just set\n\t// some params making the script generation succeed.\n\taliceKeyPriv, _ := btcec.PrivKeyFromBytes(\n\t\tchannels.AlicesPrivKey,\n\t)\n\talicePubKey := aliceKeyPriv.PubKey()\n\n\tsignDesc := &breachedOutputs[0].signDesc\n\tsignDesc.KeyDesc.PubKey = alicePubKey\n\tsignDesc.DoubleTweak = aliceKeyPriv\n\n\t// We'll test all the different types of outputs we'll sweep with the\n\t// justice tx.\n\toutputTypes := []input.StandardWitnessType{\n\t\tinput.CommitmentNoDelay,\n\t\tinput.CommitSpendNoDelayTweakless,\n\t\tinput.CommitmentToRemoteConfirmed,\n\t\tinput.CommitmentRevoke,\n\t\tinput.HtlcAcceptedRevoke,\n\t\tinput.HtlcOfferedRevoke,\n\t\tinput.HtlcSecondLevelRevoke,\n\t}\n\n\tbreachedOutputs := make([]breachedOutput, len(outputTypes))\n\tfor i, wt := range outputTypes {\n\t\t// Create a fake breached output for each type, ensuring they\n\t\t// have different outpoints for our logic to accept them.\n\t\top := breachedOutputs[0].outpoint\n\t\top.Index = uint32(i)\n\t\tbreachedOutputs[i] = makeBreachedOutput(\n\t\t\t&op,\n\t\t\twt,\n\t\t\t// Second level scripts doesn't matter in this test.\n\t\t\tnil,\n\t\t\tsignDesc,\n\t\t\t1,\n\t\t)\n\t}\n\n\t// Create the justice transactions.\n\tjusticeTxs, err := brar.createJusticeTx(breachedOutputs)\n\trequire.NoError(t, err)\n\trequire.NotNil(t, justiceTxs)\n\n\t// The spendAll tx should be spending all the outputs. This is the\n\t// \"regular\" justice transaction type.\n\trequire.Len(t, justiceTxs.spendAll.TxIn, len(breachedOutputs))\n\n\t// The spendCommitOuts tx should be spending the 4 typed of commit outs\n\t// (note that in practice there will be at most two commit outputs per\n\t// commit, but we test all 4 types here).\n\trequire.Len(t, justiceTxs.spendCommitOuts.TxIn, 4)\n\n\t// Finally check that the spendHTLCs tx are spending the two revoked\n\t// HTLC types, and the second level type.\n\trequire.Len(t, justiceTxs.spendHTLCs.TxIn, 3)\n}\n",
+      "length": 1917,
+      "tokens": 245,
+      "embedding": []
+    },
+    {
+      "slug": "type publAssertion func(*testing.T, map[wire.OutPoint]struct{},",
+      "content": "type publAssertion func(*testing.T, map[wire.OutPoint]struct{},\n\tchan *wire.MsgTx, chainhash.Hash) *wire.MsgTx\n",
+      "length": 46,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "type breachTest struct {",
+      "content": "type breachTest struct {\n\tname string\n\n\t// spend2ndLevel requests that second level htlcs be spent *again*, as\n\t// if by a remote party or watchtower. The outpoint of the second level\n\t// htlc is in effect \"re-added\" to the set of inputs.\n\tspend2ndLevel bool\n\n\t// sweepHtlc tests that the HTLC output is swept using the revocation\n\t// path in a separate tx.\n\tsweepHtlc bool\n\n\t// sendFinalConf informs the test to send a confirmation for the justice\n\t// transaction before asserting the arbiter is cleaned up.\n\tsendFinalConf bool\n\n\t// whenNonZeroInputs is called after spending an input but there are\n\t// further inputs to spend in the test.\n\twhenNonZeroInputs publAssertion\n\n\t// whenZeroInputs is called after spending an input but there are no\n\t// further inputs to spend in the test.\n\twhenZeroInputs publAssertion\n}\n",
+      "length": 770,
+      "tokens": 127,
+      "embedding": []
+    },
+    {
+      "slug": "type spendTxs struct {",
+      "content": "type spendTxs struct {\n\tcommitSpendTx    *wire.MsgTx\n\thtlc2ndLevlTx    *wire.MsgTx\n\thtlc2ndLevlSpend *wire.MsgTx\n\thtlcSweep        *wire.MsgTx\n}\n",
+      "length": 117,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func getSpendTransactions(signer input.Signer, chanPoint *wire.OutPoint,",
+      "content": "func getSpendTransactions(signer input.Signer, chanPoint *wire.OutPoint,\n\tretribution *lnwallet.BreachRetribution) (*spendTxs, error) {\n\n\tlocalOutpoint := retribution.LocalOutpoint\n\tremoteOutpoint := retribution.RemoteOutpoint\n\thtlcOutpoint := retribution.HtlcRetributions[0].OutPoint\n\n\t// commitSpendTx is used to spend commitment outputs.\n\tcommitSpendTx := &wire.MsgTx{\n\t\tTxIn: []*wire.TxIn{\n\t\t\t{\n\t\t\t\tPreviousOutPoint: localOutpoint,\n\t\t\t},\n\t\t\t{\n\t\t\t\tPreviousOutPoint: remoteOutpoint,\n\t\t\t},\n\t\t},\n\t\tTxOut: []*wire.TxOut{\n\t\t\t{Value: 500000000},\n\t\t},\n\t}\n\n\t// htlc2ndLevlTx is used to transition an htlc output on the commitment\n\t// transaction to a second level htlc.\n\thtlc2ndLevlTx := &wire.MsgTx{\n\t\tTxIn: []*wire.TxIn{\n\t\t\t{\n\t\t\t\tPreviousOutPoint: htlcOutpoint,\n\t\t\t},\n\t\t},\n\t\tTxOut: []*wire.TxOut{\n\t\t\t{Value: 20000},\n\t\t},\n\t}\n\n\tsecondLvlOp := wire.OutPoint{\n\t\tHash:  htlc2ndLevlTx.TxHash(),\n\t\tIndex: 0,\n\t}\n\n\t// htlcSpendTx is used to spend from a second level htlc.\n\thtlcSpendTx := &wire.MsgTx{\n\t\tTxIn: []*wire.TxIn{\n\t\t\t{\n\t\t\t\tPreviousOutPoint: secondLvlOp,\n\t\t\t},\n\t\t},\n\n\t\tTxOut: []*wire.TxOut{\n\t\t\t{Value: 10000},\n\t\t},\n\t}\n\n\t// htlcSweep is used to spend the HTLC output directly using the\n\t// revocation key.\n\thtlcSweep := &wire.MsgTx{\n\t\tTxIn: []*wire.TxIn{\n\t\t\t{\n\t\t\t\tPreviousOutPoint: htlcOutpoint,\n\t\t\t},\n\t\t},\n\t\tTxOut: []*wire.TxOut{\n\t\t\t{Value: 21000},\n\t\t},\n\t}\n\n\t// In order for  the breacharbiter to detect that it is being spent\n\t// using the revocation key, it will inspect the witness. Therefore\n\t// sign and add the witness to the HTLC sweep.\n\tretInfo := newRetributionInfo(chanPoint, retribution)\n\n\thashCache := input.NewTxSigHashesV0Only(htlcSweep)\n\tfor i := range retInfo.breachedOutputs {\n\t\tinp := &retInfo.breachedOutputs[i]\n\n\t\t// Find the HTLC output. so we can add the witness.\n\t\tswitch inp.witnessType {\n\t\tcase input.HtlcAcceptedRevoke:\n\t\t\tfallthrough\n\t\tcase input.HtlcOfferedRevoke:\n\t\t\tcannedFetcher := txscript.NewCannedPrevOutputFetcher(\n\t\t\t\tnil, 0,\n\t\t\t)\n\t\t\tinputScript, err := inp.CraftInputScript(\n\t\t\t\tsigner, htlcSweep, hashCache, cannedFetcher, 0,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\n\t\t\thtlcSweep.TxIn[0].Witness = inputScript.Witness\n\t\t}\n\t}\n\n\treturn &spendTxs{\n\t\tcommitSpendTx:    commitSpendTx,\n\t\thtlc2ndLevlTx:    htlc2ndLevlTx,\n\t\thtlc2ndLevlSpend: htlcSpendTx,\n\t\thtlcSweep:        htlcSweep,\n\t}, nil\n}\n\nvar breachTests = []breachTest{\n\t{\n\t\tname:          \"all spends\",\n\t\tspend2ndLevel: true,\n\t\twhenNonZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx, _ chainhash.Hash) *wire.MsgTx {\n\n\t\t\tvar tx *wire.MsgTx\n\t\t\tselect {\n\t\t\tcase tx = <-publTx:\n\t\t\tcase <-time.After(5 * time.Second):\n\t\t\t\tt.Fatalf(\"tx was not published\")\n\t\t\t}\n\n\t\t\t// The justice transaction should have the same number\n\t\t\t// of inputs as we are tracking in the test.\n\t\t\tif len(tx.TxIn) != len(inputs) {\n\t\t\t\tt.Fatalf(\"expected justice txn to have %d \"+\n\t\t\t\t\t\"inputs, found %d\", len(inputs),\n\t\t\t\t\tlen(tx.TxIn))\n\t\t\t}\n\n\t\t\t// Ensure that each input exists on the justice\n\t\t\t// transaction.\n\t\t\tfor in := range inputs {\n\t\t\t\tfindInputIndex(t, in, tx)\n\t\t\t}\n\n\t\t\treturn tx\n\t\t},\n\t\twhenZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx, _ chainhash.Hash) *wire.MsgTx {\n\n\t\t\t// Sanity check to ensure the brar doesn't try to\n\t\t\t// broadcast another sweep, since all outputs have been\n\t\t\t// spent externally.\n\t\t\tselect {\n\t\t\tcase <-publTx:\n\t\t\t\tt.Fatalf(\"tx published unexpectedly\")\n\t\t\tcase <-time.After(50 * time.Millisecond):\n\t\t\t}\n\n\t\t\treturn nil\n\t\t},\n\t},\n\t{\n\t\tname:          \"commit spends, second level sweep\",\n\t\tspend2ndLevel: false,\n\t\tsendFinalConf: true,\n\t\twhenNonZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx, _ chainhash.Hash) *wire.MsgTx {\n\n\t\t\tvar tx *wire.MsgTx\n\t\t\tselect {\n\t\t\tcase tx = <-publTx:\n\t\t\tcase <-time.After(5 * time.Second):\n\t\t\t\tt.Fatalf(\"tx was not published\")\n\t\t\t}\n\n\t\t\t// The justice transaction should have the same number\n\t\t\t// of inputs as we are tracking in the test.\n\t\t\tif len(tx.TxIn) != len(inputs) {\n\t\t\t\tt.Fatalf(\"expected justice txn to have %d \"+\n\t\t\t\t\t\"inputs, found %d\", len(inputs),\n\t\t\t\t\tlen(tx.TxIn))\n\t\t\t}\n\n\t\t\t// Ensure that each input exists on the justice\n\t\t\t// transaction.\n\t\t\tfor in := range inputs {\n\t\t\t\tfindInputIndex(t, in, tx)\n\t\t\t}\n\n\t\t\treturn tx\n\t\t},\n\t\twhenZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx,\n\t\t\thtlc2ndLevlTxHash chainhash.Hash) *wire.MsgTx {\n\n\t\t\t// Now a transaction attempting to spend from the second\n\t\t\t// level tx should be published instead. Let this\n\t\t\t// publish succeed by setting the publishing error to\n\t\t\t// nil.\n\t\t\tvar tx *wire.MsgTx\n\t\t\tselect {\n\t\t\tcase tx = <-publTx:\n\t\t\tcase <-time.After(5 * time.Second):\n\t\t\t\tt.Fatalf(\"tx was not published\")\n\t\t\t}\n\n\t\t\t// The commitment outputs should be gone, and there\n\t\t\t// should only be a single htlc spend.\n\t\t\tif len(tx.TxIn) != 1 {\n\t\t\t\tt.Fatalf(\"expect 1 htlc output, found %d \"+\n\t\t\t\t\t\"outputs\", len(tx.TxIn))\n\t\t\t}\n\n\t\t\t// The remaining TxIn  previously attempting to spend\n\t\t\t// the HTLC outpoint should now be spending from the\n\t\t\t// second level tx.\n\t\t\t//\n\t\t\t// NOTE: Commitment outputs and htlc sweeps are spent\n\t\t\t// with a different transactions (and thus txids),\n\t\t\t// ensuring we aren't mistaking this for a different\n\t\t\t// output type.\n\t\t\tonlyInput := tx.TxIn[0].PreviousOutPoint.Hash\n\t\t\tif onlyInput != htlc2ndLevlTxHash {\n\t\t\t\tt.Fatalf(\"tx not attempting to spend second \"+\n\t\t\t\t\t\"level tx, %v\", tx.TxIn[0])\n\t\t\t}\n\n\t\t\treturn tx\n\t\t},\n\t},\n\t{ // nolint: dupl\n\t\t// Test that if the HTLC output is swept via the revoke path\n\t\t// (by us) in a separate tx, it will be handled correctly.\n\t\tname:      \"sweep htlc\",\n\t\tsweepHtlc: true,\n\t\twhenNonZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx, _ chainhash.Hash) *wire.MsgTx {\n\n\t\t\tvar tx *wire.MsgTx\n\t\t\tselect {\n\t\t\tcase tx = <-publTx:\n\t\t\tcase <-time.After(5 * time.Second):\n\t\t\t\tt.Fatalf(\"tx was not published\")\n\t\t\t}\n\n\t\t\t// The justice transaction should have the same number\n\t\t\t// of inputs as we are tracking in the test.\n\t\t\tif len(tx.TxIn) != len(inputs) {\n\t\t\t\tt.Fatalf(\"expected justice txn to have %d \"+\n\t\t\t\t\t\"inputs, found %d\", len(inputs),\n\t\t\t\t\tlen(tx.TxIn))\n\t\t\t}\n\n\t\t\t// Ensure that each input exists on the justice\n\t\t\t// transaction.\n\t\t\tfor in := range inputs {\n\t\t\t\tfindInputIndex(t, in, tx)\n\t\t\t}\n\n\t\t\treturn tx\n\t\t},\n\t\twhenZeroInputs: func(t *testing.T,\n\t\t\tinputs map[wire.OutPoint]struct{},\n\t\t\tpublTx chan *wire.MsgTx, _ chainhash.Hash) *wire.MsgTx {\n\n\t\t\t// Sanity check to ensure the brar doesn't try to\n\t\t\t// broadcast another sweep, since all outputs have been\n\t\t\t// spent externally.\n\t\t\tselect {\n\t\t\tcase <-publTx:\n\t\t\t\tt.Fatalf(\"tx published unexpectedly\")\n\t\t\tcase <-time.After(50 * time.Millisecond):\n\t\t\t}\n\n\t\t\treturn nil\n\t\t},\n\t},\n}\n\n// TestBreachSpends checks the behavior of the breach arbiter in response to\n// spend events on a channels outputs by asserting that it properly removes or\n// modifies the inputs from the justice txn.",
+      "length": 6673,
+      "tokens": 886,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachSpends(t *testing.T) {",
+      "content": "func TestBreachSpends(t *testing.T) {\n\tfor _, test := range breachTests {\n\t\ttc := test\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\ttestBreachSpends(t, tc)\n\t\t})\n\t}\n}\n",
+      "length": 117,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func testBreachSpends(t *testing.T, test breachTest) {",
+      "content": "func testBreachSpends(t *testing.T, test breachTest) {\n\tbrar, alice, _, bobClose, contractBreaches := initBreachedState(t)\n\n\tvar (\n\t\theight       = bobClose.ChanSnapshot.CommitHeight\n\t\tforceCloseTx = bobClose.CloseTx\n\t\tchanPoint    = alice.ChanPoint\n\t\tpublTx       = make(chan *wire.MsgTx)\n\t\tpublErr      error\n\t\tpublMtx      sync.Mutex\n\t)\n\n\t// Make PublishTransaction always return ErrDoubleSpend to begin with.\n\tpublErr = lnwallet.ErrDoubleSpend\n\tbrar.cfg.PublishTransaction = func(tx *wire.MsgTx, _ string) error {\n\t\tpublMtx.Lock()\n\t\terr := publErr\n\t\tpublMtx.Unlock()\n\n\t\tselect {\n\t\tcase publTx <- tx:\n\t\tcase <-brar.quit:\n\t\t\treturn fmt.Errorf(\"brar quit\")\n\t\t}\n\n\t\treturn err\n\t}\n\n\t// Notify the breach arbiter about the breach.\n\tretribution, err := lnwallet.NewBreachRetribution(\n\t\talice.State(), height, 1, forceCloseTx,\n\t)\n\trequire.NoError(t, err, \"unable to create breach retribution\")\n\n\tprocessACK := make(chan error)\n\tbreach := &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: retribution,\n\t}\n\tselect {\n\tcase contractBreaches <- breach:\n\tcase <-time.After(15 * time.Second):\n\t\tt.Fatalf(\"breach not delivered\")\n\t}\n\n\t// We'll also wait to consume the ACK back from the breach arbiter.\n\tselect {\n\tcase err := <-processACK:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"handoff failed: %v\", err)\n\t\t}\n\tcase <-time.After(time.Second * 15):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\tstate := alice.State()\n\terr = state.CloseChannel(&channeldb.ChannelCloseSummary{\n\t\tChanPoint:               state.FundingOutpoint,\n\t\tChainHash:               state.ChainHash,\n\t\tRemotePub:               state.IdentityPub,\n\t\tCloseType:               channeldb.BreachClose,\n\t\tCapacity:                state.Capacity,\n\t\tIsPending:               true,\n\t\tShortChanID:             state.ShortChanID(),\n\t\tRemoteCurrentRevocation: state.RemoteCurrentRevocation,\n\t\tRemoteNextRevocation:    state.RemoteNextRevocation,\n\t\tLocalChanConfig:         state.LocalChanCfg,\n\t})\n\trequire.NoError(t, err, \"unable to close channel\")\n\n\t// After exiting, the breach arbiter should have persisted the\n\t// retribution information and the channel should be shown as pending\n\t// force closed.\n\tassertArbiterBreach(t, brar, chanPoint)\n\n\t// Assert that the database sees the channel as pending close, otherwise\n\t// the breach arbiter won't be able to fully close it.\n\tassertPendingClosed(t, alice)\n\n\t// Notify that the breaching transaction is confirmed, to trigger the\n\t// retribution logic.\n\tnotifier := brar.cfg.Notifier.(*mock.SpendNotifier)\n\n\tselect {\n\tcase notifier.ConfChan <- &chainntnfs.TxConfirmation{}:\n\tcase <-time.After(15 * time.Second):\n\t\tt.Fatalf(\"conf not delivered\")\n\t}\n\n\t// The breach arbiter should attempt to sweep all outputs on the\n\t// breached commitment. We'll pretend that the HTLC output has been\n\t// spent by the channel counter party's second level tx already.\n\tvar tx *wire.MsgTx\n\tselect {\n\tcase tx = <-publTx:\n\tcase <-time.After(5 * time.Second):\n\t\tt.Fatalf(\"tx was not published\")\n\t}\n\n\t// All outputs should initially spend from the force closed txn.\n\tforceTxID := forceCloseTx.TxHash()\n\tfor _, txIn := range tx.TxIn {\n\t\tif txIn.PreviousOutPoint.Hash != forceTxID {\n\t\t\tt.Fatalf(\"og justice tx not spending commitment\")\n\t\t}\n\t}\n\n\tlocalOutpoint := retribution.LocalOutpoint\n\tremoteOutpoint := retribution.RemoteOutpoint\n\thtlcOutpoint := retribution.HtlcRetributions[0].OutPoint\n\n\tspendTxs, err := getSpendTransactions(\n\t\tbrar.cfg.Signer, chanPoint, retribution,\n\t)\n\trequire.NoError(t, err)\n\n\t// Construct a map from outpoint on the force close to the transaction\n\t// we want it to be spent by. As the test progresses, this map will be\n\t// updated to contain only the set of commitment or second level\n\t// outpoints that remain to be spent.\n\tspentBy := map[wire.OutPoint]*wire.MsgTx{\n\t\thtlcOutpoint:   spendTxs.htlc2ndLevlTx,\n\t\tlocalOutpoint:  spendTxs.commitSpendTx,\n\t\tremoteOutpoint: spendTxs.commitSpendTx,\n\t}\n\n\t// We also keep a map of those remaining outputs we expect the\n\t// breacharbiter to try and sweep.\n\tinputsToSweep := map[wire.OutPoint]struct{}{\n\t\thtlcOutpoint:   {},\n\t\tlocalOutpoint:  {},\n\t\tremoteOutpoint: {},\n\t}\n\n\thtlc2ndLevlTx := spendTxs.htlc2ndLevlTx\n\thtlcSpendTx := spendTxs.htlc2ndLevlSpend\n\n\t// If the test is checking sweep of the HTLC directly without the\n\t// second level, insert the sweep tx instead.\n\tif test.sweepHtlc {\n\t\tspentBy[htlcOutpoint] = spendTxs.htlcSweep\n\t}\n\n\t// Until no more inputs to spend remain, deliver the spend events and\n\t// process the assertions prescribed by the test case.\n\tvar justiceTx *wire.MsgTx\n\tfor len(spentBy) > 0 {\n\t\tvar (\n\t\t\top      wire.OutPoint\n\t\t\tspendTx *wire.MsgTx\n\t\t)\n\n\t\t// Pick an outpoint at random from the set of inputs.\n\t\tfor op, spendTx = range spentBy {\n\t\t\tdelete(spentBy, op)\n\t\t\tbreak\n\t\t}\n\n\t\t// Deliver the spend notification for the chosen transaction.\n\t\tnotifier.Spend(&op, 2, spendTx)\n\n\t\t// Since the remote just swept this input, we expect our next\n\t\t// justice transaction to not include them.\n\t\tdelete(inputsToSweep, op)\n\n\t\t// If this is the second-level spend, we must add the new\n\t\t// outpoint to our expected sweeps.\n\t\tspendTxID := spendTx.TxHash()\n\t\tif spendTxID == htlc2ndLevlTx.TxHash() {\n\t\t\t// Create the second level outpoint that will\n\t\t\t// be spent, the index is always zero for these\n\t\t\t// 1-in-1-out txns.\n\t\t\tspendOp := wire.OutPoint{Hash: spendTxID}\n\t\t\tinputsToSweep[spendOp] = struct{}{}\n\n\t\t\t// When the second layer transfer is detected, add back\n\t\t\t// the outpoint of the second layer tx so that we can\n\t\t\t// spend it again. Only do so if the test requests this\n\t\t\t// behavior.\n\t\t\tif test.spend2ndLevel {\n\t\t\t\tspentBy[spendOp] = htlcSpendTx\n\t\t\t}\n\t\t}\n\n\t\tif len(spentBy) > 0 {\n\t\t\tjusticeTx = test.whenNonZeroInputs(t, inputsToSweep, publTx, htlc2ndLevlTx.TxHash())\n\t\t} else {\n\t\t\t// Reset the publishing error so that any publication,\n\t\t\t// made by the breach arbiter, if any, will succeed.\n\t\t\tpublMtx.Lock()\n\t\t\tpublErr = nil\n\t\t\tpublMtx.Unlock()\n\t\t\tjusticeTx = test.whenZeroInputs(t, inputsToSweep, publTx, htlc2ndLevlTx.TxHash())\n\t\t}\n\t}\n\n\t// Deliver confirmation of sweep if the test expects it. Since we are\n\t// looking for the final justice tx to confirme, we deliver a spend of\n\t// all its inputs.\n\tif test.sendFinalConf {\n\t\tfor _, txin := range justiceTx.TxIn {\n\t\t\top := txin.PreviousOutPoint\n\t\t\tnotifier.Spend(&op, 3, justiceTx)\n\t\t}\n\t}\n\n\t// Assert that the channel is fully resolved.\n\tassertBrarCleanup(t, brar, alice.ChanPoint, alice.State().Db)\n}\n\n// TestBreachDelayedJusticeConfirmation tests that the breach arbiter will\n// \"split\" the justice tx in case the first justice tx doesn't confirm within\n// a reasonable time.",
+      "length": 6417,
+      "tokens": 831,
+      "embedding": []
+    },
+    {
+      "slug": "func TestBreachDelayedJusticeConfirmation(t *testing.T) {",
+      "content": "func TestBreachDelayedJusticeConfirmation(t *testing.T) {\n\tbrar, alice, _, bobClose, contractBreaches := initBreachedState(t)\n\n\tvar (\n\t\theight       = bobClose.ChanSnapshot.CommitHeight\n\t\tblockHeight  = int32(10)\n\t\tforceCloseTx = bobClose.CloseTx\n\t\tchanPoint    = alice.ChanPoint\n\t\tpublTx       = make(chan *wire.MsgTx)\n\t)\n\n\t// Make PublishTransaction always return succeed.\n\tbrar.cfg.PublishTransaction = func(tx *wire.MsgTx, _ string) error {\n\t\tselect {\n\t\tcase publTx <- tx:\n\t\tcase <-brar.quit:\n\t\t\treturn fmt.Errorf(\"brar quit\")\n\t\t}\n\t\treturn nil\n\t}\n\n\t// Notify the breach arbiter about the breach.\n\tretribution, err := lnwallet.NewBreachRetribution(\n\t\talice.State(), height, uint32(blockHeight), forceCloseTx,\n\t)\n\trequire.NoError(t, err, \"unable to create breach retribution\")\n\n\tprocessACK := make(chan error, 1)\n\tbreach := &ContractBreachEvent{\n\t\tChanPoint: *chanPoint,\n\t\tProcessACK: func(brarErr error) {\n\t\t\tprocessACK <- brarErr\n\t\t},\n\t\tBreachRetribution: retribution,\n\t}\n\n\tselect {\n\tcase contractBreaches <- breach:\n\tcase <-time.After(defaultTimeout):\n\t\tt.Fatalf(\"breach not delivered\")\n\t}\n\n\t// We'll also wait to consume the ACK back from the breach arbiter.\n\tselect {\n\tcase err := <-processACK:\n\t\tif err != nil {\n\t\t\tt.Fatalf(\"handoff failed: %v\", err)\n\t\t}\n\tcase <-time.After(defaultTimeout):\n\t\tt.Fatalf(\"breach arbiter didn't send ack back\")\n\t}\n\n\tstate := alice.State()\n\terr = state.CloseChannel(&channeldb.ChannelCloseSummary{\n\t\tChanPoint:               state.FundingOutpoint,\n\t\tChainHash:               state.ChainHash,\n\t\tRemotePub:               state.IdentityPub,\n\t\tCloseType:               channeldb.BreachClose,\n\t\tCapacity:                state.Capacity,\n\t\tIsPending:               true,\n\t\tShortChanID:             state.ShortChanID(),\n\t\tRemoteCurrentRevocation: state.RemoteCurrentRevocation,\n\t\tRemoteNextRevocation:    state.RemoteNextRevocation,\n\t\tLocalChanConfig:         state.LocalChanCfg,\n\t})\n\trequire.NoError(t, err, \"unable to close channel\")\n\n\t// After exiting, the breach arbiter should have persisted the\n\t// retribution information and the channel should be shown as pending\n\t// force closed.\n\tassertArbiterBreach(t, brar, chanPoint)\n\n\t// Assert that the database sees the channel as pending close, otherwise\n\t// the breach arbiter won't be able to fully close it.\n\tassertPendingClosed(t, alice)\n\n\t// Notify that the breaching transaction is confirmed, to trigger the\n\t// retribution logic.\n\tnotifier := brar.cfg.Notifier.(*mock.SpendNotifier)\n\n\tselect {\n\tcase notifier.ConfChan <- &chainntnfs.TxConfirmation{}:\n\tcase <-time.After(defaultTimeout):\n\t\tt.Fatalf(\"conf not delivered\")\n\t}\n\n\t// The breach arbiter should attempt to sweep all outputs on the\n\t// breached commitment.\n\tvar justiceTx *wire.MsgTx\n\tselect {\n\tcase justiceTx = <-publTx:\n\tcase <-time.After(defaultTimeout):\n\t\tt.Fatalf(\"tx was not published\")\n\t}\n\n\trequire.Len(t, justiceTx.TxIn, 3)\n\n\t// All outputs should initially spend from the force closed txn.\n\tforceTxID := forceCloseTx.TxHash()\n\tfor _, txIn := range justiceTx.TxIn {\n\t\tif txIn.PreviousOutPoint.Hash != forceTxID {\n\t\t\tt.Fatalf(\"og justice tx not spending commitment\")\n\t\t}\n\t}\n\n\t// Now we'll pretend some blocks pass without the justice tx\n\t// confirming.\n\tconst pollInterval = 500 * time.Millisecond\n\tfor i := int32(0); i <= 3; i++ {\n\t\tnotifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\t\tHeight: blockHeight + i,\n\t\t}\n\n\t\t// On every epoch, check that no new tx is published.\n\t\tselect {\n\t\tcase <-publTx:\n\t\t\tt.Fatalf(\"tx was published\")\n\t\tcase <-time.After(pollInterval):\n\t\t}\n\t}\n\n\t// Now mine another block without the justice tx confirming. This\n\t// should lead to the breacharbiter publishing the split justice tx\n\t// variants.\n\tnotifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: blockHeight + 4,\n\t}\n\n\tvar (\n\t\tsplits   []*wire.MsgTx\n\t\tspending = make(map[wire.OutPoint]struct{})\n\t\tmaxIndex = uint32(len(forceCloseTx.TxOut)) - 1\n\t)\n\tfor i := 0; i < 2; i++ {\n\t\tvar tx *wire.MsgTx\n\t\tselect {\n\t\tcase tx = <-publTx:\n\t\t\tsplits = append(splits, tx)\n\n\t\tcase <-time.After(defaultTimeout):\n\t\t\tt.Fatalf(\"tx not published\")\n\t\t}\n\n\t\t// Check that every input is from the breached tx and that\n\t\t// there are no duplicates.\n\t\tfor _, in := range tx.TxIn {\n\t\t\top := in.PreviousOutPoint\n\t\t\t_, ok := spending[op]\n\t\t\tif ok {\n\t\t\t\tt.Fatal(\"already spent\")\n\t\t\t}\n\n\t\t\tif op.Hash != forceTxID || op.Index > maxIndex {\n\t\t\t\tt.Fatalf(\"not spending breach\")\n\t\t\t}\n\n\t\t\tspending[op] = struct{}{}\n\t\t}\n\t}\n\n\t// All the inputs from the original justice transaction should have\n\t// been spent by the 2 splits.\n\trequire.Len(t, spending, len(justiceTx.TxIn))\n\trequire.Len(t, splits, 2)\n\n\t// Notify that the first split confirm, making the breach arbiter\n\t// publish another TX with the remaining inputs.\n\tfor _, in := range splits[0].TxIn {\n\t\top := &in.PreviousOutPoint\n\t\tnotifier.Spend(op, blockHeight+5, splits[0])\n\t}\n\n\tselect {\n\t// The published tx should spend the same inputs as our second split.\n\tcase tx := <-publTx:\n\t\trequire.Len(t, tx.TxIn, len(splits[1].TxIn))\n\t\tfor i := range tx.TxIn {\n\t\t\trequire.Equal(\n\t\t\t\tt, tx.TxIn[i].PreviousOutPoint,\n\t\t\t\tsplits[1].TxIn[i].PreviousOutPoint,\n\t\t\t)\n\t\t}\n\n\tcase <-time.After(defaultTimeout):\n\t\tt.Fatalf(\"tx not published\")\n\t}\n\n\t// Finally notify that the second split confirms, making the breach\n\t// arbiter clean up since all inputs have been swept.\n\tfor _, in := range splits[1].TxIn {\n\t\top := &in.PreviousOutPoint\n\t\tnotifier.Spend(op, blockHeight+6, splits[1])\n\t}\n\n\t// Assert that the channel is fully resolved.\n\tassertBrarCleanup(t, brar, alice.ChanPoint, alice.State().Db)\n}\n\n// findInputIndex returns the index of the input that spends from the given\n// outpoint. This method fails if the outpoint is not found.",
+      "length": 5417,
+      "tokens": 687,
+      "embedding": []
+    },
+    {
+      "slug": "func findInputIndex(t *testing.T, op wire.OutPoint, tx *wire.MsgTx) int {",
+      "content": "func findInputIndex(t *testing.T, op wire.OutPoint, tx *wire.MsgTx) int {\n\tt.Helper()\n\n\tinputIdx := -1\n\tfor i, txIn := range tx.TxIn {\n\t\tif txIn.PreviousOutPoint == op {\n\t\t\tinputIdx = i\n\t\t}\n\t}\n\tif inputIdx == -1 {\n\t\tt.Fatalf(\"input %v in not found\", op)\n\t}\n\n\treturn inputIdx\n}\n\n// assertArbiterBreach checks that the breach arbiter has persisted the breach\n// information for a particular channel.",
+      "length": 307,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func assertArbiterBreach(t *testing.T, brar *BreachArbiter,",
+      "content": "func assertArbiterBreach(t *testing.T, brar *BreachArbiter,\n\tchanPoint *wire.OutPoint) {\n\n\tt.Helper()\n\n\tisBreached, err := brar.IsBreached(chanPoint)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to determine if channel is \"+\n\t\t\t\"breached: %v\", err)\n\t}\n\n\tif !isBreached {\n\t\tt.Fatalf(\"channel %v was never marked breached\",\n\t\t\tchanPoint)\n\t}\n\n}\n\n// assertNoArbiterBreach checks that the breach arbiter has not persisted the\n// breach information for a particular channel.",
+      "length": 381,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNoArbiterBreach(t *testing.T, brar *BreachArbiter,",
+      "content": "func assertNoArbiterBreach(t *testing.T, brar *BreachArbiter,\n\tchanPoint *wire.OutPoint) {\n\n\tt.Helper()\n\n\tisBreached, err := brar.IsBreached(chanPoint)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to determine if channel is \"+\n\t\t\t\"breached: %v\", err)\n\t}\n\n\tif isBreached {\n\t\tt.Fatalf(\"channel %v was marked breached\",\n\t\t\tchanPoint)\n\t}\n}\n\n// assertBrarCleanup blocks until the given channel point has been removed the\n// retribution store and the channel is fully closed in the database.",
+      "length": 397,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func assertBrarCleanup(t *testing.T, brar *BreachArbiter,",
+      "content": "func assertBrarCleanup(t *testing.T, brar *BreachArbiter,\n\tchanPoint *wire.OutPoint, db *channeldb.ChannelStateDB) {\n\n\tt.Helper()\n\n\terr := wait.NoError(func() error {\n\t\tisBreached, err := brar.IsBreached(chanPoint)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tif isBreached {\n\t\t\treturn fmt.Errorf(\"channel %v still breached\",\n\t\t\t\tchanPoint)\n\t\t}\n\n\t\tclosedChans, err := db.FetchClosedChannels(false)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfor _, channel := range closedChans {\n\t\t\tswitch {\n\t\t\t// Wrong channel.\n\t\t\tcase channel.ChanPoint != *chanPoint:\n\t\t\t\tcontinue\n\n\t\t\t// Right channel, fully closed!\n\t\t\tcase !channel.IsPending:\n\t\t\t\treturn nil\n\t\t\t}\n\n\t\t\t// Still pending.\n\t\t\treturn fmt.Errorf(\"channel %v still pending \"+\n\t\t\t\t\"close\", chanPoint)\n\t\t}\n\n\t\treturn fmt.Errorf(\"channel %v not closed\", chanPoint)\n\n\t}, 5*time.Second)\n\tif err != nil {\n\t\tt.Fatalf(err.Error())\n\t}\n}\n\n// assertPendingClosed checks that the channel has been marked pending closed in\n// the channel database.",
+      "length": 866,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "func assertPendingClosed(t *testing.T, c *lnwallet.LightningChannel) {",
+      "content": "func assertPendingClosed(t *testing.T, c *lnwallet.LightningChannel) {\n\tt.Helper()\n\n\tclosedChans, err := c.State().Db.FetchClosedChannels(true)\n\trequire.NoError(t, err, \"unable to load pending closed channels\")\n\n\tfor _, chanSummary := range closedChans {\n\t\tif chanSummary.ChanPoint == *c.ChanPoint {\n\t\t\treturn\n\t\t}\n\t}\n\n\tt.Fatalf(\"channel %v was not marked pending closed\", c.ChanPoint)\n}\n\n// assertNotPendingClosed checks that the channel has not been marked pending\n// closed in the channel database.",
+      "length": 414,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNotPendingClosed(t *testing.T, c *lnwallet.LightningChannel) {",
+      "content": "func assertNotPendingClosed(t *testing.T, c *lnwallet.LightningChannel) {\n\tt.Helper()\n\n\tclosedChans, err := c.State().Db.FetchClosedChannels(true)\n\trequire.NoError(t, err, \"unable to load pending closed channels\")\n\n\tfor _, chanSummary := range closedChans {\n\t\tif chanSummary.ChanPoint == *c.ChanPoint {\n\t\t\tt.Fatalf(\"channel %v was marked pending closed\",\n\t\t\t\tc.ChanPoint)\n\t\t}\n\t}\n}\n\n// createTestArbiter instantiates a breach arbiter with a failing retribution\n// store, so that controlled failures can be tested.",
+      "length": 424,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func createTestArbiter(t *testing.T, contractBreaches chan *ContractBreachEvent,",
+      "content": "func createTestArbiter(t *testing.T, contractBreaches chan *ContractBreachEvent,\n\tdb *channeldb.DB) (*BreachArbiter, error) {\n\n\t// Create a failing retribution store, that wraps a normal one.\n\tstore := newFailingRetributionStore(func() RetributionStorer {\n\t\treturn NewRetributionStore(db)\n\t})\n\n\taliceKeyPriv, _ := btcec.PrivKeyFromBytes(channels.AlicesPrivKey)\n\tsigner := &mock.SingleSigner{Privkey: aliceKeyPriv}\n\n\t// Assemble our test arbiter.\n\tnotifier := mock.MakeMockSpendNotifier()\n\tba := NewBreachArbiter(&BreachConfig{\n\t\tCloseLink:          func(_ *wire.OutPoint, _ ChannelCloseType) {},\n\t\tDB:                 db.ChannelStateDB(),\n\t\tEstimator:          chainfee.NewStaticEstimator(12500, 0),\n\t\tGenSweepScript:     func() ([]byte, error) { return nil, nil },\n\t\tContractBreaches:   contractBreaches,\n\t\tSigner:             signer,\n\t\tNotifier:           notifier,\n\t\tPublishTransaction: func(_ *wire.MsgTx, _ string) error { return nil },\n\t\tStore:              store,\n\t})\n\n\tif err := ba.Start(); err != nil {\n\t\treturn nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, ba.Stop())\n\t})\n\n\treturn ba, nil\n}\n\n// createInitChannels creates two initialized test channels funded with 10 BTC,\n// with 5 BTC allocated to each side. Within the channel, Alice is the\n// initiator.",
+      "length": 1156,
+      "tokens": 130,
+      "embedding": []
+    },
+    {
+      "slug": "func createInitChannels(t *testing.T, revocationWindow int) (",
+      "content": "func createInitChannels(t *testing.T, revocationWindow int) (\n\t*lnwallet.LightningChannel, *lnwallet.LightningChannel, error) {\n\n\taliceKeyPriv, aliceKeyPub := btcec.PrivKeyFromBytes(\n\t\tchannels.AlicesPrivKey,\n\t)\n\tbobKeyPriv, bobKeyPub := btcec.PrivKeyFromBytes(\n\t\tchannels.BobsPrivKey,\n\t)\n\n\tchannelCapacity, err := btcutil.NewAmount(10)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tchannelBal := channelCapacity / 2\n\taliceDustLimit := btcutil.Amount(200)\n\tbobDustLimit := btcutil.Amount(1300)\n\tcsvTimeoutAlice := uint32(5)\n\tcsvTimeoutBob := uint32(4)\n\n\tprevOut := &wire.OutPoint{\n\t\tHash:  channels.TestHdSeed,\n\t\tIndex: 0,\n\t}\n\tfundingTxIn := wire.NewTxIn(prevOut, nil, nil)\n\n\taliceCfg := channeldb.ChannelConfig{\n\t\tChannelConstraints: channeldb.ChannelConstraints{\n\t\t\tDustLimit:        aliceDustLimit,\n\t\t\tMaxPendingAmount: lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tChanReserve:      0,\n\t\t\tMinHTLC:          0,\n\t\t\tMaxAcceptedHtlcs: uint16(rand.Int31()),\n\t\t\tCsvDelay:         uint16(csvTimeoutAlice),\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t}\n\tbobCfg := channeldb.ChannelConfig{\n\t\tChannelConstraints: channeldb.ChannelConstraints{\n\t\t\tDustLimit:        bobDustLimit,\n\t\t\tMaxPendingAmount: lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tChanReserve:      0,\n\t\t\tMinHTLC:          0,\n\t\t\tMaxAcceptedHtlcs: uint16(rand.Int31()),\n\t\t\tCsvDelay:         uint16(csvTimeoutBob),\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t}\n\n\tbobRoot, err := chainhash.NewHash(bobKeyPriv.Serialize())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tbobPreimageProducer := shachain.NewRevocationProducer(*bobRoot)\n\tbobFirstRevoke, err := bobPreimageProducer.AtIndex(0)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tbobCommitPoint := input.ComputeCommitmentPoint(bobFirstRevoke[:])\n\n\taliceRoot, err := chainhash.NewHash(aliceKeyPriv.Serialize())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\talicePreimageProducer := shachain.NewRevocationProducer(*aliceRoot)\n\taliceFirstRevoke, err := alicePreimageProducer.AtIndex(0)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\taliceCommitPoint := input.ComputeCommitmentPoint(aliceFirstRevoke[:])\n\n\taliceCommitTx, bobCommitTx, err := lnwallet.CreateCommitmentTxns(\n\t\tchannelBal, channelBal, &aliceCfg, &bobCfg, aliceCommitPoint,\n\t\tbobCommitPoint, *fundingTxIn, channeldb.SingleFunderTweaklessBit,\n\t\tfalse, 0,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tdbAlice, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, dbAlice.Close())\n\t})\n\n\tdbBob, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, dbBob.Close())\n\t})\n\n\testimator := chainfee.NewStaticEstimator(12500, 0)\n\tfeePerKw, err := estimator.EstimateFeePerKW(1)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tcommitFee := feePerKw.FeeForWeight(input.CommitWeight)\n\n\t// TODO(roasbeef): need to factor in commit fee?\n\taliceCommit := channeldb.ChannelCommitment{\n\t\tCommitHeight:  0,\n\t\tLocalBalance:  lnwire.NewMSatFromSatoshis(channelBal - commitFee),\n\t\tRemoteBalance: lnwire.NewMSatFromSatoshis(channelBal),\n\t\tFeePerKw:      btcutil.Amount(feePerKw),\n\t\tCommitFee:     commitFee,\n\t\tCommitTx:      aliceCommitTx,\n\t\tCommitSig:     bytes.Repeat([]byte{1}, 71),\n\t}\n\tbobCommit := channeldb.ChannelCommitment{\n\t\tCommitHeight:  0,\n\t\tLocalBalance:  lnwire.NewMSatFromSatoshis(channelBal),\n\t\tRemoteBalance: lnwire.NewMSatFromSatoshis(channelBal - commitFee),\n\t\tFeePerKw:      btcutil.Amount(feePerKw),\n\t\tCommitFee:     commitFee,\n\t\tCommitTx:      bobCommitTx,\n\t\tCommitSig:     bytes.Repeat([]byte{1}, 71),\n\t}\n\n\tvar chanIDBytes [8]byte\n\tif _, err := io.ReadFull(crand.Reader, chanIDBytes[:]); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tshortChanID := lnwire.NewShortChanIDFromInt(\n\t\tbinary.BigEndian.Uint64(chanIDBytes[:]),\n\t)\n\n\taliceChannelState := &channeldb.OpenChannel{\n\t\tLocalChanCfg:            aliceCfg,\n\t\tRemoteChanCfg:           bobCfg,\n\t\tIdentityPub:             aliceKeyPub,\n\t\tFundingOutpoint:         *prevOut,\n\t\tShortChannelID:          shortChanID,\n\t\tChanType:                channeldb.SingleFunderTweaklessBit,\n\t\tIsInitiator:             true,\n\t\tCapacity:                channelCapacity,\n\t\tRemoteCurrentRevocation: bobCommitPoint,\n\t\tRevocationProducer:      alicePreimageProducer,\n\t\tRevocationStore:         shachain.NewRevocationStore(),\n\t\tLocalCommitment:         aliceCommit,\n\t\tRemoteCommitment:        aliceCommit,\n\t\tDb:                      dbAlice.ChannelStateDB(),\n\t\tPackager:                channeldb.NewChannelPackager(shortChanID),\n\t\tFundingTxn:              channels.TestFundingTx,\n\t}\n\tbobChannelState := &channeldb.OpenChannel{\n\t\tLocalChanCfg:            bobCfg,\n\t\tRemoteChanCfg:           aliceCfg,\n\t\tIdentityPub:             bobKeyPub,\n\t\tFundingOutpoint:         *prevOut,\n\t\tShortChannelID:          shortChanID,\n\t\tChanType:                channeldb.SingleFunderTweaklessBit,\n\t\tIsInitiator:             false,\n\t\tCapacity:                channelCapacity,\n\t\tRemoteCurrentRevocation: aliceCommitPoint,\n\t\tRevocationProducer:      bobPreimageProducer,\n\t\tRevocationStore:         shachain.NewRevocationStore(),\n\t\tLocalCommitment:         bobCommit,\n\t\tRemoteCommitment:        bobCommit,\n\t\tDb:                      dbBob.ChannelStateDB(),\n\t\tPackager:                channeldb.NewChannelPackager(shortChanID),\n\t}\n\n\taliceSigner := &mock.SingleSigner{Privkey: aliceKeyPriv}\n\tbobSigner := &mock.SingleSigner{Privkey: bobKeyPriv}\n\n\talicePool := lnwallet.NewSigPool(1, aliceSigner)\n\tchannelAlice, err := lnwallet.NewLightningChannel(\n\t\taliceSigner, aliceChannelState, alicePool,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\talicePool.Start()\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, alicePool.Stop())\n\t})\n\n\tbobPool := lnwallet.NewSigPool(1, bobSigner)\n\tchannelBob, err := lnwallet.NewLightningChannel(\n\t\tbobSigner, bobChannelState, bobPool,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tbobPool.Start()\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, bobPool.Stop())\n\t})\n\n\taddr := &net.TCPAddr{\n\t\tIP:   net.ParseIP(\"127.0.0.1\"),\n\t\tPort: 18556,\n\t}\n\tif err := channelAlice.State().SyncPending(addr, 101); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\taddr = &net.TCPAddr{\n\t\tIP:   net.ParseIP(\"127.0.0.1\"),\n\t\tPort: 18555,\n\t}\n\tif err := channelBob.State().SyncPending(addr, 101); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\t// Now that the channel are open, simulate the start of a session by\n\t// having Alice and Bob extend their revocation windows to each other.\n\terr = initRevocationWindows(channelAlice, channelBob, revocationWindow)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\treturn channelAlice, channelBob, nil\n}\n\n// initRevocationWindows simulates a new channel being opened within the p2p\n// network by populating the initial revocation windows of the passed\n// commitment state machines.\n//\n// TODO(conner) remove code duplication",
+      "length": 7116,
+      "tokens": 630,
+      "embedding": []
+    },
+    {
+      "slug": "func initRevocationWindows(chanA, chanB *lnwallet.LightningChannel, windowSize int) error {",
+      "content": "func initRevocationWindows(chanA, chanB *lnwallet.LightningChannel, windowSize int) error {\n\taliceNextRevoke, err := chanA.NextRevocationKey()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif err := chanB.InitNextRevocation(aliceNextRevoke); err != nil {\n\t\treturn err\n\t}\n\n\tbobNextRevoke, err := chanB.NextRevocationKey()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif err := chanA.InitNextRevocation(bobNextRevoke); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// createHTLC is a utility function for generating an HTLC with a given\n// preimage and a given amount.\n// TODO(conner) remove code duplication",
+      "length": 469,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func createHTLC(data int, amount lnwire.MilliSatoshi) (*lnwire.UpdateAddHTLC, [32]byte) {",
+      "content": "func createHTLC(data int, amount lnwire.MilliSatoshi) (*lnwire.UpdateAddHTLC, [32]byte) {\n\tpreimage := bytes.Repeat([]byte{byte(data)}, 32)\n\tpaymentHash := sha256.Sum256(preimage)\n\n\tvar returnPreimage [32]byte\n\tcopy(returnPreimage[:], preimage)\n\n\treturn &lnwire.UpdateAddHTLC{\n\t\tID:          uint64(data),\n\t\tPaymentHash: paymentHash,\n\t\tAmount:      amount,\n\t\tExpiry:      uint32(5),\n\t}, returnPreimage\n}\n\n// forceStateTransition executes the necessary interaction between the two\n// commitment state machines to transition to a new state locking in any\n// pending updates.\n// TODO(conner) remove code duplication",
+      "length": 505,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func forceStateTransition(chanA, chanB *lnwallet.LightningChannel) error {",
+      "content": "func forceStateTransition(chanA, chanB *lnwallet.LightningChannel) error {\n\taliceSig, aliceHtlcSigs, _, err := chanA.SignNextCommitment()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif err = chanB.ReceiveNewCommitment(aliceSig, aliceHtlcSigs); err != nil {\n\t\treturn err\n\t}\n\n\tbobRevocation, _, _, err := chanB.RevokeCurrentCommitment()\n\tif err != nil {\n\t\treturn err\n\t}\n\tbobSig, bobHtlcSigs, _, err := chanB.SignNextCommitment()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t_, _, _, _, err = chanA.ReceiveRevocation(bobRevocation)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif err := chanA.ReceiveNewCommitment(bobSig, bobHtlcSigs); err != nil {\n\t\treturn err\n\t}\n\n\taliceRevocation, _, _, err := chanA.RevokeCurrentCommitment()\n\tif err != nil {\n\t\treturn err\n\t}\n\t_, _, _, _, err = chanB.ReceiveRevocation(aliceRevocation)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n",
+      "length": 725,
+      "tokens": 113,
+      "embedding": []
+    }
+  ]
+}

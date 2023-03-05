@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/codec.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type UnknownElementType = channeldb.UnknownElementType",
+      "content": "type UnknownElementType = channeldb.UnknownElementType\n\n// ReadElement deserializes a single element from the provided io.Reader.",
+      "length": 73,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadElement(r io.Reader, element interface{}) error {",
+      "content": "func ReadElement(r io.Reader, element interface{}) error {\n\terr := channeldb.ReadElement(r, element)\n\tswitch {\n\n\t// Known to channeldb codec.\n\tcase err == nil:\n\t\treturn nil\n\n\t// Fail if error is not UnknownElementType.\n\tdefault:\n\t\tif _, ok := err.(UnknownElementType); !ok {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Process any wtdb-specific extensions to the codec.\n\tswitch e := element.(type) {\n\n\tcase *SessionID:\n\t\tif _, err := io.ReadFull(r, e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase *blob.BreachHint:\n\t\tif _, err := io.ReadFull(r, e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase *wtpolicy.Policy:\n\t\tvar (\n\t\t\tblobType     uint16\n\t\t\tsweepFeeRate uint64\n\t\t)\n\t\terr := channeldb.ReadElements(r,\n\t\t\t&blobType,\n\t\t\t&e.MaxUpdates,\n\t\t\t&e.RewardBase,\n\t\t\t&e.RewardRate,\n\t\t\t&sweepFeeRate,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\te.BlobType = blob.Type(blobType)\n\t\te.SweepFeeRate = chainfee.SatPerKWeight(sweepFeeRate)\n\n\t// Type is still unknown to wtdb extensions, fail.\n\tdefault:\n\t\treturn channeldb.NewUnknownElementType(\n\t\t\t\"ReadElement\", element,\n\t\t)\n\t}\n\n\treturn nil\n}\n\n// WriteElement serializes a single element into the provided io.Writer.",
+      "length": 1010,
+      "tokens": 140,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteElement(w io.Writer, element interface{}) error {",
+      "content": "func WriteElement(w io.Writer, element interface{}) error {\n\terr := channeldb.WriteElement(w, element)\n\tswitch {\n\n\t// Known to channeldb codec.\n\tcase err == nil:\n\t\treturn nil\n\n\t// Fail if error is not UnknownElementType.\n\tdefault:\n\t\tif _, ok := err.(UnknownElementType); !ok {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Process any wtdb-specific extensions to the codec.\n\tswitch e := element.(type) {\n\n\tcase SessionID:\n\t\tif _, err := w.Write(e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase blob.BreachHint:\n\t\tif _, err := w.Write(e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase wtpolicy.Policy:\n\t\treturn channeldb.WriteElements(w,\n\t\t\tuint16(e.BlobType),\n\t\t\te.MaxUpdates,\n\t\t\te.RewardBase,\n\t\t\te.RewardRate,\n\t\t\tuint64(e.SweepFeeRate),\n\t\t)\n\n\t// Type is still unknown to wtdb extensions, fail.\n\tdefault:\n\t\treturn channeldb.NewUnknownElementType(\n\t\t\t\"WriteElement\", element,\n\t\t)\n\t}\n\n\treturn nil\n}\n\n// WriteElements serializes a variadic list of elements into the given\n// io.Writer.",
+      "length": 846,
+      "tokens": 119,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteElements(w io.Writer, elements ...interface{}) error {",
+      "content": "func WriteElements(w io.Writer, elements ...interface{}) error {\n\tfor _, element := range elements {\n\t\tif err := WriteElement(w, element); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// ReadElements deserializes the provided io.Reader into a variadic list of\n// target elements.",
+      "length": 209,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadElements(r io.Reader, elements ...interface{}) error {",
+      "content": "func ReadElements(r io.Reader, elements ...interface{}) error {\n\tfor _, element := range elements {\n\t\tif err := ReadElement(r, element); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 114,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

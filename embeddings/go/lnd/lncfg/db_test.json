@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/db_test.go",
+  "package": "lncfg_test",
+  "sections": [
+    {
+      "slug": "func TestDBDefaultConfig(t *testing.T) {",
+      "content": "func TestDBDefaultConfig(t *testing.T) {\n\tdefaultConfig := lncfg.DefaultDB()\n\n\trequire.Equal(t, lncfg.BoltBackend, defaultConfig.Backend)\n\trequire.Equal(\n\t\tt, kvdb.DefaultBoltAutoCompactMinAge,\n\t\tdefaultConfig.Bolt.AutoCompactMinAge,\n\t)\n\trequire.Equal(t, kvdb.DefaultDBTimeout, defaultConfig.Bolt.DBTimeout)\n\t// Implicitly, the following fields are default to false.\n\trequire.False(t, defaultConfig.Bolt.AutoCompact)\n\trequire.True(t, defaultConfig.Bolt.NoFreelistSync)\n}\n",
+      "length": 418,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

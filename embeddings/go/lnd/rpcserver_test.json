@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/rpcserver_test.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "func TestGetAllPermissions(t *testing.T) {",
+      "content": "func TestGetAllPermissions(t *testing.T) {\n\tperms := GetAllPermissions()\n\n\t// Currently there are there are 16 entity:action pairs in use.\n\tassert.Equal(t, len(perms), 16)\n}\n",
+      "length": 126,
+      "tokens": 18,
+      "embedding": []
+    }
+  ]
+}

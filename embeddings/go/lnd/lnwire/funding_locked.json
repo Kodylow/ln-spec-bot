@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/funding_locked.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type FundingLocked struct {",
+      "content": "type FundingLocked struct {\n\t// ChanID is the outpoint of the channel's funding transaction. This\n\t// can be used to query for the channel in the database.\n\tChanID ChannelID\n\n\t// NextPerCommitmentPoint is the secret that can be used to revoke the\n\t// next commitment transaction for the channel.\n\tNextPerCommitmentPoint *btcec.PublicKey\n\n\t// AliasScid is an alias ShortChannelID used to refer to the underlying\n\t// channel. It can be used instead of the confirmed on-chain\n\t// ShortChannelID for forwarding.\n\tAliasScid *ShortChannelID\n\n\t// ExtraData is the set of data that was appended to this message to\n\t// fill out the full maximum transport message size. These fields can\n\t// be used to specify optional data such as custom TLV fields.\n\tExtraData ExtraOpaqueData\n}\n\n// NewFundingLocked creates a new FundingLocked message, populating it with the\n// necessary IDs and revocation secret.",
+      "length": 842,
+      "tokens": 133,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFundingLocked(cid ChannelID, npcp *btcec.PublicKey) *FundingLocked {",
+      "content": "func NewFundingLocked(cid ChannelID, npcp *btcec.PublicKey) *FundingLocked {\n\treturn &FundingLocked{\n\t\tChanID:                 cid,\n\t\tNextPerCommitmentPoint: npcp,\n\t\tExtraData:              make([]byte, 0),\n\t}\n}\n\n// A compile time check to ensure FundingLocked implements the lnwire.Message\n// interface.\nvar _ Message = (*FundingLocked)(nil)\n\n// Decode deserializes the serialized FundingLocked message stored in the\n// passed io.Reader into the target FundingLocked using the deserialization\n// rules defined by the passed protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 502,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *FundingLocked) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *FundingLocked) Decode(r io.Reader, pver uint32) error {\n\t// Read all the mandatory fields in the message.\n\terr := ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.NextPerCommitmentPoint,\n\t\t&c.ExtraData,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Next we'll parse out the set of known records. For now, this is just\n\t// the AliasScidRecordType.\n\tvar aliasScid ShortChannelID\n\ttypeMap, err := c.ExtraData.ExtractRecords(&aliasScid)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// We'll only set AliasScid if the corresponding TLV type was included\n\t// in the stream.\n\tif val, ok := typeMap[AliasScidRecordType]; ok && val == nil {\n\t\tc.AliasScid = &aliasScid\n\t}\n\n\treturn nil\n}\n\n// Encode serializes the target FundingLocked message into the passed io.Writer\n// implementation. Serialization will observe the rules defined by the passed\n// protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 791,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *FundingLocked) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (c *FundingLocked) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteChannelID(w, c.ChanID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WritePublicKey(w, c.NextPerCommitmentPoint); err != nil {\n\t\treturn err\n\t}\n\n\t// We'll only encode the AliasScid in a TLV segment if it exists.\n\tif c.AliasScid != nil {\n\t\trecordProducers := []tlv.RecordProducer{c.AliasScid}\n\t\terr := EncodeMessageExtraData(&c.ExtraData, recordProducers...)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn WriteBytes(w, c.ExtraData)\n}\n\n// MsgType returns the uint32 code which uniquely identifies this message as a\n// FundingLocked message on the wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 592,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *FundingLocked) MsgType() MessageType {",
+      "content": "func (c *FundingLocked) MsgType() MessageType {\n\treturn MsgFundingLocked\n}\n",
+      "length": 25,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

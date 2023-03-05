@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/context.go",
+  "package": "macaroons",
+  "sections": [
+    {
+      "slug": "type contextKey struct {",
+      "content": "type contextKey struct {\n\tName string\n}\n\n// ContextWithRootKeyID passes the root key ID value to context.",
+      "length": 77,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func ContextWithRootKeyID(ctx context.Context,",
+      "content": "func ContextWithRootKeyID(ctx context.Context,\n\tvalue interface{}) context.Context {\n\n\treturn context.WithValue(ctx, RootKeyIDContextKey, value)\n}\n\n// RootKeyIDFromContext retrieves the root key ID from context using the key\n// RootKeyIDContextKey.",
+      "length": 195,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func RootKeyIDFromContext(ctx context.Context) ([]byte, error) {",
+      "content": "func RootKeyIDFromContext(ctx context.Context) ([]byte, error) {\n\tid, ok := ctx.Value(RootKeyIDContextKey).([]byte)\n\tif !ok {\n\t\treturn nil, ErrContextRootKeyID\n\t}\n\n\t// Check that the id is not empty.\n\tif len(id) == 0 {\n\t\treturn nil, ErrMissingRootKeyID\n\t}\n\n\treturn id, nil\n}\n",
+      "length": 198,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_no_etcd_dummy_failover_test.go",
+  "package": "!kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func testEtcdFailover(ht *lntest.HarnessTest) {}",
+      "content": "func testEtcdFailover(ht *lntest.HarnessTest) {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cluster/interface.go",
+  "package": "cluster",
+  "sections": [
+    {
+      "slug": "type LeaderElector interface {",
+      "content": "type LeaderElector interface {\n\t// Campaign starts a run for leadership. Campaign will block until\n\t// the caller is elected as the leader.\n\tCampaign(ctx context.Context) error\n\n\t// Resign resigns from the leader role, allowing other election members\n\t// to take on leadership.\n\tResign() error\n\n\t// Leader returns the leader value for the current election.\n\tLeader(ctx context.Context) (string, error)\n}\n",
+      "length": 362,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

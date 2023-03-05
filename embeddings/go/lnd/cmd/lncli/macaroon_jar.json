@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/macaroon_jar.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "type getPasswordFn func(prompt string) ([]byte, error)",
+      "content": "type getPasswordFn func(prompt string) ([]byte, error)\n\n// macaroonJar is a struct that represents all macaroons of a profile.",
+      "length": 70,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type macaroonJar struct {",
+      "content": "type macaroonJar struct {\n\tDefault string           `json:\"default,omitempty\"`\n\tTimeout int64            `json:\"timeout,omitempty\"`\n\tIP      string           `json:\"ip,omitempty\"`\n\tJar     []*macaroonEntry `json:\"jar\"`\n}\n\n// macaroonEntry is a struct that represents a single macaroon. Its content can\n// either be cleartext (hex encoded) or encrypted (snacl secretbox).",
+      "length": 337,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "type macaroonEntry struct {",
+      "content": "type macaroonEntry struct {\n\tName string `json:\"name\"`\n\tData string `json:\"data\"`\n}\n\n// loadMacaroon returns the fully usable macaroon instance from the entry. This\n// detects whether the macaroon needs to be decrypted and does so if necessary.\n// An encrypted macaroon that needs to be decrypted will prompt for the user's\n// password by calling the provided password callback. Normally that should\n// result in the user being prompted for the password in the terminal.",
+      "length": 434,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *macaroonEntry) loadMacaroon(",
+      "content": "func (e *macaroonEntry) loadMacaroon(\n\tpwCallback getPasswordFn) (*macaroon.Macaroon, error) {\n\n\tif len(strings.TrimSpace(e.Data)) == 0 {\n\t\treturn nil, fmt.Errorf(\"macaroon data is empty\")\n\t}\n\n\tvar (\n\t\tmacBytes []byte\n\t\terr      error\n\t)\n\n\t// Either decrypt or simply decode the macaroon data.\n\tif strings.HasPrefix(e.Data, encryptionPrefix) {\n\t\tparts := strings.Split(e.Data, \":\")\n\t\tif len(parts) != 3 {\n\t\t\treturn nil, fmt.Errorf(\"invalid encrypted macaroon \" +\n\t\t\t\t\"format, expected 'snacl:<key_base64>:\" +\n\t\t\t\t\"<encrypted_macaroon_base64>'\")\n\t\t}\n\n\t\tpw, err := pwCallback(\"Enter macaroon encryption password: \")\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"could not read password from \"+\n\t\t\t\t\"terminal: %v\", err)\n\t\t}\n\n\t\tmacBytes, err = decryptMacaroon(parts[1], parts[2], pw)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to decrypt macaroon: %v\",\n\t\t\t\terr)\n\t\t}\n\t} else {\n\t\tmacBytes, err = hex.DecodeString(e.Data)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"unable to hex decode \"+\n\t\t\t\t\"macaroon: %v\", err)\n\t\t}\n\t}\n\n\t// Parse the macaroon data into its native struct.\n\tmac := &macaroon.Macaroon{}\n\tif err := mac.UnmarshalBinary(macBytes); err != nil {\n\t\treturn nil, fmt.Errorf(\"unable to decode macaroon: %v\", err)\n\t}\n\treturn mac, nil\n}\n\n// storeMacaroon stores a native macaroon instance to the entry. If a non-nil\n// password is provided, then the macaroon is encrypted with that password. If\n// not, the macaroon is stored as plain text.",
+      "length": 1362,
+      "tokens": 196,
+      "embedding": []
+    },
+    {
+      "slug": "func (e *macaroonEntry) storeMacaroon(mac *macaroon.Macaroon, pw []byte) error {",
+      "content": "func (e *macaroonEntry) storeMacaroon(mac *macaroon.Macaroon, pw []byte) error {\n\t// First of all, make sure we can serialize the macaroon.\n\tmacBytes, err := mac.MarshalBinary()\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to marshal macaroon: %v\", err)\n\t}\n\n\tif len(pw) == 0 {\n\t\te.Data = hex.EncodeToString(macBytes)\n\t\treturn nil\n\t}\n\n\t// The user did set a password. Let's derive an encryption key from it.\n\tkey, err := snacl.NewSecretKey(\n\t\t&pw, snacl.DefaultN, snacl.DefaultR, snacl.DefaultP,\n\t)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to create encryption key: %v\", err)\n\t}\n\n\t// Encrypt the macaroon data with the derived key and store it in the\n\t// human readable format snacl:<key_base64>:<encrypted_macaroon_base64>.\n\tencryptedMac, err := key.Encrypt(macBytes)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to encrypt macaroon: %v\", err)\n\t}\n\n\tkeyB64 := base64.StdEncoding.EncodeToString(key.Marshal())\n\tdataB64 := base64.StdEncoding.EncodeToString(encryptedMac)\n\te.Data = fmt.Sprintf(\"%s%s:%s\", encryptionPrefix, keyB64, dataB64)\n\n\treturn nil\n}\n\n// decryptMacaroon decrypts the cipher text macaroon by using the serialized\n// encryption key and the password.",
+      "length": 1053,
+      "tokens": 144,
+      "embedding": []
+    },
+    {
+      "slug": "func decryptMacaroon(keyB64, dataB64 string, pw []byte) ([]byte, error) {",
+      "content": "func decryptMacaroon(keyB64, dataB64 string, pw []byte) ([]byte, error) {\n\t// Base64 decode both the marshalled encryption key and macaroon data.\n\tkeyData, err := base64.StdEncoding.DecodeString(keyB64)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not base64 decode encryption \"+\n\t\t\t\"key: %v\", err)\n\t}\n\tencryptedMac, err := base64.StdEncoding.DecodeString(dataB64)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not base64 decode macaroon \"+\n\t\t\t\"data: %v\", err)\n\t}\n\n\t// Unmarshal the encryption key and ask the user for the password.\n\tkey := &snacl.SecretKey{}\n\terr = key.Unmarshal(keyData)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not unmarshal encryption key: %v\",\n\t\t\terr)\n\t}\n\n\t// Derive the final encryption key and then decrypt the macaroon with\n\t// it.\n\terr = key.DeriveKey(&pw)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not derive encryption key, \"+\n\t\t\t\"possibly due to incorrect password: %v\", err)\n\t}\n\tmacBytes, err := key.Decrypt(encryptedMac)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"could not decrypt macaroon data: %v\",\n\t\t\terr)\n\t}\n\treturn macBytes, nil\n}\n",
+      "length": 982,
+      "tokens": 147,
+      "embedding": []
+    }
+  ]
+}

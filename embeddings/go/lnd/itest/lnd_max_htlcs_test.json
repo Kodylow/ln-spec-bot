@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_max_htlcs_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testMaxHtlcPathfind(ht *lntest.HarnessTest) {",
+      "content": "func testMaxHtlcPathfind(ht *lntest.HarnessTest) {\n\t// Setup a channel between Alice and Bob where Alice will only allow\n\t// Bob to add a maximum of 5 htlcs to her commitment.\n\tmaxHtlcs := 5\n\n\talice, bob := ht.Alice, ht.Bob\n\tchanPoint := ht.OpenChannel(\n\t\talice, bob, lntest.OpenChannelParams{\n\t\t\tAmt:            1000000,\n\t\t\tPushAmt:        800000,\n\t\t\tRemoteMaxHtlcs: uint16(maxHtlcs),\n\t\t},\n\t)\n\n\t// Alice and bob should have one channel open with each other now.\n\tht.AssertNodeNumChannels(alice, 1)\n\tht.AssertNodeNumChannels(bob, 1)\n\n\t// Send our maximum number of htlcs from Bob -> Alice so that we get\n\t// to a point where Alice won't accept any more htlcs on the channel.\n\tsubscriptions := make([]*holdSubscription, maxHtlcs)\n\n\tfor i := 0; i < maxHtlcs; i++ {\n\t\tsubscriptions[i] = acceptHoldInvoice(ht, i, bob, alice)\n\t}\n\n\tht.AssertNumActiveHtlcs(alice, maxHtlcs)\n\tht.AssertNumActiveHtlcs(bob, maxHtlcs)\n\n\t// Now we send a payment from Alice -> Bob to sanity check that our\n\t// commitment limit is not applied in the opposite direction.\n\taliceBobSub := acceptHoldInvoice(ht, maxHtlcs, alice, bob)\n\tht.AssertNumActiveHtlcs(alice, maxHtlcs+1)\n\tht.AssertNumActiveHtlcs(bob, maxHtlcs+1)\n\n\t// Now, we're going to try to send another payment from Bob -> Alice.\n\t// We've hit our max remote htlcs, so we expect this payment to spin\n\t// out dramatically with pathfinding.\n\tsendReq := &routerrpc.SendPaymentRequest{\n\t\tAmt:            1000,\n\t\tDest:           alice.PubKey[:],\n\t\tTimeoutSeconds: 60,\n\t\tFeeLimitSat:    1000000,\n\t\tMaxParts:       10,\n\t\tAmp:            true,\n\t}\n\tht.SendPaymentAndAssertStatus(bob, sendReq, lnrpc.Payment_FAILED)\n\n\t// Now that we're done, we cancel all our pending htlcs so that we\n\t// can cleanup the channel with a coop close.\n\tfor _, sub := range subscriptions {\n\t\tsub.cancel(ht)\n\t}\n\taliceBobSub.cancel(ht)\n\n\tht.AssertNumActiveHtlcs(alice, 0)\n\tht.AssertNumActiveHtlcs(bob, 0)\n\n\tht.CloseChannel(alice, chanPoint)\n}\n",
+      "length": 1828,
+      "tokens": 244,
+      "embedding": []
+    },
+    {
+      "slug": "type holdSubscription struct {",
+      "content": "type holdSubscription struct {\n\trecipient           *node.HarnessNode\n\thash                lntypes.Hash\n\tinvSubscription     invoicesrpc.Invoices_SubscribeSingleInvoiceClient\n\tpaymentSubscription routerrpc.Router_SendPaymentV2Client\n}\n\n// cancel updates a hold invoice to cancel from the recipient and consumes\n// updates from the payer until it has reached a final, failed state.",
+      "length": 342,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *holdSubscription) cancel(ht *lntest.HarnessTest) {",
+      "content": "func (h *holdSubscription) cancel(ht *lntest.HarnessTest) {\n\th.recipient.RPC.CancelInvoice(h.hash[:])\n\n\tinvUpdate := ht.ReceiveSingleInvoice(h.invSubscription)\n\trequire.Equal(ht, lnrpc.Invoice_CANCELED, invUpdate.State,\n\t\t\"expected invoice canceled\")\n\n\t// We expect one in flight update when our htlc is canceled back, and\n\t// another when we fail the payment as a whole.\n\tpayUpdate := ht.AssertPaymentStatusFromStream(\n\t\th.paymentSubscription, lnrpc.Payment_IN_FLIGHT,\n\t)\n\trequire.Len(ht, payUpdate.Htlcs, 1)\n\n\tpayUpdate = ht.AssertPaymentStatusFromStream(\n\t\th.paymentSubscription, lnrpc.Payment_FAILED,\n\t)\n\trequire.Equal(ht, lnrpc.Payment_FAILED, payUpdate.Status,\n\t\t\"expected payment failed\")\n\trequire.Equal(ht, lnrpc.PaymentFailureReason_FAILURE_REASON_INCORRECT_PAYMENT_DETAILS, //nolint:lll\n\t\tpayUpdate.FailureReason, \"expected unknown details\")\n}\n\n// acceptHoldInvoice adds a hold invoice to the recipient node, pays it from\n// the sender and asserts that we have reached the accepted state where htlcs\n// are locked in for the payment.",
+      "length": 959,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "func acceptHoldInvoice(ht *lntest.HarnessTest, idx int, sender,",
+      "content": "func acceptHoldInvoice(ht *lntest.HarnessTest, idx int, sender,\n\treceiver *node.HarnessNode) *holdSubscription {\n\n\thash := [lntypes.HashSize]byte{byte(idx + 1)}\n\n\treq := &invoicesrpc.AddHoldInvoiceRequest{\n\t\tValueMsat: 10000,\n\t\tHash:      hash[:],\n\t}\n\tinvoice := receiver.RPC.AddHoldInvoice(req)\n\n\tinvStream := receiver.RPC.SubscribeSingleInvoice(hash[:])\n\tinv := ht.ReceiveSingleInvoice(invStream)\n\trequire.Equal(ht, lnrpc.Invoice_OPEN, inv.State, \"expect open\")\n\n\tsendReq := &routerrpc.SendPaymentRequest{\n\t\tPaymentRequest: invoice.PaymentRequest,\n\t\tTimeoutSeconds: 60,\n\t\tFeeLimitSat:    1000000,\n\t}\n\tpayStream := sender.RPC.SendPayment(sendReq)\n\n\t// Finally, assert that we progress to an accepted state. We expect\n\t// the payer to get one update for the creation of the payment, and\n\t// another when a htlc is dispatched.\n\tpayment := ht.AssertPaymentStatusFromStream(\n\t\tpayStream, lnrpc.Payment_IN_FLIGHT,\n\t)\n\trequire.Empty(ht, payment.Htlcs)\n\n\tpayment = ht.AssertPaymentStatusFromStream(\n\t\tpayStream, lnrpc.Payment_IN_FLIGHT,\n\t)\n\trequire.Len(ht, payment.Htlcs, 1)\n\n\tinv = ht.ReceiveSingleInvoice(invStream)\n\trequire.Equal(ht, lnrpc.Invoice_ACCEPTED, inv.State,\n\t\t\"expected accepted\")\n\n\treturn &holdSubscription{\n\t\trecipient:           receiver,\n\t\thash:                hash,\n\t\tinvSubscription:     invStream,\n\t\tpaymentSubscription: payStream,\n\t}\n}\n",
+      "length": 1243,
+      "tokens": 114,
+      "embedding": []
+    }
+  ]
+}

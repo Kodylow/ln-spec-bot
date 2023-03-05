@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/migration4/codec.go",
+  "package": "migration4",
+  "sections": [
+    {
+      "slug": "type SessionID [SessionIDSize]byte",
+      "content": "type SessionID [SessionIDSize]byte\n\n// String returns a hex encoding of the session id.",
+      "length": 51,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (s SessionID) String() string {",
+      "content": "func (s SessionID) String() string {\n\treturn hex.EncodeToString(s[:])\n}\n\n// ChannelID is a series of 32-bytes that uniquely identifies all channels\n// within the network. The ChannelID is computed using the outpoint of the\n// funding transaction (the txid, and output index). Given a funding output the\n// ChannelID can be calculated by XOR'ing the big-endian serialization of the\n// txid and the big-endian serialization of the output index, truncated to\n// 2 bytes.",
+      "length": 422,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelID [32]byte",
+      "content": "type ChannelID [32]byte\n\n// String returns the string representation of the ChannelID. This is just the\n// hex string encoding of the ChannelID itself.",
+      "length": 125,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (c ChannelID) String() string {",
+      "content": "func (c ChannelID) String() string {\n\treturn hex.EncodeToString(c[:])\n}\n\n// BackupID identifies a particular revoked, remote commitment by channel id and\n// commitment height.",
+      "length": 134,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type BackupID struct {",
+      "content": "type BackupID struct {\n\t// ChanID is the channel id of the revoked commitment.\n\tChanID ChannelID\n\n\t// CommitHeight is the commitment height of the revoked commitment.\n\tCommitHeight uint64\n}\n\n// Encode writes the BackupID from the passed io.Writer.",
+      "length": 217,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BackupID) Encode(w io.Writer) error {",
+      "content": "func (b *BackupID) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\tb.ChanID,\n\t\tb.CommitHeight,\n\t)\n}\n\n// Decode reads a BackupID from the passed io.Reader.",
+      "length": 108,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *BackupID) Decode(r io.Reader) error {",
+      "content": "func (b *BackupID) Decode(r io.Reader) error {\n\treturn ReadElements(r,\n\t\t&b.ChanID,\n\t\t&b.CommitHeight,\n\t)\n}\n\n// String returns a human-readable encoding of a BackupID.",
+      "length": 114,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (b BackupID) String() string {",
+      "content": "func (b BackupID) String() string {\n\treturn fmt.Sprintf(\"backup(%v, %d)\", b.ChanID, b.CommitHeight)\n}\n\n// WriteElements serializes a variadic list of elements into the given\n// io.Writer.",
+      "length": 147,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteElements(w io.Writer, elements ...interface{}) error {",
+      "content": "func WriteElements(w io.Writer, elements ...interface{}) error {\n\tfor _, element := range elements {\n\t\tif err := WriteElement(w, element); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// ReadElements deserializes the provided io.Reader into a variadic list of\n// target elements.",
+      "length": 209,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadElements(r io.Reader, elements ...interface{}) error {",
+      "content": "func ReadElements(r io.Reader, elements ...interface{}) error {\n\tfor _, element := range elements {\n\t\tif err := ReadElement(r, element); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// WriteElement serializes a single element into the provided io.Writer.",
+      "length": 186,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteElement(w io.Writer, element interface{}) error {",
+      "content": "func WriteElement(w io.Writer, element interface{}) error {\n\tswitch e := element.(type) {\n\tcase ChannelID:\n\t\tif _, err := w.Write(e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase uint64:\n\t\tif err := binary.Write(w, byteOrder, e); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unexpected type\")\n\t}\n\n\treturn nil\n}\n\n// ReadElement deserializes a single element from the provided io.Reader.",
+      "length": 321,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadElement(r io.Reader, element interface{}) error {",
+      "content": "func ReadElement(r io.Reader, element interface{}) error {\n\tswitch e := element.(type) {\n\tcase *ChannelID:\n\t\tif _, err := io.ReadFull(r, e[:]); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tcase *uint64:\n\t\tif err := binary.Read(r, byteOrder, e); err != nil {\n\t\t\treturn err\n\t\t}\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unexpected type\")\n\t}\n\n\treturn nil\n}\n",
+      "length": 256,
+      "tokens": 43,
+      "embedding": []
+    }
+  ]
+}

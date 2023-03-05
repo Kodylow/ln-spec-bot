@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/stats.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "type ClientStats struct {",
+      "content": "type ClientStats struct {\n\tmu sync.Mutex\n\n\t// NumTasksPending is the total number of backups that are pending to\n\t// be acknowledged by all active and exhausted watchtower sessions.\n\tNumTasksPending int\n\n\t// NumTasksAccepted is the total number of backups made to all active\n\t// and exhausted watchtower sessions.\n\tNumTasksAccepted int\n\n\t// NumTasksIneligible is the total number of backups that all active and\n\t// exhausted watchtower sessions have failed to acknowledge.\n\tNumTasksIneligible int\n\n\t// NumSessionsAcquired is the total number of new sessions made to\n\t// watchtowers.\n\tNumSessionsAcquired int\n\n\t// NumSessionsExhausted is the total number of watchtower sessions that\n\t// have been exhausted.\n\tNumSessionsExhausted int\n}\n\n// taskReceived increments the number of backup requests the client has received\n// from active channels.",
+      "length": 791,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) taskReceived() {",
+      "content": "func (s *ClientStats) taskReceived() {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.NumTasksPending++\n}\n\n// taskAccepted increments the number of tasks that have been assigned to active\n// session queues, and are awaiting upload to a tower.",
+      "length": 187,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) taskAccepted() {",
+      "content": "func (s *ClientStats) taskAccepted() {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.NumTasksAccepted++\n\ts.NumTasksPending--\n}\n\n// taskIneligible increments the number of tasks that were unable to satisfy the\n// active session queue's policy. These can potentially be retried later, but\n// typically this means that the balance created dust outputs, so it may not be\n// worth backing up at all.",
+      "length": 337,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) taskIneligible() {",
+      "content": "func (s *ClientStats) taskIneligible() {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.NumTasksIneligible++\n}\n\n// sessionAcquired increments the number of sessions that have been successfully\n// negotiated by the client during this execution.",
+      "length": 186,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) sessionAcquired() {",
+      "content": "func (s *ClientStats) sessionAcquired() {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.NumSessionsAcquired++\n}\n\n// sessionExhausted increments the number of session that have become full as a\n// result of accepting backup tasks.",
+      "length": 172,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) sessionExhausted() {",
+      "content": "func (s *ClientStats) sessionExhausted() {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.NumSessionsExhausted++\n}\n\n// String returns a human-readable summary of the client's metrics.",
+      "length": 125,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) String() string {",
+      "content": "func (s *ClientStats) String() string {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\treturn fmt.Sprintf(\"tasks(received=%d accepted=%d ineligible=%d) \"+\n\t\t\"sessions(acquired=%d exhausted=%d)\", s.NumTasksPending,\n\t\ts.NumTasksAccepted, s.NumTasksIneligible, s.NumSessionsAcquired,\n\t\ts.NumSessionsExhausted)\n}\n\n// Copy returns a copy of the current stats.",
+      "length": 294,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *ClientStats) Copy() ClientStats {",
+      "content": "func (s *ClientStats) Copy() ClientStats {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\treturn ClientStats{\n\t\tNumTasksPending:      s.NumTasksPending,\n\t\tNumTasksAccepted:     s.NumTasksAccepted,\n\t\tNumTasksIneligible:   s.NumTasksIneligible,\n\t\tNumSessionsAcquired:  s.NumSessionsAcquired,\n\t\tNumSessionsExhausted: s.NumSessionsExhausted,\n\t}\n}\n",
+      "length": 278,
+      "tokens": 17,
+      "embedding": []
+    }
+  ]
+}

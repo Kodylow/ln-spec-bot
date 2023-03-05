@@ -1,0 +1,251 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/features.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type FeatureBit uint16",
+      "content": "type FeatureBit uint16\n\nconst (\n\t// DataLossProtectRequired is a feature bit that indicates that a peer\n\t// *requires* the other party know about the data-loss-protect optional\n\t// feature. If the remote peer does not know of such a feature, then\n\t// the sending peer SHOLUD disconnect them. The data-loss-protect\n\t// feature allows a peer that's lost partial data to recover their\n\t// settled funds of the latest commitment state.\n\tDataLossProtectRequired FeatureBit = 0\n\n\t// DataLossProtectOptional is an optional feature bit that indicates\n\t// that the sending peer knows of this new feature and can activate it\n\t// it. The data-loss-protect feature allows a peer that's lost partial\n\t// data to recover their settled funds of the latest commitment state.\n\tDataLossProtectOptional FeatureBit = 1\n\n\t// InitialRoutingSync is a local feature bit meaning that the receiving\n\t// node should send a complete dump of routing information when a new\n\t// connection is established.\n\tInitialRoutingSync FeatureBit = 3\n\n\t// UpfrontShutdownScriptRequired is a feature bit which indicates that a\n\t// peer *requires* that the remote peer accept an upfront shutdown script to\n\t// which payout is enforced on cooperative closes.\n\tUpfrontShutdownScriptRequired FeatureBit = 4\n\n\t// UpfrontShutdownScriptOptional is an optional feature bit which indicates\n\t// that the peer will accept an upfront shutdown script to which payout is\n\t// enforced on cooperative closes.\n\tUpfrontShutdownScriptOptional FeatureBit = 5\n\n\t// GossipQueriesRequired is a feature bit that indicates that the\n\t// receiving peer MUST know of the set of features that allows nodes to\n\t// more efficiently query the network view of peers on the network for\n\t// reconciliation purposes.\n\tGossipQueriesRequired FeatureBit = 6\n\n\t// GossipQueriesOptional is an optional feature bit that signals that\n\t// the setting peer knows of the set of features that allows more\n\t// efficient network view reconciliation.\n\tGossipQueriesOptional FeatureBit = 7\n\n\t// TLVOnionPayloadRequired is a feature bit that indicates a node is\n\t// able to decode the new TLV information included in the onion packet.\n\tTLVOnionPayloadRequired FeatureBit = 8\n\n\t// TLVOnionPayloadOptional is an optional feature bit that indicates a\n\t// node is able to decode the new TLV information included in the onion\n\t// packet.\n\tTLVOnionPayloadOptional FeatureBit = 9\n\n\t// StaticRemoteKeyRequired is a required feature bit that signals that\n\t// within one's commitment transaction, the key used for the remote\n\t// party's non-delay output should not be tweaked.\n\tStaticRemoteKeyRequired FeatureBit = 12\n\n\t// StaticRemoteKeyOptional is an optional feature bit that signals that\n\t// within one's commitment transaction, the key used for the remote\n\t// party's non-delay output should not be tweaked.\n\tStaticRemoteKeyOptional FeatureBit = 13\n\n\t// PaymentAddrRequired is a required feature bit that signals that a\n\t// node requires payment addresses, which are used to mitigate probing\n\t// attacks on the receiver of a payment.\n\tPaymentAddrRequired FeatureBit = 14\n\n\t// PaymentAddrOptional is an optional feature bit that signals that a\n\t// node supports payment addresses, which are used to mitigate probing\n\t// attacks on the receiver of a payment.\n\tPaymentAddrOptional FeatureBit = 15\n\n\t// MPPRequired is a required feature bit that signals that the receiver\n\t// of a payment requires settlement of an invoice with more than one\n\t// HTLC.\n\tMPPRequired FeatureBit = 16\n\n\t// MPPOptional is an optional feature bit that signals that the receiver\n\t// of a payment supports settlement of an invoice with more than one\n\t// HTLC.\n\tMPPOptional FeatureBit = 17\n\n\t// WumboChannelsRequired is a required feature bit that signals that a\n\t// node is willing to accept channels larger than 2^24 satoshis.\n\tWumboChannelsRequired FeatureBit = 18\n\n\t// WumboChannelsOptional is an optional feature bit that signals that a\n\t// node is willing to accept channels larger than 2^24 satoshis.\n\tWumboChannelsOptional FeatureBit = 19\n\n\t// AnchorsRequired is a required feature bit that signals that the node\n\t// requires channels to be made using commitments having anchor\n\t// outputs.\n\tAnchorsRequired FeatureBit = 20\n\n\t// AnchorsOptional is an optional feature bit that signals that the\n\t// node supports channels to be made using commitments having anchor\n\t// outputs.\n\tAnchorsOptional FeatureBit = 21\n\n\t// AnchorsZeroFeeHtlcTxRequired is a required feature bit that signals\n\t// that the node requires channels having zero-fee second-level HTLC\n\t// transactions, which also imply anchor commitments.\n\tAnchorsZeroFeeHtlcTxRequired FeatureBit = 22\n\n\t// AnchorsZeroFeeHtlcTxOptional is an optional feature bit that signals\n\t// that the node supports channels having zero-fee second-level HTLC\n\t// transactions, which also imply anchor commitments.\n\tAnchorsZeroFeeHtlcTxOptional FeatureBit = 23\n\n\t// ShutdownAnySegwitRequired is an required feature bit that signals\n\t// that the sender is able to properly handle/parse segwit witness\n\t// programs up to version 16. This enables utilization of Taproot\n\t// addresses for cooperative closure addresses.\n\tShutdownAnySegwitRequired FeatureBit = 26\n\n\t// ShutdownAnySegwitOptional is an optional feature bit that signals\n\t// that the sender is able to properly handle/parse segwit witness\n\t// programs up to version 16. This enables utilization of Taproot\n\t// addresses for cooperative closure addresses.\n\tShutdownAnySegwitOptional FeatureBit = 27\n\n\t// AMPRequired is a required feature bit that signals that the receiver\n\t// of a payment supports accepts spontaneous payments, i.e.\n\t// sender-generated preimages according to BOLT XX.\n\tAMPRequired FeatureBit = 30\n\n\t// AMPOptional is an optional feature bit that signals that the receiver\n\t// of a payment supports accepts spontaneous payments, i.e.\n\t// sender-generated preimages according to BOLT XX.\n\tAMPOptional FeatureBit = 31\n\n\t// ExplicitChannelTypeRequired is a required bit that denotes that a\n\t// connection established with this node is to use explicit channel\n\t// commitment types for negotiation instead of the existing implicit\n\t// negotiation methods. With this bit, there is no longer a \"default\"\n\t// implicit channel commitment type, allowing a connection to\n\t// open/maintain types of several channels over its lifetime.\n\tExplicitChannelTypeRequired = 44\n\n\t// ExplicitChannelTypeOptional is an optional bit that denotes that a\n\t// connection established with this node is to use explicit channel\n\t// commitment types for negotiation instead of the existing implicit\n\t// negotiation methods. With this bit, there is no longer a \"default\"\n\t// implicit channel commitment type, allowing a connection to\n\t// TODO: Decide on actual feature bit value.\n\tExplicitChannelTypeOptional = 45\n\n\t// ScidAliasRequired is a required feature bit that signals that the\n\t// node requires understanding of ShortChannelID aliases in the TLV\n\t// segment of the funding_locked message.\n\tScidAliasRequired FeatureBit = 46\n\n\t// ScidAliasOptional is an optional feature bit that signals that the\n\t// node understands ShortChannelID aliases in the TLV segment of the\n\t// funding_locked message.\n\tScidAliasOptional FeatureBit = 47\n\n\t// PaymentMetadataRequired is a required bit that denotes that if an\n\t// invoice contains metadata, it must be passed along with the payment\n\t// htlc(s).\n\tPaymentMetadataRequired = 48\n\n\t// PaymentMetadataOptional is an optional bit that denotes that if an\n\t// invoice contains metadata, it may be passed along with the payment\n\t// htlc(s).\n\tPaymentMetadataOptional = 49\n\n\t// ZeroConfRequired is a required feature bit that signals that the\n\t// node requires understanding of the zero-conf channel_type.\n\tZeroConfRequired FeatureBit = 50\n\n\t// ZeroConfOptional is an optional feature bit that signals that the\n\t// node understands the zero-conf channel type.\n\tZeroConfOptional FeatureBit = 51\n\n\t// KeysendRequired is a required bit that indicates that the node is\n\t// able and willing to accept keysend payments.\n\tKeysendRequired = 54\n\n\t// KeysendOptional is an optional bit that indicates that the node is\n\t// able and willing to accept keysend payments.\n\tKeysendOptional = 55\n\n\t// ScriptEnforcedLeaseOptional is an optional feature bit that signals\n\t// that the node requires channels having zero-fee second-level HTLC\n\t// transactions, which also imply anchor commitments, along with an\n\t// additional CLTV constraint of a channel lease's expiration height\n\t// applied to all outputs that pay directly to the channel initiator.\n\t//\n\t// TODO: Decide on actual feature bit value.\n\tScriptEnforcedLeaseRequired FeatureBit = 2022\n\n\t// ScriptEnforcedLeaseOptional is an optional feature bit that signals\n\t// that the node requires channels having zero-fee second-level HTLC\n\t// transactions, which also imply anchor commitments, along with an\n\t// additional CLTV constraint of a channel lease's expiration height\n\t// applied to all outputs that pay directly to the channel initiator.\n\t//\n\t// TODO: Decide on actual feature bit value.\n\tScriptEnforcedLeaseOptional FeatureBit = 2023\n\n\t// maxAllowedSize is a maximum allowed size of feature vector.\n\t//\n\t// NOTE: Within the protocol, the maximum allowed message size is 65535\n\t// bytes for all messages. Accounting for the overhead within the feature\n\t// message to signal the type of message, that leaves us with 65533 bytes\n\t// for the init message itself.  Next, we reserve 4 bytes to encode the\n\t// lengths of both the local and global feature vectors, so 65529 bytes\n\t// for the local and global features. Knocking off one byte for the sake\n\t// of the calculation, that leads us to 32764 bytes for each feature\n\t// vector, or 131056 different features.\n\tmaxAllowedSize = 32764\n)\n\n// IsRequired returns true if the feature bit is even, and false otherwise.",
+      "length": 9566,
+      "tokens": 1451,
+      "embedding": []
+    },
+    {
+      "slug": "func (b FeatureBit) IsRequired() bool {",
+      "content": "func (b FeatureBit) IsRequired() bool {\n\treturn b&0x01 == 0x00\n}\n\n// Features is a mapping of known feature bits to a descriptive name. All known\n// feature bits must be assigned a name in this mapping, and feature bit pairs\n// must be assigned together for correct behavior.\nvar Features = map[FeatureBit]string{\n\tDataLossProtectRequired:       \"data-loss-protect\",\n\tDataLossProtectOptional:       \"data-loss-protect\",\n\tInitialRoutingSync:            \"initial-routing-sync\",\n\tUpfrontShutdownScriptRequired: \"upfront-shutdown-script\",\n\tUpfrontShutdownScriptOptional: \"upfront-shutdown-script\",\n\tGossipQueriesRequired:         \"gossip-queries\",\n\tGossipQueriesOptional:         \"gossip-queries\",\n\tTLVOnionPayloadRequired:       \"tlv-onion\",\n\tTLVOnionPayloadOptional:       \"tlv-onion\",\n\tStaticRemoteKeyOptional:       \"static-remote-key\",\n\tStaticRemoteKeyRequired:       \"static-remote-key\",\n\tPaymentAddrOptional:           \"payment-addr\",\n\tPaymentAddrRequired:           \"payment-addr\",\n\tMPPOptional:                   \"multi-path-payments\",\n\tMPPRequired:                   \"multi-path-payments\",\n\tAnchorsRequired:               \"anchor-commitments\",\n\tAnchorsOptional:               \"anchor-commitments\",\n\tAnchorsZeroFeeHtlcTxRequired:  \"anchors-zero-fee-htlc-tx\",\n\tAnchorsZeroFeeHtlcTxOptional:  \"anchors-zero-fee-htlc-tx\",\n\tWumboChannelsRequired:         \"wumbo-channels\",\n\tWumboChannelsOptional:         \"wumbo-channels\",\n\tAMPRequired:                   \"amp\",\n\tAMPOptional:                   \"amp\",\n\tPaymentMetadataOptional:       \"payment-metadata\",\n\tPaymentMetadataRequired:       \"payment-metadata\",\n\tExplicitChannelTypeOptional:   \"explicit-commitment-type\",\n\tExplicitChannelTypeRequired:   \"explicit-commitment-type\",\n\tKeysendOptional:               \"keysend\",\n\tKeysendRequired:               \"keysend\",\n\tScriptEnforcedLeaseRequired:   \"script-enforced-lease\",\n\tScriptEnforcedLeaseOptional:   \"script-enforced-lease\",\n\tScidAliasRequired:             \"scid-alias\",\n\tScidAliasOptional:             \"scid-alias\",\n\tZeroConfRequired:              \"zero-conf\",\n\tZeroConfOptional:              \"zero-conf\",\n\tShutdownAnySegwitRequired:     \"shutdown-any-segwit\",\n\tShutdownAnySegwitOptional:     \"shutdown-any-segwit\",\n}\n\n// RawFeatureVector represents a set of feature bits as defined in BOLT-09.  A\n// RawFeatureVector itself just stores a set of bit flags but can be used to\n// construct a FeatureVector which binds meaning to each bit. Feature vectors\n// can be serialized and deserialized to/from a byte representation that is\n// transmitted in Lightning network messages.",
+      "length": 2486,
+      "tokens": 180,
+      "embedding": []
+    },
+    {
+      "slug": "type RawFeatureVector struct {",
+      "content": "type RawFeatureVector struct {\n\tfeatures map[FeatureBit]struct{}\n}\n\n// NewRawFeatureVector creates a feature vector with all of the feature bits\n// given as arguments enabled.",
+      "length": 140,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRawFeatureVector(bits ...FeatureBit) *RawFeatureVector {",
+      "content": "func NewRawFeatureVector(bits ...FeatureBit) *RawFeatureVector {\n\tfv := &RawFeatureVector{features: make(map[FeatureBit]struct{})}\n\tfor _, bit := range bits {\n\t\tfv.Set(bit)\n\t}\n\treturn fv\n}\n\n// IsEmpty returns whether the feature vector contains any feature bits.",
+      "length": 190,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv RawFeatureVector) IsEmpty() bool {",
+      "content": "func (fv RawFeatureVector) IsEmpty() bool {\n\treturn len(fv.features) == 0\n}\n\n// OnlyContains determines whether only the specified feature bits are found.",
+      "length": 107,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv RawFeatureVector) OnlyContains(bits ...FeatureBit) bool {",
+      "content": "func (fv RawFeatureVector) OnlyContains(bits ...FeatureBit) bool {\n\tif len(bits) != len(fv.features) {\n\t\treturn false\n\t}\n\tfor _, bit := range bits {\n\t\tif !fv.IsSet(bit) {\n\t\t\treturn false\n\t\t}\n\t}\n\treturn true\n}\n\n// Equals determines whether two features vectors contain exactly the same\n// features.",
+      "length": 218,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv RawFeatureVector) Equals(other *RawFeatureVector) bool {",
+      "content": "func (fv RawFeatureVector) Equals(other *RawFeatureVector) bool {\n\tif len(fv.features) != len(other.features) {\n\t\treturn false\n\t}\n\tfor bit := range fv.features {\n\t\tif _, ok := other.features[bit]; !ok {\n\t\t\treturn false\n\t\t}\n\t}\n\treturn true\n}\n\n// Merges sets all feature bits in other on the receiver's feature vector.",
+      "length": 239,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Merge(other *RawFeatureVector) error {",
+      "content": "func (fv *RawFeatureVector) Merge(other *RawFeatureVector) error {\n\tfor bit := range other.features {\n\t\terr := fv.SafeSet(bit)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\treturn nil\n}\n\n// Clone makes a copy of a feature vector.",
+      "length": 147,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Clone() *RawFeatureVector {",
+      "content": "func (fv *RawFeatureVector) Clone() *RawFeatureVector {\n\tnewFeatures := NewRawFeatureVector()\n\tfor bit := range fv.features {\n\t\tnewFeatures.Set(bit)\n\t}\n\treturn newFeatures\n}\n\n// IsSet returns whether a particular feature bit is enabled in the vector.",
+      "length": 187,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) IsSet(feature FeatureBit) bool {",
+      "content": "func (fv *RawFeatureVector) IsSet(feature FeatureBit) bool {\n\t_, ok := fv.features[feature]\n\treturn ok\n}\n\n// Set marks a feature as enabled in the vector.",
+      "length": 89,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Set(feature FeatureBit) {",
+      "content": "func (fv *RawFeatureVector) Set(feature FeatureBit) {\n\tfv.features[feature] = struct{}{}\n}\n\n// SafeSet sets the chosen feature bit in the feature vector, but returns an\n// error if the opposing feature bit is already set. This ensures both that we\n// are creating properly structured feature vectors, and in some cases, that\n// peers are sending properly encoded ones, i.e. it can't be both optional and\n// required.",
+      "length": 355,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) SafeSet(feature FeatureBit) error {",
+      "content": "func (fv *RawFeatureVector) SafeSet(feature FeatureBit) error {\n\tif _, ok := fv.features[feature^1]; ok {\n\t\treturn ErrFeaturePairExists\n\t}\n\n\tfv.Set(feature)\n\treturn nil\n}\n\n// Unset marks a feature as disabled in the vector.",
+      "length": 151,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Unset(feature FeatureBit) {",
+      "content": "func (fv *RawFeatureVector) Unset(feature FeatureBit) {\n\tdelete(fv.features, feature)\n}\n\n// SerializeSize returns the number of bytes needed to represent feature vector\n// in byte format.",
+      "length": 127,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) SerializeSize() int {",
+      "content": "func (fv *RawFeatureVector) SerializeSize() int {\n\t// We calculate byte-length via the largest bit index.\n\treturn fv.serializeSize(8)\n}\n\n// SerializeSize32 returns the number of bytes needed to represent feature\n// vector in base32 format.",
+      "length": 184,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) SerializeSize32() int {",
+      "content": "func (fv *RawFeatureVector) SerializeSize32() int {\n\t// We calculate base32-length via the largest bit index.\n\treturn fv.serializeSize(5)\n}\n\n// serializeSize returns the number of bytes required to encode the feature\n// vector using at most width bits per encoded byte.",
+      "length": 212,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) serializeSize(width int) int {",
+      "content": "func (fv *RawFeatureVector) serializeSize(width int) int {\n\t// Find the largest feature bit index\n\tmax := -1\n\tfor feature := range fv.features {\n\t\tindex := int(feature)\n\t\tif index > max {\n\t\t\tmax = index\n\t\t}\n\t}\n\tif max == -1 {\n\t\treturn 0\n\t}\n\n\treturn max/width + 1\n}\n\n// Encode writes the feature vector in byte representation. Every feature\n// encoded as a bit, and the bit vector is serialized using the least number of\n// bytes. Since the bit vector length is variable, the first two bytes of the\n// serialization represent the length.",
+      "length": 459,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Encode(w io.Writer) error {",
+      "content": "func (fv *RawFeatureVector) Encode(w io.Writer) error {\n\t// Write length of feature vector.\n\tvar l [2]byte\n\tlength := fv.SerializeSize()\n\tbinary.BigEndian.PutUint16(l[:], uint16(length))\n\tif _, err := w.Write(l[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn fv.encode(w, length, 8)\n}\n\n// EncodeBase256 writes the feature vector in base256 representation. Every\n// feature is encoded as a bit, and the bit vector is serialized using the least\n// number of bytes.",
+      "length": 388,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) EncodeBase256(w io.Writer) error {",
+      "content": "func (fv *RawFeatureVector) EncodeBase256(w io.Writer) error {\n\tlength := fv.SerializeSize()\n\treturn fv.encode(w, length, 8)\n}\n\n// EncodeBase32 writes the feature vector in base32 representation. Every feature\n// is encoded as a bit, and the bit vector is serialized using the least number of\n// bytes.",
+      "length": 233,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) EncodeBase32(w io.Writer) error {",
+      "content": "func (fv *RawFeatureVector) EncodeBase32(w io.Writer) error {\n\tlength := fv.SerializeSize32()\n\treturn fv.encode(w, length, 5)\n}\n\n// encode writes the feature vector",
+      "length": 98,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) encode(w io.Writer, length, width int) error {",
+      "content": "func (fv *RawFeatureVector) encode(w io.Writer, length, width int) error {\n\t// Generate the data and write it.\n\tdata := make([]byte, length)\n\tfor feature := range fv.features {\n\t\tbyteIndex := int(feature) / width\n\t\tbitIndex := int(feature) % width\n\t\tdata[length-byteIndex-1] |= 1 << uint(bitIndex)\n\t}\n\n\t_, err := w.Write(data)\n\treturn err\n}\n\n// Decode reads the feature vector from its byte representation. Every feature\n// is encoded as a bit, and the bit vector is serialized using the least number\n// of bytes. Since the bit vector length is variable, the first two bytes of the\n// serialization represent the length.",
+      "length": 530,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) Decode(r io.Reader) error {",
+      "content": "func (fv *RawFeatureVector) Decode(r io.Reader) error {\n\t// Read the length of the feature vector.\n\tvar l [2]byte\n\tif _, err := io.ReadFull(r, l[:]); err != nil {\n\t\treturn err\n\t}\n\tlength := binary.BigEndian.Uint16(l[:])\n\n\treturn fv.decode(r, int(length), 8)\n}\n\n// DecodeBase256 reads the feature vector from its base256 representation. Every\n// feature encoded as a bit, and the bit vector is serialized using the least\n// number of bytes.",
+      "length": 371,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) DecodeBase256(r io.Reader, length int) error {",
+      "content": "func (fv *RawFeatureVector) DecodeBase256(r io.Reader, length int) error {\n\treturn fv.decode(r, length, 8)\n}\n\n// DecodeBase32 reads the feature vector from its base32 representation. Every\n// feature encoded as a bit, and the bit vector is serialized using the least\n// number of bytes.",
+      "length": 206,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) DecodeBase32(r io.Reader, length int) error {",
+      "content": "func (fv *RawFeatureVector) DecodeBase32(r io.Reader, length int) error {\n\treturn fv.decode(r, length, 5)\n}\n\n// decode reads a feature vector from the next length bytes of the io.Reader,\n// assuming each byte has width feature bits encoded per byte.",
+      "length": 171,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *RawFeatureVector) decode(r io.Reader, length, width int) error {",
+      "content": "func (fv *RawFeatureVector) decode(r io.Reader, length, width int) error {\n\t// Read the feature vector data.\n\tdata := make([]byte, length)\n\tif _, err := io.ReadFull(r, data); err != nil {\n\t\treturn err\n\t}\n\n\t// Set feature bits from parsed data.\n\tbitsNumber := len(data) * width\n\tfor i := 0; i < bitsNumber; i++ {\n\t\tbyteIndex := int(i / width)\n\t\tbitIndex := uint(i % width)\n\t\tif (data[length-byteIndex-1]>>bitIndex)&1 == 1 {\n\t\t\tfv.Set(FeatureBit(i))\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// FeatureVector represents a set of enabled features. The set stores\n// information on enabled flags and metadata about the feature names. A feature\n// vector is serializable to a compact byte representation that is included in\n// Lightning network messages.",
+      "length": 633,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "type FeatureVector struct {",
+      "content": "type FeatureVector struct {\n\t*RawFeatureVector\n\tfeatureNames map[FeatureBit]string\n}\n\n// NewFeatureVector constructs a new FeatureVector from a raw feature vector\n// and mapping of feature definitions. If the feature vector argument is nil, a\n// new one will be constructed with no enabled features.",
+      "length": 265,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFeatureVector(featureVector *RawFeatureVector,",
+      "content": "func NewFeatureVector(featureVector *RawFeatureVector,\n\tfeatureNames map[FeatureBit]string) *FeatureVector {\n\n\tif featureVector == nil {\n\t\tfeatureVector = NewRawFeatureVector()\n\t}\n\treturn &FeatureVector{\n\t\tRawFeatureVector: featureVector,\n\t\tfeatureNames:     featureNames,\n\t}\n}\n\n// EmptyFeatureVector returns a feature vector with no bits set.",
+      "length": 277,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func EmptyFeatureVector() *FeatureVector {",
+      "content": "func EmptyFeatureVector() *FeatureVector {\n\treturn NewFeatureVector(nil, Features)\n}\n\n// HasFeature returns whether a particular feature is included in the set. The\n// feature can be seen as set either if the bit is set directly OR the queried\n// bit has the same meaning as its corresponding even/odd bit, which is set\n// instead. The second case is because feature bits are generally assigned in\n// pairs where both the even and odd position represent the same feature.",
+      "length": 421,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) HasFeature(feature FeatureBit) bool {",
+      "content": "func (fv *FeatureVector) HasFeature(feature FeatureBit) bool {\n\treturn fv.IsSet(feature) ||\n\t\t(fv.isFeatureBitPair(feature) && fv.IsSet(feature^1))\n}\n\n// RequiresFeature returns true if the referenced feature vector *requires*\n// that the given required bit be set. This method can be used with both\n// optional and required feature bits as a parameter.",
+      "length": 284,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) RequiresFeature(feature FeatureBit) bool {",
+      "content": "func (fv *FeatureVector) RequiresFeature(feature FeatureBit) bool {\n\t// If we weren't passed a required feature bit, then we'll flip the\n\t// lowest bit to query for the required version of the feature. This\n\t// lets callers pass in both the optional and required bits.\n\tif !feature.IsRequired() {\n\t\tfeature ^= 1\n\t}\n\n\treturn fv.IsSet(feature)\n}\n\n// UnknownRequiredFeatures returns a list of feature bits set in the vector\n// that are unknown and in an even bit position. Feature bits with an even\n// index must be known to a node receiving the feature vector in a message.",
+      "length": 491,
+      "tokens": 89,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) UnknownRequiredFeatures() []FeatureBit {",
+      "content": "func (fv *FeatureVector) UnknownRequiredFeatures() []FeatureBit {\n\tvar unknown []FeatureBit\n\tfor feature := range fv.features {\n\t\tif feature%2 == 0 && !fv.IsKnown(feature) {\n\t\t\tunknown = append(unknown, feature)\n\t\t}\n\t}\n\treturn unknown\n}\n\n// Name returns a string identifier for the feature represented by this bit. If\n// the bit does not represent a known feature, this returns a string indicating\n// as such.",
+      "length": 332,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) Name(bit FeatureBit) string {",
+      "content": "func (fv *FeatureVector) Name(bit FeatureBit) string {\n\tname, known := fv.featureNames[bit]\n\tif !known {\n\t\treturn \"unknown\"\n\t}\n\treturn name\n}\n\n// IsKnown returns whether this feature bit represents a known feature.",
+      "length": 152,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) IsKnown(bit FeatureBit) bool {",
+      "content": "func (fv *FeatureVector) IsKnown(bit FeatureBit) bool {\n\t_, known := fv.featureNames[bit]\n\treturn known\n}\n\n// isFeatureBitPair returns whether this feature bit and its corresponding\n// even/odd bit both represent the same feature. This may often be the case as\n// bits are generally assigned in pairs, first being assigned an odd bit\n// position then being promoted to an even bit position once the network is\n// ready.",
+      "length": 355,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) isFeatureBitPair(bit FeatureBit) bool {",
+      "content": "func (fv *FeatureVector) isFeatureBitPair(bit FeatureBit) bool {\n\tname1, known1 := fv.featureNames[bit]\n\tname2, known2 := fv.featureNames[bit^1]\n\treturn known1 && known2 && name1 == name2\n}\n\n// Features returns the set of raw features contained in the feature vector.",
+      "length": 197,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) Features() map[FeatureBit]struct{} {",
+      "content": "func (fv *FeatureVector) Features() map[FeatureBit]struct{} {\n\tfs := make(map[FeatureBit]struct{}, len(fv.RawFeatureVector.features))\n\tfor b := range fv.RawFeatureVector.features {\n\t\tfs[b] = struct{}{}\n\t}\n\treturn fs\n}\n\n// Clone copies a feature vector, carrying over its feature bits. The feature\n// names are not copied.",
+      "length": 251,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (fv *FeatureVector) Clone() *FeatureVector {",
+      "content": "func (fv *FeatureVector) Clone() *FeatureVector {\n\tfeatures := fv.RawFeatureVector.Clone()\n\treturn NewFeatureVector(features, fv.featureNames)\n}\n",
+      "length": 92,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

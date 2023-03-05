@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/intercepted_forward.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "type interceptedForward struct {",
+      "content": "type interceptedForward struct {\n\tpacket *htlcswitch.InterceptedPacket\n\tbeacon *preimageBeacon\n}\n",
+      "length": 61,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newInterceptedForward(",
+      "content": "func newInterceptedForward(\n\tpacket *htlcswitch.InterceptedPacket,\n\tbeacon *preimageBeacon) *interceptedForward {\n\n\treturn &interceptedForward{\n\t\tbeacon: beacon,\n\t\tpacket: packet,\n\t}\n}\n\n// Packet returns the intercepted htlc packet.",
+      "length": 195,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Packet() htlcswitch.InterceptedPacket {",
+      "content": "func (f *interceptedForward) Packet() htlcswitch.InterceptedPacket {\n\treturn *f.packet\n}\n\n// Resume notifies the intention to resume an existing hold forward. This\n// basically means the caller wants to resume with the default behavior for this\n// htlc which usually means forward it.",
+      "length": 210,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Resume() error {",
+      "content": "func (f *interceptedForward) Resume() error {\n\treturn ErrCannotResume\n}\n\n// Fail notifies the intention to fail an existing hold forward with an\n// encrypted failure reason.",
+      "length": 123,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Fail(_ []byte) error {",
+      "content": "func (f *interceptedForward) Fail(_ []byte) error {\n\t// We can't actively fail an htlc. The best we could do is abandon the\n\t// resolver, but this wouldn't be a safe operation. There may be a race\n\t// with the preimage beacon supplying a preimage. Therefore we don't\n\t// attempt to fail and just return an error here.\n\treturn ErrCannotFail\n}\n\n// FailWithCode notifies the intention to fail an existing hold forward with the\n// specified failure code.",
+      "length": 390,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) FailWithCode(_ lnwire.FailCode) error {",
+      "content": "func (f *interceptedForward) FailWithCode(_ lnwire.FailCode) error {\n\treturn ErrCannotFail\n}\n\n// Settle notifies the intention to settle an existing hold forward with a given\n// preimage.",
+      "length": 114,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Settle(preimage lntypes.Preimage) error {",
+      "content": "func (f *interceptedForward) Settle(preimage lntypes.Preimage) error {\n\tif !preimage.Matches(f.packet.Hash) {\n\t\treturn ErrPreimageMismatch\n\t}\n\n\t// Add preimage to the preimage beacon. The onchain resolver will pick\n\t// up the preimage from the beacon.\n\treturn f.beacon.AddPreimages(preimage)\n}\n",
+      "length": 215,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

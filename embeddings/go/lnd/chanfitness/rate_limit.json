@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/rate_limit.go",
+  "package": "chanfitness",
+  "sections": [
+    {
+      "slug": "func getRateLimit(flapCount int) time.Duration {",
+      "content": "func getRateLimit(flapCount int) time.Duration {\n\t// Figure out the tier we fall into based on our current flap count.\n\ttier := flapCount / rateLimitScale\n\n\t// If we have more events than our number of tiers, we just use the\n\t// last tier\n\ttierLen := len(rateLimits)\n\tif tier >= tierLen {\n\t\ttier = tierLen - 1\n\t}\n\n\treturn rateLimits[tier]\n}\n\n// cooldownFlapCount takes a timestamped flap count, and returns its value\n// scaled down by our cooldown factor if at least our cooldown period has\n// elapsed since the peer last flapped. We do this because we store all-time\n// flap count for peers, and want to allow downgrading of peers that have not\n// flapped for a long time.",
+      "length": 607,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func cooldownFlapCount(now time.Time, flapCount int,",
+      "content": "func cooldownFlapCount(now time.Time, flapCount int,\n\tlastFlap time.Time) int {\n\n\t// Calculate time since our last flap, and the number of times we need\n\t// to apply our cooldown factor.\n\ttimeSinceFlap := now.Sub(lastFlap)\n\n\t// If our cooldown period has not elapsed yet, we just return our flap\n\t// count. We allow fractional cooldown periods once this period has\n\t// elapsed, so we do not want to apply a fractional cooldown before the\n\t// full cooldown period has elapsed.\n\tif timeSinceFlap < flapCountCooldownPeriod {\n\t\treturn flapCount\n\t}\n\n\t// Get the factor by which we need to cooldown our flap count. If\n\t// insufficient time has passed to cooldown our flap count. Use use a\n\t// float so that we allow fractional cooldown periods.\n\tcooldownPeriods := float64(timeSinceFlap) /\n\t\tfloat64(flapCountCooldownPeriod)\n\n\teffectiveFactor := math.Pow(flapCountCooldownFactor, cooldownPeriods)\n\n\treturn int(float64(flapCount) * effectiveFactor)\n}\n",
+      "length": 867,
+      "tokens": 130,
+      "embedding": []
+    }
+  ]
+}

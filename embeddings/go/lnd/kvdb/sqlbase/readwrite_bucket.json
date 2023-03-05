@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlbase/readwrite_bucket.go",
+  "package": "kvdb_postgres",
+  "sections": [
+    {
+      "slug": "type readWriteBucket struct {",
+      "content": "type readWriteBucket struct {\n\t// id is used to identify the bucket. If id is null, it refers to the\n\t// root bucket.\n\tid *int64\n\n\t// tx holds the parent transaction.\n\ttx *readWriteTx\n\n\ttable string\n}\n\n// newReadWriteBucket creates a new rw bucket with the passed transaction\n// and bucket id.",
+      "length": 252,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadWriteBucket(tx *readWriteTx, id *int64) *readWriteBucket {",
+      "content": "func newReadWriteBucket(tx *readWriteTx, id *int64) *readWriteBucket {\n\treturn &readWriteBucket{\n\t\tid:    id,\n\t\ttx:    tx,\n\t\ttable: tx.db.table,\n\t}\n}\n\n// NestedReadBucket retrieves a nested read bucket with the given key.\n// Returns nil if the bucket does not exist.",
+      "length": 187,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NestedReadBucket(key []byte) walletdb.ReadBucket {",
+      "content": "func (b *readWriteBucket) NestedReadBucket(key []byte) walletdb.ReadBucket {\n\treturn b.NestedReadWriteBucket(key)\n}\n",
+      "length": 37,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func parentSelector(id *int64) string {",
+      "content": "func parentSelector(id *int64) string {\n\tif id == nil {\n\t\treturn \"parent_id IS NULL\"\n\t}\n\treturn fmt.Sprintf(\"parent_id=%v\", *id)\n}\n\n// ForEach invokes the passed function with every key/value pair in\n// the bucket. This includes nested buckets, in which case the value\n// is nil, but it does not include the key/value pairs within those\n// nested buckets.",
+      "length": 306,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ForEach(cb func(k, v []byte) error) error {",
+      "content": "func (b *readWriteBucket) ForEach(cb func(k, v []byte) error) error {\n\tcursor := b.ReadWriteCursor()\n\n\tk, v := cursor.First()\n\tfor k != nil {\n\t\terr := cb(k, v)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tk, v = cursor.Next()\n\t}\n\n\treturn nil\n}\n\n// Get returns the value for the given key. Returns nil if the key does\n// not exist in this bucket.",
+      "length": 253,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Get(key []byte) []byte {",
+      "content": "func (b *readWriteBucket) Get(key []byte) []byte {\n\t// Return nil if the key is empty.\n\tif len(key) == 0 {\n\t\treturn nil\n\t}\n\n\tvar value *[]byte\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT value FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1\", key,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\t// When an empty byte array is stored as the value, Sqlite will decode\n\t// that into nil whereas postgres will decode that as an empty byte\n\t// array. Since returning nil is taken to mean that no value has ever\n\t// been written, we ensure here that we at least return an empty array\n\t// so that nil checks will fail.\n\tif len(*value) == 0 {\n\t\treturn []byte{}\n\t}\n\n\treturn *value\n}\n\n// ReadCursor returns a new read-only cursor for this bucket.",
+      "length": 750,
+      "tokens": 136,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ReadCursor() walletdb.ReadCursor {",
+      "content": "func (b *readWriteBucket) ReadCursor() walletdb.ReadCursor {\n\treturn newReadWriteCursor(b)\n}\n\n// NestedReadWriteBucket retrieves a nested bucket with the given key.\n// Returns nil if the bucket does not exist.",
+      "length": 144,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NestedReadWriteBucket(",
+      "content": "func (b *readWriteBucket) NestedReadWriteBucket(\n\tkey []byte) walletdb.ReadWriteBucket {\n\n\tif len(key) == 0 {\n\t\treturn nil\n\t}\n\n\tvar id int64\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT id FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1 AND value IS NULL\", key,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&id)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn nil\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\treturn newReadWriteBucket(b.tx, &id)\n}\n\n// CreateBucket creates and returns a new nested bucket with the given key.\n// Returns ErrBucketExists if the bucket already exists, ErrBucketNameRequired\n// if the key is empty, or ErrIncompatibleValue if the key value is otherwise\n// invalid for the particular database implementation.  Other errors are\n// possible depending on the implementation.",
+      "length": 715,
+      "tokens": 109,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) CreateBucket(key []byte) (",
+      "content": "func (b *readWriteBucket) CreateBucket(key []byte) (\n\twalletdb.ReadWriteBucket, error) {\n\n\tif len(key) == 0 {\n\t\treturn nil, walletdb.ErrBucketNameRequired\n\t}\n\n\t// Check to see if the bucket already exists.\n\tvar (\n\t\tvalue *[]byte\n\t\tid    int64\n\t)\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT id,value FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1\", key,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&id, &value)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\n\tcase err == nil && value == nil:\n\t\treturn nil, walletdb.ErrBucketExists\n\n\tcase err == nil && value != nil:\n\t\treturn nil, walletdb.ErrIncompatibleValue\n\n\tcase err != nil:\n\t\treturn nil, err\n\t}\n\n\t// Bucket does not yet exist, so create it. Postgres will generate a\n\t// bucket id for the new bucket.\n\trow, cancel = b.tx.QueryRow(\n\t\t\"INSERT INTO \"+b.table+\" (parent_id, key) \"+\n\t\t\t\"VALUES($1, $2) RETURNING id\", b.id, key,\n\t)\n\tdefer cancel()\n\terr = row.Scan(&id)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn newReadWriteBucket(b.tx, &id), nil\n}\n\n// CreateBucketIfNotExists creates and returns a new nested bucket with\n// the given key if it does not already exist.  Returns\n// ErrBucketNameRequired if the key is empty or ErrIncompatibleValue\n// if the key value is otherwise invalid for the particular database\n// backend.  Other errors are possible depending on the implementation.",
+      "length": 1233,
+      "tokens": 193,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) CreateBucketIfNotExists(key []byte) (",
+      "content": "func (b *readWriteBucket) CreateBucketIfNotExists(key []byte) (\n\twalletdb.ReadWriteBucket, error) {\n\n\tif len(key) == 0 {\n\t\treturn nil, walletdb.ErrBucketNameRequired\n\t}\n\n\t// Check to see if the bucket already exists.\n\tvar (\n\t\tvalue *[]byte\n\t\tid    int64\n\t)\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT id,value FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1\", key,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&id, &value)\n\n\tswitch {\n\t// Bucket does not yet exist, so create it now. Postgres will generate a\n\t// bucket id for the new bucket.\n\tcase err == sql.ErrNoRows:\n\t\trow, cancel := b.tx.QueryRow(\n\t\t\t\"INSERT INTO \"+b.table+\" (parent_id, key) \"+\n\t\t\t\t\"VALUES($1, $2) RETURNING id\", b.id, key,\n\t\t)\n\t\tdefer cancel()\n\t\terr := row.Scan(&id)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\tcase err == nil && value != nil:\n\t\treturn nil, walletdb.ErrIncompatibleValue\n\n\tcase err != nil:\n\t\treturn nil, err\n\t}\n\n\treturn newReadWriteBucket(b.tx, &id), nil\n}\n\n// DeleteNestedBucket deletes the nested bucket and its sub-buckets\n// pointed to by the passed key. All values in the bucket and sub-buckets\n// will be deleted as well.",
+      "length": 1011,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) DeleteNestedBucket(key []byte) error {",
+      "content": "func (b *readWriteBucket) DeleteNestedBucket(key []byte) error {\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\tresult, err := b.tx.Exec(\n\t\t\"DELETE FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1 AND value IS NULL\",\n\t\tkey,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\trows, err := result.RowsAffected()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif rows == 0 {\n\t\treturn walletdb.ErrBucketNotFound\n\t}\n\n\treturn nil\n}\n\n// Put updates the value for the passed key.\n// Returns ErrKeyRequired if te passed key is empty.",
+      "length": 439,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Put(key, value []byte) error {",
+      "content": "func (b *readWriteBucket) Put(key, value []byte) error {\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrKeyRequired\n\t}\n\n\t// Prevent NULL being written for an empty value slice.\n\tif value == nil {\n\t\tvalue = []byte{}\n\t}\n\n\tvar (\n\t\tresult sql.Result\n\t\terr    error\n\t)\n\n\t// We are putting a value in a bucket in this table. Try to insert the\n\t// key first. If the key already exists (ON CONFLICT), update the key.\n\t// Do not update a NULL value, because this indicates that the key\n\t// contains a sub-bucket. This case will be caught via RowsAffected\n\t// below.\n\tif b.id == nil {\n\t\t// ON CONFLICT requires the WHERE parent_id IS NULL hint to let\n\t\t// Postgres find the NULL-parent_id unique index (<table>_unp).\n\t\tresult, err = b.tx.Exec(\n\t\t\t\"INSERT INTO \"+b.table+\" (key, value) VALUES($1, $2) \"+\n\t\t\t\t\"ON CONFLICT (key) WHERE parent_id IS NULL \"+\n\t\t\t\t\"DO UPDATE SET value=$2 \"+\n\t\t\t\t\"WHERE \"+b.table+\".value IS NOT NULL\",\n\t\t\tkey, value,\n\t\t)\n\t} else {\n\t\t// ON CONFLICT requires the WHERE parent_id NOT IS NULL hint to\n\t\t// let Postgres find the non-NULL-parent_id unique index\n\t\t// (<table>_up).\n\t\tresult, err = b.tx.Exec(\n\t\t\t\"INSERT INTO \"+b.table+\" (key, value, parent_id) \"+\n\t\t\t\t\"VALUES($1, $2, $3) \"+\n\t\t\t\t\"ON CONFLICT (key, parent_id) \"+\n\t\t\t\t\"WHERE parent_id IS NOT NULL \"+\n\t\t\t\t\"DO UPDATE SET value=$2 \"+\n\t\t\t\t\"WHERE \"+b.table+\".value IS NOT NULL\",\n\t\t\tkey, value, b.id,\n\t\t)\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\n\trows, err := result.RowsAffected()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif rows != 1 {\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\treturn nil\n}\n\n// Delete deletes the key/value pointed to by the passed key.\n// Returns ErrKeyRequired if the passed key is empty.",
+      "length": 1544,
+      "tokens": 264,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Delete(key []byte) error {",
+      "content": "func (b *readWriteBucket) Delete(key []byte) error {\n\tif key == nil {\n\t\treturn nil\n\t}\n\tif len(key) == 0 {\n\t\treturn walletdb.ErrKeyRequired\n\t}\n\n\t// Check to see if a bucket with this key exists.\n\tvar dummy int\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT 1 FROM \"+b.table+\" WHERE \"+parentSelector(b.id)+\n\t\t\t\" AND key=$1 AND value IS NULL\", key,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&dummy)\n\tswitch {\n\t// No bucket exists, proceed to deletion of the key.\n\tcase err == sql.ErrNoRows:\n\n\tcase err != nil:\n\t\treturn err\n\n\t// Bucket exists.\n\tdefault:\n\t\treturn walletdb.ErrIncompatibleValue\n\t}\n\n\t_, err = b.tx.Exec(\n\t\t\"DELETE FROM \"+b.table+\" WHERE key=$1 AND \"+\n\t\t\tparentSelector(b.id)+\" AND value IS NOT NULL\",\n\t\tkey,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// ReadWriteCursor returns a new read-write cursor for this bucket.",
+      "length": 733,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ReadWriteCursor() walletdb.ReadWriteCursor {",
+      "content": "func (b *readWriteBucket) ReadWriteCursor() walletdb.ReadWriteCursor {\n\treturn newReadWriteCursor(b)\n}\n\n// Tx returns the buckets transaction.",
+      "length": 68,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Tx() walletdb.ReadWriteTx {",
+      "content": "func (b *readWriteBucket) Tx() walletdb.ReadWriteTx {\n\treturn b.tx\n}\n\n// NextSequence returns an autoincrementing sequence number for this bucket.\n// Note that this is not a thread safe function and as such it must not be used\n// for synchronization.",
+      "length": 191,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) NextSequence() (uint64, error) {",
+      "content": "func (b *readWriteBucket) NextSequence() (uint64, error) {\n\tseq := b.Sequence() + 1\n\n\treturn seq, b.SetSequence(seq)\n}\n\n// SetSequence updates the sequence number for the bucket.",
+      "length": 114,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) SetSequence(v uint64) error {",
+      "content": "func (b *readWriteBucket) SetSequence(v uint64) error {\n\tif b.id == nil {\n\t\tpanic(\"sequence not supported on top level bucket\")\n\t}\n\n\tresult, err := b.tx.Exec(\n\t\t\"UPDATE \"+b.table+\" SET sequence=$2 WHERE id=$1\",\n\t\tb.id, int64(v),\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\trows, err := result.RowsAffected()\n\tif err != nil {\n\t\treturn err\n\t}\n\tif rows != 1 {\n\t\treturn errors.New(\"cannot set sequence\")\n\t}\n\n\treturn nil\n}\n\n// Sequence returns the current sequence number for this bucket without\n// incrementing it.",
+      "length": 424,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Sequence() uint64 {",
+      "content": "func (b *readWriteBucket) Sequence() uint64 {\n\tif b.id == nil {\n\t\tpanic(\"sequence not supported on top level bucket\")\n\t}\n\n\tvar seq int64\n\trow, cancel := b.tx.QueryRow(\n\t\t\"SELECT sequence FROM \"+b.table+\" WHERE id=$1 \"+\n\t\t\t\"AND sequence IS NOT NULL\",\n\t\tb.id,\n\t)\n\tdefer cancel()\n\terr := row.Scan(&seq)\n\n\tswitch {\n\tcase err == sql.ErrNoRows:\n\t\treturn 0\n\n\tcase err != nil:\n\t\tpanic(err)\n\t}\n\n\treturn uint64(seq)\n}\n\n// Prefetch will attempt to prefetch all values under a path from the passed\n// bucket.",
+      "length": 425,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) Prefetch(paths ...[]string) {}",
+      "content": "func (b *readWriteBucket) Prefetch(paths ...[]string) {}\n\n// ForAll is an optimized version of ForEach with the limitation that no\n// additional queries can be executed within the callback.",
+      "length": 130,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (b *readWriteBucket) ForAll(cb func(k, v []byte) error) error {",
+      "content": "func (b *readWriteBucket) ForAll(cb func(k, v []byte) error) error {\n\trows, cancel, err := b.tx.Query(\n\t\t\"SELECT key, value FROM \" + b.table + \" WHERE \" +\n\t\t\tparentSelector(b.id) + \" ORDER BY key\",\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer cancel()\n\n\tfor rows.Next() {\n\t\tvar key, value []byte\n\n\t\terr := rows.Scan(&key, &value)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\terr = cb(key, value)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 348,
+      "tokens": 69,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/lookout/interface.go",
+  "package": "lookout",
+  "sections": [
+    {
+      "slug": "type Service interface {",
+      "content": "type Service interface {\n\t// Start safely starts up the Interface.\n\tStart() error\n\n\t// Stop safely stops the Interface.\n\tStop() error\n}\n\n// BlockFetcher supports the ability to fetch blocks from the backend or\n// network.",
+      "length": 188,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type BlockFetcher interface {",
+      "content": "type BlockFetcher interface {\n\t// GetBlock fetches the block given the target block hash.\n\tGetBlock(*chainhash.Hash) (*wire.MsgBlock, error)\n}\n\n// DB abstracts the required persistent calls expected by the lookout. DB\n// provides the ability to search for state updates that correspond to breach\n// transactions confirmed in a particular block.",
+      "length": 308,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "type DB interface {",
+      "content": "type DB interface {\n\t// GetLookoutTip returns the last block epoch at which the tower\n\t// performed a match. If no match has been done, a nil epoch will be\n\t// returned.\n\tGetLookoutTip() (*chainntnfs.BlockEpoch, error)\n\n\t// QueryMatches searches its database for any state updates matching the\n\t// provided breach hints. If any matches are found, they will be\n\t// returned along with encrypted blobs so that justice can be exacted.\n\tQueryMatches([]blob.BreachHint) ([]wtdb.Match, error)\n\n\t// SetLookoutTip writes the best epoch for which the watchtower has\n\t// queried for breach hints.\n\tSetLookoutTip(*chainntnfs.BlockEpoch) error\n}\n\n// EpochRegistrar supports the ability to register for events corresponding to\n// newly created blocks.",
+      "length": 702,
+      "tokens": 103,
+      "embedding": []
+    },
+    {
+      "slug": "type EpochRegistrar interface {",
+      "content": "type EpochRegistrar interface {\n\t// RegisterBlockEpochNtfn registers for a new block epoch subscription.\n\t// The implementation must support historical dispatch, starting from\n\t// the provided chainntnfs.BlockEpoch when it is non-nil. The\n\t// notifications should be delivered in-order, and deliver reorged\n\t// blocks.\n\tRegisterBlockEpochNtfn(\n\t\t*chainntnfs.BlockEpoch) (*chainntnfs.BlockEpochEvent, error)\n}\n\n// Punisher handles the construction and publication of justice transactions\n// once they have been detected by the Service.",
+      "length": 492,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "type Punisher interface {",
+      "content": "type Punisher interface {\n\t// Punish accepts a JusticeDescriptor, constructs the justice\n\t// transaction, and publishes the transaction to the network so it can\n\t// be mined. The second parameter is a quit channel so that long-running\n\t// operations required to track the confirmation of the transaction can\n\t// be canceled on shutdown.\n\tPunish(*JusticeDescriptor, <-chan struct{}) error\n}\n",
+      "length": 357,
+      "tokens": 54,
+      "embedding": []
+    }
+  ]
+}

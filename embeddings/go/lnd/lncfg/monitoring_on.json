@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/monitoring_on.go",
+  "package": "monitoring",
+  "sections": [
+    {
+      "slug": "type Prometheus struct {",
+      "content": "type Prometheus struct {\n\t// Listen is the listening address that we should use to allow the main\n\t// Prometheus server to scrape our metrics.\n\tListen string `long:\"listen\" description:\"the interface we should listen on for Prometheus\"`\n\n\t// Enable indicates whether to export lnd gRPC performance metrics to\n\t// Prometheus. Default is false.\n\tEnable bool `long:\"enable\" description:\"enable Prometheus exporting of lnd gRPC performance metrics.\"`\n\n\t// PerfHistograms indicates if the additional histogram information for\n\t// latency, and handling time of gRPC calls should be enabled. This\n\t// generates additional data, and consume more memory for the\n\t// Prometheus server.\n\tPerfHistograms bool `long:\"perfhistograms\" description:\"enable additional histogram to track gRPC call processing performance (latency, etc)\"`\n}\n\n// DefaultPrometheus is the default configuration for the Prometheus metrics\n// exporter.",
+      "length": 871,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func DefaultPrometheus() Prometheus {",
+      "content": "func DefaultPrometheus() Prometheus {\n\treturn Prometheus{\n\t\tListen: \"127.0.0.1:8989\",\n\t\tEnable: false,\n\t}\n}\n\n// Enabled returns whether or not Prometheus monitoring is enabled. Monitoring\n// is disabled by default, but may be enabled by the user.",
+      "length": 201,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Prometheus) Enabled() bool {",
+      "content": "func (p *Prometheus) Enabled() bool {\n\treturn p.Enable\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

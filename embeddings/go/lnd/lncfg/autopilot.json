@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/autopilot.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type AutoPilot struct {",
+      "content": "type AutoPilot struct {\n\tActive         bool               `long:\"active\" description:\"If the autopilot agent should be active or not.\"`\n\tHeuristic      map[string]float64 `long:\"heuristic\" description:\"Heuristic to activate, and the weight to give it during scoring.\"`\n\tMaxChannels    int                `long:\"maxchannels\" description:\"The maximum number of channels that should be created\"`\n\tAllocation     float64            `long:\"allocation\" description:\"The percentage of total funds that should be committed to automatic channel establishment\"`\n\tMinChannelSize int64              `long:\"minchansize\" description:\"The smallest channel that the autopilot agent should create\"`\n\tMaxChannelSize int64              `long:\"maxchansize\" description:\"The largest channel that the autopilot agent should create\"`\n\tPrivate        bool               `long:\"private\" description:\"Whether the channels created by the autopilot agent should be private or not. Private channels won't be announced to the network.\"`\n\tMinConfs       int32              `long:\"minconfs\" description:\"The minimum number of confirmations each of your inputs in funding transactions created by the autopilot agent must have.\"`\n\tConfTarget     uint32             `long:\"conftarget\" description:\"The confirmation target (in blocks) for channels opened by autopilot.\"`\n}\n",
+      "length": 1304,
+      "tokens": 138,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/nat/traversal.go",
+  "package": "nat",
+  "sections": [
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t_, private24BitBlock, _ = net.ParseCIDR(\"10.0.0.0/8\")\n\t_, private20BitBlock, _ = net.ParseCIDR(\"172.16.0.0/12\")\n\t_, private16BitBlock, _ = net.ParseCIDR(\"192.168.0.0/16\")\n}\n\n// Traversal is an interface that brings together the different NAT traversal\n// techniques.",
+      "length": 261,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "type Traversal interface {",
+      "content": "type Traversal interface {\n\t// ExternalIP returns the external IP address.\n\tExternalIP() (net.IP, error)\n\n\t// AddPortMapping adds a port mapping for the given port between the\n\t// private and public addresses.\n\tAddPortMapping(port uint16) error\n\n\t// DeletePortMapping deletes a port mapping for the given port between\n\t// the private and public addresses.\n\tDeletePortMapping(port uint16) error\n\n\t// ForwardedPorts returns the ports currently being forwarded using NAT\n\t// traversal.\n\tForwardedPorts() []uint16\n\n\t// Name returns the name of the specific NAT traversal technique used.\n\tName() string\n}\n\n// isPrivateIP determines if the IP is private.",
+      "length": 602,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func isPrivateIP(ip net.IP) bool {",
+      "content": "func isPrivateIP(ip net.IP) bool {\n\treturn private24BitBlock.Contains(ip) ||\n\t\tprivate20BitBlock.Contains(ip) || private16BitBlock.Contains(ip)\n}\n",
+      "length": 108,
+      "tokens": 7,
+      "embedding": []
+    }
+  ]
+}

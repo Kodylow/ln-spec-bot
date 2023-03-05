@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/interface.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "type DB interface {",
+      "content": "type DB interface {\n\t// CreateTower initialize an address record used to communicate with a\n\t// watchtower. Each Tower is assigned a unique ID, that is used to\n\t// amortize storage costs of the public key when used by multiple\n\t// sessions. If the tower already exists, the address is appended to the\n\t// list of all addresses used to that tower previously and its\n\t// corresponding sessions are marked as active.\n\tCreateTower(*lnwire.NetAddress) (*wtdb.Tower, error)\n\n\t// RemoveTower modifies a tower's record within the database. If an\n\t// address is provided, then _only_ the address record should be removed\n\t// from the tower's persisted state. Otherwise, we'll attempt to mark\n\t// the tower as inactive by marking all of its sessions inactive. If any\n\t// of its sessions has unacked updates, then ErrTowerUnackedUpdates is\n\t// returned. If the tower doesn't have any sessions at all, it'll be\n\t// completely removed from the database.\n\t//\n\t// NOTE: An error is not returned if the tower doesn't exist.\n\tRemoveTower(*btcec.PublicKey, net.Addr) error\n\n\t// LoadTower retrieves a tower by its public key.\n\tLoadTower(*btcec.PublicKey) (*wtdb.Tower, error)\n\n\t// LoadTowerByID retrieves a tower by its tower ID.\n\tLoadTowerByID(wtdb.TowerID) (*wtdb.Tower, error)\n\n\t// ListTowers retrieves the list of towers available within the\n\t// database.\n\tListTowers() ([]*wtdb.Tower, error)\n\n\t// NextSessionKeyIndex reserves a new session key derivation index for a\n\t// particular tower id and blob type. The index is reserved for that\n\t// (tower, blob type) pair until CreateClientSession is invoked for that\n\t// tower and index, at which point a new index for that tower can be\n\t// reserved. Multiple calls to this method before CreateClientSession is\n\t// invoked should return the same index.\n\tNextSessionKeyIndex(wtdb.TowerID, blob.Type) (uint32, error)\n\n\t// CreateClientSession saves a newly negotiated client session to the\n\t// client's database. This enables the session to be used across\n\t// restarts.\n\tCreateClientSession(*wtdb.ClientSession) error\n\n\t// ListClientSessions returns the set of all client sessions known to\n\t// the db. An optional tower ID can be used to filter out any client\n\t// sessions in the response that do not correspond to this tower.\n\tListClientSessions(*wtdb.TowerID, ...wtdb.ClientSessionListOption) (\n\t\tmap[wtdb.SessionID]*wtdb.ClientSession, error)\n\n\t// FetchSessionCommittedUpdates retrieves the current set of un-acked\n\t// updates of the given session.\n\tFetchSessionCommittedUpdates(id *wtdb.SessionID) (\n\t\t[]wtdb.CommittedUpdate, error)\n\n\t// IsAcked returns true if the given backup has been backed up using\n\t// the given session.\n\tIsAcked(id *wtdb.SessionID, backupID *wtdb.BackupID) (bool, error)\n\n\t// NumAckedUpdates returns the number of backups that have been\n\t// successfully backed up using the given session.\n\tNumAckedUpdates(id *wtdb.SessionID) (uint64, error)\n\n\t// FetchChanSummaries loads a mapping from all registered channels to\n\t// their channel summaries.\n\tFetchChanSummaries() (wtdb.ChannelSummaries, error)\n\n\t// RegisterChannel registers a channel for use within the client\n\t// database. For now, all that is stored in the channel summary is the\n\t// sweep pkscript that we'd like any tower sweeps to pay into. In the\n\t// future, this will be extended to contain more info to allow the\n\t// client efficiently request historical states to be backed up under\n\t// the client's active policy.\n\tRegisterChannel(lnwire.ChannelID, []byte) error\n\n\t// MarkBackupIneligible records that the state identified by the\n\t// (channel id, commit height) tuple was ineligible for being backed up\n\t// under the current policy. This state can be retried later under a\n\t// different policy.\n\tMarkBackupIneligible(chanID lnwire.ChannelID, commitHeight uint64) error\n\n\t// CommitUpdate writes the next state update for a particular\n\t// session, so that we can be sure to resend it after a restart if it\n\t// hasn't been ACK'd by the tower. The sequence number of the update\n\t// should be exactly one greater than the existing entry, and less that\n\t// or equal to the session's MaxUpdates.\n\tCommitUpdate(id *wtdb.SessionID,\n\t\tupdate *wtdb.CommittedUpdate) (uint16, error)\n\n\t// AckUpdate records an acknowledgment from the watchtower that the\n\t// update identified by seqNum was received and saved. The returned\n\t// lastApplied will be recorded.\n\tAckUpdate(id *wtdb.SessionID, seqNum, lastApplied uint16) error\n}\n\n// AuthDialer connects to a remote node using an authenticated transport, such\n// as brontide. The dialer argument is used to specify a resolver, which allows\n// this method to be used over Tor or clear net connections.",
+      "length": 4534,
+      "tokens": 671,
+      "embedding": []
+    },
+    {
+      "slug": "type AuthDialer func(localKey keychain.SingleKeyECDH,",
+      "content": "type AuthDialer func(localKey keychain.SingleKeyECDH,\n\tnetAddr *lnwire.NetAddress,\n\tdialer tor.DialFunc) (wtserver.Peer, error)\n\n// ECDHKeyRing abstracts the ability to derive shared ECDH keys given a\n// description of the derivation path of a private key.",
+      "length": 198,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "type ECDHKeyRing interface {",
+      "content": "type ECDHKeyRing interface {\n\tkeychain.ECDHRing\n\n\t// DeriveKey attempts to derive an arbitrary key specified by the\n\t// passed KeyLocator. This may be used in several recovery scenarios,\n\t// or when manually rotating something like our current default node\n\t// key.\n\tDeriveKey(keyLoc keychain.KeyLocator) (keychain.KeyDescriptor, error)\n}\n\n// Tower represents the info about a watchtower server that a watchtower client\n// needs in order to connect to it.",
+      "length": 416,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "type Tower struct {",
+      "content": "type Tower struct {\n\t// ID is the unique, db-assigned, identifier for this tower.\n\tID wtdb.TowerID\n\n\t// IdentityKey is the public key of the remote node, used to\n\t// authenticate the brontide transport.\n\tIdentityKey *btcec.PublicKey\n\n\t// Addresses is an AddressIterator that can be used to manage the\n\t// addresses for this tower.\n\tAddresses AddressIterator\n}\n\n// NewTowerFromDBTower converts a wtdb.Tower, which uses a static address list,\n// into a Tower which uses an address iterator.",
+      "length": 455,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func NewTowerFromDBTower(t *wtdb.Tower) (*Tower, error) {",
+      "content": "func NewTowerFromDBTower(t *wtdb.Tower) (*Tower, error) {\n\taddrs, err := newAddressIterator(t.Addresses...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &Tower{\n\t\tID:          t.ID,\n\t\tIdentityKey: t.IdentityKey,\n\t\tAddresses:   addrs,\n\t}, nil\n}\n\n// ClientSession represents the session that a tower client has with a server.",
+      "length": 255,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "type ClientSession struct {",
+      "content": "type ClientSession struct {\n\t// ID is the client's public key used when authenticating with the\n\t// tower.\n\tID wtdb.SessionID\n\n\twtdb.ClientSessionBody\n\n\t// Tower represents the tower that the client session has been made\n\t// with.\n\tTower *Tower\n\n\t// SessionKeyECDH is the ECDH capable wrapper of the ephemeral secret\n\t// key used to connect to the watchtower.\n\tSessionKeyECDH keychain.SingleKeyECDH\n}\n",
+      "length": 359,
+      "tokens": 55,
+      "embedding": []
+    }
+  ]
+}

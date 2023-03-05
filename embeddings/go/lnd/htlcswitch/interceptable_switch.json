@@ -1,0 +1,202 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/interceptable_switch.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type InterceptableSwitch struct {",
+      "content": "type InterceptableSwitch struct {\n\t// htlcSwitch is the underline switch\n\thtlcSwitch *Switch\n\n\t// intercepted is where we stream all intercepted packets coming from\n\t// the switch.\n\tintercepted chan *interceptedPackets\n\n\t// resolutionChan is where we stream all responses coming from the\n\t// interceptor client.\n\tresolutionChan chan *fwdResolution\n\n\tonchainIntercepted chan InterceptedForward\n\n\t// interceptorRegistration is a channel that we use to synchronize\n\t// client connect and disconnect.\n\tinterceptorRegistration chan ForwardInterceptor\n\n\t// requireInterceptor indicates whether processing should block if no\n\t// interceptor is connected.\n\trequireInterceptor bool\n\n\t// interceptor is the handler for intercepted packets.\n\tinterceptor ForwardInterceptor\n\n\t// heldHtlcSet keeps track of outstanding intercepted forwards.\n\theldHtlcSet *heldHtlcSet\n\n\t// cltvRejectDelta defines the number of blocks before the expiry of the\n\t// htlc where we no longer intercept it and instead cancel it back.\n\tcltvRejectDelta uint32\n\n\t// cltvInterceptDelta defines the number of blocks before the expiry of\n\t// the htlc where we don't intercept anymore. This value must be greater\n\t// than CltvRejectDelta, because we don't want to offer htlcs to the\n\t// interceptor client for which there is no time left to resolve them\n\t// anymore.\n\tcltvInterceptDelta uint32\n\n\t// notifier is an instance of a chain notifier that we'll use to signal\n\t// the switch when a new block has arrived.\n\tnotifier chainntnfs.ChainNotifier\n\n\t// blockEpochStream is an active block epoch event stream backed by an\n\t// active ChainNotifier instance. This will be used to retrieve the\n\t// latest height of the chain.\n\tblockEpochStream *chainntnfs.BlockEpochEvent\n\n\t// currentHeight is the currently best known height.\n\tcurrentHeight int32\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n",
+      "length": 1758,
+      "tokens": 250,
+      "embedding": []
+    },
+    {
+      "slug": "type interceptedPackets struct {",
+      "content": "type interceptedPackets struct {\n\tpackets  []*htlcPacket\n\tlinkQuit chan struct{}\n\tisReplay bool\n}\n\n// FwdAction defines the various resolution types.",
+      "length": 111,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdAction int",
+      "content": "type FwdAction int\n\nconst (\n\t// FwdActionResume forwards the intercepted packet to the switch.\n\tFwdActionResume FwdAction = iota\n\n\t// FwdActionSettle settles the intercepted packet with a preimage.\n\tFwdActionSettle\n\n\t// FwdActionFail fails the intercepted packet back to the sender.\n\tFwdActionFail\n)\n\n// FwdResolution defines the action to be taken on an intercepted packet.",
+      "length": 343,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "type FwdResolution struct {",
+      "content": "type FwdResolution struct {\n\t// Key is the incoming circuit key of the htlc.\n\tKey models.CircuitKey\n\n\t// Action is the action to take on the intercepted htlc.\n\tAction FwdAction\n\n\t// Preimage is the preimage that is to be used for settling if Action is\n\t// FwdActionSettle.\n\tPreimage lntypes.Preimage\n\n\t// FailureMessage is the encrypted failure message that is to be passed\n\t// back to the sender if action is FwdActionFail.\n\tFailureMessage []byte\n\n\t// FailureCode is the failure code that is to be passed back to the\n\t// sender if action is FwdActionFail.\n\tFailureCode lnwire.FailCode\n}\n",
+      "length": 542,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "type fwdResolution struct {",
+      "content": "type fwdResolution struct {\n\tresolution *FwdResolution\n\terrChan    chan error\n}\n\n// InterceptableSwitchConfig contains the configuration of InterceptableSwitch.",
+      "length": 128,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type InterceptableSwitchConfig struct {",
+      "content": "type InterceptableSwitchConfig struct {\n\t// Switch is a reference to the actual switch implementation that\n\t// packets get sent to on resume.\n\tSwitch *Switch\n\n\t// Notifier is an instance of a chain notifier that we'll use to signal\n\t// the switch when a new block has arrived.\n\tNotifier chainntnfs.ChainNotifier\n\n\t// CltvRejectDelta defines the number of blocks before the expiry of the\n\t// htlc where we auto-fail an intercepted htlc to prevent channel\n\t// force-closure.\n\tCltvRejectDelta uint32\n\n\t// CltvInterceptDelta defines the number of blocks before the expiry of\n\t// the htlc where we don't intercept anymore. This value must be greater\n\t// than CltvRejectDelta, because we don't want to offer htlcs to the\n\t// interceptor client for which there is no time left to resolve them\n\t// anymore.\n\tCltvInterceptDelta uint32\n\n\t// RequireInterceptor indicates whether processing should block if no\n\t// interceptor is connected.\n\tRequireInterceptor bool\n}\n\n// NewInterceptableSwitch returns an instance of InterceptableSwitch.",
+      "length": 960,
+      "tokens": 148,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInterceptableSwitch(cfg *InterceptableSwitchConfig) (",
+      "content": "func NewInterceptableSwitch(cfg *InterceptableSwitchConfig) (\n\t*InterceptableSwitch, error) {\n\n\tif cfg.CltvInterceptDelta <= cfg.CltvRejectDelta {\n\t\treturn nil, fmt.Errorf(\"cltv intercept delta %v not greater \"+\n\t\t\t\"than cltv reject delta %v\",\n\t\t\tcfg.CltvInterceptDelta, cfg.CltvRejectDelta)\n\t}\n\n\treturn &InterceptableSwitch{\n\t\thtlcSwitch:              cfg.Switch,\n\t\tintercepted:             make(chan *interceptedPackets),\n\t\tonchainIntercepted:      make(chan InterceptedForward),\n\t\tinterceptorRegistration: make(chan ForwardInterceptor),\n\t\theldHtlcSet:             newHeldHtlcSet(),\n\t\tresolutionChan:          make(chan *fwdResolution),\n\t\trequireInterceptor:      cfg.RequireInterceptor,\n\t\tcltvRejectDelta:         cfg.CltvRejectDelta,\n\t\tcltvInterceptDelta:      cfg.CltvInterceptDelta,\n\t\tnotifier:                cfg.Notifier,\n\n\t\tquit: make(chan struct{}),\n\t}, nil\n}\n\n// SetInterceptor sets the ForwardInterceptor to be used. A nil argument\n// unregisters the current interceptor.",
+      "length": 896,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) SetInterceptor(",
+      "content": "func (s *InterceptableSwitch) SetInterceptor(\n\tinterceptor ForwardInterceptor) {\n\n\t// Synchronize setting the handler with the main loop to prevent race\n\t// conditions.\n\tselect {\n\tcase s.interceptorRegistration <- interceptor:\n\n\tcase <-s.quit:\n\t}\n}\n",
+      "length": 193,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) Start() error {",
+      "content": "func (s *InterceptableSwitch) Start() error {\n\tblockEpochStream, err := s.notifier.RegisterBlockEpochNtfn(nil)\n\tif err != nil {\n\t\treturn err\n\t}\n\ts.blockEpochStream = blockEpochStream\n\n\ts.wg.Add(1)\n\tgo func() {\n\t\tdefer s.wg.Done()\n\n\t\terr := s.run()\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"InterceptableSwitch stopped: %v\", err)\n\t\t}\n\t}()\n\n\treturn nil\n}\n",
+      "length": 280,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) Stop() error {",
+      "content": "func (s *InterceptableSwitch) Stop() error {\n\tclose(s.quit)\n\ts.wg.Wait()\n\n\ts.blockEpochStream.Cancel()\n\n\treturn nil\n}\n",
+      "length": 66,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) run() error {",
+      "content": "func (s *InterceptableSwitch) run() error {\n\t// The block epoch stream will immediately stream the current height.\n\t// Read it out here.\n\tselect {\n\tcase currentBlock, ok := <-s.blockEpochStream.Epochs:\n\t\tif !ok {\n\t\t\treturn errBlockStreamStopped\n\t\t}\n\t\ts.currentHeight = currentBlock.Height\n\n\tcase <-s.quit:\n\t\treturn nil\n\t}\n\n\tlog.Debugf(\"InterceptableSwitch running: height=%v, \"+\n\t\t\"requireInterceptor=%v\", s.currentHeight, s.requireInterceptor)\n\n\tfor {\n\t\tselect {\n\t\t// An interceptor registration or de-registration came in.\n\t\tcase interceptor := <-s.interceptorRegistration:\n\t\t\ts.setInterceptor(interceptor)\n\n\t\tcase packets := <-s.intercepted:\n\t\t\tvar notIntercepted []*htlcPacket\n\t\t\tfor _, p := range packets.packets {\n\t\t\t\tintercepted, err := s.interceptForward(\n\t\t\t\t\tp, packets.isReplay,\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\n\t\t\t\tif !intercepted {\n\t\t\t\t\tnotIntercepted = append(\n\t\t\t\t\t\tnotIntercepted, p,\n\t\t\t\t\t)\n\t\t\t\t}\n\t\t\t}\n\t\t\terr := s.htlcSwitch.ForwardPackets(\n\t\t\t\tpackets.linkQuit, notIntercepted...,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Cannot forward packets: %v\", err)\n\t\t\t}\n\n\t\tcase fwd := <-s.onchainIntercepted:\n\t\t\t// For on-chain interceptions, we don't know if it has\n\t\t\t// already been offered before. This information is in\n\t\t\t// the forwarding package which isn't easily accessible\n\t\t\t// from contractcourt. It is likely though that it was\n\t\t\t// already intercepted in the off-chain flow. And even\n\t\t\t// if not, it is safe to signal replay so that we won't\n\t\t\t// unexpectedly skip over this htlc.\n\t\t\tif _, err := s.forward(fwd, true); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\tcase res := <-s.resolutionChan:\n\t\t\tres.errChan <- s.resolve(res.resolution)\n\n\t\tcase currentBlock, ok := <-s.blockEpochStream.Epochs:\n\t\t\tif !ok {\n\t\t\t\treturn errBlockStreamStopped\n\t\t\t}\n\n\t\t\ts.currentHeight = currentBlock.Height\n\n\t\t\t// A new block is appended. Fail any held htlcs that\n\t\t\t// expire at this height to prevent channel force-close.\n\t\t\ts.failExpiredHtlcs()\n\n\t\tcase <-s.quit:\n\t\t\treturn nil\n\t\t}\n\t}\n}\n",
+      "length": 1883,
+      "tokens": 249,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) failExpiredHtlcs() {",
+      "content": "func (s *InterceptableSwitch) failExpiredHtlcs() {\n\ts.heldHtlcSet.popAutoFails(\n\t\tuint32(s.currentHeight),\n\t\tfunc(fwd InterceptedForward) {\n\t\t\terr := fwd.FailWithCode(\n\t\t\t\tlnwire.CodeTemporaryChannelFailure,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Cannot fail packet: %v\", err)\n\t\t\t}\n\t\t},\n\t)\n}\n",
+      "length": 230,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) sendForward(fwd InterceptedForward) {",
+      "content": "func (s *InterceptableSwitch) sendForward(fwd InterceptedForward) {\n\terr := s.interceptor(fwd.Packet())\n\tif err != nil {\n\t\t// Only log the error. If we couldn't send the packet, we assume\n\t\t// that the interceptor will reconnect so that we can retry.\n\t\tlog.Debugf(\"Interceptor cannot handle forward: %v\", err)\n\t}\n}\n",
+      "length": 240,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) setInterceptor(interceptor ForwardInterceptor) {",
+      "content": "func (s *InterceptableSwitch) setInterceptor(interceptor ForwardInterceptor) {\n\ts.interceptor = interceptor\n\n\t// Replay all currently held htlcs. When an interceptor is not required,\n\t// there may be none because they've been cleared after the previous\n\t// disconnect.\n\tif interceptor != nil {\n\t\tlog.Debugf(\"Interceptor connected\")\n\n\t\ts.heldHtlcSet.forEach(s.sendForward)\n\n\t\treturn\n\t}\n\n\t// The interceptor disconnects. If an interceptor is required, keep the\n\t// held htlcs.\n\tif s.requireInterceptor {\n\t\tlog.Infof(\"Interceptor disconnected, retaining held packets\")\n\n\t\treturn\n\t}\n\n\t// Interceptor is not required. Release held forwards.\n\tlog.Infof(\"Interceptor disconnected, resolving held packets\")\n\n\ts.heldHtlcSet.popAll(func(fwd InterceptedForward) {\n\t\terr := fwd.Resume()\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Failed to resume hold forward %v\", err)\n\t\t}\n\t})\n}\n",
+      "length": 748,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) resolve(res *FwdResolution) error {",
+      "content": "func (s *InterceptableSwitch) resolve(res *FwdResolution) error {\n\tintercepted, err := s.heldHtlcSet.pop(res.Key)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tswitch res.Action {\n\tcase FwdActionResume:\n\t\treturn intercepted.Resume()\n\n\tcase FwdActionSettle:\n\t\treturn intercepted.Settle(res.Preimage)\n\n\tcase FwdActionFail:\n\t\tif len(res.FailureMessage) > 0 {\n\t\t\treturn intercepted.Fail(res.FailureMessage)\n\t\t}\n\n\t\treturn intercepted.FailWithCode(res.FailureCode)\n\n\tdefault:\n\t\treturn fmt.Errorf(\"unrecognized action %v\", res.Action)\n\t}\n}\n\n// Resolve resolves an intercepted packet.",
+      "length": 475,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) Resolve(res *FwdResolution) error {",
+      "content": "func (s *InterceptableSwitch) Resolve(res *FwdResolution) error {\n\tinternalRes := &fwdResolution{\n\t\tresolution: res,\n\t\terrChan:    make(chan error, 1),\n\t}\n\n\tselect {\n\tcase s.resolutionChan <- internalRes:\n\n\tcase <-s.quit:\n\t\treturn errors.New(\"switch shutting down\")\n\t}\n\n\tselect {\n\tcase err := <-internalRes.errChan:\n\t\treturn err\n\n\tcase <-s.quit:\n\t\treturn errors.New(\"switch shutting down\")\n\t}\n}\n\n// ForwardPackets attempts to forward the batch of htlcs to a connected\n// interceptor. If the interceptor signals the resume action, the htlcs are\n// forwarded to the switch. The link's quit signal should be provided to allow\n// cancellation of forwarding during link shutdown.",
+      "length": 584,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) ForwardPackets(linkQuit chan struct{}, isReplay bool,",
+      "content": "func (s *InterceptableSwitch) ForwardPackets(linkQuit chan struct{}, isReplay bool,\n\tpackets ...*htlcPacket) error {\n\n\t// Synchronize with the main event loop. This should be light in the\n\t// case where there is no interceptor.\n\tselect {\n\tcase s.intercepted <- &interceptedPackets{\n\t\tpackets:  packets,\n\t\tlinkQuit: linkQuit,\n\t\tisReplay: isReplay,\n\t}:\n\n\tcase <-linkQuit:\n\t\tlog.Debugf(\"Forward cancelled because link quit\")\n\n\tcase <-s.quit:\n\t\treturn errors.New(\"interceptable switch quit\")\n\t}\n\n\treturn nil\n}\n\n// ForwardPacket forwards a single htlc to the external interceptor.",
+      "length": 470,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) ForwardPacket(",
+      "content": "func (s *InterceptableSwitch) ForwardPacket(\n\tfwd InterceptedForward) error {\n\n\tselect {\n\tcase s.onchainIntercepted <- fwd:\n\n\tcase <-s.quit:\n\t\treturn errors.New(\"interceptable switch quit\")\n\t}\n\n\treturn nil\n}\n\n// interceptForward forwards the packet to the external interceptor after\n// checking the interception criteria.",
+      "length": 263,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) interceptForward(packet *htlcPacket,",
+      "content": "func (s *InterceptableSwitch) interceptForward(packet *htlcPacket,\n\tisReplay bool) (bool, error) {\n\n\tswitch htlc := packet.htlc.(type) {\n\tcase *lnwire.UpdateAddHTLC:\n\t\t// We are not interested in intercepting initiated payments.\n\t\tif packet.incomingChanID == hop.Source {\n\t\t\treturn false, nil\n\t\t}\n\n\t\tintercepted := &interceptedForward{\n\t\t\thtlc:       htlc,\n\t\t\tpacket:     packet,\n\t\t\thtlcSwitch: s.htlcSwitch,\n\t\t\tautoFailHeight: int32(packet.incomingTimeout -\n\t\t\t\ts.cltvRejectDelta),\n\t\t}\n\n\t\t// Handle forwards that are too close to expiry.\n\t\thandled, err := s.handleExpired(intercepted)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Error handling intercepted htlc \"+\n\t\t\t\t\"that expires too soon: circuit=%v, \"+\n\t\t\t\t\"incoming_timeout=%v, err=%v\",\n\t\t\t\tpacket.inKey(), packet.incomingTimeout, err)\n\n\t\t\t// Return false so that the packet is offered as normal\n\t\t\t// to the switch. This isn't ideal because interception\n\t\t\t// may be configured as always-on and is skipped now.\n\t\t\t// Returning true isn't great either, because the htlc\n\t\t\t// will remain stuck and potentially force-close the\n\t\t\t// channel. But in the end, we should never get here, so\n\t\t\t// the actual return value doesn't matter that much.\n\t\t\treturn false, nil\n\t\t}\n\t\tif handled {\n\t\t\treturn true, nil\n\t\t}\n\n\t\treturn s.forward(intercepted, isReplay)\n\n\tdefault:\n\t\treturn false, nil\n\t}\n}\n\n// forward records the intercepted htlc and forwards it to the interceptor.",
+      "length": 1294,
+      "tokens": 178,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) forward(",
+      "content": "func (s *InterceptableSwitch) forward(\n\tfwd InterceptedForward, isReplay bool) (bool, error) {\n\n\tinKey := fwd.Packet().IncomingCircuit\n\n\t// Ignore already held htlcs.\n\tif s.heldHtlcSet.exists(inKey) {\n\t\treturn true, nil\n\t}\n\n\t// If there is no interceptor currently registered, configuration and packet\n\t// replay status determine how the packet is handled.\n\tif s.interceptor == nil {\n\t\t// Process normally if an interceptor is not required.\n\t\tif !s.requireInterceptor {\n\t\t\treturn false, nil\n\t\t}\n\n\t\t// We are in interceptor-required mode. If this is a new packet, it is\n\t\t// still safe to fail back. The interceptor has never seen this packet\n\t\t// yet. This limits the backlog of htlcs when the interceptor is down.\n\t\tif !isReplay {\n\t\t\terr := fwd.FailWithCode(\n\t\t\t\tlnwire.CodeTemporaryChannelFailure,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Cannot fail packet: %v\", err)\n\t\t\t}\n\n\t\t\treturn true, nil\n\t\t}\n\n\t\t// This packet is a replay. It is not safe to fail back, because the\n\t\t// interceptor may still signal otherwise upon reconnect. Keep the\n\t\t// packet in the queue until then.\n\t\tif err := s.heldHtlcSet.push(inKey, fwd); err != nil {\n\t\t\treturn false, err\n\t\t}\n\n\t\treturn true, nil\n\t}\n\n\t// There is an interceptor registered. We can forward the packet right now.\n\t// Hold it in the queue too to track what is outstanding.\n\tif err := s.heldHtlcSet.push(inKey, fwd); err != nil {\n\t\treturn false, err\n\t}\n\n\ts.sendForward(fwd)\n\n\treturn true, nil\n}\n\n// handleExpired checks that the htlc isn't too close to the channel\n// force-close broadcast height. If it is, it is cancelled back.",
+      "length": 1483,
+      "tokens": 241,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *InterceptableSwitch) handleExpired(fwd *interceptedForward) (",
+      "content": "func (s *InterceptableSwitch) handleExpired(fwd *interceptedForward) (\n\tbool, error) {\n\n\theight := uint32(s.currentHeight)\n\tif fwd.packet.incomingTimeout >= height+s.cltvInterceptDelta {\n\t\treturn false, nil\n\t}\n\n\tlog.Debugf(\"Interception rejected because htlc \"+\n\t\t\"expires too soon: circuit=%v, \"+\n\t\t\"height=%v, incoming_timeout=%v\",\n\t\tfwd.packet.inKey(), height,\n\t\tfwd.packet.incomingTimeout)\n\n\terr := fwd.FailWithCode(\n\t\tlnwire.CodeExpiryTooSoon,\n\t)\n\tif err != nil {\n\t\treturn false, err\n\t}\n\n\treturn true, nil\n}\n\n// interceptedForward implements the InterceptedForward interface.\n// It is passed from the switch to external interceptors that are interested\n// in holding forwards and resolve them manually.",
+      "length": 611,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "type interceptedForward struct {",
+      "content": "type interceptedForward struct {\n\thtlc           *lnwire.UpdateAddHTLC\n\tpacket         *htlcPacket\n\thtlcSwitch     *Switch\n\tautoFailHeight int32\n}\n\n// Packet returns the intercepted htlc packet.",
+      "length": 155,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Packet() InterceptedPacket {",
+      "content": "func (f *interceptedForward) Packet() InterceptedPacket {\n\treturn InterceptedPacket{\n\t\tIncomingCircuit: models.CircuitKey{\n\t\t\tChanID: f.packet.incomingChanID,\n\t\t\tHtlcID: f.packet.incomingHTLCID,\n\t\t},\n\t\tOutgoingChanID: f.packet.outgoingChanID,\n\t\tHash:           f.htlc.PaymentHash,\n\t\tOutgoingExpiry: f.htlc.Expiry,\n\t\tOutgoingAmount: f.htlc.Amount,\n\t\tIncomingAmount: f.packet.incomingAmount,\n\t\tIncomingExpiry: f.packet.incomingTimeout,\n\t\tCustomRecords:  f.packet.customRecords,\n\t\tOnionBlob:      f.htlc.OnionBlob,\n\t\tAutoFailHeight: f.autoFailHeight,\n\t}\n}\n\n// Resume resumes the default behavior as if the packet was not intercepted.",
+      "length": 555,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Resume() error {",
+      "content": "func (f *interceptedForward) Resume() error {\n\t// Forward to the switch. A link quit channel isn't needed, because we\n\t// are on a different thread now.\n\treturn f.htlcSwitch.ForwardPackets(nil, f.packet)\n}\n\n// Fail notifies the intention to Fail an existing hold forward with an\n// encrypted failure reason.",
+      "length": 255,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Fail(reason []byte) error {",
+      "content": "func (f *interceptedForward) Fail(reason []byte) error {\n\tobfuscatedReason := f.packet.obfuscator.IntermediateEncrypt(reason)\n\n\treturn f.resolve(&lnwire.UpdateFailHTLC{\n\t\tReason: obfuscatedReason,\n\t})\n}\n\n// FailWithCode notifies the intention to fail an existing hold forward with the\n// specified failure code.",
+      "length": 246,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) FailWithCode(code lnwire.FailCode) error {",
+      "content": "func (f *interceptedForward) FailWithCode(code lnwire.FailCode) error {\n\tshaOnionBlob := func() [32]byte {\n\t\treturn sha256.Sum256(f.htlc.OnionBlob[:])\n\t}\n\n\t// Create a local failure.\n\tvar failureMsg lnwire.FailureMessage\n\n\tswitch code {\n\tcase lnwire.CodeInvalidOnionVersion:\n\t\tfailureMsg = &lnwire.FailInvalidOnionVersion{\n\t\t\tOnionSHA256: shaOnionBlob(),\n\t\t}\n\n\tcase lnwire.CodeInvalidOnionHmac:\n\t\tfailureMsg = &lnwire.FailInvalidOnionHmac{\n\t\t\tOnionSHA256: shaOnionBlob(),\n\t\t}\n\n\tcase lnwire.CodeInvalidOnionKey:\n\t\tfailureMsg = &lnwire.FailInvalidOnionKey{\n\t\t\tOnionSHA256: shaOnionBlob(),\n\t\t}\n\n\tcase lnwire.CodeTemporaryChannelFailure:\n\t\tupdate := f.htlcSwitch.failAliasUpdate(\n\t\t\tf.packet.incomingChanID, true,\n\t\t)\n\t\tif update == nil {\n\t\t\t// Fallback to the original, non-alias behavior.\n\t\t\tvar err error\n\t\t\tupdate, err = f.htlcSwitch.cfg.FetchLastChannelUpdate(\n\t\t\t\tf.packet.incomingChanID,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t}\n\n\t\tfailureMsg = lnwire.NewTemporaryChannelFailure(update)\n\n\tcase lnwire.CodeExpiryTooSoon:\n\t\tupdate, err := f.htlcSwitch.cfg.FetchLastChannelUpdate(\n\t\t\tf.packet.incomingChanID,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tfailureMsg = lnwire.NewExpiryTooSoon(*update)\n\n\tdefault:\n\t\treturn ErrUnsupportedFailureCode\n\t}\n\n\t// Encrypt the failure for the first hop. This node will be the origin\n\t// of the failure.\n\treason, err := f.packet.obfuscator.EncryptFirstHop(failureMsg)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"failed to encrypt failure reason %v\", err)\n\t}\n\n\treturn f.resolve(&lnwire.UpdateFailHTLC{\n\t\tReason: reason,\n\t})\n}\n\n// Settle forwards a settled packet to the switch.",
+      "length": 1475,
+      "tokens": 158,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) Settle(preimage lntypes.Preimage) error {",
+      "content": "func (f *interceptedForward) Settle(preimage lntypes.Preimage) error {\n\tif !preimage.Matches(f.htlc.PaymentHash) {\n\t\treturn errors.New(\"preimage does not match hash\")\n\t}\n\treturn f.resolve(&lnwire.UpdateFulfillHTLC{\n\t\tPaymentPreimage: preimage,\n\t})\n}\n\n// resolve is used for both Settle and Fail and forwards the message to the\n// switch.",
+      "length": 257,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *interceptedForward) resolve(message lnwire.Message) error {",
+      "content": "func (f *interceptedForward) resolve(message lnwire.Message) error {\n\tpkt := &htlcPacket{\n\t\tincomingChanID: f.packet.incomingChanID,\n\t\tincomingHTLCID: f.packet.incomingHTLCID,\n\t\toutgoingChanID: f.packet.outgoingChanID,\n\t\toutgoingHTLCID: f.packet.outgoingHTLCID,\n\t\tisResolution:   true,\n\t\tcircuit:        f.packet.circuit,\n\t\thtlc:           message,\n\t\tobfuscator:     f.packet.obfuscator,\n\t\tsourceRef:      f.packet.sourceRef,\n\t}\n\treturn f.htlcSwitch.mailOrchestrator.Deliver(pkt.incomingChanID, pkt)\n}\n",
+      "length": 420,
+      "tokens": 26,
+      "embedding": []
+    }
+  ]
+}

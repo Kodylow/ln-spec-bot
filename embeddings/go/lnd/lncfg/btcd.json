@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/btcd.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Btcd struct {",
+      "content": "type Btcd struct {\n\tDir        string `long:\"dir\" description:\"The base directory that contains the node's data, logs, configuration file, etc.\"`\n\tRPCHost    string `long:\"rpchost\" description:\"The daemon's rpc listening address. If a port is omitted, then the default port for the selected chain parameters will be used.\"`\n\tRPCUser    string `long:\"rpcuser\" description:\"Username for RPC connections\"`\n\tRPCPass    string `long:\"rpcpass\" default-mask:\"-\" description:\"Password for RPC connections\"`\n\tRPCCert    string `long:\"rpccert\" description:\"File containing the daemon's certificate file\"`\n\tRawRPCCert string `long:\"rawrpccert\" description:\"The raw bytes of the daemon's PEM-encoded certificate chain which will be used to authenticate the RPC connection.\"`\n}\n",
+      "length": 739,
+      "tokens": 86,
+      "embedding": []
+    }
+  ]
+}

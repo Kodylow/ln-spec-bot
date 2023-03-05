@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/internal/musig2v040/bench_test.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "func hexToBytes(s string) []byte {",
+      "content": "func hexToBytes(s string) []byte {\n\tb, err := hex.DecodeString(s)\n\tif err != nil {\n\t\tpanic(\"invalid hex in source file: \" + s)\n\t}\n\treturn b\n}\n",
+      "length": 101,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func hexToModNScalar(s string) *btcec.ModNScalar {",
+      "content": "func hexToModNScalar(s string) *btcec.ModNScalar {\n\tb, err := hex.DecodeString(s)\n\tif err != nil {\n\t\tpanic(\"invalid hex in source file: \" + s)\n\t}\n\tvar scalar btcec.ModNScalar\n\tif overflow := scalar.SetByteSlice(b); overflow {\n\t\tpanic(\"hex in source file overflows mod N scalar: \" + s)\n\t}\n\treturn &scalar\n}\n",
+      "length": 245,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func genSigner(t *testing.B) signer {",
+      "content": "func genSigner(t *testing.B) signer {\n\tprivKey, err := btcec.NewPrivateKey()\n\tif err != nil {\n\t\tt.Fatalf(\"unable to gen priv key: %v\", err)\n\t}\n\n\tpubKey, err := schnorr.ParsePubKey(\n\t\tschnorr.SerializePubKey(privKey.PubKey()),\n\t)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to gen key: %v\", err)\n\t}\n\n\tnonces, err := GenNonces()\n\tif err != nil {\n\t\tt.Fatalf(\"unable to gen nonces: %v\", err)\n\t}\n\n\treturn signer{\n\t\tprivKey: privKey,\n\t\tpubKey:  pubKey,\n\t\tnonces:  nonces,\n\t}\n}\n\nvar (\n\ttestSig *PartialSignature\n\ttestErr error\n)\n\n// BenchmarkPartialSign benchmarks how long it takes to generate a partial\n// signature factoring in if the keys are sorted and also if we're in fast sign\n// mode.",
+      "length": 609,
+      "tokens": 97,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkPartialSign(b *testing.B) {",
+      "content": "func BenchmarkPartialSign(b *testing.B) {\n\tfor _, numSigners := range []int{10, 100} {\n\t\tfor _, fastSign := range []bool{true, false} {\n\t\t\tfor _, sortKeys := range []bool{true, false} {\n\t\t\t\tname := fmt.Sprintf(\"num_signers=%v/fast_sign=%v/sort=%v\",\n\t\t\t\t\tnumSigners, fastSign, sortKeys)\n\n\t\t\t\tsigners := make(signerSet, numSigners)\n\t\t\t\tfor i := 0; i < numSigners; i++ {\n\t\t\t\t\tsigners[i] = genSigner(b)\n\t\t\t\t}\n\n\t\t\t\tcombinedNonce, err := AggregateNonces(signers.pubNonces())\n\t\t\t\tif err != nil {\n\t\t\t\t\tb.Fatalf(\"unable to generate combined nonce: %v\", err)\n\t\t\t\t}\n\n\t\t\t\tvar sig *PartialSignature\n\n\t\t\t\tvar msg [32]byte\n\t\t\t\tcopy(msg[:], testMsg[:])\n\n\t\t\t\tkeys := signers.keys()\n\n\t\t\t\tb.Run(name, func(b *testing.B) {\n\t\t\t\t\tvar signOpts []SignOption\n\t\t\t\t\tif fastSign {\n\t\t\t\t\t\tsignOpts = append(signOpts, WithFastSign())\n\t\t\t\t\t}\n\t\t\t\t\tif sortKeys {\n\t\t\t\t\t\tsignOpts = append(signOpts, WithSortedKeys())\n\t\t\t\t\t}\n\n\t\t\t\t\tb.ResetTimer()\n\t\t\t\t\tb.ReportAllocs()\n\n\t\t\t\t\tfor i := 0; i < b.N; i++ {\n\t\t\t\t\t\tsig, err = Sign(\n\t\t\t\t\t\t\tsigners[0].nonces.SecNonce, signers[0].privKey,\n\t\t\t\t\t\t\tcombinedNonce, keys, msg, signOpts...,\n\t\t\t\t\t\t)\n\t\t\t\t\t\tif err != nil {\n\t\t\t\t\t\t\tb.Fatalf(\"unable to generate sig: %v\", err)\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\ttestSig = sig\n\t\t\t\t\ttestErr = err\n\t\t\t\t})\n\t\t\t}\n\t\t}\n\t}\n}\n\n// TODO(roasbeef): add impact of sorting ^\n\nvar sigOk bool\n\n// BenchmarkPartialVerify benchmarks how long it takes to verify a partial\n// signature.",
+      "length": 1293,
+      "tokens": 167,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkPartialVerify(b *testing.B) {",
+      "content": "func BenchmarkPartialVerify(b *testing.B) {\n\tfor _, numSigners := range []int{10, 100} {\n\t\tfor _, sortKeys := range []bool{true, false} {\n\t\t\tname := fmt.Sprintf(\"sort_keys=%v/num_signers=%v\",\n\t\t\t\tsortKeys, numSigners)\n\n\t\t\tsigners := make(signerSet, numSigners)\n\t\t\tfor i := 0; i < numSigners; i++ {\n\t\t\t\tsigners[i] = genSigner(b)\n\t\t\t}\n\n\t\t\tcombinedNonce, err := AggregateNonces(\n\t\t\t\tsigners.pubNonces(),\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tb.Fatalf(\"unable to generate combined \"+\n\t\t\t\t\t\"nonce: %v\", err)\n\t\t\t}\n\n\t\t\tvar sig *PartialSignature\n\n\t\t\tvar msg [32]byte\n\t\t\tcopy(msg[:], testMsg[:])\n\n\t\t\tb.ReportAllocs()\n\t\t\tb.ResetTimer()\n\n\t\t\tsig, err = Sign(\n\t\t\t\tsigners[0].nonces.SecNonce, signers[0].privKey,\n\t\t\t\tcombinedNonce, signers.keys(), msg,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tb.Fatalf(\"unable to generate sig: %v\", err)\n\t\t\t}\n\n\t\t\tkeys := signers.keys()\n\t\t\tpubKey := signers[0].pubKey\n\n\t\t\tb.Run(name, func(b *testing.B) {\n\t\t\t\tvar signOpts []SignOption\n\t\t\t\tif sortKeys {\n\t\t\t\t\tsignOpts = append(\n\t\t\t\t\t\tsignOpts, WithSortedKeys(),\n\t\t\t\t\t)\n\t\t\t\t}\n\n\t\t\t\tb.ResetTimer()\n\t\t\t\tb.ReportAllocs()\n\n\t\t\t\tvar ok bool\n\t\t\t\tfor i := 0; i < b.N; i++ {\n\t\t\t\t\tok = sig.Verify(\n\t\t\t\t\t\tsigners[0].nonces.PubNonce, combinedNonce,\n\t\t\t\t\t\tkeys, pubKey, msg,\n\t\t\t\t\t)\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tb.Fatalf(\"generated invalid sig!\")\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tsigOk = ok\n\t\t\t})\n\n\t\t}\n\t}\n}\n\nvar finalSchnorrSig *schnorr.Signature\n\n// BenchmarkCombineSigs benchmarks how long it takes to combine a set amount of\n// signatures.",
+      "length": 1334,
+      "tokens": 169,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkCombineSigs(b *testing.B) {",
+      "content": "func BenchmarkCombineSigs(b *testing.B) {\n\n\tfor _, numSigners := range []int{10, 100} {\n\t\tsigners := make(signerSet, numSigners)\n\t\tfor i := 0; i < numSigners; i++ {\n\t\t\tsigners[i] = genSigner(b)\n\t\t}\n\n\t\tcombinedNonce, err := AggregateNonces(signers.pubNonces())\n\t\tif err != nil {\n\t\t\tb.Fatalf(\"unable to generate combined nonce: %v\", err)\n\t\t}\n\n\t\tvar msg [32]byte\n\t\tcopy(msg[:], testMsg[:])\n\n\t\tvar finalNonce *btcec.PublicKey\n\t\tfor i := range signers {\n\t\t\tsigner := signers[i]\n\t\t\tpartialSig, err := Sign(\n\t\t\t\tsigner.nonces.SecNonce, signer.privKey,\n\t\t\t\tcombinedNonce, signers.keys(), msg,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tb.Fatalf(\"unable to generate partial sig: %v\",\n\t\t\t\t\terr)\n\t\t\t}\n\n\t\t\tsigners[i].partialSig = partialSig\n\n\t\t\tif finalNonce == nil {\n\t\t\t\tfinalNonce = partialSig.R\n\t\t\t}\n\t\t}\n\n\t\tsigs := signers.partialSigs()\n\n\t\tname := fmt.Sprintf(\"num_signers=%v\", numSigners)\n\t\tb.Run(name, func(b *testing.B) {\n\t\t\tb.ResetTimer()\n\t\t\tb.ReportAllocs()\n\n\t\t\tfinalSig := CombineSigs(finalNonce, sigs)\n\n\t\t\tfinalSchnorrSig = finalSig\n\t\t})\n\t}\n}\n\nvar testNonce [PubNonceSize]byte\n\n// BenchmarkAggregateNonces benchmarks how long it takes to combine nonces.",
+      "length": 1044,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkAggregateNonces(b *testing.B) {",
+      "content": "func BenchmarkAggregateNonces(b *testing.B) {\n\tfor _, numSigners := range []int{10, 100} {\n\t\tsigners := make(signerSet, numSigners)\n\t\tfor i := 0; i < numSigners; i++ {\n\t\t\tsigners[i] = genSigner(b)\n\t\t}\n\n\t\tnonces := signers.pubNonces()\n\n\t\tname := fmt.Sprintf(\"num_signers=%v\", numSigners)\n\t\tb.Run(name, func(b *testing.B) {\n\t\t\tb.ResetTimer()\n\t\t\tb.ReportAllocs()\n\n\t\t\tpubNonce, err := AggregateNonces(nonces)\n\t\t\tif err != nil {\n\t\t\t\tb.Fatalf(\"unable to generate nonces: %v\", err)\n\t\t\t}\n\n\t\t\ttestNonce = pubNonce\n\t\t})\n\t}\n}\n\nvar testKey *btcec.PublicKey\n\n// BenchmarkAggregateKeys benchmarks how long it takes to aggregate public\n// keys.",
+      "length": 557,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func BenchmarkAggregateKeys(b *testing.B) {",
+      "content": "func BenchmarkAggregateKeys(b *testing.B) {\n\tfor _, numSigners := range []int{10, 100} {\n\t\tfor _, sortKeys := range []bool{true, false} {\n\t\t\tsigners := make(signerSet, numSigners)\n\t\t\tfor i := 0; i < numSigners; i++ {\n\t\t\t\tsigners[i] = genSigner(b)\n\t\t\t}\n\n\t\t\tsignerKeys := signers.keys()\n\n\t\t\tname := fmt.Sprintf(\"num_signers=%v/sort_keys=%v\",\n\t\t\t\tnumSigners, sortKeys)\n\n\t\t\tuniqueKeyIndex := secondUniqueKeyIndex(signerKeys, false)\n\n\t\t\tb.Run(name, func(b *testing.B) {\n\t\t\t\tb.ResetTimer()\n\t\t\t\tb.ReportAllocs()\n\n\t\t\t\taggKey, _, _, _ := AggregateKeys(\n\t\t\t\t\tsignerKeys, sortKeys,\n\t\t\t\t\tWithUniqueKeyIndex(uniqueKeyIndex),\n\t\t\t\t)\n\n\t\t\t\ttestKey = aggKey.FinalKey\n\t\t\t})\n\t\t}\n\t}\n}\n",
+      "length": 592,
+      "tokens": 68,
+      "embedding": []
+    }
+  ]
+}

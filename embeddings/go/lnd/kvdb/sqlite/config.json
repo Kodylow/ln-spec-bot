@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/sqlite/config.go",
+  "package": "sqlite",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\tTimeout        time.Duration `long:\"timeout\" description:\"The time after which a database query should be timed out.\"`\n\tBusyTimeout    time.Duration `long:\"busytimeout\" description:\"The maximum amount of time to wait for a database connection to become available for a query.\"`\n\tMaxConnections int           `long:\"maxconnections\" description:\"The maximum number of open connections to the database. Set to zero for unlimited.\"`\n\tPragmaOptions  []string      `long:\"pragmaoptions\" description:\"A list of pragma options to set on a database connection. For example, 'auto_vacuum=incremental'. Note that the flag must be specified multiple times if multiple options are to be set.\"`\n}\n",
+      "length": 679,
+      "tokens": 85,
+      "embedding": []
+    }
+  ]
+}

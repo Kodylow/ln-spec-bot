@@ -1,0 +1,146 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/session_queue.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "type reserveStatus uint8",
+      "content": "type reserveStatus uint8\n\nconst (\n\t// reserveAvailable indicates that the session has space for at least\n\t// one more backup.\n\treserveAvailable reserveStatus = iota\n\n\t// reserveExhausted indicates that all slots in the session have been\n\t// allocated.\n\treserveExhausted\n)\n\n// sessionQueueConfig bundles the resources required by the sessionQueue to\n// perform its duties. All entries MUST be non-nil.",
+      "length": 363,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "type sessionQueueConfig struct {",
+      "content": "type sessionQueueConfig struct {\n\t// ClientSession provides access to the negotiated session parameters\n\t// and updating its persistent storage.\n\tClientSession *ClientSession\n\n\t// ChainHash identifies the chain for which the session's justice\n\t// transactions are targeted.\n\tChainHash chainhash.Hash\n\n\t// Dial allows the client to dial the tower using it's public key and\n\t// net address.\n\tDial func(keychain.SingleKeyECDH, *lnwire.NetAddress) (wtserver.Peer,\n\t\terror)\n\n\t// SendMessage encodes, encrypts, and writes a message to the given peer.\n\tSendMessage func(wtserver.Peer, wtwire.Message) error\n\n\t// ReadMessage receives, decypts, and decodes a message from the given\n\t// peer.\n\tReadMessage func(wtserver.Peer) (wtwire.Message, error)\n\n\t// Signer facilitates signing of inputs, used to construct the witnesses\n\t// for justice transaction inputs.\n\tSigner input.Signer\n\n\t// DB provides access to the client's stable storage.\n\tDB DB\n\n\t// MinBackoff defines the initial backoff applied by the session\n\t// queue before reconnecting to the tower after a failed or partially\n\t// successful batch is sent. Subsequent backoff durations will grow\n\t// exponentially up until MaxBackoff.\n\tMinBackoff time.Duration\n\n\t// MaxBackoff defines the maximum backoff applied by the session\n\t// queue before reconnecting to the tower after a failed or partially\n\t// successful batch is sent. If the exponential backoff produces a\n\t// timeout greater than this value, the backoff duration will be clamped\n\t// to MaxBackoff.\n\tMaxBackoff time.Duration\n\n\t// Log specifies the desired log output, which should be prefixed by the\n\t// client type, e.g. anchor or legacy.\n\tLog btclog.Logger\n}\n\n// sessionQueue implements a reliable queue that will encrypt and send accepted\n// backups to the watchtower specified in the config's ClientSession. Calling\n// Quit will attempt to perform a clean shutdown by receiving an ACK from the\n// tower for all pending backups before exiting. The clean shutdown can be\n// aborted by using ForceQuit, which will attempt to shut down the queue\n// immediately.",
+      "length": 1985,
+      "tokens": 295,
+      "embedding": []
+    },
+    {
+      "slug": "type sessionQueue struct {",
+      "content": "type sessionQueue struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\tforced  sync.Once\n\n\tcfg *sessionQueueConfig\n\tlog btclog.Logger\n\n\tcommitQueue  *list.List\n\tpendingQueue *list.List\n\tqueueMtx     sync.Mutex\n\tqueueCond    *sync.Cond\n\n\tlocalInit *wtwire.Init\n\ttower     *Tower\n\n\tseqNum uint16\n\n\tretryBackoff time.Duration\n\n\tquit      chan struct{}\n\tforceQuit chan struct{}\n\tshutdown  chan struct{}\n}\n\n// newSessionQueue initializes a fresh sessionQueue.",
+      "length": 398,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func newSessionQueue(cfg *sessionQueueConfig,",
+      "content": "func newSessionQueue(cfg *sessionQueueConfig,\n\tupdates []wtdb.CommittedUpdate) *sessionQueue {\n\n\tlocalInit := wtwire.NewInitMessage(\n\t\tlnwire.NewRawFeatureVector(wtwire.AltruistSessionsRequired),\n\t\tcfg.ChainHash,\n\t)\n\n\tsq := &sessionQueue{\n\t\tcfg:          cfg,\n\t\tlog:          cfg.Log,\n\t\tcommitQueue:  list.New(),\n\t\tpendingQueue: list.New(),\n\t\tlocalInit:    localInit,\n\t\ttower:        cfg.ClientSession.Tower,\n\t\tseqNum:       cfg.ClientSession.SeqNum,\n\t\tretryBackoff: cfg.MinBackoff,\n\t\tquit:         make(chan struct{}),\n\t\tforceQuit:    make(chan struct{}),\n\t\tshutdown:     make(chan struct{}),\n\t}\n\tsq.queueCond = sync.NewCond(&sq.queueMtx)\n\n\t// The database should return them in sorted order, and session queue's\n\t// sequence number will be equal to that of the last committed update.\n\tfor _, update := range updates {\n\t\tsq.commitQueue.PushBack(update)\n\t}\n\n\treturn sq\n}\n\n// Start idempotently starts the sessionQueue so that it can begin accepting\n// backups.",
+      "length": 882,
+      "tokens": 93,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) Start() {",
+      "content": "func (q *sessionQueue) Start() {\n\tq.started.Do(func() {\n\t\tgo q.sessionManager()\n\t})\n}\n\n// Stop idempotently stops the sessionQueue by initiating a clean shutdown that\n// will clear all pending tasks in the queue before returning to the caller.",
+      "length": 204,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) Stop() {",
+      "content": "func (q *sessionQueue) Stop() {\n\tq.stopped.Do(func() {\n\t\tq.log.Debugf(\"SessionQueue(%s) stopping ...\", q.ID())\n\n\t\tclose(q.quit)\n\t\tq.signalUntilShutdown()\n\n\t\t// Skip log if we also force quit.\n\t\tselect {\n\t\tcase <-q.forceQuit:\n\t\t\treturn\n\t\tdefault:\n\t\t}\n\n\t\tq.log.Debugf(\"SessionQueue(%s) stopped\", q.ID())\n\t})\n}\n\n// ForceQuit idempotently aborts any clean shutdown in progress and returns to\n// he caller after all lingering goroutines have spun down.",
+      "length": 397,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) ForceQuit() {",
+      "content": "func (q *sessionQueue) ForceQuit() {\n\tq.forced.Do(func() {\n\t\tq.log.Infof(\"SessionQueue(%s) force quitting...\", q.ID())\n\n\t\tclose(q.forceQuit)\n\t\tq.signalUntilShutdown()\n\n\t\tq.log.Infof(\"SessionQueue(%s) force quit\", q.ID())\n\t})\n}\n\n// ID returns the wtdb.SessionID for the queue, which can be used to uniquely\n// identify this a particular queue.",
+      "length": 294,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) ID() *wtdb.SessionID {",
+      "content": "func (q *sessionQueue) ID() *wtdb.SessionID {\n\treturn &q.cfg.ClientSession.ID\n}\n\n// AcceptTask attempts to queue a backupTask for delivery to the sessionQueue's\n// tower. The session will only be accepted if the queue is not already\n// exhausted and the task is successfully bound to the ClientSession.",
+      "length": 251,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) AcceptTask(task *backupTask) (reserveStatus, bool) {",
+      "content": "func (q *sessionQueue) AcceptTask(task *backupTask) (reserveStatus, bool) {\n\tq.queueCond.L.Lock()\n\n\tnumPending := uint32(q.pendingQueue.Len())\n\tmaxUpdates := q.cfg.ClientSession.Policy.MaxUpdates\n\tq.log.Debugf(\"SessionQueue(%s) deciding to accept %v seqnum=%d \"+\n\t\t\"pending=%d max-updates=%d\",\n\t\tq.ID(), task.id, q.seqNum, numPending, maxUpdates)\n\n\t// Examine the current reserve status of the session queue.\n\tcurStatus := q.reserveStatus()\n\n\tswitch curStatus {\n\n\t// The session queue is exhausted, and cannot accept the task because it\n\t// is full. Reject the task such that it can be tried against a\n\t// different session.\n\tcase reserveExhausted:\n\t\tq.queueCond.L.Unlock()\n\t\treturn curStatus, false\n\n\t// The session queue is not exhausted. Compute the sweep and reward\n\t// outputs as a function of the session parameters. If the outputs are\n\t// dusty or uneconomical to backup, the task is rejected and will not be\n\t// tried again.\n\t//\n\t// TODO(conner): queue backups and retry with different session params.\n\tcase reserveAvailable:\n\t\terr := task.bindSession(&q.cfg.ClientSession.ClientSessionBody)\n\t\tif err != nil {\n\t\t\tq.queueCond.L.Unlock()\n\t\t\tq.log.Debugf(\"SessionQueue(%s) rejected %v: %v \",\n\t\t\t\tq.ID(), task.id, err)\n\t\t\treturn curStatus, false\n\t\t}\n\t}\n\n\t// The sweep and reward outputs satisfy the session's policy, queue the\n\t// task for final signing and delivery.\n\tq.pendingQueue.PushBack(task)\n\n\t// Finally, compute the session's *new* reserve status. This will be\n\t// used by the client to determine if it can continue using this session\n\t// queue, or if it should negotiate a new one.\n\tnewStatus := q.reserveStatus()\n\tq.queueCond.L.Unlock()\n\n\tq.queueCond.Signal()\n\n\treturn newStatus, true\n}\n\n// sessionManager is the primary event loop for the sessionQueue, and is\n// responsible for encrypting and sending accepted tasks to the tower.",
+      "length": 1718,
+      "tokens": 237,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) sessionManager() {",
+      "content": "func (q *sessionQueue) sessionManager() {\n\tdefer close(q.shutdown)\n\n\tfor {\n\t\tq.queueCond.L.Lock()\n\t\tfor q.commitQueue.Len() == 0 &&\n\t\t\tq.pendingQueue.Len() == 0 {\n\n\t\t\tq.queueCond.Wait()\n\n\t\t\tselect {\n\t\t\tcase <-q.quit:\n\t\t\t\tif q.commitQueue.Len() == 0 &&\n\t\t\t\t\tq.pendingQueue.Len() == 0 {\n\t\t\t\t\tq.queueCond.L.Unlock()\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\tcase <-q.forceQuit:\n\t\t\t\tq.queueCond.L.Unlock()\n\t\t\t\treturn\n\t\t\tdefault:\n\t\t\t}\n\t\t}\n\t\tq.queueCond.L.Unlock()\n\n\t\t// Exit immediately if a force quit has been requested.  If\n\t\t// either of the queues still has state updates to send to the\n\t\t// tower, we may never exit in the above case if we are unable\n\t\t// to reach the tower for some reason.\n\t\tselect {\n\t\tcase <-q.forceQuit:\n\t\t\treturn\n\t\tdefault:\n\t\t}\n\n\t\t// Initiate a new connection to the watchtower and attempt to\n\t\t// drain all pending tasks.\n\t\tq.drainBackups()\n\t}\n}\n\n// drainBackups attempts to send all pending updates in the queue to the tower.",
+      "length": 847,
+      "tokens": 125,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) drainBackups() {",
+      "content": "func (q *sessionQueue) drainBackups() {\n\tvar (\n\t\tconn      wtserver.Peer\n\t\terr       error\n\t\ttowerAddr = q.tower.Addresses.Peek()\n\t)\n\n\tfor {\n\t\tq.log.Infof(\"SessionQueue(%s) attempting to dial tower at %v\",\n\t\t\tq.ID(), towerAddr)\n\n\t\t// First, check that we are able to dial this session's tower.\n\t\tconn, err = q.cfg.Dial(\n\t\t\tq.cfg.ClientSession.SessionKeyECDH, &lnwire.NetAddress{\n\t\t\t\tIdentityKey: q.tower.IdentityKey,\n\t\t\t\tAddress:     towerAddr,\n\t\t\t},\n\t\t)\n\t\tif err != nil {\n\t\t\t// If there are more addrs available, immediately try\n\t\t\t// those.\n\t\t\tnextAddr, iteratorErr := q.tower.Addresses.Next()\n\t\t\tif iteratorErr == nil {\n\t\t\t\ttowerAddr = nextAddr\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Otherwise, if we have exhausted the address list,\n\t\t\t// back off and try again later.\n\t\t\tq.tower.Addresses.Reset()\n\n\t\t\tq.log.Errorf(\"SessionQueue(%s) unable to dial tower \"+\n\t\t\t\t\"at any available Addresses: %v\", q.ID(), err)\n\n\t\t\tq.increaseBackoff()\n\t\t\tselect {\n\t\t\tcase <-time.After(q.retryBackoff):\n\t\t\tcase <-q.forceQuit:\n\t\t\t}\n\t\t\treturn\n\t\t}\n\n\t\tbreak\n\t}\n\tdefer conn.Close()\n\n\t// Begin draining the queue of pending state updates. Before the first\n\t// update is sent, we will precede it with an Init message. If the first\n\t// is successful, subsequent updates can be streamed without sending an\n\t// Init.\n\tfor sendInit := true; ; sendInit = false {\n\t\t// Generate the next state update to upload to the tower. This\n\t\t// method will first proceed in dequeuing committed updates\n\t\t// before attempting to dequeue any pending updates.\n\t\tstateUpdate, isPending, backupID, err := q.nextStateUpdate()\n\t\tif err != nil {\n\t\t\tq.log.Errorf(\"SessionQueue(%v) unable to get next state \"+\n\t\t\t\t\"update: %v\", q.ID(), err)\n\t\t\treturn\n\t\t}\n\n\t\t// Now, send the state update to the tower and wait for a reply.\n\t\terr = q.sendStateUpdate(conn, stateUpdate, sendInit, isPending)\n\t\tif err != nil {\n\t\t\tq.log.Errorf(\"SessionQueue(%s) unable to send state \"+\n\t\t\t\t\"update: %v\", q.ID(), err)\n\n\t\t\tq.increaseBackoff()\n\t\t\tselect {\n\t\t\tcase <-time.After(q.retryBackoff):\n\t\t\tcase <-q.forceQuit:\n\t\t\t}\n\t\t\treturn\n\t\t}\n\n\t\tq.log.Infof(\"SessionQueue(%s) uploaded %v seqnum=%d\",\n\t\t\tq.ID(), backupID, stateUpdate.SeqNum)\n\n\t\t// If the last task was backed up successfully, we'll exit and\n\t\t// continue once more tasks are added to the queue. We'll also\n\t\t// clear any accumulated backoff as this batch was able to be\n\t\t// sent reliably.\n\t\tif stateUpdate.IsComplete == 1 {\n\t\t\tq.resetBackoff()\n\t\t\treturn\n\t\t}\n\n\t\t// Always apply a small delay between sends, which makes the\n\t\t// unit tests more reliable. If we were requested to back off,\n\t\t// when we will do so.\n\t\tselect {\n\t\tcase <-time.After(time.Millisecond):\n\t\tcase <-q.forceQuit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// nextStateUpdate returns the next wtwire.StateUpdate to upload to the tower.\n// If any committed updates are present, this method will reconstruct the state\n// update from the committed update using the current last applied value found\n// in the database. Otherwise, it will select the next pending update, craft the\n// payload, and commit an update before returning the state update to send. The\n// boolean value in the response is true if the state update is taken from the\n// pending queue, allowing the caller to remove the update from either the\n// commit or pending queue if the update is successfully acked.",
+      "length": 3147,
+      "tokens": 464,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) nextStateUpdate() (*wtwire.StateUpdate, bool,",
+      "content": "func (q *sessionQueue) nextStateUpdate() (*wtwire.StateUpdate, bool,\n\twtdb.BackupID, error) {\n\n\tvar (\n\t\tseqNum    uint16\n\t\tupdate    wtdb.CommittedUpdate\n\t\tisLast    bool\n\t\tisPending bool\n\t)\n\n\tq.queueCond.L.Lock()\n\tswitch {\n\n\t// If the commit queue is non-empty, parse the next committed update.\n\tcase q.commitQueue.Len() > 0:\n\t\tnext := q.commitQueue.Front()\n\n\t\tupdate = next.Value.(wtdb.CommittedUpdate)\n\t\tseqNum = update.SeqNum\n\n\t\t// If this is the last item in the commit queue and no items\n\t\t// exist in the pending queue, we will use the IsComplete flag\n\t\t// in the StateUpdate to signal that the tower can release the\n\t\t// connection after replying to free up resources.\n\t\tisLast = q.commitQueue.Len() == 1 && q.pendingQueue.Len() == 0\n\t\tq.queueCond.L.Unlock()\n\n\t\tq.log.Debugf(\"SessionQueue(%s) reprocessing committed state \"+\n\t\t\t\"update for %v seqnum=%d\",\n\t\t\tq.ID(), update.BackupID, seqNum)\n\n\t// Otherwise, craft and commit the next update from the pending queue.\n\tdefault:\n\t\tisPending = true\n\n\t\t// Determine the current sequence number to apply for this\n\t\t// pending update.\n\t\tseqNum = q.seqNum + 1\n\n\t\t// Obtain the next task from the queue.\n\t\tnext := q.pendingQueue.Front()\n\t\ttask := next.Value.(*backupTask)\n\n\t\t// If this is the last item in the pending queue, we will use\n\t\t// the IsComplete flag in the StateUpdate to signal that the\n\t\t// tower can release the connection after replying to free up\n\t\t// resources.\n\t\tisLast = q.pendingQueue.Len() == 1\n\t\tq.queueCond.L.Unlock()\n\n\t\thint, encBlob, err := task.craftSessionPayload(q.cfg.Signer)\n\t\tif err != nil {\n\t\t\t// TODO(conner): mark will not send\n\t\t\terr := fmt.Errorf(\"unable to craft session payload: %v\",\n\t\t\t\terr)\n\t\t\treturn nil, false, wtdb.BackupID{}, err\n\t\t}\n\t\t// TODO(conner): special case other obscure errors\n\n\t\tupdate = wtdb.CommittedUpdate{\n\t\t\tSeqNum: seqNum,\n\t\t\tCommittedUpdateBody: wtdb.CommittedUpdateBody{\n\t\t\t\tBackupID:      task.id,\n\t\t\t\tHint:          hint,\n\t\t\t\tEncryptedBlob: encBlob,\n\t\t\t},\n\t\t}\n\n\t\tq.log.Debugf(\"SessionQueue(%s) committing state update \"+\n\t\t\t\"%v seqnum=%d\", q.ID(), update.BackupID, seqNum)\n\t}\n\n\t// Before sending the task to the tower, commit the state update\n\t// to disk using the assigned sequence number. If this task has already\n\t// been committed, the call will succeed and only be used for the\n\t// purpose of obtaining the last applied value to send to the tower.\n\t//\n\t// This step ensures that if we crash before receiving an ack that we\n\t// will retransmit the same update. If the tower successfully received\n\t// the update from before, it will reply with an ACK regardless of what\n\t// we send the next time. This step ensures that if we reliably send the\n\t// same update for a given sequence number, to prevent us from thinking\n\t// we backed up a state when we instead backed up another.\n\tlastApplied, err := q.cfg.DB.CommitUpdate(q.ID(), &update)\n\tif err != nil {\n\t\t// TODO(conner): mark failed/reschedule\n\t\terr := fmt.Errorf(\"unable to commit state update for \"+\n\t\t\t\"%v seqnum=%d: %v\", update.BackupID, seqNum, err)\n\t\treturn nil, false, wtdb.BackupID{}, err\n\t}\n\n\tstateUpdate := &wtwire.StateUpdate{\n\t\tSeqNum:        update.SeqNum,\n\t\tLastApplied:   lastApplied,\n\t\tHint:          update.Hint,\n\t\tEncryptedBlob: update.EncryptedBlob,\n\t}\n\n\t// Set the IsComplete flag if this is the last queued item.\n\tif isLast {\n\t\tstateUpdate.IsComplete = 1\n\t}\n\n\treturn stateUpdate, isPending, update.BackupID, nil\n}\n\n// sendStateUpdate sends a wtwire.StateUpdate to the watchtower and processes\n// the ACK before returning. If sendInit is true, this method will first send\n// the localInit message and verify that the tower supports our required feature\n// bits. And error is returned if any part of the send fails. The boolean return\n// variable indicates whether we should back off before attempting to send the\n// next state update.",
+      "length": 3643,
+      "tokens": 539,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) sendStateUpdate(conn wtserver.Peer,",
+      "content": "func (q *sessionQueue) sendStateUpdate(conn wtserver.Peer,\n\tstateUpdate *wtwire.StateUpdate, sendInit, isPending bool) error {\n\n\ttowerAddr := &lnwire.NetAddress{\n\t\tIdentityKey: conn.RemotePub(),\n\t\tAddress:     conn.RemoteAddr(),\n\t}\n\n\t// If this is the first message being sent to the tower, we must send an\n\t// Init message to establish that server supports the features we\n\t// require.\n\tif sendInit {\n\t\t// Send Init to tower.\n\t\terr := q.cfg.SendMessage(conn, q.localInit)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Receive Init from tower.\n\t\tremoteMsg, err := q.cfg.ReadMessage(conn)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tremoteInit, ok := remoteMsg.(*wtwire.Init)\n\t\tif !ok {\n\t\t\treturn fmt.Errorf(\"watchtower %s responded with %T \"+\n\t\t\t\t\"to Init\", towerAddr, remoteMsg)\n\t\t}\n\n\t\t// Validate Init.\n\t\terr = q.localInit.CheckRemoteInit(\n\t\t\tremoteInit, wtwire.FeatureNames,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\t// Send StateUpdate to tower.\n\terr := q.cfg.SendMessage(conn, stateUpdate)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Receive StateUpdate from tower.\n\tremoteMsg, err := q.cfg.ReadMessage(conn)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tstateUpdateReply, ok := remoteMsg.(*wtwire.StateUpdateReply)\n\tif !ok {\n\t\treturn fmt.Errorf(\"watchtower %s responded with %T to \"+\n\t\t\t\"StateUpdate\", towerAddr, remoteMsg)\n\t}\n\n\t// Process the reply from the tower.\n\tswitch stateUpdateReply.Code {\n\n\t// The tower reported a successful update, validate the response and\n\t// record the last applied returned.\n\tcase wtwire.CodeOK:\n\n\t// TODO(conner): handle other error cases properly, ban towers, etc.\n\tdefault:\n\t\terr := fmt.Errorf(\"received error code %v in \"+\n\t\t\t\"StateUpdateReply for seqnum=%d\",\n\t\t\tstateUpdateReply.Code, stateUpdate.SeqNum)\n\t\tq.log.Warnf(\"SessionQueue(%s) unable to upload state update \"+\n\t\t\t\"to tower=%s: %v\", q.ID(), towerAddr, err)\n\t\treturn err\n\t}\n\n\tlastApplied := stateUpdateReply.LastApplied\n\terr = q.cfg.DB.AckUpdate(q.ID(), stateUpdate.SeqNum, lastApplied)\n\tswitch {\n\tcase err == wtdb.ErrUnallocatedLastApplied:\n\t\t// TODO(conner): borked watchtower\n\t\terr = fmt.Errorf(\"unable to ack seqnum=%d: %v\",\n\t\t\tstateUpdate.SeqNum, err)\n\t\tq.log.Errorf(\"SessionQueue(%v) failed to ack update: %v\",\n\t\t\tq.ID(), err)\n\t\treturn err\n\n\tcase err == wtdb.ErrLastAppliedReversion:\n\t\t// TODO(conner): borked watchtower\n\t\terr = fmt.Errorf(\"unable to ack seqnum=%d: %v\",\n\t\t\tstateUpdate.SeqNum, err)\n\t\tq.log.Errorf(\"SessionQueue(%s) failed to ack update: %v\",\n\t\t\tq.ID(), err)\n\t\treturn err\n\n\tcase err != nil:\n\t\terr = fmt.Errorf(\"unable to ack seqnum=%d: %v\",\n\t\t\tstateUpdate.SeqNum, err)\n\t\tq.log.Errorf(\"SessionQueue(%s) failed to ack update: %v\",\n\t\t\tq.ID(), err)\n\t\treturn err\n\t}\n\n\tq.queueCond.L.Lock()\n\tif isPending {\n\t\t// If a pending update was successfully sent, increment the\n\t\t// sequence number and remove the item from the queue. This\n\t\t// ensures the total number of backups in the session remains\n\t\t// unchanged, which maintains the external view of the session's\n\t\t// reserve status.\n\t\tq.seqNum++\n\t\tq.pendingQueue.Remove(q.pendingQueue.Front())\n\t} else {\n\t\t// Otherwise, simply remove the update from the committed queue.\n\t\t// This has no effect on the queues reserve status since the\n\t\t// update had already been committed.\n\t\tq.commitQueue.Remove(q.commitQueue.Front())\n\t}\n\tq.queueCond.L.Unlock()\n\n\treturn nil\n}\n\n// reserveStatus returns a reserveStatus indicating whether the sessionQueue can\n// accept another task. reserveAvailable is returned when a task can be\n// accepted, and reserveExhausted is returned if the all slots in the session\n// have been allocated.\n//\n// NOTE: This method MUST be called with queueCond's exclusive lock held.",
+      "length": 3453,
+      "tokens": 468,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) reserveStatus() reserveStatus {",
+      "content": "func (q *sessionQueue) reserveStatus() reserveStatus {\n\tnumPending := uint32(q.pendingQueue.Len())\n\tmaxUpdates := uint32(q.cfg.ClientSession.Policy.MaxUpdates)\n\n\tif uint32(q.seqNum)+numPending < maxUpdates {\n\t\treturn reserveAvailable\n\t}\n\n\treturn reserveExhausted\n\n}\n\n// resetBackoff returns the connection backoff the minimum configured backoff.",
+      "length": 279,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) resetBackoff() {",
+      "content": "func (q *sessionQueue) resetBackoff() {\n\tq.retryBackoff = q.cfg.MinBackoff\n}\n\n// increaseBackoff doubles the current connection backoff, clamping to the\n// configured maximum backoff if it would exceed the limit.",
+      "length": 168,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) increaseBackoff() {",
+      "content": "func (q *sessionQueue) increaseBackoff() {\n\tq.retryBackoff *= 2\n\tif q.retryBackoff > q.cfg.MaxBackoff {\n\t\tq.retryBackoff = q.cfg.MaxBackoff\n\t}\n}\n\n// signalUntilShutdown strobes the sessionQueue's condition variable until the\n// main event loop exits.",
+      "length": 200,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func (q *sessionQueue) signalUntilShutdown() {",
+      "content": "func (q *sessionQueue) signalUntilShutdown() {\n\tfor {\n\t\tselect {\n\t\tcase <-time.After(time.Millisecond):\n\t\t\tq.queueCond.Signal()\n\t\tcase <-q.shutdown:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// sessionQueueSet maintains a mapping of SessionIDs to their corresponding\n// sessionQueue.",
+      "length": 203,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "type sessionQueueSet map[wtdb.SessionID]*sessionQueue",
+      "content": "type sessionQueueSet map[wtdb.SessionID]*sessionQueue\n\n// Add inserts a sessionQueue into the sessionQueueSet.",
+      "length": 55,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sessionQueueSet) Add(sessionQueue *sessionQueue) {",
+      "content": "func (s *sessionQueueSet) Add(sessionQueue *sessionQueue) {\n\t(*s)[*sessionQueue.ID()] = sessionQueue\n}\n\n// ApplyAndWait executes the nil-adic function returned from getApply for each\n// sessionQueue in the set in parallel, then waits for all of them to finish\n// before returning to the caller.",
+      "length": 229,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *sessionQueueSet) ApplyAndWait(getApply func(*sessionQueue) func()) {",
+      "content": "func (s *sessionQueueSet) ApplyAndWait(getApply func(*sessionQueue) func()) {\n\tvar wg sync.WaitGroup\n\tfor _, sessionq := range *s {\n\t\twg.Add(1)\n\t\tgo func(sq *sessionQueue) {\n\t\t\tdefer wg.Done()\n\n\t\t\tgetApply(sq)()\n\t\t}(sessionq)\n\t}\n\twg.Wait()\n}\n",
+      "length": 153,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

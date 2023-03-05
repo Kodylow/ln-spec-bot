@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lntypes/hash.go",
+  "package": "lntypes",
+  "sections": [
+    {
+      "slug": "type Hash [HashSize]byte",
+      "content": "type Hash [HashSize]byte\n\n// String returns the Hash as a hexadecimal string.",
+      "length": 51,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (hash Hash) String() string {",
+      "content": "func (hash Hash) String() string {\n\treturn hex.EncodeToString(hash[:])\n}\n\n// MakeHash returns a new Hash from a byte slice.  An error is returned if\n// the number of bytes passed in is not HashSize.",
+      "length": 159,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeHash(newHash []byte) (Hash, error) {",
+      "content": "func MakeHash(newHash []byte) (Hash, error) {\n\tnhlen := len(newHash)\n\tif nhlen != HashSize {\n\t\treturn Hash{}, fmt.Errorf(\"invalid hash length of %v, want %v\",\n\t\t\tnhlen, HashSize)\n\t}\n\n\tvar hash Hash\n\tcopy(hash[:], newHash)\n\n\treturn hash, nil\n}\n\n// MakeHashFromStr creates a Hash from a hex hash string.",
+      "length": 243,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func MakeHashFromStr(newHash string) (Hash, error) {",
+      "content": "func MakeHashFromStr(newHash string) (Hash, error) {\n\t// Return error if hash string is of incorrect length.\n\tif len(newHash) != HashSize*2 {\n\t\treturn Hash{}, fmt.Errorf(\"invalid hash string length of %v, \"+\n\t\t\t\"want %v\", len(newHash), HashSize*2)\n\t}\n\n\thash, err := hex.DecodeString(newHash)\n\tif err != nil {\n\t\treturn Hash{}, err\n\t}\n\n\treturn MakeHash(hash)\n}\n",
+      "length": 293,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

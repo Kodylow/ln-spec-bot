@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/peernotifier/peernotifier.go",
+  "package": "peernotifier",
+  "sections": [
+    {
+      "slug": "type PeerNotifier struct {",
+      "content": "type PeerNotifier struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tntfnServer *subscribe.Server\n}\n\n// PeerOnlineEvent represents a new event where a peer comes online.",
+      "length": 134,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "type PeerOnlineEvent struct {",
+      "content": "type PeerOnlineEvent struct {\n\t// PubKey is the peer's compressed public key.\n\tPubKey [33]byte\n}\n\n// PeerOfflineEvent represents a new event where a peer goes offline.",
+      "length": 133,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type PeerOfflineEvent struct {",
+      "content": "type PeerOfflineEvent struct {\n\t// PubKey is the peer's compressed public key.\n\tPubKey [33]byte\n}\n\n// New creates a new peer notifier which notifies clients of peer online\n// and offline events.",
+      "length": 158,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func New() *PeerNotifier {",
+      "content": "func New() *PeerNotifier {\n\treturn &PeerNotifier{\n\t\tntfnServer: subscribe.NewServer(),\n\t}\n}\n\n// Start starts the PeerNotifier's subscription server.",
+      "length": 116,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PeerNotifier) Start() error {",
+      "content": "func (p *PeerNotifier) Start() error {\n\tvar err error\n\n\tp.started.Do(func() {\n\t\tlog.Info(\"PeerNotifier starting\")\n\t\terr = p.ntfnServer.Start()\n\t})\n\n\treturn err\n}\n\n// Stop signals the notifier for a graceful shutdown.",
+      "length": 167,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PeerNotifier) Stop() error {",
+      "content": "func (p *PeerNotifier) Stop() error {\n\tvar err error\n\tp.stopped.Do(func() {\n\t\tlog.Info(\"PeerNotifier shutting down\")\n\t\terr = p.ntfnServer.Stop()\n\t})\n\treturn err\n}\n\n// SubscribePeerEvents returns a subscribe.Client that will receive updates\n// any time the Server is informed of a peer event.",
+      "length": 244,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PeerNotifier) SubscribePeerEvents() (*subscribe.Client, error) {",
+      "content": "func (p *PeerNotifier) SubscribePeerEvents() (*subscribe.Client, error) {\n\treturn p.ntfnServer.Subscribe()\n}\n\n// NotifyPeerOnline sends a peer online event to all clients subscribed to the\n// peer notifier.",
+      "length": 128,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PeerNotifier) NotifyPeerOnline(pubKey [33]byte) {",
+      "content": "func (p *PeerNotifier) NotifyPeerOnline(pubKey [33]byte) {\n\tevent := PeerOnlineEvent{PubKey: pubKey}\n\n\tlog.Debugf(\"PeerNotifier notifying peer: %x online\", pubKey)\n\n\tif err := p.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send peer online update: %v\", err)\n\t}\n}\n\n// NotifyPeerOffline sends a peer offline event to all the clients subscribed\n// to the peer notifier.",
+      "length": 318,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PeerNotifier) NotifyPeerOffline(pubKey [33]byte) {",
+      "content": "func (p *PeerNotifier) NotifyPeerOffline(pubKey [33]byte) {\n\tevent := PeerOfflineEvent{PubKey: pubKey}\n\n\tlog.Debugf(\"PeerNotifier notifying peer: %x offline\", pubKey)\n\n\tif err := p.ntfnServer.SendUpdate(event); err != nil {\n\t\tlog.Warnf(\"Unable to send peer offline update: %v\", err)\n\t}\n}\n",
+      "length": 220,
+      "tokens": 28,
+      "embedding": []
+    }
+  ]
+}

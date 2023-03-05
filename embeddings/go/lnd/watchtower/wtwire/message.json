@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/message.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type MessageType uint16",
+      "content": "type MessageType uint16\n\n// The currently defined message types within this current version of the\n// Watchtower protocol.\nconst (\n\t// MsgInit identifies an encoded Init message.\n\tMsgInit MessageType = 600\n\n\t// MsgError identifies an encoded Error message.\n\tMsgError MessageType = 601\n\n\t// MsgCreateSession identifies an encoded CreateSession message.\n\tMsgCreateSession MessageType = 602\n\n\t// MsgCreateSessionReply identifies an encoded CreateSessionReply message.\n\tMsgCreateSessionReply MessageType = 603\n\n\t// MsgStateUpdate identifies an encoded StateUpdate message.\n\tMsgStateUpdate MessageType = 604\n\n\t// MsgStateUpdateReply identifies an encoded StateUpdateReply message.\n\tMsgStateUpdateReply MessageType = 605\n\n\t// MsgDeleteSession identifies an encoded DeleteSession message.\n\tMsgDeleteSession MessageType = 606\n\n\t// MsgDeleteSessionReply identifies an encoded DeleteSessionReply\n\t// message.\n\tMsgDeleteSessionReply MessageType = 607\n)\n\n// String returns a human readable description of the message type.",
+      "length": 956,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func (m MessageType) String() string {",
+      "content": "func (m MessageType) String() string {\n\tswitch m {\n\tcase MsgInit:\n\t\treturn \"Init\"\n\tcase MsgCreateSession:\n\t\treturn \"MsgCreateSession\"\n\tcase MsgCreateSessionReply:\n\t\treturn \"MsgCreateSessionReply\"\n\tcase MsgStateUpdate:\n\t\treturn \"MsgStateUpdate\"\n\tcase MsgStateUpdateReply:\n\t\treturn \"MsgStateUpdateReply\"\n\tcase MsgDeleteSession:\n\t\treturn \"MsgDeleteSession\"\n\tcase MsgDeleteSessionReply:\n\t\treturn \"MsgDeleteSessionReply\"\n\tcase MsgError:\n\t\treturn \"Error\"\n\tdefault:\n\t\treturn \"<unknown>\"\n\t}\n}\n\n// Serializable is an interface which defines a lightning wire serializable\n// object.",
+      "length": 510,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "type Serializable interface {",
+      "content": "type Serializable interface {\n\t// Decode reads the bytes stream and converts it to the object.\n\tDecode(io.Reader, uint32) error\n\n\t// Encode converts object to the bytes stream and write it into the\n\t// write buffer.\n\tEncode(io.Writer, uint32) error\n}\n\n// Message is an interface that defines a lightning wire protocol message. The\n// interface is general in order to allow implementing types full control over\n// the representation of its data.",
+      "length": 404,
+      "tokens": 67,
+      "embedding": []
+    },
+    {
+      "slug": "type Message interface {",
+      "content": "type Message interface {\n\tSerializable\n\n\t// MsgType returns a MessageType that uniquely identifies the message to\n\t// be encoded.\n\tMsgType() MessageType\n\n\t// MaxMessagePayload is the maximum serialized length that a particular\n\t// message type can take.\n\tMaxPayloadLength(uint32) uint32\n}\n\n// makeEmptyMessage creates a new empty message of the proper concrete type\n// based on the passed message type.",
+      "length": 365,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func makeEmptyMessage(msgType MessageType) (Message, error) {",
+      "content": "func makeEmptyMessage(msgType MessageType) (Message, error) {\n\tvar msg Message\n\n\tswitch msgType {\n\tcase MsgInit:\n\t\tmsg = &Init{}\n\tcase MsgCreateSession:\n\t\tmsg = &CreateSession{}\n\tcase MsgCreateSessionReply:\n\t\tmsg = &CreateSessionReply{}\n\tcase MsgStateUpdate:\n\t\tmsg = &StateUpdate{}\n\tcase MsgStateUpdateReply:\n\t\tmsg = &StateUpdateReply{}\n\tcase MsgDeleteSession:\n\t\tmsg = &DeleteSession{}\n\tcase MsgDeleteSessionReply:\n\t\tmsg = &DeleteSessionReply{}\n\tcase MsgError:\n\t\tmsg = &Error{}\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unknown message type [%d]\", msgType)\n\t}\n\n\treturn msg, nil\n}\n\n// WriteMessage writes a lightning Message to w including the necessary header\n// information and returns the number of bytes written.",
+      "length": 620,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteMessage(w io.Writer, msg Message, pver uint32) (int, error) {",
+      "content": "func WriteMessage(w io.Writer, msg Message, pver uint32) (int, error) {\n\ttotalBytes := 0\n\n\t// Encode the message payload itself into a temporary buffer.\n\t// TODO(roasbeef): create buffer pool\n\tvar bw bytes.Buffer\n\tif err := msg.Encode(&bw, pver); err != nil {\n\t\treturn totalBytes, err\n\t}\n\tpayload := bw.Bytes()\n\tlenp := len(payload)\n\n\t// Enforce maximum overall message payload.\n\tif lenp > MaxMessagePayload {\n\t\treturn totalBytes, fmt.Errorf(\"message payload is too large - \"+\n\t\t\t\"encoded %d bytes, but maximum message payload is %d bytes\",\n\t\t\tlenp, MaxMessagePayload)\n\t}\n\n\t// Enforce maximum message payload on the message type.\n\tmpl := msg.MaxPayloadLength(pver)\n\tif uint32(lenp) > mpl {\n\t\treturn totalBytes, fmt.Errorf(\"message payload is too large - \"+\n\t\t\t\"encoded %d bytes, but maximum message payload of \"+\n\t\t\t\"type %v is %d bytes\", lenp, msg.MsgType(), mpl)\n\t}\n\n\t// With the initial sanity checks complete, we'll now write out the\n\t// message type itself.\n\tvar mType [2]byte\n\tbinary.BigEndian.PutUint16(mType[:], uint16(msg.MsgType()))\n\tn, err := w.Write(mType[:])\n\ttotalBytes += n\n\tif err != nil {\n\t\treturn totalBytes, err\n\t}\n\n\t// With the message type written, we'll now write out the raw payload\n\t// itself.\n\tn, err = w.Write(payload)\n\ttotalBytes += n\n\n\treturn totalBytes, err\n}\n\n// ReadMessage reads, validates, and parses the next Watchtower message from r\n// for the provided protocol version.",
+      "length": 1289,
+      "tokens": 198,
+      "embedding": []
+    },
+    {
+      "slug": "func ReadMessage(r io.Reader, pver uint32) (Message, error) {",
+      "content": "func ReadMessage(r io.Reader, pver uint32) (Message, error) {\n\t// First, we'll read out the first two bytes of the message so we can\n\t// create the proper empty message.\n\tvar mType [2]byte\n\tif _, err := io.ReadFull(r, mType[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tmsgType := MessageType(binary.BigEndian.Uint16(mType[:]))\n\n\t// Now that we know the target message type, we can create the proper\n\t// empty message type and decode the message into it.\n\tmsg, err := makeEmptyMessage(msgType)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tif err := msg.Decode(r, pver); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn msg, nil\n}\n",
+      "length": 530,
+      "tokens": 95,
+      "embedding": []
+    }
+  ]
+}

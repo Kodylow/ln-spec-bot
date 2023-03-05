@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_tx_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestChangeDuringManualTx(t *testing.T) {",
+      "content": "func TestChangeDuringManualTx(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tdb, err := newEtcdBackend(context.TODO(), f.BackendConfig())\n\trequire.NoError(t, err)\n\n\ttx, err := db.BeginReadWriteTx()\n\trequire.Nil(t, err)\n\trequire.NotNil(t, tx)\n\n\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\trequire.Nil(t, err)\n\trequire.NotNil(t, apple)\n\n\trequire.NoError(t, apple.Put([]byte(\"testKey\"), []byte(\"testVal\")))\n\n\t// Try overwriting the bucket key.\n\tf.Put(BucketKey(\"apple\"), \"banana\")\n\n\t// TODO: translate error\n\trequire.NotNil(t, tx.Commit())\n\trequire.Equal(t, map[string]string{\n\t\tBucketKey(\"apple\"): \"banana\",\n\t}, f.Dump())\n}\n",
+      "length": 576,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func TestChangeDuringUpdate(t *testing.T) {",
+      "content": "func TestChangeDuringUpdate(t *testing.T) {\n\tt.Parallel()\n\n\tf := NewEtcdTestFixture(t)\n\n\tdb, err := newEtcdBackend(context.TODO(), f.BackendConfig())\n\trequire.NoError(t, err)\n\n\tcount := 0\n\n\terr = db.Update(func(tx walletdb.ReadWriteTx) error {\n\t\tapple, err := tx.CreateTopLevelBucket([]byte(\"apple\"))\n\t\trequire.NoError(t, err)\n\t\trequire.NotNil(t, apple)\n\n\t\trequire.NoError(t, apple.Put([]byte(\"key\"), []byte(\"value\")))\n\n\t\tif count == 0 {\n\t\t\tf.Put(ValueKey(\"key\", \"apple\"), \"new_value\")\n\t\t\tf.Put(ValueKey(\"key2\", \"apple\"), \"value2\")\n\t\t}\n\n\t\tcursor := apple.ReadCursor()\n\t\tk, v := cursor.First()\n\t\trequire.Equal(t, []byte(\"key\"), k)\n\t\trequire.Equal(t, []byte(\"value\"), v)\n\t\trequire.Equal(t, v, apple.Get([]byte(\"key\")))\n\n\t\tk, v = cursor.Next()\n\t\tif count == 0 {\n\t\t\trequire.Nil(t, k)\n\t\t\trequire.Nil(t, v)\n\t\t} else {\n\t\t\trequire.Equal(t, []byte(\"key2\"), k)\n\t\t\trequire.Equal(t, []byte(\"value2\"), v)\n\t\t}\n\n\t\tcount++\n\t\treturn nil\n\t}, func() {})\n\n\trequire.Nil(t, err)\n\trequire.Equal(t, count, 2)\n\n\texpected := map[string]string{\n\t\tBucketKey(\"apple\"):        BucketVal(\"apple\"),\n\t\tValueKey(\"key\", \"apple\"):  \"value\",\n\t\tValueKey(\"key2\", \"apple\"): \"value2\",\n\t}\n\trequire.Equal(t, expected, f.Dump())\n}\n",
+      "length": 1093,
+      "tokens": 109,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/interface.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func Update(db Backend, f func(tx RwTx) error, reset func()) error {",
+      "content": "func Update(db Backend, f func(tx RwTx) error, reset func()) error {\n\treturn db.Update(f, reset)\n}\n\n// View opens a database read transaction and executes the function f with the\n// transaction passed as a parameter. After f exits, the transaction is rolled\n// back. If f errors, its error is returned, not a rollback error (if any\n// occur). The passed reset function is called before the start of the\n// transaction and can be used to reset intermediate state. As callers may\n// expect retries of the f closure (depending on the database backend used), the\n// reset function will be called before each retry respectively.",
+      "length": 545,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func View(db Backend, f func(tx RTx) error, reset func()) error {",
+      "content": "func View(db Backend, f func(tx RTx) error, reset func()) error {\n\treturn db.View(f, reset)\n}\n\n// Batch is identical to the Update call, but it attempts to combine several\n// individual Update transactions into a single write database transaction on\n// an optimistic basis. This only has benefits if multiple goroutines call\n// Batch. For etcd Batch simply does an Update since combination is more complex\n// in that case due to STM retries.",
+      "length": 368,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func Batch(db Backend, f func(tx RwTx) error) error {",
+      "content": "func Batch(db Backend, f func(tx RwTx) error) error {\n\t// Fall back to the normal Update method if the backend doesn't support\n\t// batching.\n\tif _, ok := db.(walletdb.BatchDB); !ok {\n\t\t// Since Batch calls handle external state reset, we can safely\n\t\t// pass in an empty reset closure.\n\t\treturn db.Update(f, func() {})\n\t}\n\n\treturn walletdb.Batch(db, f)\n}\n\n// Create initializes and opens a database for the specified type. The\n// arguments are specific to the database type driver. See the documentation\n// for the database driver for further details.\n//\n// ErrDbUnknownType will be returned if the database type is not registered.\nvar Create = walletdb.Create\n\n// Backend represents an ACID database. All database access is performed\n// through read or read+write transactions.",
+      "length": 705,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "type Backend = walletdb.DB",
+      "content": "type Backend = walletdb.DB\n\n// Open opens an existing database for the specified type. The arguments are\n// specific to the database type driver. See the documentation for the database\n// driver for further details.\n//\n// ErrDbUnknownType will be returned if the database type is not registered.\nvar Open = walletdb.Open\n\n// Driver defines a structure for backend drivers to use when they registered\n// themselves as a backend which implements the Backend interface.",
+      "length": 430,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "type Driver = walletdb.Driver",
+      "content": "type Driver = walletdb.Driver\n\n// RBucket represents a bucket (a hierarchical structure within the\n// database) that is only allowed to perform read operations.",
+      "length": 128,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type RBucket = walletdb.ReadBucket",
+      "content": "type RBucket = walletdb.ReadBucket\n\n// RCursor represents a bucket cursor that can be positioned at the start or\n// end of the bucket's key/value pairs and iterate over pairs in the bucket.\n// This type is only allowed to perform database read operations.",
+      "length": 217,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "type RCursor = walletdb.ReadCursor",
+      "content": "type RCursor = walletdb.ReadCursor\n\n// RTx represents a database transaction that can only be used for reads. If\n// a database update must occur, use a RwTx.",
+      "length": 120,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "type RTx = walletdb.ReadTx",
+      "content": "type RTx = walletdb.ReadTx\n\n// RwBucket represents a bucket (a hierarchical structure within the database)\n// that is allowed to perform both read and write operations.",
+      "length": 139,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type RwBucket = walletdb.ReadWriteBucket",
+      "content": "type RwBucket = walletdb.ReadWriteBucket\n\n// RwCursor represents a bucket cursor that can be positioned at the start or\n// end of the bucket's key/value pairs and iterate over pairs in the bucket.\n// This abstraction is allowed to perform both database read and write\n// operations.",
+      "length": 237,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "type RwCursor = walletdb.ReadWriteCursor",
+      "content": "type RwCursor = walletdb.ReadWriteCursor\n\n// RwTx represents a database transaction that can be used for both reads and\n// writes. When only reads are necessary, consider using a RTx instead.",
+      "length": 148,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "type RwTx = walletdb.ReadWriteTx",
+      "content": "type RwTx = walletdb.ReadWriteTx\n\n// ExtendedRTx is an extension to walletdb.ReadTx to allow prefetching of keys.",
+      "length": 79,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type ExtendedRTx interface {",
+      "content": "type ExtendedRTx interface {\n\tRTx\n\n\t// RootBucket returns the \"root bucket\" which is pseudo bucket used\n\t// when prefetching (keys from) top level buckets.\n\tRootBucket() RBucket\n}\n\n// ExtendedRBucket is an extension to walletdb.ReadBucket to allow prefetching\n// of all values inside buckets.",
+      "length": 255,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "type ExtendedRBucket interface {",
+      "content": "type ExtendedRBucket interface {\n\tRBucket\n\n\t// Prefetch will attempt to prefetch all values under a path.\n\tPrefetch(paths ...[]string)\n\n\t// ForAll is an optimized version of ForEach.\n\t//\n\t// NOTE: ForAll differs from ForEach in that no additional queries can\n\t// be executed within the callback.\n\tForAll(func(k, v []byte) error) error\n}\n\n// Prefetch will attempt to prefetch all values under a path from the passed\n// bucket.",
+      "length": 379,
+      "tokens": 63,
+      "embedding": []
+    },
+    {
+      "slug": "func Prefetch(b RBucket, paths ...[]string) {",
+      "content": "func Prefetch(b RBucket, paths ...[]string) {\n\tif bucket, ok := b.(ExtendedRBucket); ok {\n\t\tbucket.Prefetch(paths...)\n\t}\n}\n\n// ForAll is an optimized version of ForEach with the limitation that no\n// additional queries can be executed within the callback.",
+      "length": 203,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func ForAll(b RBucket, cb func(k, v []byte) error) error {",
+      "content": "func ForAll(b RBucket, cb func(k, v []byte) error) error {\n\tif bucket, ok := b.(ExtendedRBucket); ok {\n\t\treturn bucket.ForAll(cb)\n\t}\n\n\treturn b.ForEach(cb)\n}\n\n// RootBucket is a wrapper to ExtendedRTx.RootBucket which does nothing if\n// the implementation doesn't have ExtendedRTx.",
+      "length": 214,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func RootBucket(t RTx) RBucket {",
+      "content": "func RootBucket(t RTx) RBucket {\n\tif tx, ok := t.(ExtendedRTx); ok {\n\t\treturn tx.RootBucket()\n\t}\n\n\treturn nil\n}\n\nvar (\n\t// ErrBucketNotFound is returned when trying to access a bucket that\n\t// has not been created yet.\n\tErrBucketNotFound = walletdb.ErrBucketNotFound\n\n\t// ErrBucketExists is returned when creating a bucket that already\n\t// exists.\n\tErrBucketExists = walletdb.ErrBucketExists\n\n\t// ErrDatabaseNotOpen is returned when a database instance is accessed\n\t// before it is opened or after it is closed.\n\tErrDatabaseNotOpen = walletdb.ErrDbNotOpen\n)\n",
+      "length": 505,
+      "tokens": 74,
+      "embedding": []
+    }
+  ]
+}

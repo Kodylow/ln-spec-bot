@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_max_channel_size_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testMaxChannelSize(ht *lntest.HarnessTest) {",
+      "content": "func testMaxChannelSize(ht *lntest.HarnessTest) {\n\t// We'll make two new nodes, both wumbo but with the default limit on\n\t// maximum channel size (10 BTC)\n\twumboNode := ht.NewNode(\n\t\t\"wumbo\", []string{\"--protocol.wumbo-channels\"},\n\t)\n\twumboNode2 := ht.NewNode(\n\t\t\"wumbo2\", []string{\"--protocol.wumbo-channels\"},\n\t)\n\n\t// We'll send 11 BTC to the wumbo node so it can test the wumbo soft\n\t// limit.\n\tht.FundCoins(11*btcutil.SatoshiPerBitcoin, wumboNode)\n\n\t// Next we'll connect both nodes, then attempt to make a wumbo channel\n\t// funding request, which should fail as it exceeds the default wumbo\n\t// soft limit of 10 BTC.\n\tht.EnsureConnected(wumboNode, wumboNode2)\n\n\tchanAmt := funding.MaxBtcFundingAmountWumbo + 1\n\t// The test should show failure due to the channel exceeding our max\n\t// size.\n\texpectedErr := lnwallet.ErrChanTooLarge(\n\t\tchanAmt, funding.MaxBtcFundingAmountWumbo,\n\t)\n\tht.OpenChannelAssertErr(\n\t\twumboNode, wumboNode2,\n\t\tlntest.OpenChannelParams{Amt: chanAmt}, expectedErr,\n\t)\n\n\t// We'll now make another wumbo node with appropriate maximum channel\n\t// size to accept our wumbo channel funding.\n\twumboNode3 := ht.NewNode(\n\t\t\"wumbo3\", []string{\n\t\t\t\"--protocol.wumbo-channels\",\n\t\t\tfmt.Sprintf(\n\t\t\t\t\"--maxchansize=%v\",\n\t\t\t\tint64(funding.MaxBtcFundingAmountWumbo+1),\n\t\t\t),\n\t\t},\n\t)\n\n\t// Creating a wumbo channel between these two nodes should succeed.\n\tht.EnsureConnected(wumboNode, wumboNode3)\n\tchanPoint := ht.OpenChannel(\n\t\twumboNode, wumboNode3, lntest.OpenChannelParams{Amt: chanAmt},\n\t)\n\n\tht.CloseChannel(wumboNode, chanPoint)\n}\n",
+      "length": 1448,
+      "tokens": 173,
+      "embedding": []
+    }
+  ]
+}

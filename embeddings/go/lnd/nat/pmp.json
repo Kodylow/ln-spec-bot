@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/nat/pmp.go",
+  "package": "nat",
+  "sections": [
+    {
+      "slug": "type PMP struct {",
+      "content": "type PMP struct {\n\tclient *natpmp.Client\n\n\tforwardedPortsMtx sync.Mutex\n\tforwardedPorts    map[uint16]struct{}\n}\n\n// DiscoverPMP attempts to scan the local network for a NAT-PMP enabled device\n// within the given timeout.",
+      "length": 196,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func DiscoverPMP(timeout time.Duration) (*PMP, error) {",
+      "content": "func DiscoverPMP(timeout time.Duration) (*PMP, error) {\n\t// Retrieve the gateway IP address of the local network.\n\tgatewayIP, err := gateway.DiscoverGateway()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tpmp := &PMP{\n\t\tclient:         natpmp.NewClientWithTimeout(gatewayIP, timeout),\n\t\tforwardedPorts: make(map[uint16]struct{}),\n\t}\n\n\t// We'll then attempt to retrieve the external IP address of this\n\t// device to ensure it is not behind multiple NATs.\n\tif _, err := pmp.ExternalIP(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn pmp, nil\n}\n\n// ExternalIP returns the external IP address of the NAT-PMP enabled device.",
+      "length": 535,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PMP) ExternalIP() (net.IP, error) {",
+      "content": "func (p *PMP) ExternalIP() (net.IP, error) {\n\tres, err := p.client.GetExternalAddress()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tip := net.IP(res.ExternalIPAddress[:])\n\tif isPrivateIP(ip) {\n\t\treturn nil, ErrMultipleNAT\n\t}\n\n\treturn ip, nil\n}\n\n// AddPortMapping enables port forwarding for the given port.",
+      "length": 244,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PMP) AddPortMapping(port uint16) error {",
+      "content": "func (p *PMP) AddPortMapping(port uint16) error {\n\tp.forwardedPortsMtx.Lock()\n\tdefer p.forwardedPortsMtx.Unlock()\n\n\t_, err := p.client.AddPortMapping(\"tcp\", int(port), int(port), 0)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tp.forwardedPorts[port] = struct{}{}\n\n\treturn nil\n}\n\n// DeletePortMapping disables port forwarding for the given port.",
+      "length": 271,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PMP) DeletePortMapping(port uint16) error {",
+      "content": "func (p *PMP) DeletePortMapping(port uint16) error {\n\tp.forwardedPortsMtx.Lock()\n\tdefer p.forwardedPortsMtx.Unlock()\n\n\tif _, exists := p.forwardedPorts[port]; !exists {\n\t\treturn fmt.Errorf(\"port %d is not being forwarded\", port)\n\t}\n\n\t_, err := p.client.AddPortMapping(\"tcp\", int(port), 0, 0)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tdelete(p.forwardedPorts, port)\n\n\treturn nil\n}\n\n// ForwardedPorts returns a list of ports currently being forwarded.",
+      "length": 372,
+      "tokens": 49,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PMP) ForwardedPorts() []uint16 {",
+      "content": "func (p *PMP) ForwardedPorts() []uint16 {\n\tp.forwardedPortsMtx.Lock()\n\tdefer p.forwardedPortsMtx.Unlock()\n\n\tports := make([]uint16, 0, len(p.forwardedPorts))\n\tfor port := range p.forwardedPorts {\n\t\tports = append(ports, port)\n\t}\n\n\treturn ports\n}\n\n// Name returns the name of the specific NAT traversal technique used.",
+      "length": 264,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *PMP) Name() string {",
+      "content": "func (p *PMP) Name() string {\n\treturn \"NAT-PMP\"\n}\n",
+      "length": 18,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/log.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "func UseLogger(logger btclog.Logger) {",
+      "content": "func UseLogger(logger btclog.Logger) {\n\tlog = logger\n\n\tsqlbase.UseLogger(log)\n}\n",
+      "length": 37,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

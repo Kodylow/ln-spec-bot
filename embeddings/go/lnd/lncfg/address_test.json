@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/address_test.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type addressTest struct {",
+      "content": "type addressTest struct {\n\taddress         string\n\texpectedNetwork string\n\texpectedAddress string\n\tisLoopback      bool\n\tisUnix          bool\n}\n\nvar (\n\tdefaultTestPort    = \"1234\"\n\taddressTestVectors = []addressTest{\n\t\t{\"tcp://127.0.0.1:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\"tcp:127.0.0.1:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\"127.0.0.1:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\":9735\", \"tcp\", \":9735\", false, false},\n\t\t{\"\", \"tcp\", \":1234\", false, false},\n\t\t{\":\", \"tcp\", \":1234\", false, false},\n\t\t{\"tcp4://127.0.0.1:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\"tcp4:127.0.0.1:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\"127.0.0.1\", \"tcp\", \"127.0.0.1:1234\", true, false},\n\t\t{\"[::1]\", \"tcp\", \"[::1]:1234\", true, false},\n\t\t{\"::1\", \"tcp\", \"[::1]:1234\", true, false},\n\t\t{\"tcp6://::1\", \"tcp\", \"[::1]:1234\", true, false},\n\t\t{\"tcp6:::1\", \"tcp\", \"[::1]:1234\", true, false},\n\t\t{\"localhost:9735\", \"tcp\", \"127.0.0.1:9735\", true, false},\n\t\t{\"localhost\", \"tcp\", \"127.0.0.1:1234\", true, false},\n\t\t{\"unix:///tmp/lnd.sock\", \"unix\", \"/tmp/lnd.sock\", false, true},\n\t\t{\"unix:/tmp/lnd.sock\", \"unix\", \"/tmp/lnd.sock\", false, true},\n\t\t{\"123\", \"tcp\", \"127.0.0.1:123\", true, false},\n\t\t{\n\t\t\t\"4acth47i6kxnvkewtm6q7ib2s3ufpo5sqbsnzjpbi7utijcltosqemad.onion\",\n\t\t\t\"tcp\",\n\t\t\t\"4acth47i6kxnvkewtm6q7ib2s3ufpo5sqbsnzjpbi7utijcltosqemad.onion:1234\",\n\t\t\tfalse,\n\t\t\tfalse,\n\t\t},\n\t\t{\n\t\t\t\"4acth47i6kxnvkewtm6q7ib2s3ufpo5sqbsnzjpbi7utijcltosqemad.onion:9735\",\n\t\t\t\"tcp\",\n\t\t\t\"4acth47i6kxnvkewtm6q7ib2s3ufpo5sqbsnzjpbi7utijcltosqemad.onion:9735\",\n\t\t\tfalse,\n\t\t\tfalse,\n\t\t},\n\t\t{\n\t\t\t\"3g2upl4pq6kufc4m.onion\",\n\t\t\t\"tcp\",\n\t\t\t\"3g2upl4pq6kufc4m.onion:1234\",\n\t\t\tfalse,\n\t\t\tfalse,\n\t\t},\n\t\t{\n\t\t\t\"3g2upl4pq6kufc4m.onion:9735\",\n\t\t\t\"tcp\",\n\t\t\t\"3g2upl4pq6kufc4m.onion:9735\",\n\t\t\tfalse,\n\t\t\tfalse,\n\t\t},\n\t}\n\tinvalidTestVectors = []string{\n\t\t\"some string\",\n\t\t\"://\",\n\t\t\"12.12.12.12.12\",\n\t}\n)\n\n// TestAddresses ensures that all supported address formats can be parsed and\n// normalized correctly.",
+      "length": 1877,
+      "tokens": 162,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAddresses(t *testing.T) {",
+      "content": "func TestAddresses(t *testing.T) {\n\t// First, test all correct addresses.\n\tfor _, test := range addressTestVectors {\n\t\tt.Run(test.address, func(t *testing.T) {\n\t\t\ttestAddress(t, test)\n\t\t})\n\t}\n\n\t// Finally, test invalid inputs to see if they are handled correctly.\n\tfor _, invalidAddr := range invalidTestVectors {\n\t\tt.Run(invalidAddr, func(t *testing.T) {\n\t\t\ttestInvalidAddress(t, invalidAddr)\n\t\t})\n\t}\n}\n\n// testAddress parses an address from its string representation, and\n// asserts that the parsed net.Addr is correct against the given test case.",
+      "length": 498,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func testAddress(t *testing.T, test addressTest) {",
+      "content": "func testAddress(t *testing.T, test addressTest) {\n\taddr := []string{test.address}\n\tnormalized, err := NormalizeAddresses(\n\t\taddr, defaultTestPort, net.ResolveTCPAddr,\n\t)\n\tif err != nil {\n\t\tt.Fatalf(\"unable to normalize address %s: %v\",\n\t\t\ttest.address, err)\n\t}\n\n\tif len(addr) == 0 {\n\t\tt.Fatalf(\"no normalized addresses returned\")\n\t}\n\n\tnetAddr := normalized[0]\n\tvalidateAddr(t, netAddr, test)\n}\n\n// testInvalidAddress asserts that parsing the invalidAddr string using\n// NormalizeAddresses results in an error.",
+      "length": 441,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func testInvalidAddress(t *testing.T, invalidAddr string) {",
+      "content": "func testInvalidAddress(t *testing.T, invalidAddr string) {\n\taddr := []string{invalidAddr}\n\t_, err := NormalizeAddresses(\n\t\taddr, defaultTestPort, net.ResolveTCPAddr,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"expected error when parsing %v\", invalidAddr)\n\t}\n}\n\nvar (\n\tpubKeyBytes = []byte{0x03,\n\t\t0xc7, 0x82, 0x86, 0xd0, 0xbf, 0xe0, 0xb2, 0x33,\n\t\t0x77, 0xe3, 0x47, 0xd7, 0xd9, 0x63, 0x94, 0x3c,\n\t\t0x4f, 0x57, 0x5d, 0xdd, 0xd5, 0x7e, 0x2f, 0x1d,\n\t\t0x52, 0xa5, 0xbe, 0x1e, 0xb7, 0xf6, 0x25, 0xa4,\n\t}\n\n\tpubKeyHex = hex.EncodeToString(pubKeyBytes)\n\n\tpubKey, _ = btcec.ParsePubKey(pubKeyBytes)\n)\n",
+      "length": 500,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "type lnAddressCase struct {",
+      "content": "type lnAddressCase struct {\n\tlnAddress      string\n\texpectedPubKey *btcec.PublicKey\n\n\taddressTest\n}\n\n// lnAddressTests constructs valid LNAddress test vectors from the existing set\n// of valid address test vectors. All addresses will use the same public key for\n// the positive tests.\nvar lnAddressTests = func() []lnAddressCase {\n\tvar cases []lnAddressCase\n\tfor _, addrTest := range addressTestVectors {\n\t\tcases = append(cases, lnAddressCase{\n\t\t\tlnAddress:      pubKeyHex + \"@\" + addrTest.address,\n\t\t\texpectedPubKey: pubKey,\n\t\t\taddressTest:    addrTest,\n\t\t})\n\t}\n\n\treturn cases\n}()\n\nvar invalidLNAddressTests = []string{\n\t\"\",                                  // empty string\n\t\"@\",                                 // empty pubkey\n\t\"nonhexpubkey@\",                     // non-hex public key\n\tpubKeyHex[:len(pubKeyHex)-2] + \"@\",  // pubkey too short\n\tpubKeyHex + \"aa@\",                   // pubkey too long\n\tpubKeyHex[:len(pubKeyHex)-1] + \"7@\", // pubkey not on curve\n\tpubKeyHex + \"@some string\",          // invalid address\n\tpubKeyHex + \"@://\",                  // invalid address\n\tpubKeyHex + \"@21.21.21.21.21\",       // invalid address\n}\n\n// TestLNAddresses performs both positive and negative tests against\n// ParseLNAddressString.",
+      "length": 1169,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func TestLNAddresses(t *testing.T) {",
+      "content": "func TestLNAddresses(t *testing.T) {\n\tfor _, test := range lnAddressTests {\n\t\tt.Run(test.lnAddress, func(t *testing.T) {\n\t\t\ttestLNAddress(t, test)\n\t\t})\n\t}\n\n\tfor _, invalidAddr := range invalidLNAddressTests {\n\t\tt.Run(invalidAddr, func(t *testing.T) {\n\t\t\ttestInvalidLNAddress(t, invalidAddr)\n\t\t})\n\t}\n}\n\n// testLNAddress parses an LNAddress from its string representation, and asserts\n// that the parsed IdentityKey and Address are correct according to its test\n// case.",
+      "length": 416,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func testLNAddress(t *testing.T, test lnAddressCase) {",
+      "content": "func testLNAddress(t *testing.T, test lnAddressCase) {\n\t// Parse the LNAddress using the default port and TCP resolver.\n\tlnAddr, err := ParseLNAddressString(\n\t\ttest.lnAddress, defaultTestPort, net.ResolveTCPAddr,\n\t)\n\trequire.NoError(t, err, \"unable to parse ln address\")\n\n\t// Assert that the public key matches the expected public key.\n\tpkBytes := lnAddr.IdentityKey.SerializeCompressed()\n\tif !bytes.Equal(pkBytes, pubKeyBytes) {\n\t\tt.Fatalf(\"mismatched pubkey, want: %x, got: %v\",\n\t\t\tpubKeyBytes, pkBytes)\n\t}\n\n\t// Assert that the address after the @ is parsed properly, as if it were\n\t// just a standalone address parsed by ParseAddressString.\n\tvalidateAddr(t, lnAddr.Address, test.addressTest)\n}\n\n// testLNAddressCase asserts that parsing the given invalidAddr string results\n// in an error when parsed with ParseLNAddressString.",
+      "length": 756,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func testInvalidLNAddress(t *testing.T, invalidAddr string) {",
+      "content": "func testInvalidLNAddress(t *testing.T, invalidAddr string) {\n\t_, err := ParseLNAddressString(\n\t\tinvalidAddr, defaultTestPort, net.ResolveTCPAddr,\n\t)\n\tif err == nil {\n\t\tt.Fatalf(\"expected error when parsing invalid lnaddress: %v\",\n\t\t\tinvalidAddr)\n\t}\n}\n\n// validateAddr asserts that an addr parsed by ParseAddressString matches the\n// properties expected by its addressTest. In particular, it validates that the\n// Network() and String() methods match the expectedNetwork and expectedAddress,\n// respectively. Further, we test the IsLoopback and IsUnix detection methods\n// against addr and assert that they match the expected values in the test case.",
+      "length": 575,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func validateAddr(t *testing.T, addr net.Addr, test addressTest) {",
+      "content": "func validateAddr(t *testing.T, addr net.Addr, test addressTest) {\n\n\tt.Helper()\n\n\t// Assert that the parsed network and address match what we expect.\n\tif addr.Network() != test.expectedNetwork ||\n\t\taddr.String() != test.expectedAddress {\n\t\tt.Fatalf(\"mismatched address: expected %s://%s, \"+\n\t\t\t\"got %s://%s\",\n\t\t\ttest.expectedNetwork, test.expectedAddress,\n\t\t\taddr.Network(), addr.String(),\n\t\t)\n\t}\n\n\t// Assert whether we expect this address to be a loopback address.\n\tisAddrLoopback := IsLoopback(addr.String())\n\tif test.isLoopback != isAddrLoopback {\n\t\tt.Fatalf(\"mismatched loopback detection: expected \"+\n\t\t\t\"%v, got %v for addr %s\",\n\t\t\ttest.isLoopback, isAddrLoopback, test.address,\n\t\t)\n\t}\n\n\t// Assert whether we expect this address to be a unix address.\n\tisAddrUnix := IsUnix(addr)\n\tif test.isUnix != isAddrUnix {\n\t\tt.Fatalf(\"mismatched unix detection: expected \"+\n\t\t\t\"%v, got %v for addr %s\",\n\t\t\ttest.isUnix, isAddrUnix, test.address,\n\t\t)\n\t}\n}\n",
+      "length": 850,
+      "tokens": 108,
+      "embedding": []
+    },
+    {
+      "slug": "func TestIsPrivate(t *testing.T) {",
+      "content": "func TestIsPrivate(t *testing.T) {\n\tnonPrivateIPList := []net.IP{\n\t\tnet.IPv4(169, 255, 0, 0),\n\t\t{0xfe, 0x79, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t\tnet.IPv4(225, 0, 0, 0),\n\t\t{0xff, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t\tnet.IPv4(11, 0, 0, 0),\n\t\tnet.IPv4(172, 15, 0, 0),\n\t\tnet.IPv4(192, 169, 0, 0),\n\t\t{0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t\tnet.IPv4(8, 8, 8, 8),\n\t\t{2, 0, 0, 1, 4, 8, 6, 0, 4, 8, 6, 0, 8, 8, 8, 8},\n\t}\n\tprivateIPList := []net.IP{\n\t\tnet.IPv4(169, 254, 0, 0),\n\t\t{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t\tnet.IPv4(224, 0, 0, 0),\n\t\t{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t\tnet.IPv4(10, 0, 0, 1),\n\t\tnet.IPv4(172, 16, 0, 1),\n\t\tnet.IPv4(172, 31, 255, 255),\n\t\tnet.IPv4(192, 168, 0, 1),\n\t\t{0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\n\t}\n\n\ttestParams := []struct {\n\t\tname    string\n\t\tipList  []net.IP\n\t\tprivate bool\n\t}{\n\t\t{\n\t\t\t\"Non-private addresses should return false\",\n\t\t\tnonPrivateIPList, false,\n\t\t},\n\t\t{\n\t\t\t\"Private addresses should return true\",\n\t\t\tprivateIPList, true,\n\t\t},\n\t}\n\n\tfor _, tt := range testParams {\n\t\ttest := tt\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tfor _, ip := range test.ipList {\n\t\t\t\taddr := &net.TCPAddr{IP: ip}\n\t\t\t\trequire.Equal(\n\t\t\t\t\tt, test.private, IsPrivate(addr),\n\t\t\t\t\t\"expected IP: %s to be %v\", ip, test.private,\n\t\t\t\t)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 1262,
+      "tokens": 240,
+      "embedding": []
+    }
+  ]
+}

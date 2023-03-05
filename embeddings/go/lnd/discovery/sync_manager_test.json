@@ -1,0 +1,153 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/sync_manager_test.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "func randPeer(t *testing.T, quit chan struct{}) *mockPeer {",
+      "content": "func randPeer(t *testing.T, quit chan struct{}) *mockPeer {\n\tt.Helper()\n\n\tpk := randPubKey(t)\n\treturn peerWithPubkey(pk, quit)\n}\n",
+      "length": 64,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func peerWithPubkey(pk *btcec.PublicKey, quit chan struct{}) *mockPeer {",
+      "content": "func peerWithPubkey(pk *btcec.PublicKey, quit chan struct{}) *mockPeer {\n\treturn &mockPeer{\n\t\tpk:       pk,\n\t\tsentMsgs: make(chan lnwire.Message),\n\t\tquit:     quit,\n\t}\n}\n\n// newTestSyncManager creates a new test SyncManager using mock implementations\n// of its dependencies.",
+      "length": 193,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func newTestSyncManager(numActiveSyncers int) *SyncManager {",
+      "content": "func newTestSyncManager(numActiveSyncers int) *SyncManager {\n\treturn newPinnedTestSyncManager(numActiveSyncers, nil)\n}\n\n// newTestSyncManager creates a new test SyncManager with a set of pinned\n// syncers using mock implementations of its dependencies.",
+      "length": 187,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func newPinnedTestSyncManager(numActiveSyncers int,",
+      "content": "func newPinnedTestSyncManager(numActiveSyncers int,\n\tpinnedSyncers PinnedSyncers) *SyncManager {\n\n\thID := lnwire.ShortChannelID{BlockHeight: latestKnownHeight}\n\treturn newSyncManager(&SyncManagerCfg{\n\t\tChanSeries:           newMockChannelGraphTimeSeries(hID),\n\t\tRotateTicker:         ticker.NewForce(DefaultSyncerRotationInterval),\n\t\tHistoricalSyncTicker: ticker.NewForce(DefaultHistoricalSyncInterval),\n\t\tNumActiveSyncers:     numActiveSyncers,\n\t\tBestHeight: func() uint32 {\n\t\t\treturn latestKnownHeight\n\t\t},\n\t\tPinnedSyncers: pinnedSyncers,\n\t})\n}\n\n// TestSyncManagerNumActiveSyncers ensures that we are unable to have more than\n// NumActiveSyncers active syncers.",
+      "length": 595,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerNumActiveSyncers(t *testing.T) {",
+      "content": "func TestSyncManagerNumActiveSyncers(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll start by creating our test sync manager which will hold up to\n\t// 3 active syncers.\n\tconst numActiveSyncers = 3\n\tconst numPinnedSyncers = 3\n\tconst numInactiveSyncers = 1\n\n\tpinnedSyncers := make(PinnedSyncers)\n\tpinnedPubkeys := make(map[route.Vertex]*btcec.PublicKey)\n\tfor i := 0; i < numPinnedSyncers; i++ {\n\t\tpubkey := randPubKey(t)\n\t\tvertex := route.NewVertex(pubkey)\n\n\t\tpinnedSyncers[vertex] = struct{}{}\n\t\tpinnedPubkeys[vertex] = pubkey\n\t}\n\n\tsyncMgr := newPinnedTestSyncManager(numActiveSyncers, pinnedSyncers)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// First we'll start by adding the pinned syncers. These should\n\t// immediately be assigned PinnedSync.\n\tfor _, pubkey := range pinnedPubkeys {\n\t\tpeer := peerWithPubkey(pubkey, syncMgr.quit)\n\t\terr := syncMgr.InitSyncState(peer)\n\t\trequire.NoError(t, err)\n\n\t\ts := assertSyncerExistence(t, syncMgr, peer)\n\t\tassertTransitionToChansSynced(t, s, peer)\n\t\tassertActiveGossipTimestampRange(t, peer)\n\t\tassertSyncerStatus(t, s, chansSynced, PinnedSync)\n\t}\n\n\t// We'll go ahead and create our syncers. We'll gather the ones which\n\t// should be active and passive to check them later on. The pinned peers\n\t// added above should not influence the active syncer count.\n\tfor i := 0; i < numActiveSyncers; i++ {\n\t\tpeer := randPeer(t, syncMgr.quit)\n\t\terr := syncMgr.InitSyncState(peer)\n\t\trequire.NoError(t, err)\n\n\t\ts := assertSyncerExistence(t, syncMgr, peer)\n\n\t\t// The first syncer registered always attempts a historical\n\t\t// sync.\n\t\tif i == 0 {\n\t\t\tassertTransitionToChansSynced(t, s, peer)\n\t\t}\n\t\tassertActiveGossipTimestampRange(t, peer)\n\t\tassertSyncerStatus(t, s, chansSynced, ActiveSync)\n\t}\n\n\tfor i := 0; i < numInactiveSyncers; i++ {\n\t\tpeer := randPeer(t, syncMgr.quit)\n\t\terr := syncMgr.InitSyncState(peer)\n\t\trequire.NoError(t, err)\n\n\t\ts := assertSyncerExistence(t, syncMgr, peer)\n\t\tassertSyncerStatus(t, s, chansSynced, PassiveSync)\n\t}\n}\n\n// TestSyncManagerNewActiveSyncerAfterDisconnect ensures that we can regain an\n// active syncer after losing one due to the peer disconnecting.",
+      "length": 1986,
+      "tokens": 248,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerNewActiveSyncerAfterDisconnect(t *testing.T) {",
+      "content": "func TestSyncManagerNewActiveSyncerAfterDisconnect(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll create our test sync manager to have two active syncers.\n\tsyncMgr := newTestSyncManager(2)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// The first will be an active syncer that performs a historical sync\n\t// since it is the first one registered with the SyncManager.\n\thistoricalSyncPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(historicalSyncPeer)\n\thistoricalSyncer := assertSyncerExistence(t, syncMgr, historicalSyncPeer)\n\tassertTransitionToChansSynced(t, historicalSyncer, historicalSyncPeer)\n\tassertActiveGossipTimestampRange(t, historicalSyncPeer)\n\tassertSyncerStatus(t, historicalSyncer, chansSynced, ActiveSync)\n\n\t// Then, we'll create the second active syncer, which is the one we'll\n\t// disconnect.\n\tactiveSyncPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(activeSyncPeer)\n\tactiveSyncer := assertSyncerExistence(t, syncMgr, activeSyncPeer)\n\tassertActiveGossipTimestampRange(t, activeSyncPeer)\n\tassertSyncerStatus(t, activeSyncer, chansSynced, ActiveSync)\n\n\t// It will then be torn down to simulate a disconnection. Since there\n\t// are no other candidate syncers available, the active syncer won't be\n\t// replaced.\n\tsyncMgr.PruneSyncState(activeSyncPeer.PubKey())\n\n\t// Then, we'll start our active syncer again, but this time we'll also\n\t// have a passive syncer available to replace the active syncer after\n\t// the peer disconnects.\n\tsyncMgr.InitSyncState(activeSyncPeer)\n\tactiveSyncer = assertSyncerExistence(t, syncMgr, activeSyncPeer)\n\tassertActiveGossipTimestampRange(t, activeSyncPeer)\n\tassertSyncerStatus(t, activeSyncer, chansSynced, ActiveSync)\n\n\t// Create our second peer, which should be initialized as a passive\n\t// syncer.\n\tnewActiveSyncPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(newActiveSyncPeer)\n\tnewActiveSyncer := assertSyncerExistence(t, syncMgr, newActiveSyncPeer)\n\tassertSyncerStatus(t, newActiveSyncer, chansSynced, PassiveSync)\n\n\t// Disconnect our active syncer, which should trigger the SyncManager to\n\t// replace it with our passive syncer.\n\tgo syncMgr.PruneSyncState(activeSyncPeer.PubKey())\n\tassertPassiveSyncerTransition(t, newActiveSyncer, newActiveSyncPeer)\n}\n\n// TestSyncManagerRotateActiveSyncerCandidate tests that we can successfully\n// rotate our active syncers after a certain interval.",
+      "length": 2236,
+      "tokens": 230,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerRotateActiveSyncerCandidate(t *testing.T) {",
+      "content": "func TestSyncManagerRotateActiveSyncerCandidate(t *testing.T) {\n\tt.Parallel()\n\n\t// We'll create our sync manager with three active syncers.\n\tsyncMgr := newTestSyncManager(1)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// The first syncer registered always performs a historical sync.\n\tactiveSyncPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(activeSyncPeer)\n\tactiveSyncer := assertSyncerExistence(t, syncMgr, activeSyncPeer)\n\tassertTransitionToChansSynced(t, activeSyncer, activeSyncPeer)\n\tassertActiveGossipTimestampRange(t, activeSyncPeer)\n\tassertSyncerStatus(t, activeSyncer, chansSynced, ActiveSync)\n\n\t// We'll send a tick to force a rotation. Since there aren't any\n\t// candidates, none of the active syncers will be rotated.\n\tsyncMgr.cfg.RotateTicker.(*ticker.Force).Force <- time.Time{}\n\tassertNoMsgSent(t, activeSyncPeer)\n\tassertSyncerStatus(t, activeSyncer, chansSynced, ActiveSync)\n\n\t// We'll then go ahead and add a passive syncer.\n\tpassiveSyncPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(passiveSyncPeer)\n\tpassiveSyncer := assertSyncerExistence(t, syncMgr, passiveSyncPeer)\n\tassertSyncerStatus(t, passiveSyncer, chansSynced, PassiveSync)\n\n\t// We'll force another rotation - this time, since we have a passive\n\t// syncer available, they should be rotated.\n\tsyncMgr.cfg.RotateTicker.(*ticker.Force).Force <- time.Time{}\n\n\t// The transition from an active syncer to a passive syncer causes the\n\t// peer to send out a new GossipTimestampRange in the past so that they\n\t// don't receive new graph updates.\n\tassertActiveSyncerTransition(t, activeSyncer, activeSyncPeer)\n\n\t// The transition from a passive syncer to an active syncer causes the\n\t// peer to send a new GossipTimestampRange with the current timestamp to\n\t// signal that they would like to receive new graph updates from their\n\t// peers. This will also cause the gossip syncer to redo its state\n\t// machine, starting from its initial syncingChans state. We'll then\n\t// need to transition it to its final chansSynced state to ensure the\n\t// next syncer is properly started in the round-robin.\n\tassertPassiveSyncerTransition(t, passiveSyncer, passiveSyncPeer)\n}\n\n// TestSyncManagerNoInitialHistoricalSync ensures no initial sync is attempted\n// when NumActiveSyncers is set to 0.",
+      "length": 2153,
+      "tokens": 263,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerNoInitialHistoricalSync(t *testing.T) {",
+      "content": "func TestSyncManagerNoInitialHistoricalSync(t *testing.T) {\n\tt.Parallel()\n\n\tsyncMgr := newTestSyncManager(0)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We should not expect any messages from the peer.\n\tpeer := randPeer(t, syncMgr.quit)\n\terr := syncMgr.InitSyncState(peer)\n\trequire.NoError(t, err)\n\tassertNoMsgSent(t, peer)\n\n\t// Force the historical syncer to tick. This shouldn't happen normally\n\t// since the ticker is never started. However, we will test that even if\n\t// this were to occur that a historical sync does not progress.\n\tsyncMgr.cfg.HistoricalSyncTicker.(*ticker.Force).Force <- time.Time{}\n\n\tassertNoMsgSent(t, peer)\n\ts := assertSyncerExistence(t, syncMgr, peer)\n\tassertSyncerStatus(t, s, chansSynced, PassiveSync)\n}\n\n// TestSyncManagerInitialHistoricalSync ensures that we only attempt a single\n// historical sync during the SyncManager's startup. If the peer corresponding\n// to the initial historical syncer disconnects, we should attempt to find a\n// replacement.",
+      "length": 899,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerInitialHistoricalSync(t *testing.T) {",
+      "content": "func TestSyncManagerInitialHistoricalSync(t *testing.T) {\n\tt.Parallel()\n\n\tsyncMgr := newTestSyncManager(1)\n\n\t// The graph should not be considered as synced since the sync manager\n\t// has yet to start.\n\tif syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to not be considered as synced\")\n\t}\n\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We should expect to see a QueryChannelRange message with a\n\t// FirstBlockHeight of the genesis block, signaling that an initial\n\t// historical sync is being attempted.\n\tpeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(peer)\n\tassertMsgSent(t, peer, &lnwire.QueryChannelRange{\n\t\tFirstBlockHeight: 0,\n\t\tNumBlocks:        latestKnownHeight,\n\t})\n\n\t// The graph should not be considered as synced since the initial\n\t// historical sync has not finished.\n\tif syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to not be considered as synced\")\n\t}\n\n\t// If an additional peer connects, then another historical sync should\n\t// not be attempted.\n\tfinalHistoricalPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(finalHistoricalPeer)\n\tfinalHistoricalSyncer := assertSyncerExistence(t, syncMgr, finalHistoricalPeer)\n\tassertNoMsgSent(t, finalHistoricalPeer)\n\n\t// If we disconnect the peer performing the initial historical sync, a\n\t// new one should be chosen.\n\tsyncMgr.PruneSyncState(peer.PubKey())\n\n\t// Complete the initial historical sync by transitionining the syncer to\n\t// its final chansSynced state. The graph should be considered as synced\n\t// after the fact.\n\tassertTransitionToChansSynced(t, finalHistoricalSyncer, finalHistoricalPeer)\n\tif !syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to be considered as synced\")\n\t}\n\t// The historical syncer should be active after the sync completes.\n\tassertActiveGossipTimestampRange(t, finalHistoricalPeer)\n\n\t// Once the initial historical sync has succeeded, another one should\n\t// not be attempted by disconnecting the peer who performed it.\n\textraPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(extraPeer)\n\n\t// Pruning the first peer will cause the passive peer to send an active\n\t// gossip timestamp msg, which we must consume asynchronously for the\n\t// call to return.\n\tvar wg sync.WaitGroup\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tassertActiveGossipTimestampRange(t, extraPeer)\n\t}()\n\tsyncMgr.PruneSyncState(finalHistoricalPeer.PubKey())\n\twg.Wait()\n\n\t// No further messages should be sent.\n\tassertNoMsgSent(t, extraPeer)\n}\n\n// TestSyncManagerHistoricalSyncOnReconnect tests that the sync manager will\n// re-trigger a historical sync when a new peer connects after a historical\n// sync has completed, but we have lost all peers.",
+      "length": 2509,
+      "tokens": 318,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerHistoricalSyncOnReconnect(t *testing.T) {",
+      "content": "func TestSyncManagerHistoricalSyncOnReconnect(t *testing.T) {\n\tt.Parallel()\n\n\tsyncMgr := newTestSyncManager(2)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We should expect to see a QueryChannelRange message with a\n\t// FirstBlockHeight of the genesis block, signaling that an initial\n\t// historical sync is being attempted.\n\tpeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(peer)\n\ts := assertSyncerExistence(t, syncMgr, peer)\n\tassertTransitionToChansSynced(t, s, peer)\n\tassertActiveGossipTimestampRange(t, peer)\n\tassertSyncerStatus(t, s, chansSynced, ActiveSync)\n\n\t// Now that the historical sync is completed, we prune the syncer,\n\t// simulating all peers having disconnected.\n\tsyncMgr.PruneSyncState(peer.PubKey())\n\n\t// If a new peer now connects, then another historical sync should\n\t// be attempted. This is to ensure we get an up-to-date graph if we\n\t// haven't had any peers for a time.\n\tnextPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(nextPeer)\n\ts1 := assertSyncerExistence(t, syncMgr, nextPeer)\n\tassertTransitionToChansSynced(t, s1, nextPeer)\n\tassertActiveGossipTimestampRange(t, nextPeer)\n\tassertSyncerStatus(t, s1, chansSynced, ActiveSync)\n}\n\n// TestSyncManagerForceHistoricalSync ensures that we can perform routine\n// historical syncs whenever the HistoricalSyncTicker fires.",
+      "length": 1213,
+      "tokens": 141,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerForceHistoricalSync(t *testing.T) {",
+      "content": "func TestSyncManagerForceHistoricalSync(t *testing.T) {\n\tt.Parallel()\n\n\tsyncMgr := newTestSyncManager(1)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We should expect to see a QueryChannelRange message with a\n\t// FirstBlockHeight of the genesis block, signaling that a historical\n\t// sync is being attempted.\n\tpeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(peer)\n\tassertMsgSent(t, peer, &lnwire.QueryChannelRange{\n\t\tFirstBlockHeight: 0,\n\t\tNumBlocks:        latestKnownHeight,\n\t})\n\n\t// If an additional peer connects, then a historical sync should not be\n\t// attempted again.\n\textraPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(extraPeer)\n\tassertNoMsgSent(t, extraPeer)\n\n\t// Then, we'll send a tick to force a historical sync. This should\n\t// trigger the extra peer to also perform a historical sync since the\n\t// first peer is not eligible due to not being in a chansSynced state.\n\tsyncMgr.cfg.HistoricalSyncTicker.(*ticker.Force).Force <- time.Time{}\n\tassertMsgSent(t, extraPeer, &lnwire.QueryChannelRange{\n\t\tFirstBlockHeight: 0,\n\t\tNumBlocks:        latestKnownHeight,\n\t})\n}\n\n// TestSyncManagerGraphSyncedAfterHistoricalSyncReplacement ensures that the\n// sync manager properly marks the graph as synced given that our initial\n// historical sync has stalled, but a replacement has fully completed.",
+      "length": 1228,
+      "tokens": 150,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerGraphSyncedAfterHistoricalSyncReplacement(t *testing.T) {",
+      "content": "func TestSyncManagerGraphSyncedAfterHistoricalSyncReplacement(t *testing.T) {\n\tt.Parallel()\n\n\tsyncMgr := newTestSyncManager(1)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We should expect to see a QueryChannelRange message with a\n\t// FirstBlockHeight of the genesis block, signaling that an initial\n\t// historical sync is being attempted.\n\tpeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(peer)\n\tassertMsgSent(t, peer, &lnwire.QueryChannelRange{\n\t\tFirstBlockHeight: 0,\n\t\tNumBlocks:        latestKnownHeight,\n\t})\n\n\t// The graph should not be considered as synced since the initial\n\t// historical sync has not finished.\n\tif syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to not be considered as synced\")\n\t}\n\n\t// If an additional peer connects, then another historical sync should\n\t// not be attempted.\n\tfinalHistoricalPeer := randPeer(t, syncMgr.quit)\n\tsyncMgr.InitSyncState(finalHistoricalPeer)\n\tfinalHistoricalSyncer := assertSyncerExistence(t, syncMgr, finalHistoricalPeer)\n\tassertNoMsgSent(t, finalHistoricalPeer)\n\n\t// To simulate that our initial historical sync has stalled, we'll force\n\t// a historical sync with the new peer to ensure it is replaced.\n\tsyncMgr.cfg.HistoricalSyncTicker.(*ticker.Force).Force <- time.Time{}\n\n\t// The graph should still not be considered as synced since the\n\t// replacement historical sync has not finished.\n\tif syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to not be considered as synced\")\n\t}\n\n\t// Complete the replacement historical sync by transitioning the syncer\n\t// to its final chansSynced state. The graph should be considered as\n\t// synced after the fact.\n\tassertTransitionToChansSynced(t, finalHistoricalSyncer, finalHistoricalPeer)\n\tif !syncMgr.IsGraphSynced() {\n\t\tt.Fatal(\"expected graph to be considered as synced\")\n\t}\n}\n\n// TestSyncManagerWaitUntilInitialHistoricalSync ensures that no GossipSyncers\n// are initialized as ActiveSync until the initial historical sync has been\n// completed. Once it does, the pending GossipSyncers should be transitioned to\n// ActiveSync.",
+      "length": 1910,
+      "tokens": 237,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSyncManagerWaitUntilInitialHistoricalSync(t *testing.T) {",
+      "content": "func TestSyncManagerWaitUntilInitialHistoricalSync(t *testing.T) {\n\tt.Parallel()\n\n\tconst numActiveSyncers = 2\n\n\t// We'll start by creating our test sync manager which will hold up to\n\t// 2 active syncers.\n\tsyncMgr := newTestSyncManager(numActiveSyncers)\n\tsyncMgr.Start()\n\tdefer syncMgr.Stop()\n\n\t// We'll go ahead and create our syncers.\n\tpeers := make([]*mockPeer, 0, numActiveSyncers)\n\tsyncers := make([]*GossipSyncer, 0, numActiveSyncers)\n\tfor i := 0; i < numActiveSyncers; i++ {\n\t\tpeer := randPeer(t, syncMgr.quit)\n\t\tpeers = append(peers, peer)\n\n\t\tsyncMgr.InitSyncState(peer)\n\t\ts := assertSyncerExistence(t, syncMgr, peer)\n\t\tsyncers = append(syncers, s)\n\n\t\t// The first one always attempts a historical sync. We won't\n\t\t// transition it to chansSynced to ensure the remaining syncers\n\t\t// aren't started as active.\n\t\tif i == 0 {\n\t\t\tassertSyncerStatus(t, s, syncingChans, PassiveSync)\n\t\t\tcontinue\n\t\t}\n\n\t\t// The rest should remain in a passive and chansSynced state,\n\t\t// and they should be queued to transition to active once the\n\t\t// initial historical sync is completed.\n\t\tassertNoMsgSent(t, peer)\n\t\tassertSyncerStatus(t, s, chansSynced, PassiveSync)\n\t}\n\n\t// To ensure we don't transition any pending active syncers that have\n\t// previously disconnected, we'll disconnect the last one.\n\tstalePeer := peers[numActiveSyncers-1]\n\tsyncMgr.PruneSyncState(stalePeer.PubKey())\n\n\t// Then, we'll complete the initial historical sync by transitioning the\n\t// historical syncer to its final chansSynced state. This should trigger\n\t// all of the pending active syncers to transition, except for the one\n\t// we disconnected.\n\tassertTransitionToChansSynced(t, syncers[0], peers[0])\n\tfor i, s := range syncers {\n\t\tif i == numActiveSyncers-1 {\n\t\t\tassertNoMsgSent(t, peers[i])\n\t\t\tcontinue\n\t\t}\n\t\tassertPassiveSyncerTransition(t, s, peers[i])\n\t}\n}\n\n// assertNoMsgSent is a helper function that ensures a peer hasn't sent any\n// messages.",
+      "length": 1799,
+      "tokens": 248,
+      "embedding": []
+    },
+    {
+      "slug": "func assertNoMsgSent(t *testing.T, peer *mockPeer) {",
+      "content": "func assertNoMsgSent(t *testing.T, peer *mockPeer) {\n\tt.Helper()\n\n\tselect {\n\tcase msg := <-peer.sentMsgs:\n\t\tt.Fatalf(\"peer %x sent unexpected message %v\", peer.PubKey(),\n\t\t\tspew.Sdump(msg))\n\tcase <-time.After(time.Second):\n\t}\n}\n\n// assertMsgSent asserts that the peer has sent the given message.",
+      "length": 232,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func assertMsgSent(t *testing.T, peer *mockPeer, msg lnwire.Message) {",
+      "content": "func assertMsgSent(t *testing.T, peer *mockPeer, msg lnwire.Message) {\n\tt.Helper()\n\n\tvar msgSent lnwire.Message\n\tselect {\n\tcase msgSent = <-peer.sentMsgs:\n\tcase <-time.After(time.Second):\n\t\tt.Fatalf(\"expected peer %x to send %T message\", peer.PubKey(),\n\t\t\tmsg)\n\t}\n\n\tif !reflect.DeepEqual(msgSent, msg) {\n\t\tt.Fatalf(\"expected peer %x to send message: %v\\ngot: %v\",\n\t\t\tpeer.PubKey(), spew.Sdump(msg), spew.Sdump(msgSent))\n\t}\n}\n\n// assertActiveGossipTimestampRange is a helper function that ensures a peer has\n// sent a lnwire.GossipTimestampRange message indicating that it would like to\n// receive new graph updates.",
+      "length": 526,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func assertActiveGossipTimestampRange(t *testing.T, peer *mockPeer) {",
+      "content": "func assertActiveGossipTimestampRange(t *testing.T, peer *mockPeer) {\n\tt.Helper()\n\n\tvar msgSent lnwire.Message\n\tselect {\n\tcase msgSent = <-peer.sentMsgs:\n\tcase <-time.After(2 * time.Second):\n\t\tt.Fatalf(\"expected peer %x to send lnwire.GossipTimestampRange \"+\n\t\t\t\"message\", peer.PubKey())\n\t}\n\n\tmsg, ok := msgSent.(*lnwire.GossipTimestampRange)\n\tif !ok {\n\t\tt.Fatalf(\"expected peer %x to send %T message\", peer.PubKey(),\n\t\t\tmsg)\n\t}\n\tif msg.FirstTimestamp == 0 {\n\t\tt.Fatalf(\"expected *lnwire.GossipTimestampRange message with \" +\n\t\t\t\"non-zero FirstTimestamp\")\n\t}\n\tif msg.TimestampRange == 0 {\n\t\tt.Fatalf(\"expected *lnwire.GossipTimestampRange message with \" +\n\t\t\t\"non-zero TimestampRange\")\n\t}\n}\n\n// assertSyncerExistence asserts that a GossipSyncer exists for the given peer.",
+      "length": 676,
+      "tokens": 81,
+      "embedding": []
+    },
+    {
+      "slug": "func assertSyncerExistence(t *testing.T, syncMgr *SyncManager,",
+      "content": "func assertSyncerExistence(t *testing.T, syncMgr *SyncManager,\n\tpeer *mockPeer) *GossipSyncer {\n\n\tt.Helper()\n\n\ts, ok := syncMgr.GossipSyncer(peer.PubKey())\n\tif !ok {\n\t\tt.Fatalf(\"gossip syncer for peer %x not found\", peer.PubKey())\n\t}\n\n\treturn s\n}\n\n// assertSyncerStatus asserts that the gossip syncer for the given peer matches\n// the expected sync state and type.",
+      "length": 288,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func assertSyncerStatus(t *testing.T, s *GossipSyncer, syncState syncerState,",
+      "content": "func assertSyncerStatus(t *testing.T, s *GossipSyncer, syncState syncerState,\n\tsyncType SyncerType) {\n\n\tt.Helper()\n\n\t// We'll check the status of our syncer within a WaitPredicate as some\n\t// sync transitions might cause this to be racy.\n\terr := wait.NoError(func() error {\n\t\tstate := s.syncState()\n\t\tif s.syncState() != syncState {\n\t\t\treturn fmt.Errorf(\"expected syncState %v for peer \"+\n\t\t\t\t\"%x, got %v\", syncState, s.cfg.peerPub, state)\n\t\t}\n\n\t\ttyp := s.SyncType()\n\t\tif s.SyncType() != syncType {\n\t\t\treturn fmt.Errorf(\"expected syncType %v for peer \"+\n\t\t\t\t\"%x, got %v\", syncType, s.cfg.peerPub, typ)\n\t\t}\n\n\t\treturn nil\n\t}, time.Second)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// assertTransitionToChansSynced asserts the transition of an ActiveSync\n// GossipSyncer to its final chansSynced state.",
+      "length": 690,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func assertTransitionToChansSynced(t *testing.T, s *GossipSyncer, peer *mockPeer) {",
+      "content": "func assertTransitionToChansSynced(t *testing.T, s *GossipSyncer, peer *mockPeer) {\n\tt.Helper()\n\n\tquery := &lnwire.QueryChannelRange{\n\t\tFirstBlockHeight: 0,\n\t\tNumBlocks:        latestKnownHeight,\n\t}\n\tassertMsgSent(t, peer, query)\n\n\trequire.Eventually(t, func() bool {\n\t\treturn s.syncState() == waitingQueryRangeReply\n\t}, time.Second, 500*time.Millisecond)\n\n\trequire.NoError(t, s.ProcessQueryMsg(&lnwire.ReplyChannelRange{\n\t\tChainHash:        query.ChainHash,\n\t\tFirstBlockHeight: query.FirstBlockHeight,\n\t\tNumBlocks:        query.NumBlocks,\n\t\tComplete:         1,\n\t}, nil))\n\n\tchanSeries := s.cfg.channelSeries.(*mockChannelGraphTimeSeries)\n\n\tselect {\n\tcase <-chanSeries.filterReq:\n\t\tchanSeries.filterResp <- nil\n\tcase <-time.After(2 * time.Second):\n\t\tt.Fatal(\"expected to receive FilterKnownChanIDs request\")\n\t}\n\n\terr := wait.NoError(func() error {\n\t\tstate := syncerState(atomic.LoadUint32(&s.state))\n\t\tif state != chansSynced {\n\t\t\treturn fmt.Errorf(\"expected syncerState %v, got %v\",\n\t\t\t\tchansSynced, state)\n\t\t}\n\n\t\treturn nil\n\t}, time.Second)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n\n// assertPassiveSyncerTransition asserts that a gossip syncer goes through all\n// of its expected steps when transitioning from passive to active.",
+      "length": 1100,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func assertPassiveSyncerTransition(t *testing.T, s *GossipSyncer, peer *mockPeer) {",
+      "content": "func assertPassiveSyncerTransition(t *testing.T, s *GossipSyncer, peer *mockPeer) {\n\n\tt.Helper()\n\n\tassertActiveGossipTimestampRange(t, peer)\n\tassertSyncerStatus(t, s, chansSynced, ActiveSync)\n}\n\n// assertActiveSyncerTransition asserts that a gossip syncer goes through all of\n// its expected steps when transitioning from active to passive.",
+      "length": 248,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func assertActiveSyncerTransition(t *testing.T, s *GossipSyncer, peer *mockPeer) {",
+      "content": "func assertActiveSyncerTransition(t *testing.T, s *GossipSyncer, peer *mockPeer) {\n\tt.Helper()\n\n\tassertMsgSent(t, peer, &lnwire.GossipTimestampRange{\n\t\tFirstTimestamp: uint32(zeroTimestamp.Unix()),\n\t\tTimestampRange: 0,\n\t})\n\tassertSyncerStatus(t, s, chansSynced, PassiveSync)\n}\n",
+      "length": 186,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

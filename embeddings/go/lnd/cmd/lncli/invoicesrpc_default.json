@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/invoicesrpc_default.go",
+  "package": "!invoicesrpc",
+  "sections": [
+    {
+      "slug": "func invoicesCommands() []cli.Command {",
+      "content": "func invoicesCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

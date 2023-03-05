@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/utils_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "func timeout() func() {",
+      "content": "func timeout() func() {\n\tdone := make(chan struct{})\n\tgo func() {\n\t\tselect {\n\t\tcase <-time.After(5 * time.Second):\n\t\t\tpprof.Lookup(\"goroutine\").WriteTo(os.Stdout, 1)\n\n\t\t\tpanic(\"test timeout\")\n\t\tcase <-done:\n\t\t}\n\t}()\n\n\treturn func() {\n\t\tclose(done)\n\t}\n}\n",
+      "length": 214,
+      "tokens": 27,
+      "embedding": []
+    },
+    {
+      "slug": "func copyFile(dest, src string) error {",
+      "content": "func copyFile(dest, src string) error {\n\ts, err := os.Open(src)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer s.Close()\n\n\td, err := os.Create(dest)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := io.Copy(d, s); err != nil {\n\t\td.Close()\n\t\treturn err\n\t}\n\n\treturn d.Close()\n}\n\n// copyChannelState copies the OpenChannel state by copying the database and\n// creating a new struct from it. The copied state is returned.",
+      "length": 348,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func copyChannelState(t *testing.T, state *channeldb.OpenChannel) (",
+      "content": "func copyChannelState(t *testing.T, state *channeldb.OpenChannel) (\n\t*channeldb.OpenChannel, error) {\n\n\t// Make a copy of the DB.\n\tdbFile := filepath.Join(state.Db.GetParentDB().Path(), \"channel.db\")\n\ttempDbPath := t.TempDir()\n\n\ttempDbFile := filepath.Join(tempDbPath, \"channel.db\")\n\terr := copyFile(tempDbFile, dbFile)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tnewDb, err := channeldb.Open(tempDbPath)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tchans, err := newDb.ChannelStateDB().FetchAllChannels()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// We only support DBs with a single channel, for now.\n\tif len(chans) != 1 {\n\t\treturn nil, fmt.Errorf(\"found %d chans in the db\",\n\t\t\tlen(chans))\n\t}\n\n\treturn chans[0], nil\n}\n",
+      "length": 612,
+      "tokens": 90,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/failure.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type ClearTextError interface {",
+      "content": "type ClearTextError interface {\n\terror\n\n\t// WireMessage extracts a valid wire failure message from an internal\n\t// error which may contain additional metadata (which should not be\n\t// exposed to the network). This value may be nil in the case where\n\t// an unknown wire error is returned by one of our peers.\n\tWireMessage() lnwire.FailureMessage\n}\n\n// LinkError is an implementation of the ClearTextError interface which\n// represents failures that occur on our incoming or outgoing link.",
+      "length": 445,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "type LinkError struct {",
+      "content": "type LinkError struct {\n\t// msg returns the wire failure associated with the error.\n\t// This value should *not* be nil, because we should always\n\t// know the failure type for failures which occur at our own\n\t// node.\n\tmsg lnwire.FailureMessage\n\n\t// FailureDetail enriches the wire error with additional information.\n\tFailureDetail\n}\n\n// NewLinkError returns a LinkError with the failure message provided.\n// The failure message provided should *not* be nil, because we should\n// always know the failure type for failures which occur at our own node.",
+      "length": 513,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func NewLinkError(msg lnwire.FailureMessage) *LinkError {",
+      "content": "func NewLinkError(msg lnwire.FailureMessage) *LinkError {\n\treturn &LinkError{msg: msg}\n}\n\n// NewDetailedLinkError returns a link error that enriches a wire message with\n// a failure detail.",
+      "length": 127,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func NewDetailedLinkError(msg lnwire.FailureMessage,",
+      "content": "func NewDetailedLinkError(msg lnwire.FailureMessage,\n\tdetail FailureDetail) *LinkError {\n\n\treturn &LinkError{\n\t\tmsg:           msg,\n\t\tFailureDetail: detail,\n\t}\n}\n\n// WireMessage extracts a valid wire failure message from an internal\n// error which may contain additional metadata (which should not be\n// exposed to the network). This value should never be nil for LinkErrors,\n// because we are the ones failing the htlc.\n//\n// Note this is part of the ClearTextError interface.",
+      "length": 411,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LinkError) WireMessage() lnwire.FailureMessage {",
+      "content": "func (l *LinkError) WireMessage() lnwire.FailureMessage {\n\treturn l.msg\n}\n\n// Error returns the string representation of a link error.\n//\n// Note this is part of the ClearTextError interface.",
+      "length": 128,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (l *LinkError) Error() string {",
+      "content": "func (l *LinkError) Error() string {\n\t// If the link error has no failure detail, return the wire message's\n\t// error.\n\tif l.FailureDetail == nil {\n\t\treturn l.msg.Error()\n\t}\n\n\treturn l.FailureDetail.FailureString()\n}\n\n// ForwardingError wraps an lnwire.FailureMessage in a struct that also\n// includes the source of the error.",
+      "length": 279,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type ForwardingError struct {",
+      "content": "type ForwardingError struct {\n\t// FailureSourceIdx is the index of the node that sent the failure. With\n\t// this information, the dispatcher of a payment can modify their set of\n\t// candidate routes in response to the type of failure extracted. Index\n\t// zero is the self node.\n\tFailureSourceIdx int\n\n\t// msg is the wire message associated with the error. This value may\n\t// be nil in the case where we fail to decode failure message sent by\n\t// a peer.\n\tmsg lnwire.FailureMessage\n}\n\n// WireMessage extracts a valid wire failure message from an internal\n// error which may contain additional metadata (which should not be\n// exposed to the network). This value may be nil in the case where\n// an unknown wire error is returned by one of our peers.\n//\n// Note this is part of the ClearTextError interface.",
+      "length": 757,
+      "tokens": 138,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *ForwardingError) WireMessage() lnwire.FailureMessage {",
+      "content": "func (f *ForwardingError) WireMessage() lnwire.FailureMessage {\n\treturn f.msg\n}\n\n// Error implements the built-in error interface. We use this method to allow\n// the switch or any callers to insert additional context to the error message\n// returned.",
+      "length": 181,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *ForwardingError) Error() string {",
+      "content": "func (f *ForwardingError) Error() string {\n\treturn fmt.Sprintf(\n\t\t\"%v@%v\", f.msg, f.FailureSourceIdx,\n\t)\n}\n\n// NewForwardingError creates a new payment error which wraps a wire error\n// with additional metadata.",
+      "length": 162,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func NewForwardingError(failure lnwire.FailureMessage,",
+      "content": "func NewForwardingError(failure lnwire.FailureMessage,\n\tindex int) *ForwardingError {\n\n\treturn &ForwardingError{\n\t\tFailureSourceIdx: index,\n\t\tmsg:              failure,\n\t}\n}\n\n// NewUnknownForwardingError returns a forwarding error which has a nil failure\n// message. This constructor should only be used in the case where we cannot\n// decode the failure we have received from a peer.",
+      "length": 318,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func NewUnknownForwardingError(index int) *ForwardingError {",
+      "content": "func NewUnknownForwardingError(index int) *ForwardingError {\n\treturn &ForwardingError{\n\t\tFailureSourceIdx: index,\n\t}\n}\n\n// ErrorDecrypter is an interface that is used to decrypt the onion encrypted\n// failure reason an extra out a well formed error.",
+      "length": 182,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrorDecrypter interface {",
+      "content": "type ErrorDecrypter interface {\n\t// DecryptError peels off each layer of onion encryption from the first\n\t// hop, to the source of the error. A fully populated\n\t// lnwire.FailureMessage is returned along with the source of the\n\t// error.\n\tDecryptError(lnwire.OpaqueReason) (*ForwardingError, error)\n}\n\n// UnknownEncrypterType is an error message used to signal that an unexpected\n// EncrypterType was encountered during decoding.",
+      "length": 389,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "type UnknownEncrypterType hop.EncrypterType",
+      "content": "type UnknownEncrypterType hop.EncrypterType\n\n// Error returns a formatted error indicating the invalid EncrypterType.",
+      "length": 72,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (e UnknownEncrypterType) Error() string {",
+      "content": "func (e UnknownEncrypterType) Error() string {\n\treturn fmt.Sprintf(\"unknown error encrypter type: %d\", e)\n}\n\n// OnionErrorDecrypter is the interface that provides onion level error\n// decryption.",
+      "length": 144,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type OnionErrorDecrypter interface {",
+      "content": "type OnionErrorDecrypter interface {\n\t// DecryptError attempts to decrypt the passed encrypted error response.\n\t// The onion failure is encrypted in backward manner, starting from the\n\t// node where error have occurred. As a result, in order to decrypt the\n\t// error we need get all shared secret and apply decryption in the\n\t// reverse order.\n\tDecryptError(encryptedData []byte) (*sphinx.DecryptedError, error)\n}\n\n// SphinxErrorDecrypter wraps the sphinx data SphinxErrorDecrypter and maps the\n// returned errors to concrete lnwire.FailureMessage instances.",
+      "length": 512,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "type SphinxErrorDecrypter struct {",
+      "content": "type SphinxErrorDecrypter struct {\n\tOnionErrorDecrypter\n}\n\n// DecryptError peels off each layer of onion encryption from the first hop, to\n// the source of the error. A fully populated lnwire.FailureMessage is returned\n// along with the source of the error.\n//\n// NOTE: Part of the ErrorDecrypter interface.",
+      "length": 265,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *SphinxErrorDecrypter) DecryptError(reason lnwire.OpaqueReason) (",
+      "content": "func (s *SphinxErrorDecrypter) DecryptError(reason lnwire.OpaqueReason) (\n\t*ForwardingError, error) {\n\n\tfailure, err := s.OnionErrorDecrypter.DecryptError(reason)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Decode the failure. If an error occurs, we leave the failure message\n\t// field nil.\n\tr := bytes.NewReader(failure.Message)\n\tfailureMsg, err := lnwire.DecodeFailure(r, 0)\n\tif err != nil {\n\t\treturn NewUnknownForwardingError(failure.SenderIdx), nil\n\t}\n\n\treturn NewForwardingError(failureMsg, failure.SenderIdx), nil\n}\n\n// A compile time check to ensure ErrorDecrypter implements the Deobfuscator\n// interface.\nvar _ ErrorDecrypter = (*SphinxErrorDecrypter)(nil)\n",
+      "length": 570,
+      "tokens": 72,
+      "embedding": []
+    }
+  ]
+}

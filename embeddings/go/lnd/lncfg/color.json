@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/color.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "func ParseHexColor(colorStr string) (color.RGBA, error) {",
+      "content": "func ParseHexColor(colorStr string) (color.RGBA, error) {\n\t// Check if the hex color string is a valid color representation.\n\tif !validColorRegexp.MatchString(colorStr) {\n\t\treturn color.RGBA{}, errors.New(\"color must be specified \" +\n\t\t\t\"using a hexadecimal value in the form #RRGGBB\")\n\t}\n\n\t// Decode the hex color string to bytes.\n\t// The resulting byte array is in the form [R, G, B].\n\tcolorBytes, err := hex.DecodeString(colorStr[1:])\n\tif err != nil {\n\t\treturn color.RGBA{}, err\n\t}\n\n\treturn color.RGBA{R: colorBytes[0], G: colorBytes[1], B: colorBytes[2]}, nil\n}\n",
+      "length": 493,
+      "tokens": 74,
+      "embedding": []
+    }
+  ]
+}

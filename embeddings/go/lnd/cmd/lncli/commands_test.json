@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/commands_test.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func TestParseChanPoint(t *testing.T) {",
+      "content": "func TestParseChanPoint(t *testing.T) {\n\ttestCases := []struct {\n\t\tchannelPoinStr    string\n\t\tchannelPointIsNil bool\n\t\toutputIndex       uint32\n\t\terr               error\n\t}{\n\t\t{\n\t\t\t\"24581424081379576b4a7580ace91db10925d996a2a8d45c8034\" +\n\t\t\t\t\"3a5a467dc0bc:0\",\n\t\t\tfalse,\n\t\t\t0,\n\t\t\tnil,\n\t\t}, {\n\t\t\t\"24581424081379576b4a7580ace91db10925d996a2a8d45c8034\" +\n\t\t\t\t\"3a5a467dc0bc:4\",\n\t\t\tfalse,\n\t\t\t4,\n\t\t\tnil,\n\t\t}, {\n\t\t\t\":\",\n\t\t\ttrue,\n\t\t\t0,\n\t\t\terrBadChanPoint,\n\t\t}, {\n\t\t\t\":0\",\n\t\t\ttrue,\n\t\t\t0,\n\t\t\terrBadChanPoint,\n\t\t}, {\n\t\t\t\"24581424081379576b4a7580ace91db10925d996a2a8d45c8034\" +\n\t\t\t\t\"3a5a467dc0bc:\",\n\t\t\ttrue,\n\t\t\t0,\n\t\t\terrBadChanPoint,\n\t\t}, {\n\t\t\t\"24581424081379576b4a7580ace91db10925d996a2a8d45c8034\" +\n\t\t\t\t\"3a5a467dc0bc:string\",\n\t\t\ttrue,\n\t\t\t0,\n\t\t\terrors.New(\"unable to decode output index: strconv.\" +\n\t\t\t\t\"ParseInt: parsing \\\"string\\\": invalid syntax\"),\n\t\t}, {\n\t\t\t\"not_hex:0\",\n\t\t\ttrue,\n\t\t\t0,\n\t\t\terrors.New(\"unable to parse hex string: encoding/hex:\" +\n\t\t\t\t\" invalid byte: U+006E 'n'\"),\n\t\t},\n\t}\n\tfor _, tc := range testCases {\n\t\tcp, err := parseChanPoint(tc.channelPoinStr)\n\t\trequire.Equal(t, tc.err, err)\n\t\trequire.Equal(t, tc.channelPointIsNil, cp == nil)\n\t\tif !tc.channelPointIsNil {\n\t\t\trequire.Equal(t, tc.outputIndex, cp.OutputIndex)\n\t\t}\n\t}\n}\n",
+      "length": 1136,
+      "tokens": 114,
+      "embedding": []
+    }
+  ]
+}

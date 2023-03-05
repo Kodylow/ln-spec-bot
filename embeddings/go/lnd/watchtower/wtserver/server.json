@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtserver/server.go",
+  "package": "wtserver",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// DB provides persistent access to the server's sessions and for\n\t// storing state updates.\n\tDB DB\n\n\t// NodeKeyECDH is the the ECDH capable wrapper of the key to be used in\n\t// accepting new brontide connections.\n\tNodeKeyECDH keychain.SingleKeyECDH\n\n\t// Listeners specifies which address to which clients may connect.\n\tListeners []net.Listener\n\n\t// ReadTimeout specifies how long a client may go without sending a\n\t// message.\n\tReadTimeout time.Duration\n\n\t// WriteTimeout specifies how long a client may go without reading a\n\t// message from the other end, if the connection has stopped buffering\n\t// the server's replies.\n\tWriteTimeout time.Duration\n\n\t// NewAddress is used to generate reward addresses, where a cut of\n\t// successfully sent funds can be received.\n\tNewAddress func() (btcutil.Address, error)\n\n\t// ChainHash identifies the network that the server is watching.\n\tChainHash chainhash.Hash\n\n\t// NoAckCreateSession causes the server to not reply to create session\n\t// requests, this should only be used for testing.\n\tNoAckCreateSession bool\n\n\t// NoAckUpdates causes the server to not acknowledge state updates, this\n\t// should only be used for testing.\n\tNoAckUpdates bool\n\n\t// DisableReward causes the server to reject any session creation\n\t// attempts that request rewards.\n\tDisableReward bool\n}\n\n// Server houses the state required to handle watchtower peers. It's primary job\n// is to accept incoming connections, and dispatch processing of the client\n// message streams.",
+      "length": 1445,
+      "tokens": 220,
+      "embedding": []
+    },
+    {
+      "slug": "type Server struct {",
+      "content": "type Server struct {\n\tstarted sync.Once\n\tstopped sync.Once\n\n\tcfg *Config\n\n\tconnMgr *connmgr.ConnManager\n\n\tclientMtx sync.RWMutex\n\tclients   map[wtdb.SessionID]Peer\n\n\tnewPeers chan Peer\n\n\tlocalInit *wtwire.Init\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// New creates a new server to handle watchtower clients. The server will accept\n// clients connecting to the listener addresses, and allows them to open\n// sessions and send state updates.",
+      "length": 403,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func New(cfg *Config) (*Server, error) {",
+      "content": "func New(cfg *Config) (*Server, error) {\n\tlocalInit := wtwire.NewInitMessage(\n\t\tlnwire.NewRawFeatureVector(\n\t\t\twtwire.AltruistSessionsOptional,\n\t\t\twtwire.AnchorCommitOptional,\n\t\t),\n\t\tcfg.ChainHash,\n\t)\n\n\ts := &Server{\n\t\tcfg:       cfg,\n\t\tclients:   make(map[wtdb.SessionID]Peer),\n\t\tnewPeers:  make(chan Peer),\n\t\tlocalInit: localInit,\n\t\tquit:      make(chan struct{}),\n\t}\n\n\tconnMgr, err := connmgr.New(&connmgr.Config{\n\t\tListeners: cfg.Listeners,\n\t\tOnAccept:  s.inboundPeerConnected,\n\t\tDial:      noDial,\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\ts.connMgr = connMgr\n\n\treturn s, nil\n}\n\n// Start begins listening on the server's listeners.",
+      "length": 567,
+      "tokens": 60,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Start() error {",
+      "content": "func (s *Server) Start() error {\n\ts.started.Do(func() {\n\t\tlog.Infof(\"Starting watchtower server\")\n\n\t\ts.wg.Add(1)\n\t\tgo s.peerHandler()\n\n\t\ts.connMgr.Start()\n\n\t\tlog.Infof(\"Watchtower server started successfully\")\n\t})\n\treturn nil\n}\n\n// Stop shutdowns down the server's listeners and any active requests.",
+      "length": 253,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) Stop() error {",
+      "content": "func (s *Server) Stop() error {\n\ts.stopped.Do(func() {\n\t\tlog.Infof(\"Stopping watchtower server\")\n\n\t\ts.connMgr.Stop()\n\n\t\tclose(s.quit)\n\t\ts.wg.Wait()\n\n\t\tlog.Infof(\"Watchtower server stopped successfully\")\n\t})\n\treturn nil\n}\n\n// inboundPeerConnected is the callback given to the connection manager, and is\n// called each time a new connection is made to the watchtower. This method\n// proxies the new peers by filtering out those that do not satisfy the\n// server.Peer interface, and closes their connection. Successful connections\n// will be passed on to the public InboundPeerConnected method.",
+      "length": 542,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) inboundPeerConnected(c net.Conn) {",
+      "content": "func (s *Server) inboundPeerConnected(c net.Conn) {\n\tpeer, ok := c.(Peer)\n\tif !ok {\n\t\tlog.Warnf(\"incoming connection %T does not satisfy \"+\n\t\t\t\"server.Peer interface\", c)\n\t\tc.Close()\n\t\treturn\n\t}\n\n\ts.InboundPeerConnected(peer)\n}\n\n// InboundPeerConnected accepts a server.Peer, and handles the request submitted\n// by the client. This method serves also as a public endpoint for locally\n// registering new clients with the server.",
+      "length": 363,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) InboundPeerConnected(peer Peer) {",
+      "content": "func (s *Server) InboundPeerConnected(peer Peer) {\n\tselect {\n\tcase s.newPeers <- peer:\n\tcase <-s.quit:\n\t}\n}\n\n// peerHandler processes newly accepted peers and spawns a client handler for\n// each. The peerHandler is used to ensure that waitgrouped client handlers are\n// spawned from a waitgrouped goroutine.",
+      "length": 248,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) peerHandler() {",
+      "content": "func (s *Server) peerHandler() {\n\tdefer s.wg.Done()\n\tdefer s.removeAllPeers()\n\n\tfor {\n\t\tselect {\n\t\tcase peer := <-s.newPeers:\n\t\t\ts.wg.Add(1)\n\t\t\tgo s.handleClient(peer)\n\n\t\tcase <-s.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// handleClient processes a series watchtower messages sent by a client. The\n// client may either send:\n//   - a single CreateSession message.\n//   - a series of StateUpdate messages.\n//\n// This method uses the server's peer map to ensure at most one peer using the\n// same session id can enter the main event loop. The connection will be\n// dropped by the watchtower if no messages are sent or received by the\n// configured Read/WriteTimeouts.\n//\n// NOTE: This method MUST be run as a goroutine.",
+      "length": 644,
+      "tokens": 110,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) handleClient(peer Peer) {",
+      "content": "func (s *Server) handleClient(peer Peer) {\n\tdefer s.wg.Done()\n\n\t// Use the connection's remote pubkey as the client's session id.\n\tid := wtdb.NewSessionIDFromPubKey(peer.RemotePub())\n\n\t// Register this peer in the server's client map, and defer the\n\t// connection's cleanup. If the peer already exists, we will close the\n\t// connection and exit immediately.\n\terr := s.addPeer(&id, peer)\n\tif err != nil {\n\t\tpeer.Close()\n\t\treturn\n\t}\n\tdefer s.removePeer(&id, peer.RemoteAddr())\n\n\tmsg, err := s.readMessage(peer)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to read message from client %s@%s: %v\",\n\t\t\tid, peer.RemoteAddr(), err)\n\t\treturn\n\t}\n\n\tremoteInit, ok := msg.(*wtwire.Init)\n\tif !ok {\n\t\tlog.Errorf(\"Client %s@%s did not send Init msg as first \"+\n\t\t\t\"message\", id, peer.RemoteAddr())\n\t\treturn\n\t}\n\n\terr = s.sendMessage(peer, s.localInit)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to send Init msg to %s: %v\", id, err)\n\t\treturn\n\t}\n\n\terr = s.localInit.CheckRemoteInit(remoteInit, wtwire.FeatureNames)\n\tif err != nil {\n\t\tlog.Errorf(\"Cannot support client %s: %v\", id, err)\n\t\treturn\n\t}\n\n\tnextMsg, err := s.readMessage(peer)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to read watchtower msg from %s: %v\",\n\t\t\tid, err)\n\t\treturn\n\t}\n\n\tswitch msg := nextMsg.(type) {\n\tcase *wtwire.CreateSession:\n\t\t// Attempt to open a new session for this client.\n\t\terr = s.handleCreateSession(peer, &id, msg)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Unable to handle CreateSession \"+\n\t\t\t\t\"from %s: %v\", id, err)\n\t\t}\n\n\tcase *wtwire.DeleteSession:\n\t\terr = s.handleDeleteSession(peer, &id)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Unable to handle DeleteSession \"+\n\t\t\t\t\"from %s: %v\", id, err)\n\t\t}\n\n\tcase *wtwire.StateUpdate:\n\t\terr = s.handleStateUpdates(peer, &id, msg)\n\t\tif err != nil {\n\t\t\tlog.Errorf(\"Unable to handle StateUpdate \"+\n\t\t\t\t\"from %s: %v\", id, err)\n\t\t}\n\n\tdefault:\n\t\tlog.Errorf(\"Received unsupported message type: %T \"+\n\t\t\t\"from %s\", nextMsg, id)\n\t}\n}\n\n// connFailure is a default error used when a request failed with a non-zero\n// error code.",
+      "length": 1875,
+      "tokens": 277,
+      "embedding": []
+    },
+    {
+      "slug": "type connFailure struct {",
+      "content": "type connFailure struct {\n\tID   wtdb.SessionID\n\tCode wtwire.ErrorCode\n}\n\n// Error displays the SessionID and Code that caused the connection failure.",
+      "length": 119,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *connFailure) Error() string {",
+      "content": "func (f *connFailure) Error() string {\n\treturn fmt.Sprintf(\"connection with %s failed with code=%s\",\n\t\tf.ID, f.Code,\n\t)\n}\n\n// readMessage receives and parses the next message from the given Peer. An\n// error is returned if a message is not received before the server's read\n// timeout, the read off the wire failed, or the message could not be\n// deserialized.",
+      "length": 313,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) readMessage(peer Peer) (wtwire.Message, error) {",
+      "content": "func (s *Server) readMessage(peer Peer) (wtwire.Message, error) {\n\t// Set a read timeout to ensure we drop the client if not sent in a\n\t// timely manner.\n\terr := peer.SetReadDeadline(time.Now().Add(s.cfg.ReadTimeout))\n\tif err != nil {\n\t\terr = fmt.Errorf(\"unable to set read deadline: %v\", err)\n\t\treturn nil, err\n\t}\n\n\t// Pull the next message off the wire, and parse it according to the\n\t// watchtower wire specification.\n\trawMsg, err := peer.ReadNextMessage()\n\tif err != nil {\n\t\terr = fmt.Errorf(\"unable to read message: %v\", err)\n\t\treturn nil, err\n\t}\n\n\tmsgReader := bytes.NewReader(rawMsg)\n\tmsg, err := wtwire.ReadMessage(msgReader, 0)\n\tif err != nil {\n\t\terr = fmt.Errorf(\"unable to parse message: %v\", err)\n\t\treturn nil, err\n\t}\n\n\tlogMessage(peer, msg, true)\n\n\treturn msg, nil\n}\n\n// sendMessage sends a watchtower wire message to the target peer.",
+      "length": 753,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) sendMessage(peer Peer, msg wtwire.Message) error {",
+      "content": "func (s *Server) sendMessage(peer Peer, msg wtwire.Message) error {\n\t// TODO(conner): use buffer pool?\n\n\tvar b bytes.Buffer\n\t_, err := wtwire.WriteMessage(&b, msg, 0)\n\tif err != nil {\n\t\terr = fmt.Errorf(\"unable to encode msg: %v\", err)\n\t\treturn err\n\t}\n\n\terr = peer.SetWriteDeadline(time.Now().Add(s.cfg.WriteTimeout))\n\tif err != nil {\n\t\terr = fmt.Errorf(\"unable to set write deadline: %v\", err)\n\t\treturn err\n\t}\n\n\tlogMessage(peer, msg, false)\n\n\t_, err = peer.Write(b.Bytes())\n\treturn err\n}\n\n// addPeer stores a client in the server's client map. An error is returned if a\n// client with the same session id already exists.",
+      "length": 531,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) addPeer(id *wtdb.SessionID, peer Peer) error {",
+      "content": "func (s *Server) addPeer(id *wtdb.SessionID, peer Peer) error {\n\ts.clientMtx.Lock()\n\tdefer s.clientMtx.Unlock()\n\n\tif existingPeer, ok := s.clients[*id]; ok {\n\t\tlog.Infof(\"Already connected to peer %s@%s, disconnecting %s\",\n\t\t\tid, existingPeer.RemoteAddr(), peer.RemoteAddr())\n\t\treturn ErrPeerAlreadyConnected\n\t}\n\ts.clients[*id] = peer\n\n\tlog.Infof(\"Accepted incoming peer %s@%s\",\n\t\tid, peer.RemoteAddr())\n\n\treturn nil\n}\n\n// removePeer deletes a client from the server's client map. If a peer is found,\n// this method will close the peer's connection.",
+      "length": 468,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) removePeer(id *wtdb.SessionID, addr net.Addr) {",
+      "content": "func (s *Server) removePeer(id *wtdb.SessionID, addr net.Addr) {\n\tlog.Infof(\"Releasing incoming peer %s@%s\", id, addr)\n\n\ts.clientMtx.Lock()\n\tpeer, ok := s.clients[*id]\n\tdelete(s.clients, *id)\n\ts.clientMtx.Unlock()\n\n\tif ok {\n\t\tpeer.Close()\n\t}\n}\n\n// removeAllPeers iterates through the server's current set of peers and closes\n// all open connections.",
+      "length": 271,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Server) removeAllPeers() {",
+      "content": "func (s *Server) removeAllPeers() {\n\ts.clientMtx.Lock()\n\tdefer s.clientMtx.Unlock()\n\n\tfor id, peer := range s.clients {\n\t\tlog.Infof(\"Releasing incoming peer %s@%s\", id,\n\t\t\tpeer.RemoteAddr())\n\n\t\tdelete(s.clients, id)\n\t\tpeer.Close()\n\t}\n}\n\n// logMessage writes information about a message exchanged with a remote peer,\n// using directional prepositions to signal whether the message was sent or\n// received.",
+      "length": 354,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func logMessage(peer Peer, msg wtwire.Message, read bool) {",
+      "content": "func logMessage(peer Peer, msg wtwire.Message, read bool) {\n\tvar action = \"Received\"\n\tvar preposition = \"from\"\n\tif !read {\n\t\taction = \"Sending\"\n\t\tpreposition = \"to\"\n\t}\n\n\tsummary := wtwire.MessageSummary(msg)\n\tif len(summary) > 0 {\n\t\tsummary = \"(\" + summary + \")\"\n\t}\n\n\tlog.Debugf(\"%s %s%v %s %x@%s\", action, msg.MsgType(), summary,\n\t\tpreposition, peer.RemotePub().SerializeCompressed(),\n\t\tpeer.RemoteAddr())\n}\n\n// noDial is a dummy dial method passed to the server's connmgr.",
+      "length": 397,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func noDial(_ net.Addr) (net.Conn, error) {",
+      "content": "func noDial(_ net.Addr) (net.Conn, error) {\n\treturn nil, fmt.Errorf(\"watchtower cannot make outgoing conns\")\n}\n",
+      "length": 65,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

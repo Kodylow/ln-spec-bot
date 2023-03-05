@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/extra_bytes_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestExtraOpaqueDataEncodeDecode(t *testing.T) {",
+      "content": "func TestExtraOpaqueDataEncodeDecode(t *testing.T) {\n\tt.Parallel()\n\n\ttype testCase struct {\n\t\t// emptyBytes indicates if we should try to encode empty bytes\n\t\t// or not.\n\t\temptyBytes bool\n\n\t\t// inputBytes if emptyBytes is false, then we'll read in this\n\t\t// set of bytes instead.\n\t\tinputBytes []byte\n\t}\n\n\t// We should be able to read in an arbitrary set of bytes as an\n\t// ExtraOpaqueData, then encode those new bytes into a new instance.\n\t// The final two instances should be identical.\n\tscenario := func(test testCase) bool {\n\t\tvar (\n\t\t\textraData ExtraOpaqueData\n\t\t\tb         bytes.Buffer\n\t\t)\n\n\t\tcopy(extraData[:], test.inputBytes)\n\n\t\tif err := extraData.Encode(&b); err != nil {\n\t\t\tt.Fatalf(\"unable to encode extra data: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tvar newBytes ExtraOpaqueData\n\t\tif err := newBytes.Decode(&b); err != nil {\n\t\t\tt.Fatalf(\"unable to decode extra bytes: %v\", err)\n\t\t\treturn false\n\t\t}\n\n\t\tif !bytes.Equal(extraData[:], newBytes[:]) {\n\t\t\tt.Fatalf(\"expected %x, got %x\", extraData,\n\t\t\t\tnewBytes)\n\t\t\treturn false\n\t\t}\n\n\t\treturn true\n\t}\n\n\t// We'll make a function to generate random test data. Half of the\n\t// time, we'll actually feed in blank bytes.\n\tquickCfg := &quick.Config{\n\t\tValues: func(v []reflect.Value, r *rand.Rand) {\n\t\t\tvar newTestCase testCase\n\t\t\tif r.Int31()%2 == 0 {\n\t\t\t\tnewTestCase.emptyBytes = true\n\t\t\t}\n\n\t\t\tif !newTestCase.emptyBytes {\n\t\t\t\tnumBytes := r.Int31n(1000)\n\t\t\t\tnewTestCase.inputBytes = make([]byte, numBytes)\n\n\t\t\t\t_, err := r.Read(newTestCase.inputBytes)\n\t\t\t\tif err != nil {\n\t\t\t\t\tt.Fatalf(\"unable to gen random bytes: %v\", err)\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tv[0] = reflect.ValueOf(newTestCase)\n\t\t},\n\t}\n\n\tif err := quick.Check(scenario, quickCfg); err != nil {\n\t\tt.Fatalf(\"encode+decode test failed: %v\", err)\n\t}\n}\n",
+      "length": 1630,
+      "tokens": 236,
+      "embedding": []
+    },
+    {
+      "slug": "type recordProducer struct {",
+      "content": "type recordProducer struct {\n\trecord tlv.Record\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *recordProducer) Record() tlv.Record {",
+      "content": "func (r *recordProducer) Record() tlv.Record {\n\treturn r.record\n}\n\n// TestExtraOpaqueDataPackUnpackRecords tests that we're able to pack a set of\n// tlv.Records into a stream, and unpack them on the other side to obtain the\n// same set of records.",
+      "length": 195,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func TestExtraOpaqueDataPackUnpackRecords(t *testing.T) {",
+      "content": "func TestExtraOpaqueDataPackUnpackRecords(t *testing.T) {\n\tt.Parallel()\n\n\tvar (\n\t\ttype1 tlv.Type = 1\n\t\ttype2 tlv.Type = 2\n\n\t\tchannelType1 uint8 = 2\n\t\tchannelType2 uint8\n\n\t\thop1 uint32 = 99\n\t\thop2 uint32\n\t)\n\ttestRecordsProducers := []tlv.RecordProducer{\n\t\t&recordProducer{tlv.MakePrimitiveRecord(type1, &channelType1)},\n\t\t&recordProducer{tlv.MakePrimitiveRecord(type2, &hop1)},\n\t}\n\n\t// Now that we have our set of sample records and types, we'll encode\n\t// them into the passed ExtraOpaqueData instance.\n\tvar extraBytes ExtraOpaqueData\n\tif err := extraBytes.PackRecords(testRecordsProducers...); err != nil {\n\t\tt.Fatalf(\"unable to pack records: %v\", err)\n\t}\n\n\t// We'll now simulate decoding these types _back_ into records on the\n\t// other side.\n\tnewRecords := []tlv.RecordProducer{\n\t\t&recordProducer{tlv.MakePrimitiveRecord(type1, &channelType2)},\n\t\t&recordProducer{tlv.MakePrimitiveRecord(type2, &hop2)},\n\t}\n\ttypeMap, err := extraBytes.ExtractRecords(newRecords...)\n\trequire.NoError(t, err, \"unable to extract record\")\n\n\t// We should find that the new backing values have been populated with\n\t// the proper value.\n\tswitch {\n\tcase channelType1 != channelType2:\n\t\tt.Fatalf(\"wrong record for channel type: expected %v, got %v\",\n\t\t\tchannelType1, channelType2)\n\n\tcase hop1 != hop2:\n\t\tt.Fatalf(\"wrong record for hop: expected %v, got %v\", hop1,\n\t\t\thop2)\n\t}\n\n\t// Both types we created above should be found in the type map.\n\tif _, ok := typeMap[type1]; !ok {\n\t\tt.Fatalf(\"type1 not found in typeMap\")\n\t}\n\tif _, ok := typeMap[type2]; !ok {\n\t\tt.Fatalf(\"type2 not found in typeMap\")\n\t}\n}\n",
+      "length": 1467,
+      "tokens": 193,
+      "embedding": []
+    }
+  ]
+}

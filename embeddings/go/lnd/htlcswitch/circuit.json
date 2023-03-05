@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/circuit.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type CircuitKey = models.CircuitKey",
+      "content": "type CircuitKey = models.CircuitKey\n\n// PaymentCircuit is used by the switch as placeholder between when the\n// switch makes a forwarding decision and the outgoing link determines the\n// proper HTLC ID for the local log. After the outgoing HTLC ID has been\n// determined, the half circuit will be converted into a full PaymentCircuit.",
+      "length": 294,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "type PaymentCircuit struct {",
+      "content": "type PaymentCircuit struct {\n\t// AddRef is the forward reference of the Add update in the incoming\n\t// link's forwarding package. This value is set on the htlcPacket of the\n\t// returned settle/fail so that it can be removed from disk.\n\tAddRef channeldb.AddRef\n\n\t// Incoming is the circuit key identifying the incoming channel and htlc\n\t// index from which this ADD originates.\n\tIncoming CircuitKey\n\n\t// Outgoing is the circuit key identifying the outgoing channel, and the\n\t// HTLC index that was used to forward the ADD. It will be nil if this\n\t// circuit's keystone has not been set.\n\tOutgoing *CircuitKey\n\n\t// PaymentHash used as unique identifier of payment.\n\tPaymentHash [32]byte\n\n\t// IncomingAmount is the value of the HTLC from the incoming link.\n\tIncomingAmount lnwire.MilliSatoshi\n\n\t// OutgoingAmount specifies the value of the HTLC leaving the switch,\n\t// either as a payment or forwarded amount.\n\tOutgoingAmount lnwire.MilliSatoshi\n\n\t// ErrorEncrypter is used to re-encrypt the onion failure before\n\t// sending it back to the originator of the payment.\n\tErrorEncrypter hop.ErrorEncrypter\n\n\t// LoadedFromDisk is set true for any circuits loaded after the circuit\n\t// map is reloaded from disk.\n\t//\n\t// NOTE: This value is determined implicitly during a restart. It is not\n\t// persisted, and should never be set outside the circuit map.\n\tLoadedFromDisk bool\n}\n\n// HasKeystone returns true if an outgoing link has assigned this circuit's\n// outgoing circuit key.",
+      "length": 1404,
+      "tokens": 226,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *PaymentCircuit) HasKeystone() bool {",
+      "content": "func (c *PaymentCircuit) HasKeystone() bool {\n\treturn c.Outgoing != nil\n}\n\n// newPaymentCircuit initializes a payment circuit on the heap using the payment\n// hash and an in-memory htlc packet.",
+      "length": 143,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func newPaymentCircuit(hash *[32]byte, pkt *htlcPacket) *PaymentCircuit {",
+      "content": "func newPaymentCircuit(hash *[32]byte, pkt *htlcPacket) *PaymentCircuit {\n\tvar addRef channeldb.AddRef\n\tif pkt.sourceRef != nil {\n\t\taddRef = *pkt.sourceRef\n\t}\n\n\treturn &PaymentCircuit{\n\t\tAddRef: addRef,\n\t\tIncoming: CircuitKey{\n\t\t\tChanID: pkt.incomingChanID,\n\t\t\tHtlcID: pkt.incomingHTLCID,\n\t\t},\n\t\tPaymentHash:    *hash,\n\t\tIncomingAmount: pkt.incomingAmount,\n\t\tOutgoingAmount: pkt.amount,\n\t\tErrorEncrypter: pkt.obfuscator,\n\t}\n}\n\n// makePaymentCircuit initializes a payment circuit on the stack using the\n// payment hash and an in-memory htlc packet.",
+      "length": 454,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func makePaymentCircuit(hash *[32]byte, pkt *htlcPacket) PaymentCircuit {",
+      "content": "func makePaymentCircuit(hash *[32]byte, pkt *htlcPacket) PaymentCircuit {\n\tvar addRef channeldb.AddRef\n\tif pkt.sourceRef != nil {\n\t\taddRef = *pkt.sourceRef\n\t}\n\n\treturn PaymentCircuit{\n\t\tAddRef: addRef,\n\t\tIncoming: CircuitKey{\n\t\t\tChanID: pkt.incomingChanID,\n\t\t\tHtlcID: pkt.incomingHTLCID,\n\t\t},\n\t\tPaymentHash:    *hash,\n\t\tIncomingAmount: pkt.incomingAmount,\n\t\tOutgoingAmount: pkt.amount,\n\t\tErrorEncrypter: pkt.obfuscator,\n\t}\n}\n\n// Encode writes a PaymentCircuit to the provided io.Writer.",
+      "length": 394,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *PaymentCircuit) Encode(w io.Writer) error {",
+      "content": "func (c *PaymentCircuit) Encode(w io.Writer) error {\n\tif err := c.AddRef.Encode(w); err != nil {\n\t\treturn err\n\t}\n\n\tif err := c.Incoming.Encode(w); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := w.Write(c.PaymentHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\tvar scratch [8]byte\n\n\tbinary.BigEndian.PutUint64(scratch[:], uint64(c.IncomingAmount))\n\tif _, err := w.Write(scratch[:]); err != nil {\n\t\treturn err\n\t}\n\n\tbinary.BigEndian.PutUint64(scratch[:], uint64(c.OutgoingAmount))\n\tif _, err := w.Write(scratch[:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Defaults to EncrypterTypeNone.\n\tvar encrypterType hop.EncrypterType\n\tif c.ErrorEncrypter != nil {\n\t\tencrypterType = c.ErrorEncrypter.Type()\n\t}\n\n\terr := binary.Write(w, binary.BigEndian, encrypterType)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Skip encoding of error encrypter if this half add does not have one.\n\tif encrypterType == hop.EncrypterTypeNone {\n\t\treturn nil\n\t}\n\n\treturn c.ErrorEncrypter.Encode(w)\n}\n\n// Decode reads a PaymentCircuit from the provided io.Reader.",
+      "length": 909,
+      "tokens": 128,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *PaymentCircuit) Decode(r io.Reader) error {",
+      "content": "func (c *PaymentCircuit) Decode(r io.Reader) error {\n\tif err := c.AddRef.Decode(r); err != nil {\n\t\treturn err\n\t}\n\n\tif err := c.Incoming.Decode(r); err != nil {\n\t\treturn err\n\t}\n\n\tif _, err := io.ReadFull(r, c.PaymentHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\tvar scratch [8]byte\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn err\n\t}\n\tc.IncomingAmount = lnwire.MilliSatoshi(\n\t\tbinary.BigEndian.Uint64(scratch[:]))\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn err\n\t}\n\tc.OutgoingAmount = lnwire.MilliSatoshi(\n\t\tbinary.BigEndian.Uint64(scratch[:]))\n\n\t// Read the encrypter type used for this circuit.\n\tvar encrypterType hop.EncrypterType\n\terr := binary.Read(r, binary.BigEndian, &encrypterType)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tswitch encrypterType {\n\tcase hop.EncrypterTypeNone:\n\t\t// No encrypter was provided, such as when the payment is\n\t\t// locally initiated.\n\t\treturn nil\n\n\tcase hop.EncrypterTypeSphinx:\n\t\t// Sphinx encrypter was used as this is a forwarded HTLC.\n\t\tc.ErrorEncrypter = hop.NewSphinxErrorEncrypter()\n\n\tcase hop.EncrypterTypeMock:\n\t\t// Test encrypter.\n\t\tc.ErrorEncrypter = NewMockObfuscator()\n\n\tdefault:\n\t\treturn UnknownEncrypterType(encrypterType)\n\t}\n\n\treturn c.ErrorEncrypter.Decode(r)\n}\n\n// InKey returns the primary identifier for the circuit corresponding to the\n// incoming HTLC.",
+      "length": 1229,
+      "tokens": 164,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *PaymentCircuit) InKey() CircuitKey {",
+      "content": "func (c *PaymentCircuit) InKey() CircuitKey {\n\treturn c.Incoming\n}\n\n// OutKey returns the keystone identifying the outgoing link and HTLC ID. If the\n// circuit hasn't been completed, this method returns an EmptyKeystone, which is\n// an invalid outgoing circuit key. Only call this method if HasKeystone returns\n// true.",
+      "length": 267,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *PaymentCircuit) OutKey() CircuitKey {",
+      "content": "func (c *PaymentCircuit) OutKey() CircuitKey {\n\tif c.Outgoing != nil {\n\t\treturn *c.Outgoing\n\t}\n\n\treturn EmptyCircuitKey\n}\n",
+      "length": 69,
+      "tokens": 11,
+      "embedding": []
+    }
+  ]
+}

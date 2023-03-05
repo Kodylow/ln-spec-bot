@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/state_update.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type StateUpdate struct {",
+      "content": "type StateUpdate struct {\n\t// SeqNum is a 1-indexed, monotonically incrementing sequence number.\n\t// This number represents to the client's expected sequence number when\n\t// sending updates sent to the watchtower. This value must always be\n\t// less or equal than the negotiated MaxUpdates for the session, and\n\t// greater than the LastApplied sent in the same message.\n\tSeqNum uint16\n\n\t// LastApplied echos the LastApplied value returned from watchtower,\n\t// allowing the tower to detect faulty clients. This allow provides a\n\t// feedback mechanism for the tower if updates are allowed to stream in\n\t// an async fashion.\n\tLastApplied uint16\n\n\t// IsComplete is 1 if the watchtower should close the connection after\n\t// responding, and 0 otherwise.\n\tIsComplete uint8\n\n\t// Hint is the 16-byte prefix of the revoked commitment transaction ID\n\t// for which the encrypted blob can exact justice.\n\tHint [16]byte\n\n\t// EncryptedBlob is the serialized ciphertext containing all necessary\n\t// information to sweep the commitment transaction corresponding to the\n\t// Hint. The ciphertext is to be encrypted using the full transaction ID\n\t// of the revoked commitment transaction.\n\t//\n\t// The plaintext MUST be encoded using the negotiated Version for\n\t// this session. In addition, the signatures must be computed over a\n\t// sweep transaction honoring the decided SweepFeeRate, RewardRate, and\n\t// (possibly) reward address returned in the SessionInitReply.\n\tEncryptedBlob []byte\n}\n\n// A compile time check to ensure StateUpdate implements the wtwire.Message\n// interface.\nvar _ Message = (*StateUpdate)(nil)\n\n// Decode deserializes a serialized StateUpdate message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 1715,
+      "tokens": 265,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *StateUpdate) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (m *StateUpdate) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&m.SeqNum,\n\t\t&m.LastApplied,\n\t\t&m.IsComplete,\n\t\t&m.Hint,\n\t\t&m.EncryptedBlob,\n\t)\n}\n\n// Encode serializes the target StateUpdate into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 263,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *StateUpdate) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (m *StateUpdate) Encode(w io.Writer, pver uint32) error {\n\treturn WriteElements(w,\n\t\tm.SeqNum,\n\t\tm.LastApplied,\n\t\tm.IsComplete,\n\t\tm.Hint,\n\t\tm.EncryptedBlob,\n\t)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 230,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *StateUpdate) MsgType() MessageType {",
+      "content": "func (m *StateUpdate) MsgType() MessageType {\n\treturn MsgStateUpdate\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a StateUpdate\n// complete message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 212,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *StateUpdate) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (m *StateUpdate) MaxPayloadLength(uint32) uint32 {\n\treturn MaxMessagePayload\n}\n",
+      "length": 26,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

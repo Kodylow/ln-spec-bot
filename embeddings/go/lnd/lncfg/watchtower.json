@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/watchtower.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Watchtower struct {",
+      "content": "type Watchtower struct {\n\tActive bool `long:\"active\" description:\"If the watchtower should be active or not\"`\n\n\tTowerDir string `long:\"towerdir\" description:\"Directory of the watchtower.db\"`\n\n\twatchtower.Conf\n}\n",
+      "length": 180,
+      "tokens": 20,
+      "embedding": []
+    }
+  ]
+}

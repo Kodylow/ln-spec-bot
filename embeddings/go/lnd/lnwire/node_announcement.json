@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/node_announcement.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ErrUnknownAddrType struct {",
+      "content": "type ErrUnknownAddrType struct {\n\taddrType addressType\n}\n\n// Error returns a human readable string describing the error.\n//\n// NOTE: implements the error interface.",
+      "length": 126,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrUnknownAddrType) Error() string {",
+      "content": "func (e ErrUnknownAddrType) Error() string {\n\treturn fmt.Sprintf(\"unknown address type: %v\", e.addrType)\n}\n\n// ErrInvalidNodeAlias is an error returned if a node alias we parse on the\n// wire is invalid, as in it has non UTF-8 characters.",
+      "length": 189,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "type ErrInvalidNodeAlias struct{}",
+      "content": "type ErrInvalidNodeAlias struct{}\n\n// Error returns a human readable string describing the error.\n//\n// NOTE: implements the error interface.",
+      "length": 104,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrInvalidNodeAlias) Error() string {",
+      "content": "func (e ErrInvalidNodeAlias) Error() string {\n\treturn \"node alias has non-utf8 characters\"\n}\n\n// NodeAlias is a hex encoded UTF-8 string that may be displayed as an\n// alternative to the node's ID. Notice that aliases are not unique and may be\n// freely chosen by the node operators.",
+      "length": 232,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "type NodeAlias [32]byte",
+      "content": "type NodeAlias [32]byte\n\n// NewNodeAlias creates a new instance of a NodeAlias. Verification is\n// performed on the passed string to ensure it meets the alias requirements.",
+      "length": 146,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func NewNodeAlias(s string) (NodeAlias, error) {",
+      "content": "func NewNodeAlias(s string) (NodeAlias, error) {\n\tvar n NodeAlias\n\n\tif len(s) > 32 {\n\t\treturn n, fmt.Errorf(\"alias too large: max is %v, got %v\", 32,\n\t\t\tlen(s))\n\t}\n\n\tif !utf8.ValidString(s) {\n\t\treturn n, &ErrInvalidNodeAlias{}\n\t}\n\n\tcopy(n[:], []byte(s))\n\treturn n, nil\n}\n\n// String returns a utf8 string representation of the alias bytes.",
+      "length": 274,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (n NodeAlias) String() string {",
+      "content": "func (n NodeAlias) String() string {\n\t// Trim trailing zero-bytes for presentation\n\treturn string(bytes.Trim(n[:], \"\\x00\"))\n}\n\n// NodeAnnouncement message is used to announce the presence of a Lightning\n// node and also to signal that the node is accepting incoming connections.\n// Each NodeAnnouncement authenticating the advertised information within the\n// announcement via a signature using the advertised node pubkey.",
+      "length": 378,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "type NodeAnnouncement struct {",
+      "content": "type NodeAnnouncement struct {\n\t// Signature is used to prove the ownership of node id.\n\tSignature Sig\n\n\t// Features is the list of protocol features this node supports.\n\tFeatures *RawFeatureVector\n\n\t// Timestamp allows ordering in the case of multiple announcements.\n\tTimestamp uint32\n\n\t// NodeID is a public key which is used as node identification.\n\tNodeID [33]byte\n\n\t// RGBColor is used to customize their node's appearance in maps and\n\t// graphs\n\tRGBColor color.RGBA\n\n\t// Alias is used to customize their node's appearance in maps and\n\t// graphs\n\tAlias NodeAlias\n\n\t// Address includes two specification fields: 'ipv6' and 'port' on\n\t// which the node is accepting incoming connections.\n\tAddresses []net.Addr\n\n\t// ExtraOpaqueData is the set of data that was appended to this\n\t// message, some of which we may not actually know how to iterate or\n\t// parse. By holding onto this data, we ensure that we're able to\n\t// properly validate the set of signatures that cover these new fields,\n\t// and ensure we're able to make upgrades to the network in a forwards\n\t// compatible manner.\n\tExtraOpaqueData ExtraOpaqueData\n}\n\n// A compile time check to ensure NodeAnnouncement implements the\n// lnwire.Message interface.\nvar _ Message = (*NodeAnnouncement)(nil)\n\n// Decode deserializes a serialized NodeAnnouncement stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 1366,
+      "tokens": 219,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *NodeAnnouncement) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *NodeAnnouncement) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&a.Signature,\n\t\t&a.Features,\n\t\t&a.Timestamp,\n\t\t&a.NodeID,\n\t\t&a.RGBColor,\n\t\t&a.Alias,\n\t\t&a.Addresses,\n\t\t&a.ExtraOpaqueData,\n\t)\n}\n\n// Encode serializes the target NodeAnnouncement into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 311,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *NodeAnnouncement) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (a *NodeAnnouncement) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteSig(w, a.Signature); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteRawFeatureVector(w, a.Features); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint32(w, a.Timestamp); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, a.NodeID[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteColorRGBA(w, a.RGBColor); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteNodeAlias(w, a.Alias); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteNetAddrs(w, a.Addresses); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, a.ExtraOpaqueData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 645,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *NodeAnnouncement) MsgType() MessageType {",
+      "content": "func (a *NodeAnnouncement) MsgType() MessageType {\n\treturn MsgNodeAnnouncement\n}\n\n// DataToSign returns the part of the message that should be signed.",
+      "length": 96,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *NodeAnnouncement) DataToSign() ([]byte, error) {",
+      "content": "func (a *NodeAnnouncement) DataToSign() ([]byte, error) {\n\n\t// We should not include the signatures itself.\n\tbuffer := make([]byte, 0, MaxMsgBody)\n\tbuf := bytes.NewBuffer(buffer)\n\n\tif err := WriteRawFeatureVector(buf, a.Features); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteUint32(buf, a.Timestamp); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.NodeID[:]); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteColorRGBA(buf, a.RGBColor); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteNodeAlias(buf, a.Alias); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteNetAddrs(buf, a.Addresses); err != nil {\n\t\treturn nil, err\n\t}\n\n\tif err := WriteBytes(buf, a.ExtraOpaqueData); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn buf.Bytes(), nil\n}\n",
+      "length": 669,
+      "tokens": 111,
+      "embedding": []
+    }
+  ]
+}

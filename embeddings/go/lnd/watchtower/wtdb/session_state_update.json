@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/session_state_update.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type SessionStateUpdate struct {",
+      "content": "type SessionStateUpdate struct {\n\t// ID the session id of the client who sent the state update.\n\tID SessionID\n\n\t// SeqNum the sequence number of the update within the session.\n\tSeqNum uint16\n\n\t// LastApplied the highest index that client has acknowledged is\n\t// committed\n\tLastApplied uint16\n\n\t// Hint is the 16-byte prefix of the revoked commitment transaction.\n\tHint blob.BreachHint\n\n\t// EncryptedBlob is a ciphertext containing the sweep information for\n\t// exacting justice if the commitment transaction matching the breach\n\t// hint is broadcast.\n\tEncryptedBlob []byte\n}\n\n// Encode serializes the state update into the provided io.Writer.",
+      "length": 590,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *SessionStateUpdate) Encode(w io.Writer) error {",
+      "content": "func (u *SessionStateUpdate) Encode(w io.Writer) error {\n\treturn WriteElements(w,\n\t\tu.ID,\n\t\tu.SeqNum,\n\t\tu.LastApplied,\n\t\tu.Hint,\n\t\tu.EncryptedBlob,\n\t)\n}\n\n// Decode deserializes the target state update from the provided io.Reader.",
+      "length": 163,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (u *SessionStateUpdate) Decode(r io.Reader) error {",
+      "content": "func (u *SessionStateUpdate) Decode(r io.Reader) error {\n\treturn ReadElements(r,\n\t\t&u.ID,\n\t\t&u.SeqNum,\n\t\t&u.LastApplied,\n\t\t&u.Hint,\n\t\t&u.EncryptedBlob,\n\t)\n}\n",
+      "length": 92,
+      "tokens": 9,
+      "embedding": []
+    }
+  ]
+}

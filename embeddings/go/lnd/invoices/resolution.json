@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/resolution.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type HtlcResolution interface {",
+      "content": "type HtlcResolution interface {\n\t// CircuitKey returns the circuit key for the htlc that we have a\n\t// resolution for.\n\tCircuitKey() CircuitKey\n}\n\n// HtlcFailResolution is an implementation of the HtlcResolution interface\n// which is returned when a htlc is failed.",
+      "length": 227,
+      "tokens": 37,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcFailResolution struct {",
+      "content": "type HtlcFailResolution struct {\n\t// circuitKey is the key of the htlc for which we have a resolution.\n\tcircuitKey CircuitKey\n\n\t// AcceptHeight is the original height at which the htlc was accepted.\n\tAcceptHeight int32\n\n\t// Outcome indicates the outcome of the invoice registry update.\n\tOutcome FailResolutionResult\n}\n\n// NewFailResolution returns a htlc failure resolution.",
+      "length": 331,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "func NewFailResolution(key CircuitKey, acceptHeight int32,",
+      "content": "func NewFailResolution(key CircuitKey, acceptHeight int32,\n\toutcome FailResolutionResult) *HtlcFailResolution {\n\n\treturn &HtlcFailResolution{\n\t\tcircuitKey:   key,\n\t\tAcceptHeight: acceptHeight,\n\t\tOutcome:      outcome,\n\t}\n}\n\n// CircuitKey returns the circuit key for the htlc that we have a\n// resolution for.\n//\n// Note: it is part of the HtlcResolution interface.",
+      "length": 293,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (f *HtlcFailResolution) CircuitKey() CircuitKey {",
+      "content": "func (f *HtlcFailResolution) CircuitKey() CircuitKey {\n\treturn f.circuitKey\n}\n\n// HtlcSettleResolution is an implementation of the HtlcResolution interface\n// which is returned when a htlc is settled.",
+      "length": 141,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type HtlcSettleResolution struct {",
+      "content": "type HtlcSettleResolution struct {\n\t// Preimage is the htlc preimage. Its value is nil in case of a cancel.\n\tPreimage lntypes.Preimage\n\n\t// circuitKey is the key of the htlc for which we have a resolution.\n\tcircuitKey CircuitKey\n\n\t// acceptHeight is the original height at which the htlc was accepted.\n\tAcceptHeight int32\n\n\t// Outcome indicates the outcome of the invoice registry update.\n\tOutcome SettleResolutionResult\n}\n\n// NewSettleResolution returns a htlc resolution which is associated with a\n// settle.",
+      "length": 461,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func NewSettleResolution(preimage lntypes.Preimage, key CircuitKey,",
+      "content": "func NewSettleResolution(preimage lntypes.Preimage, key CircuitKey,\n\tacceptHeight int32,\n\toutcome SettleResolutionResult) *HtlcSettleResolution {\n\n\treturn &HtlcSettleResolution{\n\t\tPreimage:     preimage,\n\t\tcircuitKey:   key,\n\t\tAcceptHeight: acceptHeight,\n\t\tOutcome:      outcome,\n\t}\n}\n\n// CircuitKey returns the circuit key for the htlc that we have a\n// resolution for.\n//\n// Note: it is part of the HtlcResolution interface.",
+      "length": 344,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *HtlcSettleResolution) CircuitKey() CircuitKey {",
+      "content": "func (s *HtlcSettleResolution) CircuitKey() CircuitKey {\n\treturn s.circuitKey\n}\n\n// htlcAcceptResolution is an implementation of the HtlcResolution interface\n// which is returned when a htlc is accepted. This struct is not exported\n// because the codebase uses a nil resolution to indicate that a htlc was\n// accepted. This struct is used internally in the invoice registry to\n// surface accept resolution results. When an invoice update returns an\n// acceptResolution, a nil resolution should be surfaced.",
+      "length": 441,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "type htlcAcceptResolution struct {",
+      "content": "type htlcAcceptResolution struct {\n\t// circuitKey is the key of the htlc for which we have a resolution.\n\tcircuitKey CircuitKey\n\n\t// autoRelease signals that the htlc should be automatically released\n\t// after a timeout.\n\tautoRelease bool\n\n\t// acceptTime is the time at which this htlc was accepted.\n\tacceptTime time.Time\n\n\t// outcome indicates the outcome of the invoice registry update.\n\toutcome acceptResolutionResult\n}\n\n// newAcceptResolution returns a htlc resolution which is associated with a\n// htlc accept.",
+      "length": 465,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func newAcceptResolution(key CircuitKey,",
+      "content": "func newAcceptResolution(key CircuitKey,\n\toutcome acceptResolutionResult) *htlcAcceptResolution {\n\n\treturn &htlcAcceptResolution{\n\t\tcircuitKey: key,\n\t\toutcome:    outcome,\n\t}\n}\n\n// CircuitKey returns the circuit key for the htlc that we have a\n// resolution for.\n//\n// Note: it is part of the HtlcResolution interface.",
+      "length": 266,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *htlcAcceptResolution) CircuitKey() CircuitKey {",
+      "content": "func (a *htlcAcceptResolution) CircuitKey() CircuitKey {\n\treturn a.circuitKey\n}\n",
+      "length": 21,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/htlcswitch/sequencer.go",
+  "package": "htlcswitch",
+  "sections": [
+    {
+      "slug": "type Sequencer interface {",
+      "content": "type Sequencer interface {\n\t// NextID returns a unique sequence number for each invocation.\n\tNextID() (uint64, error)\n}\n\nvar (\n\t// nextPaymentIDKey identifies the bucket that will keep track of the\n\t// persistent sequence numbers for payments.\n\tnextPaymentIDKey = []byte(\"next-payment-id-key\")\n\n\t// ErrSequencerCorrupted signals that the persistence engine was not\n\t// initialized, or has been corrupted since startup.\n\tErrSequencerCorrupted = errors.New(\n\t\t\"sequencer database has been corrupted\")\n)\n\n// persistentSequencer is a concrete implementation of IDGenerator, that uses\n// channeldb to allocate sequence numbers.",
+      "length": 579,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "type persistentSequencer struct {",
+      "content": "type persistentSequencer struct {\n\tdb *channeldb.DB\n\n\tmu sync.Mutex\n\n\tnextID    uint64\n\thorizonID uint64\n}\n\n// NewPersistentSequencer initializes a new sequencer using a channeldb backend.",
+      "length": 146,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func NewPersistentSequencer(db *channeldb.DB) (Sequencer, error) {",
+      "content": "func NewPersistentSequencer(db *channeldb.DB) (Sequencer, error) {\n\tg := &persistentSequencer{\n\t\tdb: db,\n\t}\n\n\t// Ensure the database bucket is created before any updates are\n\t// performed.\n\tif err := g.initDB(); err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn g, nil\n}\n\n// NextID returns a unique sequence number for every invocation, persisting the\n// assignment to avoid reuse.",
+      "length": 293,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *persistentSequencer) NextID() (uint64, error) {",
+      "content": "func (s *persistentSequencer) NextID() (uint64, error) {\n\n\t// nextID will be the unique sequence number returned if no errors are\n\t// encountered.\n\tvar nextID uint64\n\n\t// If our sequence batch has not been exhausted, we can allocate the\n\t// next identifier in the range.\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\n\tif s.nextID < s.horizonID {\n\t\tnextID = s.nextID\n\t\ts.nextID++\n\n\t\treturn nextID, nil\n\t}\n\n\t// Otherwise, our sequence batch has been exhausted. We use the last\n\t// known sequence number on disk to mark the beginning of the next\n\t// sequence batch, and allocate defaultSequenceBatchSize (1000) at a\n\t// time.\n\t//\n\t// NOTE: This also will happen on the first invocation after startup,\n\t// i.e. when nextID and horizonID are both 0. The next sequence batch to be\n\t// allocated will start from the last known tip on disk, which is fine\n\t// as we only require uniqueness of the allocated numbers.\n\tvar nextHorizonID uint64\n\tif err := kvdb.Update(s.db, func(tx kvdb.RwTx) error {\n\t\tnextIDBkt := tx.ReadWriteBucket(nextPaymentIDKey)\n\t\tif nextIDBkt == nil {\n\t\t\treturn ErrSequencerCorrupted\n\t\t}\n\n\t\tnextID = nextIDBkt.Sequence()\n\t\tnextHorizonID = nextID + defaultSequenceBatchSize\n\n\t\t// Cannot fail when used in Update.\n\t\tnextIDBkt.SetSequence(nextHorizonID)\n\n\t\treturn nil\n\t}, func() {\n\t\tnextHorizonID = 0\n\t}); err != nil {\n\t\treturn 0, err\n\t}\n\n\t// Never assign index zero, to avoid collisions with the EmptyKeystone.\n\tif nextID == 0 {\n\t\tnextID++\n\t}\n\n\t// If our batch sequence allocation succeed, update our in-memory values\n\t// so we can continue to allocate sequence numbers without hitting disk.\n\t// The nextID is incremented by one in memory so the in can be used\n\t// issued directly on the next invocation.\n\ts.nextID = nextID + 1\n\ts.horizonID = nextHorizonID\n\n\treturn nextID, nil\n}\n\n// initDB populates the bucket used to generate payment sequence numbers.",
+      "length": 1736,
+      "tokens": 282,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *persistentSequencer) initDB() error {",
+      "content": "func (s *persistentSequencer) initDB() error {\n\treturn kvdb.Update(s.db, func(tx kvdb.RwTx) error {\n\t\t_, err := tx.CreateTopLevelBucket(nextPaymentIDKey)\n\t\treturn err\n\t}, func() {})\n}\n",
+      "length": 132,
+      "tokens": 16,
+      "embedding": []
+    }
+  ]
+}

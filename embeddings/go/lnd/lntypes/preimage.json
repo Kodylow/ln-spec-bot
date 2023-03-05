@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lntypes/preimage.go",
+  "package": "lntypes",
+  "sections": [
+    {
+      "slug": "type Preimage [PreimageSize]byte",
+      "content": "type Preimage [PreimageSize]byte\n\n// String returns the Preimage as a hexadecimal string.",
+      "length": 55,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (p Preimage) String() string {",
+      "content": "func (p Preimage) String() string {\n\treturn hex.EncodeToString(p[:])\n}\n\n// MakePreimage returns a new Preimage from a bytes slice. An error is returned\n// if the number of bytes passed in is not PreimageSize.",
+      "length": 168,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func MakePreimage(newPreimage []byte) (Preimage, error) {",
+      "content": "func MakePreimage(newPreimage []byte) (Preimage, error) {\n\tnhlen := len(newPreimage)\n\tif nhlen != PreimageSize {\n\t\treturn Preimage{}, fmt.Errorf(\"invalid preimage length of %v, \"+\n\t\t\t\"want %v\", nhlen, PreimageSize)\n\t}\n\n\tvar preimage Preimage\n\tcopy(preimage[:], newPreimage)\n\n\treturn preimage, nil\n}\n\n// MakePreimageFromStr creates a Preimage from a hex preimage string.",
+      "length": 299,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func MakePreimageFromStr(newPreimage string) (Preimage, error) {",
+      "content": "func MakePreimageFromStr(newPreimage string) (Preimage, error) {\n\t// Return error if preimage string is of incorrect length.\n\tif len(newPreimage) != PreimageSize*2 {\n\t\treturn Preimage{}, fmt.Errorf(\"invalid preimage string length \"+\n\t\t\t\"of %v, want %v\", len(newPreimage), PreimageSize*2)\n\t}\n\n\tpreimage, err := hex.DecodeString(newPreimage)\n\tif err != nil {\n\t\treturn Preimage{}, err\n\t}\n\n\treturn MakePreimage(preimage)\n}\n\n// Hash returns the sha256 hash of the preimage.",
+      "length": 389,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Preimage) Hash() Hash {",
+      "content": "func (p *Preimage) Hash() Hash {\n\treturn Hash(sha256.Sum256(p[:]))\n}\n\n// Matches returns whether this preimage is the preimage of the given hash.",
+      "length": 109,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (p *Preimage) Matches(h Hash) bool {",
+      "content": "func (p *Preimage) Matches(h Hash) bool {\n\treturn h == p.Hash()\n}\n",
+      "length": 22,
+      "tokens": 5,
+      "embedding": []
+    }
+  ]
+}

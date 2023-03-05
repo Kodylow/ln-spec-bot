@@ -1,0 +1,132 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/chaneventstore_testctx_test.go",
+  "package": "chanfitness",
+  "sections": [
+    {
+      "slug": "type chanEventStoreTestCtx struct {",
+      "content": "type chanEventStoreTestCtx struct {\n\tt *testing.T\n\n\tstore *ChannelEventStore\n\n\tchannelSubscription *mockSubscription\n\tpeerSubscription    *mockSubscription\n\n\t// testVarIdx is an index which will be used to deterministically add\n\t// channels and public keys to our test context. We use a single value\n\t// for a single pubkey + channel combination because its actual value\n\t// does not matter.\n\ttestVarIdx int\n\n\t// clock is the clock that our test store will use.\n\tclock *clock.TestClock\n\n\t// flapUpdates stores our most recent set of updates flap counts.\n\tflapUpdates peerFlapCountMap\n\n\t// flapCountUpdates is a channel which receives new flap counts.\n\tflapCountUpdates chan peerFlapCountMap\n\n\t// stopped is closed when our test context is fully shutdown. It is\n\t// used to prevent calling of functions which can only be called after\n\t// shutdown.\n\tstopped chan struct{}\n}\n\n// newChanEventStoreTestCtx creates a test context which can be used to test\n// the event store.",
+      "length": 904,
+      "tokens": 139,
+      "embedding": []
+    },
+    {
+      "slug": "func newChanEventStoreTestCtx(t *testing.T) *chanEventStoreTestCtx {",
+      "content": "func newChanEventStoreTestCtx(t *testing.T) *chanEventStoreTestCtx {\n\ttestCtx := &chanEventStoreTestCtx{\n\t\tt:                   t,\n\t\tchannelSubscription: newMockSubscription(t),\n\t\tpeerSubscription:    newMockSubscription(t),\n\t\tclock:               clock.NewTestClock(testNow),\n\t\tflapUpdates:         make(peerFlapCountMap),\n\t\tflapCountUpdates:    make(chan peerFlapCountMap),\n\t\tstopped:             make(chan struct{}),\n\t}\n\n\tcfg := &Config{\n\t\tClock: testCtx.clock,\n\t\tSubscribeChannelEvents: func() (subscribe.Subscription, error) {\n\t\t\treturn testCtx.channelSubscription, nil\n\t\t},\n\t\tSubscribePeerEvents: func() (subscribe.Subscription, error) {\n\t\t\treturn testCtx.peerSubscription, nil\n\t\t},\n\t\tGetOpenChannels: func() ([]*channeldb.OpenChannel, error) {\n\t\t\treturn nil, nil\n\t\t},\n\t\tWriteFlapCount: func(updates map[route.Vertex]*channeldb.FlapCount) error {\n\t\t\t// Send our whole update map into the test context's\n\t\t\t// updates channel. The test will need to assert flap\n\t\t\t// count updated or this send will timeout.\n\t\t\tselect {\n\t\t\tcase testCtx.flapCountUpdates <- updates:\n\n\t\t\tcase <-time.After(timeout):\n\t\t\t\tt.Fatalf(\"WriteFlapCount timeout\")\n\t\t\t}\n\n\t\t\treturn nil\n\t\t},\n\t\tReadFlapCount: func(peer route.Vertex) (*channeldb.FlapCount, error) {\n\t\t\tcount, ok := testCtx.flapUpdates[peer]\n\t\t\tif !ok {\n\t\t\t\treturn nil, channeldb.ErrNoPeerBucket\n\t\t\t}\n\n\t\t\treturn count, nil\n\t\t},\n\t\tFlapCountTicker: ticker.NewForce(FlapCountFlushRate),\n\t}\n\n\ttestCtx.store = NewChannelEventStore(cfg)\n\n\treturn testCtx\n}\n\n// start starts the test context's event store.",
+      "length": 1418,
+      "tokens": 137,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) start() {",
+      "content": "func (c *chanEventStoreTestCtx) start() {\n\trequire.NoError(c.t, c.store.Start())\n}\n\n// stop stops the channel event store's subscribe servers and the store itself.",
+      "length": 118,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) stop() {",
+      "content": "func (c *chanEventStoreTestCtx) stop() {\n\t// On shutdown of our event store, we write flap counts to disk. In our\n\t// test context, this write function is blocked on asserting that the\n\t// update has occurred. We stop our store in a goroutine so that we\n\t// can shut it down and assert that it performs these on-shutdown\n\t// updates. The stopped channel is used to ensure that we do not finish\n\t// our test before this shutdown has completed.\n\tgo func() {\n\t\tc.store.Stop()\n\t\tclose(c.stopped)\n\t}()\n\n\t// We write our flap count to disk on shutdown, assert that the most\n\t// recent record that the server has is written on shutdown. Calling\n\t// this assert unblocks the stop function above. We don't check values\n\t// here, so that our tests don't all require providing an expected swap\n\t// count, but at least assert that the write occurred.\n\tc.assertFlapCountUpdated()\n\n\t<-c.stopped\n\n\t// Make sure that the cancel function was called for both of our\n\t// subscription mocks.\n\tc.channelSubscription.assertCancelled()\n\tc.peerSubscription.assertCancelled()\n}\n\n// newChannel creates a new, unique test channel. Note that this function\n// does not add it to the test event store, it just creates mocked values.",
+      "length": 1134,
+      "tokens": 190,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) newChannel() (route.Vertex, *btcec.PublicKey,",
+      "content": "func (c *chanEventStoreTestCtx) newChannel() (route.Vertex, *btcec.PublicKey,\n\twire.OutPoint) {\n\n\t// Create a pubkey for our channel peer.\n\tpubKey := btcec.NewPublicKey(\n\t\tnew(btcec.FieldVal).SetInt(uint16(c.testVarIdx)),\n\t\tnew(btcec.FieldVal).SetInt(uint16(c.testVarIdx)),\n\t)\n\n\t// Create vertex from our pubkey.\n\tvertex, err := route.NewVertexFromBytes(pubKey.SerializeCompressed())\n\trequire.NoError(c.t, err)\n\n\t// Create a channel point using our channel index, then increment it.\n\tchanPoint := wire.OutPoint{\n\t\tHash:  [chainhash.HashSize]byte{1, 2, 3},\n\t\tIndex: uint32(c.testVarIdx),\n\t}\n\n\t// Increment the index we use so that the next channel and pubkey we\n\t// create will be unique.\n\tc.testVarIdx++\n\n\treturn vertex, pubKey, chanPoint\n}\n\n// createChannel creates a new channel, notifies the event store that it has\n// been created and returns the peer vertex, pubkey and channel point.",
+      "length": 785,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) createChannel() (route.Vertex, *btcec.PublicKey,",
+      "content": "func (c *chanEventStoreTestCtx) createChannel() (route.Vertex, *btcec.PublicKey,\n\twire.OutPoint) {\n\n\tvertex, pubKey, chanPoint := c.newChannel()\n\tc.sendChannelOpenedUpdate(pubKey, chanPoint)\n\n\treturn vertex, pubKey, chanPoint\n}\n\n// closeChannel sends a close channel event to our subscribe server.",
+      "length": 208,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) closeChannel(channel wire.OutPoint,",
+      "content": "func (c *chanEventStoreTestCtx) closeChannel(channel wire.OutPoint,\n\tpeer *btcec.PublicKey) {\n\n\tupdate := channelnotifier.ClosedChannelEvent{\n\t\tCloseSummary: &channeldb.ChannelCloseSummary{\n\t\t\tChanPoint: channel,\n\t\t\tRemotePub: peer,\n\t\t},\n\t}\n\n\tc.channelSubscription.sendUpdate(update)\n}\n\n// tickFlapCount forces a tick for our flap count ticker with the current time.",
+      "length": 286,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) tickFlapCount() {",
+      "content": "func (c *chanEventStoreTestCtx) tickFlapCount() {\n\ttestTicker := c.store.cfg.FlapCountTicker.(*ticker.Force)\n\n\tselect {\n\tcase testTicker.Force <- c.store.cfg.Clock.Now():\n\n\tcase <-time.After(timeout):\n\t\tc.t.Fatalf(\"could not tick flap count ticker\")\n\t}\n}\n\n// peerEvent sends a peer online or offline event to the store for the peer\n// provided.",
+      "length": 283,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) peerEvent(peer route.Vertex, online bool) {",
+      "content": "func (c *chanEventStoreTestCtx) peerEvent(peer route.Vertex, online bool) {\n\tvar update interface{}\n\tif online {\n\t\tupdate = peernotifier.PeerOnlineEvent{PubKey: peer}\n\t} else {\n\t\tupdate = peernotifier.PeerOfflineEvent{PubKey: peer}\n\t}\n\n\tc.peerSubscription.sendUpdate(update)\n}\n\n// sendChannelOpenedUpdate notifies the test event store that a channel has\n// been opened.",
+      "length": 282,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) sendChannelOpenedUpdate(pubkey *btcec.PublicKey,",
+      "content": "func (c *chanEventStoreTestCtx) sendChannelOpenedUpdate(pubkey *btcec.PublicKey,\n\tchannel wire.OutPoint) {\n\n\tupdate := channelnotifier.OpenChannelEvent{\n\t\tChannel: &channeldb.OpenChannel{\n\t\t\tFundingOutpoint: channel,\n\t\t\tIdentityPub:     pubkey,\n\t\t},\n\t}\n\n\tc.channelSubscription.sendUpdate(update)\n}\n\n// assertFlapCountUpdated asserts that our store has made an attempt to write\n// our current set of flap counts to disk and sets this value in our test ctx.\n// Note that it does not check the values of the update.",
+      "length": 417,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) assertFlapCountUpdated() {",
+      "content": "func (c *chanEventStoreTestCtx) assertFlapCountUpdated() {\n\tselect {\n\tcase c.flapUpdates = <-c.flapCountUpdates:\n\n\tcase <-time.After(timeout):\n\t\tc.t.Fatalf(\"assertFlapCountUpdated timeout\")\n\t}\n}\n\n// assertFlapCountUpdates asserts that out current record of flap counts is\n// as expected.",
+      "length": 219,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *chanEventStoreTestCtx) assertFlapCountUpdates(expected peerFlapCountMap) {",
+      "content": "func (c *chanEventStoreTestCtx) assertFlapCountUpdates(expected peerFlapCountMap) {\n\trequire.Equal(c.t, expected, c.flapUpdates)\n}\n\n// mockSubscription is a mock subscription client that blocks on sends into the\n// updates channel. We use this mock rather than an actual subscribe client\n// because they do not block, which makes tests race (because we have no way\n// to guarantee that the test client consumes the update before shutdown).",
+      "length": 349,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "type mockSubscription struct {",
+      "content": "type mockSubscription struct {\n\tt       *testing.T\n\tupdates chan interface{}\n\n\t// Embed the subscription interface in this mock so that we satisfy it.\n\tsubscribe.Subscription\n}\n\n// newMockSubscription creates a mock subscription.",
+      "length": 191,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockSubscription(t *testing.T) *mockSubscription {",
+      "content": "func newMockSubscription(t *testing.T) *mockSubscription {\n\treturn &mockSubscription{\n\t\tt:       t,\n\t\tupdates: make(chan interface{}),\n\t}\n}\n\n// sendUpdate sends an update into our updates channel, mocking the dispatch of\n// an update from a subscription server. This call will fail the test if the\n// update is not consumed within our timeout.",
+      "length": 276,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSubscription) sendUpdate(update interface{}) {",
+      "content": "func (m *mockSubscription) sendUpdate(update interface{}) {\n\tselect {\n\tcase m.updates <- update:\n\n\tcase <-time.After(timeout):\n\t\tm.t.Fatalf(\"update: %v timeout\", update)\n\t}\n}\n\n// Updates returns the updates channel for the mock.",
+      "length": 160,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSubscription) Updates() <-chan interface{} {",
+      "content": "func (m *mockSubscription) Updates() <-chan interface{} {\n\treturn m.updates\n}\n\n// Cancel should be called in case the client no longer wants to subscribe for\n// updates from the server.",
+      "length": 123,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSubscription) Cancel() {",
+      "content": "func (m *mockSubscription) Cancel() {\n\tclose(m.updates)\n}\n\n// assertCancelled asserts that the cancel function has been called for this\n// mock.",
+      "length": 102,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSubscription) assertCancelled() {",
+      "content": "func (m *mockSubscription) assertCancelled() {\n\tselect {\n\tcase _, open := <-m.updates:\n\t\trequire.False(m.t, open, \"subscription not cancelled\")\n\n\tcase <-time.After(timeout):\n\t\tm.t.Fatalf(\"assert cancelled timeout\")\n\t}\n}\n",
+      "length": 165,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

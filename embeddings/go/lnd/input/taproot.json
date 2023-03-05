@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/input/taproot.go",
+  "package": "input",
+  "sections": [
+    {
+      "slug": "func NewTxSigHashesV0Only(tx *wire.MsgTx) *txscript.TxSigHashes {",
+      "content": "func NewTxSigHashesV0Only(tx *wire.MsgTx) *txscript.TxSigHashes {\n\t// The canned output fetcher returns a wire.TxOut instance with the\n\t// given pk script and amount. We can get away with nil since the first\n\t// thing the TxSigHashes constructor checks is the length of the pk\n\t// script and whether it matches taproot output script length. If the\n\t// length doesn't match it assumes v0 inputs only.\n\tnilFetcher := txscript.NewCannedPrevOutputFetcher(nil, 0)\n\treturn txscript.NewTxSigHashes(tx, nilFetcher)\n}\n\n// MultiPrevOutFetcher returns a txscript.MultiPrevOutFetcher for the given set\n// of inputs.",
+      "length": 527,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "func MultiPrevOutFetcher(inputs []Input) (*txscript.MultiPrevOutFetcher, error) {",
+      "content": "func MultiPrevOutFetcher(inputs []Input) (*txscript.MultiPrevOutFetcher, error) {\n\tfetcher := txscript.NewMultiPrevOutFetcher(nil)\n\tfor _, inp := range inputs {\n\t\top := inp.OutPoint()\n\t\tdesc := inp.SignDesc()\n\n\t\tif op == nil {\n\t\t\treturn nil, fmt.Errorf(\"missing input outpoint\")\n\t\t}\n\n\t\tif desc == nil || desc.Output == nil {\n\t\t\treturn nil, fmt.Errorf(\"missing input utxo information\")\n\t\t}\n\n\t\tfetcher.AddPrevOut(*op, desc.Output)\n\t}\n\n\treturn fetcher, nil\n}\n\n// TapscriptFullTree creates a waddrmgr.Tapscript for the given internal key and\n// tree leaves.",
+      "length": 451,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "func TapscriptFullTree(internalKey *btcec.PublicKey,",
+      "content": "func TapscriptFullTree(internalKey *btcec.PublicKey,\n\tallTreeLeaves ...txscript.TapLeaf) *waddrmgr.Tapscript {\n\n\ttree := txscript.AssembleTaprootScriptTree(allTreeLeaves...)\n\trootHash := tree.RootNode.TapHash()\n\ttapKey := txscript.ComputeTaprootOutputKey(internalKey, rootHash[:])\n\n\tvar outputKeyYIsOdd bool\n\tif tapKey.SerializeCompressed()[0] == PubKeyFormatCompressedOdd {\n\t\toutputKeyYIsOdd = true\n\t}\n\n\treturn &waddrmgr.Tapscript{\n\t\tType: waddrmgr.TapscriptTypeFullTree,\n\t\tControlBlock: &txscript.ControlBlock{\n\t\t\tInternalKey:     internalKey,\n\t\t\tOutputKeyYIsOdd: outputKeyYIsOdd,\n\t\t\tLeafVersion:     txscript.BaseLeafVersion,\n\t\t},\n\t\tLeaves: allTreeLeaves,\n\t}\n}\n\n// TapscriptPartialReveal creates a waddrmgr.Tapscript for the given internal\n// key and revealed script.",
+      "length": 694,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func TapscriptPartialReveal(internalKey *btcec.PublicKey,",
+      "content": "func TapscriptPartialReveal(internalKey *btcec.PublicKey,\n\trevealedLeaf txscript.TapLeaf,\n\tinclusionProof []byte) *waddrmgr.Tapscript {\n\n\tcontrolBlock := &txscript.ControlBlock{\n\t\tInternalKey:    internalKey,\n\t\tLeafVersion:    txscript.BaseLeafVersion,\n\t\tInclusionProof: inclusionProof,\n\t}\n\trootHash := controlBlock.RootHash(revealedLeaf.Script)\n\ttapKey := txscript.ComputeTaprootOutputKey(internalKey, rootHash)\n\n\tif tapKey.SerializeCompressed()[0] == PubKeyFormatCompressedOdd {\n\t\tcontrolBlock.OutputKeyYIsOdd = true\n\t}\n\n\treturn &waddrmgr.Tapscript{\n\t\tType:           waddrmgr.TapscriptTypePartialReveal,\n\t\tControlBlock:   controlBlock,\n\t\tRevealedScript: revealedLeaf.Script,\n\t}\n}\n\n// TapscriptRootHashOnly creates a waddrmgr.Tapscript for the given internal key\n// and root hash.",
+      "length": 701,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func TapscriptRootHashOnly(internalKey *btcec.PublicKey,",
+      "content": "func TapscriptRootHashOnly(internalKey *btcec.PublicKey,\n\trootHash []byte) *waddrmgr.Tapscript {\n\n\tcontrolBlock := &txscript.ControlBlock{\n\t\tInternalKey: internalKey,\n\t}\n\n\ttapKey := txscript.ComputeTaprootOutputKey(internalKey, rootHash)\n\tif tapKey.SerializeCompressed()[0] == PubKeyFormatCompressedOdd {\n\t\tcontrolBlock.OutputKeyYIsOdd = true\n\t}\n\n\treturn &waddrmgr.Tapscript{\n\t\tType:         waddrmgr.TaprootKeySpendRootHash,\n\t\tControlBlock: controlBlock,\n\t\tRootHash:     rootHash,\n\t}\n}\n\n// TapscriptFullKeyOnly creates a waddrmgr.Tapscript for the given full Taproot\n// key.",
+      "length": 499,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func TapscriptFullKeyOnly(taprootKey *btcec.PublicKey) *waddrmgr.Tapscript {",
+      "content": "func TapscriptFullKeyOnly(taprootKey *btcec.PublicKey) *waddrmgr.Tapscript {\n\treturn &waddrmgr.Tapscript{\n\t\tType:          waddrmgr.TaprootFullKeyOnly,\n\t\tFullOutputKey: taprootKey,\n\t}\n}\n",
+      "length": 104,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

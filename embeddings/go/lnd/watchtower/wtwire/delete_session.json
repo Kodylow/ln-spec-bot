@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtwire/delete_session.go",
+  "package": "wtwire",
+  "sections": [
+    {
+      "slug": "type DeleteSession struct{}",
+      "content": "type DeleteSession struct{}\n\n// Compile-time constraint to ensure DeleteSession implements the wtwire.Message\n// interface.\nvar _ Message = (*DeleteSession)(nil)\n\n// Decode deserializes a serialized DeleteSession message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 312,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *DeleteSession) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (m *DeleteSession) Decode(r io.Reader, pver uint32) error {\n\treturn nil\n}\n\n// Encode serializes the target DeleteSession message into the passed io.Writer\n// observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 185,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *DeleteSession) Encode(w io.Writer, pver uint32) error {",
+      "content": "func (m *DeleteSession) Encode(w io.Writer, pver uint32) error {\n\treturn nil\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 146,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *DeleteSession) MsgType() MessageType {",
+      "content": "func (m *DeleteSession) MsgType() MessageType {\n\treturn MsgDeleteSession\n}\n\n// MaxPayloadLength returns the maximum allowed payload size for a DeleteSession\n// message observing the specified protocol version.\n//\n// This is part of the wtwire.Message interface.",
+      "length": 207,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *DeleteSession) MaxPayloadLength(uint32) uint32 {",
+      "content": "func (m *DeleteSession) MaxPayloadLength(uint32) uint32 {\n\treturn 0\n}\n",
+      "length": 10,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

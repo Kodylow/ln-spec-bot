@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/warning.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type WarningData []byte",
+      "content": "type WarningData []byte\n\n// Warning is used to express non-critical errors in the protocol, providing\n// a \"soft\" way for nodes to communicate failures.",
+      "length": 126,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "type Warning struct {",
+      "content": "type Warning struct {\n\t// ChanID references the active channel in which the warning occurred\n\t// within. If the ChanID is all zeros, then this warning applies to the\n\t// entire established connection.\n\tChanID ChannelID\n\n\t// Data is the attached warning data that describes the exact failure\n\t// which caused the warning message to be sent.\n\tData WarningData\n}\n\n// A compile time check to ensure Warning implements the lnwire.Message\n// interface.\nvar _ Message = (*Warning)(nil)\n\n// NewWarning creates a new Warning message.",
+      "length": 488,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func NewWarning() *Warning {",
+      "content": "func NewWarning() *Warning {\n\treturn &Warning{}\n}\n\n// Warning returns the string representation to Warning.",
+      "length": 75,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Warning) Warning() string {",
+      "content": "func (c *Warning) Warning() string {\n\terrMsg := \"non-ascii data\"\n\tif isASCII(c.Data) {\n\t\terrMsg = string(c.Data)\n\t}\n\n\treturn fmt.Sprintf(\"chan_id=%v, err=%v\", c.ChanID, errMsg)\n}\n\n// Decode deserializes a serialized Warning message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 311,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Warning) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *Warning) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.Data,\n\t)\n}\n\n// Encode serializes the target Warning into the passed io.Writer observing the\n// protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 207,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Warning) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (c *Warning) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteBytes(w, c.ChanID[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteWarningData(w, c.Data)\n}\n\n// MsgType returns the integer uniquely identifying an Warning message on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 236,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Warning) MsgType() MessageType {",
+      "content": "func (c *Warning) MsgType() MessageType {\n\treturn MsgWarning\n}\n",
+      "length": 19,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

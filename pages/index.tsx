@@ -155,17 +155,6 @@ export default function Home() {
     }
   };
 
-  const handleSave = () => {
-    if (apiKey.length !== 51) {
-      alert("Please enter a valid API key.");
-      return;
-    }
-
-    localStorage.setItem("WBW_KEY", apiKey);
-    localStorage.setItem("WBW_MATCH_COUNT", matchCount.toString());
-    localStorage.setItem("WBW_MODE", mode);
-  };
-
   useEffect(() => {
     if (matchCount > 10) {
       setMatchCount(10);
@@ -202,7 +191,7 @@ export default function Home() {
           content={`AI-powered search and chat for Tim Urban's blog "Wait But Why."`}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/boltsPic.ico" />
       </Head>
 
       <div className="flex flex-col h-screen">

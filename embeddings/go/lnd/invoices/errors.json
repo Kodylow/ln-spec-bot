@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/errors.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type ErrDuplicateSetID struct {",
+      "content": "type ErrDuplicateSetID struct {\n\tSetID [32]byte\n}\n\n// Error returns a human-readable description of ErrDuplicateSetID.",
+      "length": 83,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (e ErrDuplicateSetID) Error() string {",
+      "content": "func (e ErrDuplicateSetID) Error() string {\n\treturn fmt.Sprintf(\"invoice with set_id=%x already exists\", e.SetID)\n}\n",
+      "length": 70,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}

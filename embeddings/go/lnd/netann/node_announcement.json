@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/netann/node_announcement.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type NodeAnnModifier func(*lnwire.NodeAnnouncement)",
+      "content": "type NodeAnnModifier func(*lnwire.NodeAnnouncement)\n\n// NodeAnnSetAlias is a functional option that sets the alias of the\n// given node announcement.",
+      "length": 95,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeAnnSetAlias(alias lnwire.NodeAlias) func(*lnwire.NodeAnnouncement) {",
+      "content": "func NodeAnnSetAlias(alias lnwire.NodeAlias) func(*lnwire.NodeAnnouncement) {\n\treturn func(nodeAnn *lnwire.NodeAnnouncement) {\n\t\tnodeAnn.Alias = alias\n\t}\n}\n\n// NodeAnnSetAddrs is a functional option that allows updating the addresses of\n// the given node announcement.",
+      "length": 184,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeAnnSetAddrs(addrs []net.Addr) func(*lnwire.NodeAnnouncement) {",
+      "content": "func NodeAnnSetAddrs(addrs []net.Addr) func(*lnwire.NodeAnnouncement) {\n\treturn func(nodeAnn *lnwire.NodeAnnouncement) {\n\t\tnodeAnn.Addresses = addrs\n\t}\n}\n\n// NodeAnnSetColor is a functional option that sets the color of the\n// given node announcement.",
+      "length": 173,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeAnnSetColor(newColor color.RGBA) func(*lnwire.NodeAnnouncement) {",
+      "content": "func NodeAnnSetColor(newColor color.RGBA) func(*lnwire.NodeAnnouncement) {\n\treturn func(nodeAnn *lnwire.NodeAnnouncement) {\n\t\tnodeAnn.RGBColor = newColor\n\t}\n}\n\n// NodeAnnSetFeatures is a functional option that allows updating the features of\n// the given node announcement.",
+      "length": 192,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeAnnSetFeatures(features *lnwire.RawFeatureVector) func(*lnwire.NodeAnnouncement) {",
+      "content": "func NodeAnnSetFeatures(features *lnwire.RawFeatureVector) func(*lnwire.NodeAnnouncement) {\n\treturn func(nodeAnn *lnwire.NodeAnnouncement) {\n\t\tnodeAnn.Features = features\n\t}\n}\n\n// NodeAnnSetTimestamp is a functional option that sets the timestamp of the\n// announcement to the current time, or increments it if the timestamp is\n// already in the future.",
+      "length": 254,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func NodeAnnSetTimestamp(nodeAnn *lnwire.NodeAnnouncement) {",
+      "content": "func NodeAnnSetTimestamp(nodeAnn *lnwire.NodeAnnouncement) {\n\tnewTimestamp := uint32(time.Now().Unix())\n\tif newTimestamp <= nodeAnn.Timestamp {\n\t\t// Increment the prior value to  ensure the timestamp\n\t\t// monotonically increases, otherwise the announcement won't\n\t\t// propagate.\n\t\tnewTimestamp = nodeAnn.Timestamp + 1\n\t}\n\tnodeAnn.Timestamp = newTimestamp\n}\n\n// SignNodeAnnouncement applies the given modifies to the passed\n// lnwire.NodeAnnouncement, then signs the resulting announcement. The provided\n// update should be the most recent, valid update, otherwise the timestamp may\n// not monotonically increase from the prior.",
+      "length": 553,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func SignNodeAnnouncement(signer lnwallet.MessageSigner,",
+      "content": "func SignNodeAnnouncement(signer lnwallet.MessageSigner,\n\tkeyLoc keychain.KeyLocator, nodeAnn *lnwire.NodeAnnouncement,\n\tmods ...NodeAnnModifier) error {\n\n\t// Apply the requested changes to the node announcement.\n\tfor _, modifier := range mods {\n\t\tmodifier(nodeAnn)\n\t}\n\n\t// Create the DER-encoded ECDSA signature over the message digest.\n\tsig, err := SignAnnouncement(signer, keyLoc, nodeAnn)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Parse the DER-encoded signature into a fixed-size 64-byte array.\n\tnodeAnn.Signature, err = lnwire.NewSigFromSignature(sig)\n\treturn err\n}\n",
+      "length": 493,
+      "tokens": 67,
+      "embedding": []
+    }
+  ]
+}

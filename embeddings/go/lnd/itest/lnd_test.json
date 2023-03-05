@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func TestLightningNetworkDaemon(t *testing.T) {",
+      "content": "func TestLightningNetworkDaemon(t *testing.T) {\n\t// If no tests are registered, then we can exit early.\n\tif len(allTestCases) == 0 {\n\t\tt.Skip(\"integration tests not selected with flag 'integration'\")\n\t}\n\n\t// Get the test cases to be run in this tranche.\n\ttestCases, trancheIndex, trancheOffset := getTestCaseSplitTranche()\n\tnode.ApplyPortOffset(uint32(trancheIndex) * 1000)\n\n\t// Create a simple fee service.\n\tfeeService := lntest.NewFeeService(t)\n\n\t// Get the binary path and setup the harness test.\n\tbinary := getLndBinary(t)\n\tharnessTest := lntest.SetupHarness(\n\t\tt, binary, *dbBackendFlag, feeService,\n\t)\n\tdefer harnessTest.Stop()\n\n\t// Setup standby nodes, Alice and Bob, which will be alive and shared\n\t// among all the test cases.\n\tharnessTest.SetupStandbyNodes()\n\n\t// Run the subset of the test cases selected in this tranche.\n\tfor idx, testCase := range testCases {\n\t\ttestCase := testCase\n\t\tname := fmt.Sprintf(\"tranche%02d/%02d-of-%d/%s/%s\",\n\t\t\ttrancheIndex, trancheOffset+uint(idx)+1,\n\t\t\tlen(allTestCases), harnessTest.ChainBackendName(),\n\t\t\ttestCase.Name)\n\n\t\tsuccess := t.Run(name, func(t1 *testing.T) {\n\t\t\t// Create a separate harness test for the testcase to\n\t\t\t// avoid overwriting the external harness test that is\n\t\t\t// tied to the parent test.\n\t\t\tht := harnessTest.Subtest(t1)\n\n\t\t\t// TODO(yy): split log files.\n\t\t\tcleanTestCaseName := strings.ReplaceAll(\n\t\t\t\ttestCase.Name, \" \", \"_\",\n\t\t\t)\n\t\t\tht.SetTestName(cleanTestCaseName)\n\n\t\t\tlogLine := fmt.Sprintf(\n\t\t\t\t\"STARTING ============ %v ============\\n\",\n\t\t\t\ttestCase.Name,\n\t\t\t)\n\n\t\t\tht.Alice.AddToLogf(logLine)\n\t\t\tht.Bob.AddToLogf(logLine)\n\n\t\t\tht.EnsureConnected(ht.Alice, ht.Bob)\n\n\t\t\tht.RunTestCase(testCase)\n\t\t})\n\n\t\t// Stop at the first failure. Mimic behavior of original test\n\t\t// framework.\n\t\tif !success {\n\t\t\t// Log failure time to help relate the lnd logs to the\n\t\t\t// failure.\n\t\t\tt.Logf(\"Failure time: %v\", time.Now().Format(\n\t\t\t\t\"2006-01-02 15:04:05.000\",\n\t\t\t))\n\t\t\tbreak\n\t\t}\n\t}\n\n\t_, height := harnessTest.Miner.GetBestBlock()\n\tt.Logf(\"=========> tests finished for tranche: %v, tested %d \"+\n\t\t\"cases, end height: %d\\n\", trancheIndex, len(testCases), height)\n}\n\n// getTestCaseSplitTranche returns the sub slice of the test cases that should\n// be run as the current split tranche as well as the index and slice offset of\n// the tranche.",
+      "length": 2183,
+      "tokens": 281,
+      "embedding": []
+    },
+    {
+      "slug": "func getTestCaseSplitTranche() ([]*lntest.TestCase, uint, uint) {",
+      "content": "func getTestCaseSplitTranche() ([]*lntest.TestCase, uint, uint) {\n\tnumTranches := defaultSplitTranches\n\tif testCasesSplitTranches != nil {\n\t\tnumTranches = *testCasesSplitTranches\n\t}\n\trunTranche := defaultRunTranche\n\tif testCasesRunTranche != nil {\n\t\trunTranche = *testCasesRunTranche\n\t}\n\n\t// There's a special flake-hunt mode where we run the same test multiple\n\t// times in parallel. In that case the tranche index is equal to the\n\t// thread ID, but we need to actually run all tests for the regex\n\t// selection to work.\n\tthreadID := runTranche\n\tif numTranches == 1 {\n\t\trunTranche = 0\n\t}\n\n\tnumCases := uint(len(allTestCases))\n\ttestsPerTranche := numCases / numTranches\n\ttrancheOffset := runTranche * testsPerTranche\n\ttrancheEnd := trancheOffset + testsPerTranche\n\tif trancheEnd > numCases || runTranche == numTranches-1 {\n\t\ttrancheEnd = numCases\n\t}\n\n\treturn allTestCases[trancheOffset:trancheEnd], threadID,\n\t\ttrancheOffset\n}\n",
+      "length": 832,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "func getLndBinary(t *testing.T) string {",
+      "content": "func getLndBinary(t *testing.T) string {\n\tbinary := itestLndBinary\n\tlndExec := \"\"\n\tif lndExecutable != nil && *lndExecutable != \"\" {\n\t\tlndExec = *lndExecutable\n\t}\n\tif lndExec == \"\" && runtime.GOOS == \"windows\" {\n\t\t// Windows (even in a bash like environment like git bash as on\n\t\t// Travis) doesn't seem to like relative paths to exe files...\n\t\tcurrentDir, err := os.Getwd()\n\t\trequire.NoError(t, err, \"unable to get working directory\")\n\n\t\ttargetPath := filepath.Join(currentDir, \"../../lnd-itest.exe\")\n\t\tbinary, err = filepath.Abs(targetPath)\n\t\trequire.NoError(t, err, \"unable to get absolute path\")\n\t} else if lndExec != \"\" {\n\t\tbinary = lndExec\n\t}\n\n\treturn binary\n}\n",
+      "length": 606,
+      "tokens": 92,
+      "embedding": []
+    },
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Before we start any node, we need to make sure that any btcd node\n\t// that is started through the RPC harness uses a unique port as well\n\t// to avoid any port collisions.\n\trpctest.ListenAddressGenerator = node.GenerateBtcdListenerAddresses\n\n\t// Swap out grpc's default logger with out fake logger which drops the\n\t// statements on the floor.\n\tfakeLogger := grpclog.NewLoggerV2(io.Discard, io.Discard, io.Discard)\n\tgrpclog.SetLoggerV2(fakeLogger)\n}\n",
+      "length": 442,
+      "tokens": 63,
+      "embedding": []
+    }
+  ]
+}

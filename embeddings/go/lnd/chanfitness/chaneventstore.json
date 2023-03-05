@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/chanfitness/chaneventstore.go",
+  "package": "Package",
+  "sections": [
+    {
+      "slug": "type ChannelEventStore struct {",
+      "content": "type ChannelEventStore struct {\n\tcfg *Config\n\n\t// peers tracks all of our currently monitored peers and their channels.\n\tpeers map[route.Vertex]peerMonitor\n\n\t// chanInfoRequests serves requests for information about our channel.\n\tchanInfoRequests chan channelInfoRequest\n\n\t// peerRequests serves requests for information about a peer.\n\tpeerRequests chan peerRequest\n\n\tquit chan struct{}\n\n\twg sync.WaitGroup\n}\n\n// Config provides the event store with functions required to monitor channel\n// activity. All elements of the config must be non-nil for the event store to\n// operate.",
+      "length": 528,
+      "tokens": 75,
+      "embedding": []
+    },
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\t// SubscribeChannelEvents provides a subscription client which provides\n\t// a stream of channel events.\n\tSubscribeChannelEvents func() (subscribe.Subscription, error)\n\n\t// SubscribePeerEvents provides a subscription client which provides a\n\t// stream of peer online/offline events.\n\tSubscribePeerEvents func() (subscribe.Subscription, error)\n\n\t// GetOpenChannels provides a list of existing open channels which is\n\t// used to populate the ChannelEventStore with a set of channels on\n\t// startup.\n\tGetOpenChannels func() ([]*channeldb.OpenChannel, error)\n\n\t// Clock is the time source that the subsystem uses, provided here\n\t// for ease of testing.\n\tClock clock.Clock\n\n\t// WriteFlapCounts records the flap count for a set of peers on disk.\n\tWriteFlapCount func(map[route.Vertex]*channeldb.FlapCount) error\n\n\t// ReadFlapCount gets the flap count for a peer on disk.\n\tReadFlapCount func(route.Vertex) (*channeldb.FlapCount, error)\n\n\t// FlapCountTicker is a ticker which controls how often we flush our\n\t// peer's flap count to disk.\n\tFlapCountTicker ticker.Ticker\n}\n\n// peerFlapCountMap is the map used to map peers to flap counts, declared here\n// to allow shorter function signatures.",
+      "length": 1155,
+      "tokens": 157,
+      "embedding": []
+    },
+    {
+      "slug": "type peerFlapCountMap map[route.Vertex]*channeldb.FlapCount",
+      "content": "type peerFlapCountMap map[route.Vertex]*channeldb.FlapCount\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type channelInfoRequest struct {",
+      "content": "type channelInfoRequest struct {\n\tpeer         route.Vertex\n\tchannelPoint wire.OutPoint\n\tresponseChan chan channelInfoResponse\n}\n",
+      "length": 92,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "type channelInfoResponse struct {",
+      "content": "type channelInfoResponse struct {\n\tinfo *ChannelInfo\n\terr  error\n}\n",
+      "length": 30,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "type peerRequest struct {",
+      "content": "type peerRequest struct {\n\tpeer         route.Vertex\n\tresponseChan chan peerResponse\n}\n",
+      "length": 58,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "type peerResponse struct {",
+      "content": "type peerResponse struct {\n\tflapCount int\n\tts        *time.Time\n\terr       error\n}\n\n// NewChannelEventStore initializes an event store with the config provided.\n// Note that this function does not start the main event loop, Start() must be\n// called.",
+      "length": 216,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func NewChannelEventStore(config *Config) *ChannelEventStore {",
+      "content": "func NewChannelEventStore(config *Config) *ChannelEventStore {\n\tstore := &ChannelEventStore{\n\t\tcfg:              config,\n\t\tpeers:            make(map[route.Vertex]peerMonitor),\n\t\tchanInfoRequests: make(chan channelInfoRequest),\n\t\tpeerRequests:     make(chan peerRequest),\n\t\tquit:             make(chan struct{}),\n\t}\n\n\treturn store\n}\n\n// Start adds all existing open channels to the event store and starts the main\n// loop which records channel and peer events, and serves requests for\n// information from the store. If this function fails, it cancels its existing\n// subscriptions and returns an error.",
+      "length": 525,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) Start() error {",
+      "content": "func (c *ChannelEventStore) Start() error {\n\tlog.Info(\"ChannelEventStore starting\")\n\n\t// Create a subscription to channel events.\n\tchannelClient, err := c.cfg.SubscribeChannelEvents()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Create a subscription to peer events. If an error occurs, cancel the\n\t// existing subscription to channel events and return.\n\tpeerClient, err := c.cfg.SubscribePeerEvents()\n\tif err != nil {\n\t\tchannelClient.Cancel()\n\t\treturn err\n\t}\n\n\t// cancel should be called to cancel all subscriptions if an error\n\t// occurs.\n\tcancel := func() {\n\t\tchannelClient.Cancel()\n\t\tpeerClient.Cancel()\n\t}\n\n\t// Add the existing set of channels to the event store. This is required\n\t// because channel events will not be triggered for channels that exist\n\t// at startup time.\n\tchannels, err := c.cfg.GetOpenChannels()\n\tif err != nil {\n\t\tcancel()\n\t\treturn err\n\t}\n\n\tlog.Infof(\"Adding %v channels to event store\", len(channels))\n\n\tfor _, ch := range channels {\n\t\tpeerKey, err := route.NewVertexFromBytes(\n\t\t\tch.IdentityPub.SerializeCompressed(),\n\t\t)\n\t\tif err != nil {\n\t\t\tcancel()\n\t\t\treturn err\n\t\t}\n\n\t\t// Add existing channels to the channel store with an initial\n\t\t// peer online or offline event.\n\t\tc.addChannel(ch.FundingOutpoint, peerKey)\n\t}\n\n\t// Start a goroutine that consumes events from all subscriptions.\n\tc.wg.Add(1)\n\tgo c.consume(&subscriptions{\n\t\tchannelUpdates: channelClient.Updates(),\n\t\tpeerUpdates:    peerClient.Updates(),\n\t\tcancel:         cancel,\n\t})\n\n\treturn nil\n}\n\n// Stop terminates all goroutines started by the event store.",
+      "length": 1437,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) Stop() {",
+      "content": "func (c *ChannelEventStore) Stop() {\n\tlog.Info(\"Stopping event store\")\n\n\t// Stop the consume goroutine.\n\tclose(c.quit)\n\tc.wg.Wait()\n\n\t// Stop the ticker after the goroutine reading from it has exited, to\n\t// avoid a race.\n\tc.cfg.FlapCountTicker.Stop()\n}\n\n// addChannel checks whether we are already tracking a channel's peer, creates a\n// new peer log to track it if we are not yet monitoring it, and adds the\n// channel.",
+      "length": 371,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) addChannel(channelPoint wire.OutPoint,",
+      "content": "func (c *ChannelEventStore) addChannel(channelPoint wire.OutPoint,\n\tpeer route.Vertex) {\n\n\tpeerMonitor, err := c.getPeerMonitor(peer)\n\tif err != nil {\n\t\tlog.Error(\"could not create monitor: %v\", err)\n\t\treturn\n\t}\n\n\tif err := peerMonitor.addChannel(channelPoint); err != nil {\n\t\tlog.Errorf(\"could not add channel: %v\", err)\n\t}\n}\n\n// getPeerMonitor tries to get an existing peer monitor from our in memory list,\n// and falls back to creating a new monitor if it is not currently known.",
+      "length": 401,
+      "tokens": 65,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) getPeerMonitor(peer route.Vertex) (peerMonitor,",
+      "content": "func (c *ChannelEventStore) getPeerMonitor(peer route.Vertex) (peerMonitor,\n\terror) {\n\n\tpeerMonitor, ok := c.peers[peer]\n\tif ok {\n\t\treturn peerMonitor, nil\n\t}\n\n\tvar (\n\t\tflapCount int\n\t\tlastFlap  *time.Time\n\t)\n\n\thistoricalFlap, err := c.cfg.ReadFlapCount(peer)\n\tswitch err {\n\t// If we do not have any records for this peer we set a 0 flap count\n\t// and timestamp.\n\tcase channeldb.ErrNoPeerBucket:\n\n\tcase nil:\n\t\tflapCount = int(historicalFlap.Count)\n\t\tlastFlap = &historicalFlap.LastFlap\n\n\t// Return if we get an unexpected error.\n\tdefault:\n\t\treturn nil, err\n\t}\n\n\tpeerMonitor = newPeerLog(c.cfg.Clock, flapCount, lastFlap)\n\tc.peers[peer] = peerMonitor\n\n\treturn peerMonitor, nil\n}\n\n// closeChannel records a closed time for a channel, and returns early is the\n// channel is not known to the event store. We log warnings (rather than errors)\n// when we cannot find a peer/channel because channels that we restore from a\n// static channel backup do not have their open notified, so the event store\n// never learns about them, but they are closed using the regular flow so we\n// will try to remove them on close. At present, we cannot easily distinguish\n// between these closes and others.",
+      "length": 1068,
+      "tokens": 174,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) closeChannel(channelPoint wire.OutPoint,",
+      "content": "func (c *ChannelEventStore) closeChannel(channelPoint wire.OutPoint,\n\tpeer route.Vertex) {\n\n\tpeerMonitor, ok := c.peers[peer]\n\tif !ok {\n\t\tlog.Warnf(\"peer not known to store: %v\", peer)\n\t\treturn\n\t}\n\n\tif err := peerMonitor.removeChannel(channelPoint); err != nil {\n\t\tlog.Warnf(\"could not remove channel: %v\", err)\n\t}\n}\n\n// peerEvent creates a peer monitor for a peer if we do not currently have\n// one, and adds an online event to it.",
+      "length": 349,
+      "tokens": 59,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) peerEvent(peer route.Vertex, online bool) {",
+      "content": "func (c *ChannelEventStore) peerEvent(peer route.Vertex, online bool) {\n\tpeerMonitor, err := c.getPeerMonitor(peer)\n\tif err != nil {\n\t\tlog.Error(\"could not create monitor: %v\", err)\n\t\treturn\n\t}\n\n\tpeerMonitor.onlineEvent(online)\n}\n\n// subscriptions abstracts away from subscription clients to allow for mocking.",
+      "length": 229,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "type subscriptions struct {",
+      "content": "type subscriptions struct {\n\tchannelUpdates <-chan interface{}\n\tpeerUpdates    <-chan interface{}\n\tcancel         func()\n}\n\n// consume is the event store's main loop. It consumes subscriptions to update\n// the event store with channel and peer events, and serves requests for channel\n// uptime and lifespan.",
+      "length": 272,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) consume(subscriptions *subscriptions) {",
+      "content": "func (c *ChannelEventStore) consume(subscriptions *subscriptions) {\n\t// Start our flap count ticker.\n\tc.cfg.FlapCountTicker.Resume()\n\n\t// On exit, we will cancel our subscriptions and write our most recent\n\t// flap counts to disk. This ensures that we have consistent data in\n\t// the case of a graceful shutdown. If we do not shutdown gracefully,\n\t// our worst case is data from our last flap count tick (1H).\n\tdefer func() {\n\t\tsubscriptions.cancel()\n\n\t\tif err := c.recordFlapCount(); err != nil {\n\t\t\tlog.Errorf(\"error recording flap on shutdown: %v\", err)\n\t\t}\n\n\t\tc.wg.Done()\n\t}()\n\n\t// Consume events until the channel is closed.\n\tfor {\n\t\tselect {\n\t\t// Process channel opened and closed events.\n\t\tcase e := <-subscriptions.channelUpdates:\n\t\t\tswitch event := e.(type) {\n\t\t\t// A new channel has been opened, we must add the\n\t\t\t// channel to the store and record a channel open event.\n\t\t\tcase channelnotifier.OpenChannelEvent:\n\t\t\t\tcompressed := event.Channel.IdentityPub.SerializeCompressed()\n\t\t\t\tpeerKey, err := route.NewVertexFromBytes(\n\t\t\t\t\tcompressed,\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Errorf(\"Could not get vertex \"+\n\t\t\t\t\t\t\"from: %v\", compressed)\n\t\t\t\t}\n\n\t\t\t\tc.addChannel(\n\t\t\t\t\tevent.Channel.FundingOutpoint, peerKey,\n\t\t\t\t)\n\n\t\t\t// A channel has been closed, we must remove the channel\n\t\t\t// from the store and record a channel closed event.\n\t\t\tcase channelnotifier.ClosedChannelEvent:\n\t\t\t\tcompressed := event.CloseSummary.RemotePub.SerializeCompressed()\n\t\t\t\tpeerKey, err := route.NewVertexFromBytes(\n\t\t\t\t\tcompressed,\n\t\t\t\t)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Errorf(\"Could not get vertex \"+\n\t\t\t\t\t\t\"from: %v\", compressed)\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tc.closeChannel(\n\t\t\t\t\tevent.CloseSummary.ChanPoint, peerKey,\n\t\t\t\t)\n\t\t\t}\n\n\t\t// Process peer online and offline events.\n\t\tcase e := <-subscriptions.peerUpdates:\n\t\t\tswitch event := e.(type) {\n\t\t\t// We have reestablished a connection with our peer,\n\t\t\t// and should record an online event for any channels\n\t\t\t// with that peer.\n\t\t\tcase peernotifier.PeerOnlineEvent:\n\t\t\t\tc.peerEvent(event.PubKey, true)\n\n\t\t\t// We have lost a connection with our peer, and should\n\t\t\t// record an offline event for any channels with that\n\t\t\t// peer.\n\t\t\tcase peernotifier.PeerOfflineEvent:\n\t\t\t\tc.peerEvent(event.PubKey, false)\n\t\t\t}\n\n\t\t// Serve all requests for channel lifetime.\n\t\tcase req := <-c.chanInfoRequests:\n\t\t\tvar resp channelInfoResponse\n\n\t\t\tresp.info, resp.err = c.getChanInfo(req)\n\t\t\treq.responseChan <- resp\n\n\t\t// Serve all requests for information about our peer.\n\t\tcase req := <-c.peerRequests:\n\t\t\tvar resp peerResponse\n\n\t\t\tresp.flapCount, resp.ts, resp.err = c.flapCount(\n\t\t\t\treq.peer,\n\t\t\t)\n\t\t\treq.responseChan <- resp\n\n\t\tcase <-c.cfg.FlapCountTicker.Ticks():\n\t\t\tif err := c.recordFlapCount(); err != nil {\n\t\t\t\tlog.Errorf(\"could not record flap \"+\n\t\t\t\t\t\"count: %v\", err)\n\t\t\t}\n\n\t\t// Exit if the store receives the signal to shutdown.\n\t\tcase <-c.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// ChannelInfo provides the set of information that the event store has recorded\n// for a channel.",
+      "length": 2827,
+      "tokens": 382,
+      "embedding": []
+    },
+    {
+      "slug": "type ChannelInfo struct {",
+      "content": "type ChannelInfo struct {\n\t// Lifetime is the total amount of time we have monitored the channel\n\t// for.\n\tLifetime time.Duration\n\n\t// Uptime is the total amount of time that the channel peer has been\n\t// observed as online during the monitored lifespan.\n\tUptime time.Duration\n}\n\n// GetChanInfo gets all the information we have on a channel in the event store.",
+      "length": 325,
+      "tokens": 57,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) GetChanInfo(channelPoint wire.OutPoint,",
+      "content": "func (c *ChannelEventStore) GetChanInfo(channelPoint wire.OutPoint,\n\tpeer route.Vertex) (*ChannelInfo, error) {\n\n\trequest := channelInfoRequest{\n\t\tpeer:         peer,\n\t\tchannelPoint: channelPoint,\n\t\tresponseChan: make(chan channelInfoResponse),\n\t}\n\n\t// Send a request for the channel's information to the main event loop,\n\t// or return early with an error if the store has already received a\n\t// shutdown signal.\n\tselect {\n\tcase c.chanInfoRequests <- request:\n\tcase <-c.quit:\n\t\treturn nil, errShuttingDown\n\t}\n\n\t// Return the response we receive on the response channel or exit early\n\t// if the store is instructed to exit.\n\tselect {\n\tcase resp := <-request.responseChan:\n\t\treturn resp.info, resp.err\n\n\tcase <-c.quit:\n\t\treturn nil, errShuttingDown\n\t}\n}\n\n// getChanInfo collects channel information for a channel. It gets uptime over\n// the full lifetime of the channel.",
+      "length": 771,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) getChanInfo(req channelInfoRequest) (*ChannelInfo,",
+      "content": "func (c *ChannelEventStore) getChanInfo(req channelInfoRequest) (*ChannelInfo,\n\terror) {\n\n\tpeerMonitor, ok := c.peers[req.peer]\n\tif !ok {\n\t\treturn nil, ErrPeerNotFound\n\t}\n\n\tlifetime, uptime, err := peerMonitor.channelUptime(req.channelPoint)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn &ChannelInfo{\n\t\tLifetime: lifetime,\n\t\tUptime:   uptime,\n\t}, nil\n}\n\n// FlapCount returns the flap count we have for a peer and the timestamp of its\n// last flap. If we do not have any flaps recorded for the peer, the last flap\n// timestamp will be nil.",
+      "length": 441,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) FlapCount(peer route.Vertex) (int, *time.Time,",
+      "content": "func (c *ChannelEventStore) FlapCount(peer route.Vertex) (int, *time.Time,\n\terror) {\n\n\trequest := peerRequest{\n\t\tpeer:         peer,\n\t\tresponseChan: make(chan peerResponse),\n\t}\n\n\t// Send a request for the peer's information to the main event loop,\n\t// or return early with an error if the store has already received a\n\t// shutdown signal.\n\tselect {\n\tcase c.peerRequests <- request:\n\tcase <-c.quit:\n\t\treturn 0, nil, errShuttingDown\n\t}\n\n\t// Return the response we receive on the response channel or exit early\n\t// if the store is instructed to exit.\n\tselect {\n\tcase resp := <-request.responseChan:\n\t\treturn resp.flapCount, resp.ts, resp.err\n\n\tcase <-c.quit:\n\t\treturn 0, nil, errShuttingDown\n\t}\n}\n\n// flapCount gets our peer flap count and last flap timestamp from our in memory\n// record of a peer, falling back to on disk if we are not currently tracking\n// the peer. If we have no flap count recorded for the peer, a nil last flap\n// time will be returned.",
+      "length": 851,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) flapCount(peer route.Vertex) (int, *time.Time,",
+      "content": "func (c *ChannelEventStore) flapCount(peer route.Vertex) (int, *time.Time,\n\terror) {\n\n\t// First check whether we are tracking this peer in memory, because this\n\t// record will have the most accurate flap count. We do not fail if we\n\t// can't find the peer in memory, because we may have previously\n\t// recorded its flap count on disk.\n\tpeerMonitor, ok := c.peers[peer]\n\tif ok {\n\t\tcount, ts := peerMonitor.getFlapCount()\n\t\treturn count, ts, nil\n\t}\n\n\t// Try to get our flap count from the database. If this value is not\n\t// recorded, we return a nil last flap time to indicate that we have no\n\t// record of the peer's flap count.\n\tflapCount, err := c.cfg.ReadFlapCount(peer)\n\tswitch err {\n\tcase channeldb.ErrNoPeerBucket:\n\t\treturn 0, nil, nil\n\n\tcase nil:\n\t\treturn int(flapCount.Count), &flapCount.LastFlap, nil\n\n\tdefault:\n\t\treturn 0, nil, err\n\t}\n}\n\n// recordFlapCount will record our flap count for each peer that we are\n// currently tracking, skipping peers that have a 0 flap count.",
+      "length": 878,
+      "tokens": 152,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *ChannelEventStore) recordFlapCount() error {",
+      "content": "func (c *ChannelEventStore) recordFlapCount() error {\n\tupdates := make(peerFlapCountMap)\n\n\tfor peer, monitor := range c.peers {\n\t\tflapCount, lastFlap := monitor.getFlapCount()\n\t\tif lastFlap == nil {\n\t\t\tcontinue\n\t\t}\n\n\t\tupdates[peer] = &channeldb.FlapCount{\n\t\t\tCount:    uint32(flapCount),\n\t\t\tLastFlap: *lastFlap,\n\t\t}\n\t}\n\n\tlog.Debugf(\"recording flap count for: %v peers\", len(updates))\n\n\treturn c.cfg.WriteFlapCount(updates)\n}\n",
+      "length": 353,
+      "tokens": 40,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/server_test.go",
+  "package": "lnd",
+  "sections": [
+    {
+      "slug": "func TestShouldPeerBootstrap(t *testing.T) {",
+      "content": "func TestShouldPeerBootstrap(t *testing.T) {\n\tt.Parallel()\n\n\ttestCases := []struct {\n\t\tcfg            *Config\n\t\tshouldBoostrap bool\n\t}{\n\t\t// Simnet active, no bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tSimNet: true,\n\t\t\t\t},\n\t\t\t\tLitecoin: &lncfg.Chain{},\n\t\t\t},\n\t\t},\n\n\t\t// Regtest active, no bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tRegTest: true,\n\t\t\t\t},\n\t\t\t\tLitecoin: &lncfg.Chain{},\n\t\t\t},\n\t\t},\n\n\t\t// Signet active, no bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tSigNet: true,\n\t\t\t\t},\n\t\t\t\tLitecoin: &lncfg.Chain{},\n\t\t\t},\n\t\t},\n\n\t\t// Mainnet active, but bootstrap disabled, no bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tMainNet: true,\n\t\t\t\t},\n\t\t\t\tLitecoin:       &lncfg.Chain{},\n\t\t\t\tNoNetBootstrap: true,\n\t\t\t},\n\t\t},\n\n\t\t// Mainnet active, should bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tMainNet: true,\n\t\t\t\t},\n\t\t\t\tLitecoin: &lncfg.Chain{},\n\t\t\t},\n\t\t\tshouldBoostrap: true,\n\t\t},\n\n\t\t// Testnet active, should bootstrap.\n\t\t{\n\t\t\tcfg: &Config{\n\t\t\t\tBitcoin: &lncfg.Chain{\n\t\t\t\t\tTestNet3: true,\n\t\t\t\t},\n\t\t\t\tLitecoin: &lncfg.Chain{},\n\t\t\t},\n\t\t\tshouldBoostrap: true,\n\t\t},\n\t}\n\tfor i, testCase := range testCases {\n\t\tbootstrapped := shouldPeerBootstrap(testCase.cfg)\n\t\tif bootstrapped != testCase.shouldBoostrap {\n\t\t\tt.Fatalf(\"#%v: expected bootstrap=%v, got bootstrap=%v\",\n\t\t\t\ti, testCase.shouldBoostrap, bootstrapped)\n\t\t}\n\t}\n}\n",
+      "length": 1291,
+      "tokens": 148,
+      "embedding": []
+    }
+  ]
+}

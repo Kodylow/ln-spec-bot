@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/discovery/reliable_sender.go",
+  "package": "discovery",
+  "sections": [
+    {
+      "slug": "type reliableSenderCfg struct {",
+      "content": "type reliableSenderCfg struct {\n\t// NotifyWhenOnline is a function that allows the gossiper to be\n\t// notified when a certain peer comes online, allowing it to\n\t// retry sending a peer message.\n\t//\n\t// NOTE: The peerChan channel must be buffered.\n\tNotifyWhenOnline func(peerPubKey [33]byte, peerChan chan<- lnpeer.Peer)\n\n\t// NotifyWhenOffline is a function that allows the gossiper to be\n\t// notified when a certain peer disconnects, allowing it to request a\n\t// notification for when it reconnects.\n\tNotifyWhenOffline func(peerPubKey [33]byte) <-chan struct{}\n\n\t// MessageStore is a persistent storage of gossip messages which we will\n\t// use to determine which messages need to be resent for a given peer.\n\tMessageStore GossipMessageStore\n\n\t// IsMsgStale determines whether a message retrieved from the backing\n\t// MessageStore is seen as stale by the current graph.\n\tIsMsgStale func(lnwire.Message) bool\n}\n\n// peerManager contains the set of channels required for the peerHandler to\n// properly carry out its duties.",
+      "length": 965,
+      "tokens": 147,
+      "embedding": []
+    },
+    {
+      "slug": "type peerManager struct {",
+      "content": "type peerManager struct {\n\t// msgs is the channel through which messages will be streamed to the\n\t// handler in order to send the message to the peer while they're\n\t// online.\n\tmsgs chan lnwire.Message\n\n\t// done is a channel that will be closed to signal that the handler for\n\t// the given peer has been torn down for whatever reason.\n\tdone chan struct{}\n}\n\n// reliableSender is a small subsystem of the gossiper used to reliably send\n// gossip messages to peers.",
+      "length": 426,
+      "tokens": 79,
+      "embedding": []
+    },
+    {
+      "slug": "type reliableSender struct {",
+      "content": "type reliableSender struct {\n\tstart sync.Once\n\tstop  sync.Once\n\n\tcfg reliableSenderCfg\n\n\t// activePeers keeps track of whether a peerHandler exists for a given\n\t// peer. A peerHandler is tasked with handling requests for messages\n\t// that should be reliably sent to peers while also taking into account\n\t// the peer's connection lifecycle.\n\tactivePeers    map[[33]byte]peerManager\n\tactivePeersMtx sync.Mutex\n\n\twg   sync.WaitGroup\n\tquit chan struct{}\n}\n\n// newReliableSender returns a new reliableSender backed by the given config.",
+      "length": 485,
+      "tokens": 68,
+      "embedding": []
+    },
+    {
+      "slug": "func newReliableSender(cfg *reliableSenderCfg) *reliableSender {",
+      "content": "func newReliableSender(cfg *reliableSenderCfg) *reliableSender {\n\treturn &reliableSender{\n\t\tcfg:         *cfg,\n\t\tactivePeers: make(map[[33]byte]peerManager),\n\t\tquit:        make(chan struct{}),\n\t}\n}\n\n// Start spawns message handlers for any peers with pending messages.",
+      "length": 197,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) Start() error {",
+      "content": "func (s *reliableSender) Start() error {\n\tvar err error\n\ts.start.Do(func() {\n\t\terr = s.resendPendingMsgs()\n\t})\n\treturn err\n}\n\n// Stop halts the reliable sender from sending messages to peers.",
+      "length": 143,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) Stop() {",
+      "content": "func (s *reliableSender) Stop() {\n\ts.stop.Do(func() {\n\t\tlog.Debugf(\"reliableSender is stopping\")\n\t\tdefer log.Debugf(\"reliableSender stopped\")\n\n\t\tclose(s.quit)\n\t\ts.wg.Wait()\n\t})\n}\n\n// sendMessage constructs a request to send a message reliably to a peer. In the\n// event that the peer is currently offline, this will only write the message to\n// disk. Once the peer reconnects, this message, along with any others pending,\n// will be sent to the peer.",
+      "length": 404,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) sendMessage(msg lnwire.Message, peerPubKey [33]byte) error {",
+      "content": "func (s *reliableSender) sendMessage(msg lnwire.Message, peerPubKey [33]byte) error {\n\t// We'll start by persisting the message to disk. This allows us to\n\t// resend the message upon restarts and peer reconnections.\n\tif err := s.cfg.MessageStore.AddMessage(msg, peerPubKey); err != nil {\n\t\treturn err\n\t}\n\n\t// Then, we'll spawn a peerHandler for this peer to handle resending its\n\t// pending messages while taking into account its connection lifecycle.\nspawnHandler:\n\tmsgHandler, ok := s.spawnPeerHandler(peerPubKey)\n\n\t// If the handler wasn't previously active, we can exit now as we know\n\t// that the message will be sent once the peer online notification is\n\t// received. This prevents us from potentially sending the message\n\t// twice.\n\tif !ok {\n\t\treturn nil\n\t}\n\n\t// Otherwise, we'll attempt to stream the message to the handler.\n\t// There's a subtle race condition where the handler can be torn down\n\t// due to all of the messages sent being stale, so we'll handle this\n\t// gracefully by spawning another one to prevent blocking.\n\tselect {\n\tcase msgHandler.msgs <- msg:\n\tcase <-msgHandler.done:\n\t\tgoto spawnHandler\n\tcase <-s.quit:\n\t\treturn ErrGossiperShuttingDown\n\t}\n\n\treturn nil\n}\n\n// spawnPeerMsgHandler spawns a peerHandler for the given peer if there isn't\n// one already active. The boolean returned signals whether there was already\n// one active or not.",
+      "length": 1242,
+      "tokens": 201,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) spawnPeerHandler(",
+      "content": "func (s *reliableSender) spawnPeerHandler(\n\tpeerPubKey [33]byte) (peerManager, bool) {\n\n\ts.activePeersMtx.Lock()\n\tmsgHandler, ok := s.activePeers[peerPubKey]\n\tif !ok {\n\t\tmsgHandler = peerManager{\n\t\t\tmsgs: make(chan lnwire.Message),\n\t\t\tdone: make(chan struct{}),\n\t\t}\n\t\ts.activePeers[peerPubKey] = msgHandler\n\t}\n\ts.activePeersMtx.Unlock()\n\n\t// If this is a newly initiated peerManager, we will create a\n\t// peerHandler.\n\tif !ok {\n\t\ts.wg.Add(1)\n\t\tgo s.peerHandler(msgHandler, peerPubKey)\n\t}\n\n\treturn msgHandler, ok\n}\n\n// peerHandler is responsible for handling our reliable message send requests\n// for a given peer while also taking into account the peer's connection\n// lifecycle. Any messages that are attempted to be sent while the peer is\n// offline will be queued and sent once the peer reconnects.\n//\n// NOTE: This must be run as a goroutine.",
+      "length": 775,
+      "tokens": 113,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) peerHandler(peerMgr peerManager, peerPubKey [33]byte) {",
+      "content": "func (s *reliableSender) peerHandler(peerMgr peerManager, peerPubKey [33]byte) {\n\tdefer s.wg.Done()\n\n\t// We'll start by requesting a notification for when the peer\n\t// reconnects.\n\tpeerChan := make(chan lnpeer.Peer, 1)\n\nwaitUntilOnline:\n\tlog.Debugf(\"Requesting online notification for peer=%x\", peerPubKey)\n\n\ts.cfg.NotifyWhenOnline(peerPubKey, peerChan)\n\n\tvar peer lnpeer.Peer\nout:\n\tfor {\n\t\tselect {\n\t\t// While we're waiting, we'll also consume any messages that\n\t\t// must be sent to prevent blocking the caller. These can be\n\t\t// ignored for now since the peer is currently offline. Once\n\t\t// they reconnect, the messages will be sent since they should\n\t\t// have been persisted to disk.\n\t\tcase msg := <-peerMgr.msgs:\n\t\t\t// Retrieve the short channel ID for which this message\n\t\t\t// applies for logging purposes. The error can be\n\t\t\t// ignored as the store can only contain messages which\n\t\t\t// have a ShortChannelID field.\n\t\t\tshortChanID, _ := msgShortChanID(msg)\n\t\t\tlog.Debugf(\"Received request to send %v message for \"+\n\t\t\t\t\"channel=%v while peer=%x is offline\",\n\t\t\t\tmsg.MsgType(), shortChanID, peerPubKey)\n\n\t\tcase peer = <-peerChan:\n\t\t\tbreak out\n\n\t\tcase <-s.quit:\n\t\t\treturn\n\t\t}\n\t}\n\n\tlog.Debugf(\"Peer=%x is now online, proceeding to send pending messages\",\n\t\tpeerPubKey)\n\n\t// Once we detect the peer has reconnected, we'll also request a\n\t// notification for when they disconnect. We'll use this to make sure\n\t// they haven't disconnected (in the case of a flappy peer, etc.) by the\n\t// time we attempt to send them the pending messages.\n\tlog.Debugf(\"Requesting offline notification for peer=%x\", peerPubKey)\n\n\tofflineChan := s.cfg.NotifyWhenOffline(peerPubKey)\n\n\tpendingMsgs, err := s.cfg.MessageStore.MessagesForPeer(peerPubKey)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to retrieve pending messages for peer %x: %v\",\n\t\t\tpeerPubKey, err)\n\t\treturn\n\t}\n\n\t// With the peer online, we can now proceed to send our pending messages\n\t// for them.\n\tfor _, msg := range pendingMsgs {\n\t\t// Retrieve the short channel ID for which this message applies\n\t\t// for logging purposes. The error can be ignored as the store\n\t\t// can only contain messages which have a ShortChannelID field.\n\t\tshortChanID, _ := msgShortChanID(msg)\n\n\t\t// Ensure the peer is still online right before sending the\n\t\t// message.\n\t\tselect {\n\t\tcase <-offlineChan:\n\t\t\tgoto waitUntilOnline\n\t\tdefault:\n\t\t}\n\n\t\tif err := peer.SendMessage(false, msg); err != nil {\n\t\t\tlog.Errorf(\"Unable to send %v message for channel=%v \"+\n\t\t\t\t\"to %x: %v\", msg.MsgType(), shortChanID,\n\t\t\t\tpeerPubKey, err)\n\t\t\tgoto waitUntilOnline\n\t\t}\n\n\t\tlog.Debugf(\"Successfully sent %v message for channel=%v with \"+\n\t\t\t\"peer=%x upon reconnection\", msg.MsgType(), shortChanID,\n\t\t\tpeerPubKey)\n\n\t\t// Now that the message has at least been sent once, we can\n\t\t// check whether it's stale. This guarantees that\n\t\t// AnnounceSignatures are sent at least once if we happen to\n\t\t// already have signatures for both parties.\n\t\tif s.cfg.IsMsgStale(msg) {\n\t\t\terr := s.cfg.MessageStore.DeleteMessage(msg, peerPubKey)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Unable to remove stale %v message \"+\n\t\t\t\t\t\"for channel=%v with peer %x: %v\",\n\t\t\t\t\tmsg.MsgType(), shortChanID, peerPubKey,\n\t\t\t\t\terr)\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tlog.Debugf(\"Removed stale %v message for channel=%v \"+\n\t\t\t\t\"with peer=%x\", msg.MsgType(), shortChanID,\n\t\t\t\tpeerPubKey)\n\t\t}\n\t}\n\n\t// If all of our messages were stale, then there's no need for this\n\t// handler to continue running, so we can exit now.\n\tpendingMsgs, err = s.cfg.MessageStore.MessagesForPeer(peerPubKey)\n\tif err != nil {\n\t\tlog.Errorf(\"Unable to retrieve pending messages for peer %x: %v\",\n\t\t\tpeerPubKey, err)\n\t\treturn\n\t}\n\n\tif len(pendingMsgs) == 0 {\n\t\tlog.Debugf(\"No pending messages left for peer=%x\", peerPubKey)\n\n\t\ts.activePeersMtx.Lock()\n\t\tdelete(s.activePeers, peerPubKey)\n\t\ts.activePeersMtx.Unlock()\n\n\t\tclose(peerMgr.done)\n\n\t\treturn\n\t}\n\n\t// Once the pending messages are sent, we can continue to send any\n\t// future messages while the peer remains connected.\n\tfor {\n\t\tselect {\n\t\tcase msg := <-peerMgr.msgs:\n\t\t\t// Retrieve the short channel ID for which this message\n\t\t\t// applies for logging purposes. The error can be\n\t\t\t// ignored as the store can only contain messages which\n\t\t\t// have a ShortChannelID field.\n\t\t\tshortChanID, _ := msgShortChanID(msg)\n\n\t\t\tif err := peer.SendMessage(false, msg); err != nil {\n\t\t\t\tlog.Errorf(\"Unable to send %v message for \"+\n\t\t\t\t\t\"channel=%v to %x: %v\", msg.MsgType(),\n\t\t\t\t\tshortChanID, peerPubKey, err)\n\t\t\t}\n\n\t\t\tlog.Debugf(\"Successfully sent %v message for \"+\n\t\t\t\t\"channel=%v with peer=%x\", msg.MsgType(),\n\t\t\t\tshortChanID, peerPubKey)\n\n\t\tcase <-offlineChan:\n\t\t\tgoto waitUntilOnline\n\n\t\tcase <-s.quit:\n\t\t\treturn\n\t\t}\n\t}\n}\n\n// resendPendingMsgs retrieves and sends all of the messages within the message\n// store that should be reliably sent to their respective peers.",
+      "length": 4597,
+      "tokens": 654,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *reliableSender) resendPendingMsgs() error {",
+      "content": "func (s *reliableSender) resendPendingMsgs() error {\n\t// Fetch all of the peers for which we have pending messages for and\n\t// spawn a peerMsgHandler for each. Once the peer is seen as online, all\n\t// of the pending messages will be sent.\n\tpeers, err := s.cfg.MessageStore.Peers()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tfor peer := range peers {\n\t\ts.spawnPeerHandler(peer)\n\t}\n\n\treturn nil\n}\n",
+      "length": 320,
+      "tokens": 59,
+      "embedding": []
+    }
+  ]
+}

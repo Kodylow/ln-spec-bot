@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnutils/stream.go",
+  "package": "lnutils",
+  "sections": [
+    {
+      "slug": "func Map[T1, T2 any](s []T1, f func(T1) T2) []T2 {",
+      "content": "func Map[T1, T2 any](s []T1, f func(T1) T2) []T2 {\n\tr := make([]T2, len(s))\n\n\tfor i, v := range s {\n\t\tr[i] = f(v)\n\t}\n\n\treturn r\n}\n",
+      "length": 71,
+      "tokens": 18,
+      "embedding": []
+    }
+  ]
+}

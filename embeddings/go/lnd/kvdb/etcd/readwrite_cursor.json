@@ -1,0 +1,62 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/readwrite_cursor.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "type readWriteCursor struct {",
+      "content": "type readWriteCursor struct {\n\t// bucket holds the reference to the parent bucket.\n\tbucket *readWriteBucket\n\n\t// prefix holds the value prefix which is in front of each\n\t// value key in the bucket.\n\tprefix string\n\n\t// currKey holds the current key of the cursor.\n\tcurrKey string\n}\n",
+      "length": 241,
+      "tokens": 43,
+      "embedding": []
+    },
+    {
+      "slug": "func newReadWriteCursor(bucket *readWriteBucket) *readWriteCursor {",
+      "content": "func newReadWriteCursor(bucket *readWriteBucket) *readWriteCursor {\n\treturn &readWriteCursor{\n\t\tbucket: bucket,\n\t\tprefix: string(bucket.id),\n\t}\n}\n\n// First positions the cursor at the first key/value pair and returns\n// the pair.",
+      "length": 154,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) First() (key, value []byte) {",
+      "content": "func (c *readWriteCursor) First() (key, value []byte) {\n\t// Get the first key with the value prefix.\n\tkv, err := c.bucket.tx.stm.First(c.prefix)\n\tif err != nil {\n\t\t// TODO: revise this once kvdb interface supports errors\n\t\treturn nil, nil\n\t}\n\n\tif kv != nil {\n\t\tc.currKey = kv.key\n\t\treturn getKeyVal(kv)\n\t}\n\n\treturn nil, nil\n}\n\n// Last positions the cursor at the last key/value pair and returns the\n// pair.",
+      "length": 335,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Last() (key, value []byte) {",
+      "content": "func (c *readWriteCursor) Last() (key, value []byte) {\n\tkv, err := c.bucket.tx.stm.Last(c.prefix)\n\tif err != nil {\n\t\t// TODO: revise this once kvdb interface supports errors\n\t\treturn nil, nil\n\t}\n\n\tif kv != nil {\n\t\tc.currKey = kv.key\n\t\treturn getKeyVal(kv)\n\t}\n\n\treturn nil, nil\n}\n\n// Next moves the cursor one key/value pair forward and returns the new\n// pair.",
+      "length": 290,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Next() (key, value []byte) {",
+      "content": "func (c *readWriteCursor) Next() (key, value []byte) {\n\tkv, err := c.bucket.tx.stm.Next(c.prefix, c.currKey)\n\tif err != nil {\n\t\t// TODO: revise this once kvdb interface supports errors\n\t\treturn nil, nil\n\t}\n\n\tif kv != nil {\n\t\tc.currKey = kv.key\n\t\treturn getKeyVal(kv)\n\t}\n\n\treturn nil, nil\n}\n\n// Prev moves the cursor one key/value pair backward and returns the new\n// pair.",
+      "length": 302,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Prev() (key, value []byte) {",
+      "content": "func (c *readWriteCursor) Prev() (key, value []byte) {\n\tkv, err := c.bucket.tx.stm.Prev(c.prefix, c.currKey)\n\tif err != nil {\n\t\t// TODO: revise this once kvdb interface supports errors\n\t\treturn nil, nil\n\t}\n\n\tif kv != nil {\n\t\tc.currKey = kv.key\n\t\treturn getKeyVal(kv)\n\t}\n\n\treturn nil, nil\n}\n\n// Seek positions the cursor at the passed seek key.  If the key does\n// not exist, the cursor is moved to the next key after seek.  Returns\n// the new pair.",
+      "length": 377,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Seek(seek []byte) (key, value []byte) {",
+      "content": "func (c *readWriteCursor) Seek(seek []byte) (key, value []byte) {\n\t// Seek to the first key with prefix + seek. If that key is not present\n\t// STM will seek to the next matching key with prefix.\n\tkv, err := c.bucket.tx.stm.Seek(c.prefix, c.prefix+string(seek))\n\tif err != nil {\n\t\t// TODO: revise this once kvdb interface supports errors\n\t\treturn nil, nil\n\t}\n\n\tif kv != nil {\n\t\tc.currKey = kv.key\n\t\treturn getKeyVal(kv)\n\t}\n\n\treturn nil, nil\n}\n\n// Delete removes the current key/value pair the cursor is at without\n// invalidating the cursor.  Returns ErrIncompatibleValue if attempted\n// when the cursor points to a nested bucket.",
+      "length": 545,
+      "tokens": 94,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *readWriteCursor) Delete() error {",
+      "content": "func (c *readWriteCursor) Delete() error {\n\tif isBucketKey(c.currKey) {\n\t\tc.bucket.DeleteNestedBucket(getKey(c.currKey))\n\t} else {\n\t\tc.bucket.Delete(getKey(c.currKey))\n\t}\n\n\treturn nil\n}\n",
+      "length": 135,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

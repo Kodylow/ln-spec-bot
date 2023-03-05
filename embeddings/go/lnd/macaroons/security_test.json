@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/security_test.go",
+  "package": "macaroons",
+  "sections": [
+    {
+      "slug": "func init() {",
+      "content": "func init() {\n\t// Below are the reduced scrypt parameters that are used when creating\n\t// the encryption key for the macaroon database with snacl.NewSecretKey.\n\t// We use very low values for our itest/rpctest to speed things up.\n\tscryptN = waddrmgr.FastScryptOptions.N\n\tscryptR = waddrmgr.FastScryptOptions.R\n\tscryptP = waddrmgr.FastScryptOptions.P\n}\n",
+      "length": 330,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

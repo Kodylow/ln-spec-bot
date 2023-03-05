@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/blob/type.go",
+  "package": "blob",
+  "sections": [
+    {
+      "slug": "type Flag uint16",
+      "content": "type Flag uint16\n\nconst (\n\t// FlagReward signals that the justice transaction should contain an\n\t// additional output for itself. Signatures sent by the client should\n\t// include the reward script negotiated during session creation. Without\n\t// the flag, there is only one output sweeping clients funds back to\n\t// them solely.\n\tFlagReward Flag = 1\n\n\t// FlagCommitOutputs signals that the blob contains the information\n\t// required to sweep commitment outputs.\n\tFlagCommitOutputs Flag = 1 << 1\n\n\t// FlagAnchorChannel signals that this blob is meant to spend an anchor\n\t// channel, and therefore must expect a P2WSH-style to-remote output if\n\t// one exists.\n\tFlagAnchorChannel Flag = 1 << 2\n)\n\n// Type returns a Type consisting solely of this flag enabled.",
+      "length": 719,
+      "tokens": 118,
+      "embedding": []
+    },
+    {
+      "slug": "func (f Flag) Type() Type {",
+      "content": "func (f Flag) Type() Type {\n\treturn Type(f)\n}\n\n// String returns the name of the flag.",
+      "length": 55,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (f Flag) String() string {",
+      "content": "func (f Flag) String() string {\n\tswitch f {\n\tcase FlagReward:\n\t\treturn \"FlagReward\"\n\tcase FlagCommitOutputs:\n\t\treturn \"FlagCommitOutputs\"\n\tcase FlagAnchorChannel:\n\t\treturn \"FlagAnchorChannel\"\n\tdefault:\n\t\treturn \"FlagUnknown\"\n\t}\n}\n\n// Type is a bit vector composed of Flags that govern various aspects of\n// reconstructing the justice transaction from an encrypted blob. The flags can\n// be used to signal behaviors such as which inputs are being swept, which\n// outputs should be added to the justice transaction, or modify serialization\n// of the blob itself.",
+      "length": 512,
+      "tokens": 77,
+      "embedding": []
+    },
+    {
+      "slug": "type Type uint16",
+      "content": "type Type uint16\n\nconst (\n\t// TypeAltruistCommit sweeps only commitment outputs to a sweep address\n\t// controlled by the user, and does not give the tower a reward.\n\tTypeAltruistCommit = Type(FlagCommitOutputs)\n\n\t// TypeAltruistAnchorCommit sweeps only commitment outputs from an\n\t// anchor commitment to a sweep address controlled by the user, and does\n\t// not give the tower a reward.\n\tTypeAltruistAnchorCommit = Type(FlagCommitOutputs | FlagAnchorChannel)\n\n\t// TypeRewardCommit sweeps only commitment outputs to a sweep address\n\t// controlled by the user, and pays a negotiated reward to the tower.\n\tTypeRewardCommit = Type(FlagCommitOutputs | FlagReward)\n)\n\n// Has returns true if the Type has the passed flag enabled.",
+      "length": 689,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func (t Type) Has(flag Flag) bool {",
+      "content": "func (t Type) Has(flag Flag) bool {\n\treturn Flag(t)&flag == flag\n}\n\n// TypeFromFlags creates a single Type from an arbitrary list of flags.",
+      "length": 100,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func TypeFromFlags(flags ...Flag) Type {",
+      "content": "func TypeFromFlags(flags ...Flag) Type {\n\tvar typ Type\n\tfor _, flag := range flags {\n\t\ttyp |= Type(flag)\n\t}\n\n\treturn typ\n}\n\n// IsAnchorChannel returns true if the blob type is for an anchor channel.",
+      "length": 149,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (t Type) IsAnchorChannel() bool {",
+      "content": "func (t Type) IsAnchorChannel() bool {\n\treturn t.Has(FlagAnchorChannel)\n}\n\n// knownFlags maps the supported flags to their name.\nvar knownFlags = map[Flag]struct{}{\n\tFlagReward:        {},\n\tFlagCommitOutputs: {},\n\tFlagAnchorChannel: {},\n}\n\n// String returns a human readable description of a Type.",
+      "length": 248,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (t Type) String() string {",
+      "content": "func (t Type) String() string {\n\tvar (\n\t\thrPieces        []string\n\t\thasUnknownFlags bool\n\t)\n\n\t// Iterate through the possible flags from highest to lowest. This will\n\t// ensure that the human readable names will be in the same order as the\n\t// bits (left to right) if the type were to be printed in big-endian\n\t// byte order.\n\tfor f := Flag(1 << 15); f != 0; f >>= 1 {\n\t\t// If this flag is known, we'll add a human-readable name or its\n\t\t// inverse depending on whether the type has this flag set.\n\t\tif _, ok := knownFlags[f]; ok {\n\t\t\tif t.Has(f) {\n\t\t\t\thrPieces = append(hrPieces, f.String())\n\t\t\t} else {\n\t\t\t\thrPieces = append(hrPieces, \"No-\"+f.String())\n\t\t\t}\n\t\t} else {\n\t\t\t// Make note of any unknown flags that this type has\n\t\t\t// set. If any are present, we'll prepend the bit-wise\n\t\t\t// representation of the type in the final string.\n\t\t\tif t.Has(f) {\n\t\t\t\thasUnknownFlags = true\n\t\t\t}\n\t\t}\n\t}\n\n\t// If there were no unknown flags, we'll simply return the list of human\n\t// readable pieces.\n\tif !hasUnknownFlags {\n\t\treturn fmt.Sprintf(\"[%s]\", strings.Join(hrPieces, \"|\"))\n\t}\n\n\t// Otherwise, we'll prepend the bit-wise representation to the human\n\t// readable names.\n\treturn fmt.Sprintf(\"%016b[%s]\", t, strings.Join(hrPieces, \"|\"))\n}\n\n// supportedTypes is the set of all configurations known to be supported by the\n// package.\nvar supportedTypes = map[Type]struct{}{\n\tTypeAltruistCommit:       {},\n\tTypeRewardCommit:         {},\n\tTypeAltruistAnchorCommit: {},\n}\n\n// IsSupportedType returns true if the given type is supported by the package.",
+      "length": 1461,
+      "tokens": 236,
+      "embedding": []
+    },
+    {
+      "slug": "func IsSupportedType(blobType Type) bool {",
+      "content": "func IsSupportedType(blobType Type) bool {\n\t_, ok := supportedTypes[blobType]\n\treturn ok\n}\n\n// SupportedTypes returns a list of all supported blob types.",
+      "length": 106,
+      "tokens": 17,
+      "embedding": []
+    },
+    {
+      "slug": "func SupportedTypes() []Type {",
+      "content": "func SupportedTypes() []Type {\n\tsupported := make([]Type, 0, len(supportedTypes))\n\tfor t := range supportedTypes {\n\t\tsupported = append(supported, t)\n\t}\n\treturn supported\n}\n",
+      "length": 136,
+      "tokens": 19,
+      "embedding": []
+    }
+  ]
+}

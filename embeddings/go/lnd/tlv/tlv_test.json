@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/tlv/tlv_test.go",
+  "package": "tlv_test",
+  "sections": [
+    {
+      "slug": "type nodeAmts struct {",
+      "content": "type nodeAmts struct {\n\tnodeID *btcec.PublicKey\n\tamt1   uint64\n\tamt2   uint64\n}\n",
+      "length": 53,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func ENodeAmts(w io.Writer, val interface{}, buf *[8]byte) error {",
+      "content": "func ENodeAmts(w io.Writer, val interface{}, buf *[8]byte) error {\n\tif t, ok := val.(*nodeAmts); ok {\n\t\tif err := tlv.EPubKey(w, &t.nodeID, buf); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tif err := tlv.EUint64T(w, t.amt1, buf); err != nil {\n\t\t\treturn err\n\t\t}\n\t\treturn tlv.EUint64T(w, t.amt2, buf)\n\t}\n\treturn tlv.NewTypeForEncodingErr(val, \"nodeAmts\")\n}\n",
+      "length": 266,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func DNodeAmts(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {",
+      "content": "func DNodeAmts(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {\n\tif t, ok := val.(*nodeAmts); ok && l == 49 {\n\t\tif err := tlv.DPubKey(r, &t.nodeID, buf, 33); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tif err := tlv.DUint64(r, &t.amt1, buf, 8); err != nil {\n\t\t\treturn err\n\t\t}\n\t\treturn tlv.DUint64(r, &t.amt2, buf, 8)\n\t}\n\treturn tlv.NewTypeForDecodingErr(val, \"nodeAmts\", l, 49)\n}\n",
+      "length": 294,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "type N1 struct {",
+      "content": "type N1 struct {\n\tamt       uint64\n\tscid      uint64\n\tnodeAmts  nodeAmts\n\tcltvDelta uint16\n\n\talias []byte\n\n\tstream *tlv.Stream\n}\n",
+      "length": 103,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N1) sizeAmt() uint64 {",
+      "content": "func (n *N1) sizeAmt() uint64 {\n\treturn tlv.SizeTUint64(n.amt)\n}\n",
+      "length": 31,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewN1() *N1 {",
+      "content": "func NewN1() *N1 {\n\tn := new(N1)\n\n\tn.stream = tlv.MustNewStream(\n\t\ttlv.MakeDynamicRecord(\n\t\t\t1, &n.amt, n.sizeAmt, tlv.ETUint64, tlv.DTUint64,\n\t\t),\n\t\ttlv.MakePrimitiveRecord(2, &n.scid),\n\t\ttlv.MakeStaticRecord(3, &n.nodeAmts, 49, ENodeAmts, DNodeAmts),\n\t\ttlv.MakePrimitiveRecord(254, &n.cltvDelta),\n\t\ttlv.MakePrimitiveRecord(401, &n.alias),\n\t)\n\n\treturn n\n}\n",
+      "length": 324,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N1) Encode(w io.Writer) error {",
+      "content": "func (n *N1) Encode(w io.Writer) error {\n\treturn n.stream.Encode(w)\n}\n",
+      "length": 27,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N1) Decode(r io.Reader) error {",
+      "content": "func (n *N1) Decode(r io.Reader) error {\n\treturn n.stream.Decode(r)\n}\n",
+      "length": 27,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "type N2 struct {",
+      "content": "type N2 struct {\n\tamt        uint64\n\tcltvExpiry uint32\n\n\tstream *tlv.Stream\n}\n",
+      "length": 56,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N2) sizeAmt() uint64 {",
+      "content": "func (n *N2) sizeAmt() uint64 {\n\treturn tlv.SizeTUint64(n.amt)\n}\n",
+      "length": 31,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N2) sizeCltv() uint64 {",
+      "content": "func (n *N2) sizeCltv() uint64 {\n\treturn tlv.SizeTUint32(n.cltvExpiry)\n}\n",
+      "length": 38,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func NewN2() *N2 {",
+      "content": "func NewN2() *N2 {\n\tn := new(N2)\n\n\tn.stream = tlv.MustNewStream(\n\t\ttlv.MakeDynamicRecord(\n\t\t\t0, &n.amt, n.sizeAmt, tlv.ETUint64, tlv.DTUint64,\n\t\t),\n\t\ttlv.MakeDynamicRecord(\n\t\t\t11, &n.cltvExpiry, n.sizeCltv, tlv.ETUint32, tlv.DTUint32,\n\t\t),\n\t)\n\n\treturn n\n}\n",
+      "length": 224,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N2) Encode(w io.Writer) error {",
+      "content": "func (n *N2) Encode(w io.Writer) error {\n\treturn n.stream.Encode(w)\n}\n",
+      "length": 27,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (n *N2) Decode(r io.Reader) error {",
+      "content": "func (n *N2) Decode(r io.Reader) error {\n\treturn n.stream.Decode(r)\n}\n\nvar tlvDecodingFailureTests = []struct {\n\tname   string\n\tbytes  []byte\n\texpErr error\n\n\t// skipN2 if true, will cause the test to only be executed on N1.\n\tskipN2 bool\n}{\n\t{\n\t\tname:   \"type truncated\",\n\t\tbytes:  []byte{0xfd},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"type truncated\",\n\t\tbytes:  []byte{0xfd, 0x01},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"not minimally encoded type\",\n\t\tbytes:  []byte{0xfd, 0x00, 0x01}, // spec has trailing 0x00\n\t\texpErr: tlv.ErrVarIntNotCanonical,\n\t},\n\t{\n\t\tname:   \"missing length\",\n\t\tbytes:  []byte{0xfd, 0x01, 0x01},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"length truncated\",\n\t\tbytes:  []byte{0x0f, 0xfd},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"length truncated\",\n\t\tbytes:  []byte{0x0f, 0xfd, 0x26},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"missing value\",\n\t\tbytes:  []byte{0x0f, 0xfd, 0x26, 0x02},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"not minimally encoded length\",\n\t\tbytes:  []byte{0x0f, 0xfd, 0x00, 0x01}, // spec has trailing 0x00\n\t\texpErr: tlv.ErrVarIntNotCanonical,\n\t},\n\t{\n\t\tname: \"value truncated\",\n\t\tbytes: []byte{0x0f, 0xfd, 0x02, 0x01,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\n\t\t},\n\t\texpErr: io.ErrUnexpectedEOF,\n\t},\n\t{\n\t\tname:   \"greater than encoding length for n1's amt\",\n\t\tbytes:  []byte{0x01, 0x09, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint64), \"uint64\", 9, 8),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x01, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x02, 0x00, 0x01},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x03, 0x00, 0x01, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x04, 0x00, 0x01, 0x00, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x05, 0x00, 0x01, 0x00, 0x00, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"encoding for n1's amt is not minimal\",\n\t\tbytes:  []byte{0x01, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},\n\t\texpErr: tlv.ErrTUintNotMinimal,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"less than encoding length for n1's scid\",\n\t\tbytes:  []byte{0x02, 0x07, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint64), \"uint64\", 7, 8),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"less than encoding length for n1's scid\",\n\t\tbytes:  []byte{0x02, 0x09, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint64), \"uint64\", 9, 8),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"less than encoding length for n1's nodeAmts\",\n\t\tbytes: []byte{0x03, 0x29,\n\t\t\t0x02, 0x3d, 0xa0, 0x92, 0xf6, 0x98, 0x0e, 0x58, 0xd2,\n\t\t\t0xc0, 0x37, 0x17, 0x31, 0x80, 0xe9, 0xa4, 0x65, 0x47,\n\t\t\t0x60, 0x26, 0xee, 0x50, 0xf9, 0x66, 0x95, 0x96, 0x3e,\n\t\t\t0x8e, 0xfe, 0x43, 0x6f, 0x54, 0xeb, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x01,\n\t\t},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(nodeAmts), \"nodeAmts\", 41, 49),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"less than encoding length for n1's nodeAmts\",\n\t\tbytes: []byte{0x03, 0x30,\n\t\t\t0x02, 0x3d, 0xa0, 0x92, 0xf6, 0x98, 0x0e, 0x58, 0xd2,\n\t\t\t0xc0, 0x37, 0x17, 0x31, 0x80, 0xe9, 0xa4, 0x65, 0x47,\n\t\t\t0x60, 0x26, 0xee, 0x50, 0xf9, 0x66, 0x95, 0x96, 0x3e,\n\t\t\t0x8e, 0xfe, 0x43, 0x6f, 0x54, 0xeb, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x01,\n\t\t},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(nodeAmts), \"nodeAmts\", 48, 49),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"n1's node_id is not a valid point\",\n\t\tbytes: []byte{0x03, 0x31,\n\t\t\t0x04, 0x3d, 0xa0, 0x92, 0xf6, 0x98, 0x0e, 0x58, 0xd2,\n\t\t\t0xc0, 0x37, 0x17, 0x31, 0x80, 0xe9, 0xa4, 0x65, 0x47,\n\t\t\t0x60, 0x26, 0xee, 0x50, 0xf9, 0x66, 0x95, 0x96, 0x3e,\n\t\t\t0x8e, 0xfe, 0x43, 0x6f, 0x54, 0xeb, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x02,\n\t\t},\n\t\texpErr: secp.Error{\n\t\t\tErr:         secp.ErrPubKeyInvalidFormat,\n\t\t\tDescription: \"invalid public key: unsupported format: 4\",\n\t\t},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"greater than encoding length for n1's nodeAmts\",\n\t\tbytes: []byte{0x03, 0x32,\n\t\t\t0x02, 0x3d, 0xa0, 0x92, 0xf6, 0x98, 0x0e, 0x58, 0xd2,\n\t\t\t0xc0, 0x37, 0x17, 0x31, 0x80, 0xe9, 0xa4, 0x65, 0x47,\n\t\t\t0x60, 0x26, 0xee, 0x50, 0xf9, 0x66, 0x95, 0x96, 0x3e,\n\t\t\t0x8e, 0xfe, 0x43, 0x6f, 0x54, 0xeb, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x01,\n\t\t},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(nodeAmts), \"nodeAmts\", 50, 49),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"less than encoding length for n1's cltvDelta\",\n\t\tbytes:  []byte{0xfd, 0x00, 0x0fe, 0x00},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint16), \"uint16\", 0, 2),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"less than encoding length for n1's cltvDelta\",\n\t\tbytes:  []byte{0xfd, 0x00, 0xfe, 0x01, 0x01},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint16), \"uint16\", 1, 2),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"greater than encoding length for n1's cltvDelta\",\n\t\tbytes:  []byte{0xfd, 0x00, 0xfe, 0x03, 0x01, 0x01, 0x01},\n\t\texpErr: tlv.NewTypeForDecodingErr(new(uint16), \"uint16\", 3, 2),\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"valid records but invalid ordering\",\n\t\tbytes: []byte{0x02, 0x08,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x26, 0x01,\n\t\t\t0x01, 0x2a,\n\t\t},\n\t\texpErr: tlv.ErrStreamNotCanonical,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"duplicate tlv type\",\n\t\tbytes: []byte{0x02, 0x08,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x31, 0x02,\n\t\t\t0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x51,\n\t\t},\n\t\texpErr: tlv.ErrStreamNotCanonical,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"duplicate ignored tlv type\",\n\t\tbytes:  []byte{0x1f, 0x00, 0x1f, 0x01, 0x2a},\n\t\texpErr: tlv.ErrStreamNotCanonical,\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"type wraparound\",\n\t\tbytes:  []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00},\n\t\texpErr: tlv.ErrStreamNotCanonical,\n\t},\n}\n\n// TestTLVDecodingSuccess asserts that the TLV parser fails to decode invalid\n// TLV streams.",
+      "length": 7998,
+      "tokens": 1119,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTLVDecodingFailures(t *testing.T) {",
+      "content": "func TestTLVDecodingFailures(t *testing.T) {\n\tfor _, test := range tlvDecodingFailureTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tn1 := NewN1()\n\t\t\tr := bytes.NewReader(test.bytes)\n\n\t\t\terr := n1.Decode(r)\n\t\t\tif !reflect.DeepEqual(err, test.expErr) {\n\t\t\t\tt.Fatalf(\"expected N1 decoding failure: %v, \"+\n\t\t\t\t\t\"got: %v\", test.expErr, err)\n\t\t\t}\n\n\t\t\tif test.skipN2 {\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\tn2 := NewN2()\n\t\t\tr = bytes.NewReader(test.bytes)\n\n\t\t\terr = n2.Decode(r)\n\t\t\tif !reflect.DeepEqual(err, test.expErr) {\n\t\t\t\tt.Fatalf(\"expected N2 decoding failure: %v, \"+\n\t\t\t\t\t\"got: %v\", test.expErr, err)\n\t\t\t}\n\t\t})\n\t}\n}\n\nvar tlvDecodingSuccessTests = []struct {\n\tname   string\n\tbytes  []byte\n\tskipN2 bool\n}{\n\t{\n\t\tname: \"empty\",\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0x21, 0x00},\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0xfd, 0x02, 0x01, 0x00},\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0xfd, 0x00, 0xfd, 0x00},\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0xfd, 0x00, 0xff, 0x00},\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0xfe, 0x02, 0x00, 0x00, 0x01, 0x00},\n\t},\n\t{\n\t\tname:  \"unknown odd type\",\n\t\tbytes: []byte{0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00},\n\t},\n\t{\n\t\tname:   \"N1 amt=0\",\n\t\tbytes:  []byte{0x01, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=1\",\n\t\tbytes:  []byte{0x01, 0x01, 0x01},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=256\",\n\t\tbytes:  []byte{0x01, 0x02, 0x01, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=65536\",\n\t\tbytes:  []byte{0x01, 0x03, 0x01, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=16777216\",\n\t\tbytes:  []byte{0x01, 0x04, 0x01, 0x00, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=4294967296\",\n\t\tbytes:  []byte{0x01, 0x05, 0x01, 0x00, 0x00, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=1099511627776\",\n\t\tbytes:  []byte{0x01, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=281474976710656\",\n\t\tbytes:  []byte{0x01, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 amt=72057594037927936\",\n\t\tbytes:  []byte{0x01, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 scid=0x0x550\",\n\t\tbytes:  []byte{0x02, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x26},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname: \"N1 node_id=023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb amount_msat_1=1 amount_msat_2=2\",\n\t\tbytes: []byte{0x03, 0x31,\n\t\t\t0x02, 0x3d, 0xa0, 0x92, 0xf6, 0x98, 0x0e, 0x58, 0xd2,\n\t\t\t0xc0, 0x37, 0x17, 0x31, 0x80, 0xe9, 0xa4, 0x65, 0x47,\n\t\t\t0x60, 0x26, 0xee, 0x50, 0xf9, 0x66, 0x95, 0x96, 0x3e,\n\t\t\t0x8e, 0xfe, 0x43, 0x6f, 0x54, 0xeb, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,\n\t\t\t0x00, 0x00, 0x00, 0x02},\n\t\tskipN2: true,\n\t},\n\t{\n\t\tname:   \"N1 cltv_delta=550\",\n\t\tbytes:  []byte{0xfd, 0x00, 0xfe, 0x02, 0x02, 0x26},\n\t\tskipN2: true,\n\t},\n}\n\n// TestTLVDecodingSuccess asserts that the TLV parser is able to successfully\n// decode valid TLV streams.",
+      "length": 2827,
+      "tokens": 391,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTLVDecodingSuccess(t *testing.T) {",
+      "content": "func TestTLVDecodingSuccess(t *testing.T) {\n\tfor _, test := range tlvDecodingSuccessTests {\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tn1 := NewN1()\n\t\t\tr := bytes.NewReader(test.bytes)\n\n\t\t\terr := n1.Decode(r)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"expected N1 decoding success, got: %v\",\n\t\t\t\t\terr)\n\t\t\t}\n\n\t\t\tif test.skipN2 {\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\tn2 := NewN2()\n\t\t\tr = bytes.NewReader(test.bytes)\n\n\t\t\terr = n2.Decode(r)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"expected N2 decoding success, got: %v\",\n\t\t\t\t\terr)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 438,
+      "tokens": 63,
+      "embedding": []
+    }
+  ]
+}

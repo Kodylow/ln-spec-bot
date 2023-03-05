@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/channel_reestablish.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type ChannelReestablish struct {",
+      "content": "type ChannelReestablish struct {\n\t// ChanID is the channel ID of the channel state we're attempting to\n\t// synchronize with the remote party.\n\tChanID ChannelID\n\n\t// NextLocalCommitHeight is the next local commitment height of the\n\t// sending party. If the height of the sender's commitment chain from\n\t// the receiver's Pov is one less that this number, then the sender\n\t// should re-send the *exact* same proposed commitment.\n\t//\n\t// In other words, the receiver should re-send their last sent\n\t// commitment iff:\n\t//\n\t//  * NextLocalCommitHeight == remoteCommitChain.Height\n\t//\n\t// This covers the case of a lost commitment which was sent by the\n\t// sender of this message, but never received by the receiver of this\n\t// message.\n\tNextLocalCommitHeight uint64\n\n\t// RemoteCommitTailHeight is the height of the receiving party's\n\t// unrevoked commitment from the PoV of the sender of this message. If\n\t// the height of the receiver's commitment is *one more* than this\n\t// value, then their prior RevokeAndAck message should be\n\t// retransmitted.\n\t//\n\t// In other words, the receiver should re-send their last sent\n\t// RevokeAndAck message iff:\n\t//\n\t//  * localCommitChain.tail().Height == RemoteCommitTailHeight + 1\n\t//\n\t// This covers the case of a lost revocation, wherein the receiver of\n\t// the message sent a revocation for a prior state, but the sender of\n\t// the message never fully processed it.\n\tRemoteCommitTailHeight uint64\n\n\t// LastRemoteCommitSecret is the last commitment secret that the\n\t// receiving node has sent to the sending party. This will be the\n\t// secret of the last revoked commitment transaction. Including this\n\t// provides proof that the sending node at least knows of this state,\n\t// as they couldn't have produced it if it wasn't sent, as the value\n\t// can be authenticated by querying the shachain or the receiving\n\t// party.\n\tLastRemoteCommitSecret [32]byte\n\n\t// LocalUnrevokedCommitPoint is the commitment point used in the\n\t// current un-revoked commitment transaction of the sending party.\n\tLocalUnrevokedCommitPoint *btcec.PublicKey\n\n\t// ExtraData is the set of data that was appended to this message to\n\t// fill out the full maximum transport message size. These fields can\n\t// be used to specify optional data such as custom TLV fields.\n\tExtraData ExtraOpaqueData\n}\n\n// A compile time check to ensure ChannelReestablish implements the\n// lnwire.Message interface.\nvar _ Message = (*ChannelReestablish)(nil)\n\n// Encode serializes the target ChannelReestablish into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 2527,
+      "tokens": 401,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelReestablish) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (a *ChannelReestablish) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteChannelID(w, a.ChanID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint64(w, a.NextLocalCommitHeight); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint64(w, a.RemoteCommitTailHeight); err != nil {\n\t\treturn err\n\t}\n\n\t// If the commit point wasn't sent, then we won't write out any of the\n\t// remaining fields as they're optional.\n\tif a.LocalUnrevokedCommitPoint == nil {\n\t\t// However, we'll still write out the extra data if it's\n\t\t// present.\n\t\t//\n\t\t// NOTE: This is here primarily for the quickcheck tests, in\n\t\t// practice, we'll always populate this field.\n\t\treturn WriteBytes(w, a.ExtraData)\n\t}\n\n\t// Otherwise, we'll write out the remaining elements.\n\tif err := WriteBytes(w, a.LastRemoteCommitSecret[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WritePublicKey(w, a.LocalUnrevokedCommitPoint); err != nil {\n\t\treturn err\n\t}\n\treturn WriteBytes(w, a.ExtraData)\n}\n\n// Decode deserializes a serialized ChannelReestablish stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 1031,
+      "tokens": 160,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelReestablish) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (a *ChannelReestablish) Decode(r io.Reader, pver uint32) error {\n\terr := ReadElements(r,\n\t\t&a.ChanID,\n\t\t&a.NextLocalCommitHeight,\n\t\t&a.RemoteCommitTailHeight,\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// This message has currently defined optional fields. As a result,\n\t// we'll only proceed if there's still bytes remaining within the\n\t// reader.\n\t//\n\t// We'll manually parse out the optional fields in order to be able to\n\t// still utilize the io.Reader interface.\n\n\t// We'll first attempt to read the optional commit secret, if we're at\n\t// the EOF, then this means the field wasn't included so we can exit\n\t// early.\n\tvar buf [32]byte\n\t_, err = io.ReadFull(r, buf[:32])\n\tif err == io.EOF {\n\t\t// If there aren't any more bytes, then we'll emplace an empty\n\t\t// extra data to make our quickcheck tests happy.\n\t\ta.ExtraData = make([]byte, 0)\n\t\treturn nil\n\t} else if err != nil {\n\t\treturn err\n\t}\n\n\t// If the field is present, then we'll copy it over and proceed.\n\tcopy(a.LastRemoteCommitSecret[:], buf[:])\n\n\t// We'll conclude by parsing out the commitment point. We don't check\n\t// the error in this case, as it has included the commit secret, then\n\t// they MUST also include the commit point.\n\tif err = ReadElement(r, &a.LocalUnrevokedCommitPoint); err != nil {\n\t\treturn err\n\t}\n\n\treturn a.ExtraData.Decode(r)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 1335,
+      "tokens": 226,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *ChannelReestablish) MsgType() MessageType {",
+      "content": "func (a *ChannelReestablish) MsgType() MessageType {\n\treturn MsgChannelReestablish\n}\n",
+      "length": 30,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/test.go",
+  "package": "kvdb",
+  "sections": [
+    {
+      "slug": "type KV struct {",
+      "content": "type KV struct {\n\tkey string\n\tval string\n}\n",
+      "length": 23,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func reverseKVs(a []KV) []KV {",
+      "content": "func reverseKVs(a []KV) []KV {\n\tfor i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {\n\t\ta[i], a[j] = a[j], a[i]\n\t}\n\n\treturn a\n}\n",
+      "length": 87,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

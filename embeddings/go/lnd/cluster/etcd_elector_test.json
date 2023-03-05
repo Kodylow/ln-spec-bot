@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/cluster/etcd_elector_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func GuardTimeout(t *testing.T, timeout time.Duration) func() {",
+      "content": "func GuardTimeout(t *testing.T, timeout time.Duration) func() {\n\tdone := make(chan struct{})\n\tgo func() {\n\t\tselect {\n\t\tcase <-time.After(timeout):\n\t\t\terr := pprof.Lookup(\"goroutine\").WriteTo(os.Stdout, 1)\n\t\t\trequire.NoError(t, err)\n\t\t\tpanic(\"test timeout\")\n\n\t\tcase <-done:\n\t\t}\n\t}()\n\n\treturn func() {\n\t\tclose(done)\n\t}\n}\n\n// TestEtcdElector tests that two candidates competing for leadership works as\n// expected and that elected leader can resign and allow others to take on.",
+      "length": 392,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func TestEtcdElector(t *testing.T) {",
+      "content": "func TestEtcdElector(t *testing.T) {\n\tguard := GuardTimeout(t, 5*time.Second)\n\tdefer guard()\n\n\ttmpDir := t.TempDir()\n\n\tetcdCfg, cleanup, err := etcd.NewEmbeddedEtcdInstance(tmpDir, 0, 0, \"\")\n\trequire.NoError(t, err)\n\tt.Cleanup(cleanup)\n\n\tctx, cancel := context.WithCancel(context.Background())\n\tdefer cancel()\n\n\tconst (\n\t\telection = \"/election/\"\n\t\tid1      = \"e1\"\n\t\tid2      = \"e2\"\n\t\tttl      = 5\n\t)\n\n\te1, err := newEtcdLeaderElector(\n\t\tctx, id1, election, ttl, etcdCfg,\n\t)\n\trequire.NoError(t, err)\n\n\te2, err := newEtcdLeaderElector(\n\t\tctx, id2, election, ttl, etcdCfg,\n\t)\n\trequire.NoError(t, err)\n\n\tvar wg sync.WaitGroup\n\tch := make(chan *etcdLeaderElector)\n\n\twg.Add(2)\n\tctxb := context.Background()\n\n\tgo func() {\n\t\tdefer wg.Done()\n\t\trequire.NoError(t, e1.Campaign(ctxb))\n\t\tch <- e1\n\t}()\n\n\tgo func() {\n\t\tdefer wg.Done()\n\t\trequire.NoError(t, e2.Campaign(ctxb))\n\t\tch <- e2\n\t}()\n\n\ttmp := <-ch\n\tfirst, err := tmp.Leader(ctxb)\n\trequire.NoError(t, err)\n\trequire.NoError(t, tmp.Resign())\n\n\ttmp = <-ch\n\tsecond, err := tmp.Leader(ctxb)\n\trequire.NoError(t, err)\n\trequire.NoError(t, tmp.Resign())\n\n\trequire.Contains(t, []string{id1, id2}, first)\n\trequire.Contains(t, []string{id1, id2}, second)\n\trequire.NotEqual(t, first, second)\n\n\twg.Wait()\n}\n",
+      "length": 1135,
+      "tokens": 133,
+      "embedding": []
+    }
+  ]
+}

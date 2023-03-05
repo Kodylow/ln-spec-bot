@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/input/txout.go",
+  "package": "input",
+  "sections": [
+    {
+      "slug": "func writeTxOut(w io.Writer, txo *wire.TxOut) error {",
+      "content": "func writeTxOut(w io.Writer, txo *wire.TxOut) error {\n\tvar scratch [8]byte\n\n\tbinary.BigEndian.PutUint64(scratch[:], uint64(txo.Value))\n\tif _, err := w.Write(scratch[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := wire.WriteVarBytes(w, 0, txo.PkScript); err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// readTxOut deserializes a wire.TxOut struct from the passed io.Reader stream.",
+      "length": 307,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func readTxOut(r io.Reader, txo *wire.TxOut) error {",
+      "content": "func readTxOut(r io.Reader, txo *wire.TxOut) error {\n\tvar scratch [8]byte\n\n\tif _, err := io.ReadFull(r, scratch[:]); err != nil {\n\t\treturn err\n\t}\n\tvalue := int64(binary.BigEndian.Uint64(scratch[:]))\n\n\tpkScript, err := wire.ReadVarBytes(r, 0, 80, \"pkScript\")\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t*txo = wire.TxOut{\n\t\tValue:    value,\n\t\tPkScript: pkScript,\n\t}\n\n\treturn nil\n}\n",
+      "length": 299,
+      "tokens": 45,
+      "embedding": []
+    }
+  ]
+}

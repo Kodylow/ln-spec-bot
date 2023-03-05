@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/shachain/element_test.go",
+  "package": "shachain",
+  "sections": [
+    {
+      "slug": "func bitsToIndex(bs ...uint64) (index, error) {",
+      "content": "func bitsToIndex(bs ...uint64) (index, error) {\n\tif len(bs) > 64 {\n\t\treturn 0, errors.New(\"number of elements should be lower then\" +\n\t\t\t\" 64\")\n\t}\n\n\tvar res uint64\n\tfor i, e := range bs {\n\t\tif e != 1 && e != 0 {\n\t\t\treturn 0, errors.New(\"wrong element, should be '0' or\" +\n\t\t\t\t\" '1'\")\n\t\t}\n\n\t\tres += e * 1 << uint(len(bs)-i-1)\n\t}\n\n\treturn index(res), nil\n}\n",
+      "length": 290,
+      "tokens": 61,
+      "embedding": []
+    },
+    {
+      "slug": "type deriveTest struct {",
+      "content": "type deriveTest struct {\n\tname       string\n\tfrom       index\n\tto         index\n\tposition   []uint8\n\tshouldFail bool\n}\n",
+      "length": 88,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func generateTests(t *testing.T) []deriveTest {",
+      "content": "func generateTests(t *testing.T) []deriveTest {\n\tvar (\n\t\ttests []deriveTest\n\t\tfrom  index\n\t\tto    index\n\t\terr   error\n\t)\n\n\tfrom, err = bitsToIndex(0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"zero 'from' 'to'\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tposition:   nil,\n\t\tshouldFail: false,\n\t})\n\n\tfrom, err = bitsToIndex(0, 1, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(0, 1, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"same indexes #1\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tposition:   nil,\n\t\tshouldFail: false,\n\t})\n\n\tfrom, err = bitsToIndex(1)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"same indexes #2\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tshouldFail: true,\n\t})\n\n\tfrom, err = bitsToIndex(0, 0, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(0, 0, 1, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"test seed 'from'\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tposition:   []uint8{1},\n\t\tshouldFail: false,\n\t})\n\n\tfrom, err = bitsToIndex(1, 1, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(0, 1, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"not the same indexes\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tshouldFail: true,\n\t})\n\n\tfrom, err = bitsToIndex(1, 0, 1, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(1, 0, 0, 0)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"'from' index greater then 'to' index\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tshouldFail: true,\n\t})\n\n\tfrom, err = bitsToIndex(1)\n\trequire.NoError(t, err, \"can't generate from index\")\n\tto, err = bitsToIndex(1)\n\trequire.NoError(t, err, \"can't generate from index\")\n\ttests = append(tests, deriveTest{\n\t\tname:       \"zero number trailing zeros\",\n\t\tfrom:       from,\n\t\tto:         to,\n\t\tposition:   nil,\n\t\tshouldFail: false,\n\t})\n\n\treturn tests\n}\n\n// TestDeriveIndex check the correctness of index derive function by testing\n// the index corner cases.",
+      "length": 2351,
+      "tokens": 312,
+      "embedding": []
+    },
+    {
+      "slug": "func TestDeriveIndex(t *testing.T) {",
+      "content": "func TestDeriveIndex(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, test := range generateTests(t) {\n\t\tpos, err := test.from.deriveBitTransformations(test.to)\n\t\tif err != nil {\n\t\t\tif !test.shouldFail {\n\t\t\t\tt.Fatalf(\"Failed (%v): %v\", test.name, err)\n\t\t\t}\n\t\t} else {\n\t\t\tif test.shouldFail {\n\t\t\t\tt.Fatalf(\"Failed (%v): test should failed \"+\n\t\t\t\t\t\"but it's not\", test.name)\n\t\t\t}\n\n\t\t\tif !reflect.DeepEqual(pos, test.position) {\n\t\t\t\tt.Fatalf(\"Failed(%v): position is wrong real:\"+\n\t\t\t\t\t\"%v expected:%v\", test.name, pos, test.position)\n\t\t\t}\n\t\t}\n\n\t\tt.Logf(\"Passed: %v\", test.name)\n\n\t}\n}\n\n// deriveElementTests encodes the test vectors specified in BOLT-03,\n// Appendix D, Generation Tests.\nvar deriveElementTests = []struct {\n\tname       string\n\tindex      index\n\toutput     string\n\tseed       string\n\tshouldFail bool\n}{\n\t{\n\t\tname:       \"generate_from_seed 0 final node\",\n\t\tseed:       \"0000000000000000000000000000000000000000000000000000000000000000\",\n\t\tindex:      0xffffffffffff,\n\t\toutput:     \"02a40c85b6f28da08dfdbe0926c53fab2de6d28c10301f8f7c4073d5e42e3148\",\n\t\tshouldFail: false,\n\t},\n\t{\n\t\tname:       \"generate_from_seed FF final node\",\n\t\tseed:       \"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\",\n\t\tindex:      0xffffffffffff,\n\t\toutput:     \"7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc\",\n\t\tshouldFail: false,\n\t},\n\t{\n\t\tname:       \"generate_from_seed FF alternate bits 1\",\n\t\tindex:      0xaaaaaaaaaaa,\n\t\toutput:     \"56f4008fb007ca9acf0e15b054d5c9fd12ee06cea347914ddbaed70d1c13a528\",\n\t\tseed:       \"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\",\n\t\tshouldFail: false,\n\t},\n\t{\n\t\tname:       \"generate_from_seed FF alternate bits 2\",\n\t\tindex:      0x555555555555,\n\t\toutput:     \"9015daaeb06dba4ccc05b91b2f73bd54405f2be9f217fbacd3c5ac2e62327d31\",\n\t\tseed:       \"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\",\n\t\tshouldFail: false,\n\t},\n\t{\n\t\tname:       \"generate_from_seed 01 last nontrivial node\",\n\t\tindex:      1,\n\t\toutput:     \"915c75942a26bb3a433a8ce2cb0427c29ec6c1775cfc78328b57f6ba7bfeaa9c\",\n\t\tseed:       \"0101010101010101010101010101010101010101010101010101010101010101\",\n\t\tshouldFail: false,\n\t},\n}\n\n// TestSpecificationDeriveElement is used to check the consistency with\n// specification hash derivation function.",
+      "length": 2181,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "func TestSpecificationDeriveElement(t *testing.T) {",
+      "content": "func TestSpecificationDeriveElement(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, test := range deriveElementTests {\n\t\t// Generate seed element.\n\t\telement, err := newElementFromStr(test.seed, rootIndex)\n\t\tif err != nil {\n\t\t\tt.Fatal(err)\n\t\t}\n\n\t\t// Derive element by index.\n\t\tresult, err := element.derive(test.index)\n\t\tif err != nil {\n\t\t\tif !test.shouldFail {\n\t\t\t\tt.Fatalf(\"Failed (%v): %v\", test.name, err)\n\t\t\t}\n\t\t} else {\n\t\t\tif test.shouldFail {\n\t\t\t\tt.Fatalf(\"Failed (%v): test should failed \"+\n\t\t\t\t\t\"but it's not\", test.name)\n\t\t\t}\n\n\t\t\t// Generate element which we should get after derivation.\n\t\t\toutput, err := newElementFromStr(test.output, test.index)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatal(err)\n\t\t\t}\n\n\t\t\t// Check that they are equal.\n\t\t\tif !result.isEqual(output) {\n\t\t\t\tt.Fatalf(\"Failed (%v): hash is wrong, real:\"+\n\t\t\t\t\t\"%v expected:%v\", test.name,\n\t\t\t\t\tresult.hash.String(), output.hash.String())\n\t\t\t}\n\t\t}\n\n\t\tt.Logf(\"Passed (%v)\", test.name)\n\t}\n}\n",
+      "length": 849,
+      "tokens": 112,
+      "embedding": []
+    }
+  ]
+}

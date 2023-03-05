@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/arg_parse.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func parseTime(s string, base time.Time) (uint64, error) {",
+      "content": "func parseTime(s string, base time.Time) (uint64, error) {\n\tif reTimeRange.MatchString(s) {\n\t\tlast := len(s) - 1\n\n\t\td, err := strconv.ParseInt(s[1:last], 10, 64)\n\t\tif err != nil {\n\t\t\treturn uint64(0), err\n\t\t}\n\n\t\tmul := secondsPer[string(s[last])]\n\t\treturn uint64(base.Unix() - d*mul), nil\n\t}\n\n\treturn strconv.ParseUint(s, 10, 64)\n}\n\nvar lightningPrefix = \"lightning:\"\n\n// stripPrefix removes accidentally copied 'lightning:' prefix.",
+      "length": 356,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func stripPrefix(s string) string {",
+      "content": "func stripPrefix(s string) string {\n\treturn strings.TrimSpace(strings.TrimPrefix(s, lightningPrefix))\n}\n",
+      "length": 66,
+      "tokens": 4,
+      "embedding": []
+    }
+  ]
+}

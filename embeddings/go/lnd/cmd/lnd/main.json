@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lnd/main.go",
+  "package": "main",
+  "sections": [
+    {
+      "slug": "func main() {",
+      "content": "func main() {\n\t// Hook interceptor for os signals.\n\tshutdownInterceptor, err := signal.Intercept()\n\tif err != nil {\n\t\t_, _ = fmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(1)\n\t}\n\n\t// Load the configuration, and parse any command line options. This\n\t// function will also set up logging properly.\n\tloadedConfig, err := lnd.LoadConfig(shutdownInterceptor)\n\tif err != nil {\n\t\tif e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {\n\t\t\t// Print error if not due to help request.\n\t\t\terr = fmt.Errorf(\"failed to load config: %w\", err)\n\t\t\t_, _ = fmt.Fprintln(os.Stderr, err)\n\t\t\tos.Exit(1)\n\t\t}\n\n\t\t// Help was requested, exit normally.\n\t\tos.Exit(0)\n\t}\n\timplCfg := loadedConfig.ImplementationConfig(shutdownInterceptor)\n\n\t// Call the \"real\" main in a nested manner so the defers will properly\n\t// be executed in the case of a graceful shutdown.\n\tif err = lnd.Main(\n\t\tloadedConfig, lnd.ListenerCfg{}, implCfg, shutdownInterceptor,\n\t); err != nil {\n\t\t_, _ = fmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(1)\n\t}\n}\n",
+      "length": 948,
+      "tokens": 141,
+      "embedding": []
+    }
+  ]
+}

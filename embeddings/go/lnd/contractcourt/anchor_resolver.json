@@ -1,0 +1,69 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/anchor_resolver.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type anchorResolver struct {",
+      "content": "type anchorResolver struct {\n\t// anchorSignDescriptor contains the information that is required to\n\t// sweep the anchor.\n\tanchorSignDescriptor input.SignDescriptor\n\n\t// anchor is the outpoint on the commitment transaction.\n\tanchor wire.OutPoint\n\n\t// resolved reflects if the contract has been fully resolved or not.\n\tresolved bool\n\n\t// broadcastHeight is the height that the original contract was\n\t// broadcast to the main-chain at. We'll use this value to bound any\n\t// historical queries to the chain for spends/confirmations.\n\tbroadcastHeight uint32\n\n\t// chanPoint is the channel point of the original contract.\n\tchanPoint wire.OutPoint\n\n\t// currentReport stores the current state of the resolver for reporting\n\t// over the rpc interface.\n\tcurrentReport ContractReport\n\n\t// reportLock prevents concurrent access to the resolver report.\n\treportLock sync.Mutex\n\n\tcontractResolverKit\n}\n\n// newAnchorResolver instantiates a new anchor resolver.",
+      "length": 886,
+      "tokens": 123,
+      "embedding": []
+    },
+    {
+      "slug": "func newAnchorResolver(anchorSignDescriptor input.SignDescriptor,",
+      "content": "func newAnchorResolver(anchorSignDescriptor input.SignDescriptor,\n\tanchor wire.OutPoint, broadcastHeight uint32,\n\tchanPoint wire.OutPoint, resCfg ResolverConfig) *anchorResolver {\n\n\tamt := btcutil.Amount(anchorSignDescriptor.Output.Value)\n\n\treport := ContractReport{\n\t\tOutpoint:         anchor,\n\t\tType:             ReportOutputAnchor,\n\t\tAmount:           amt,\n\t\tLimboBalance:     amt,\n\t\tRecoveredBalance: 0,\n\t}\n\n\tr := &anchorResolver{\n\t\tcontractResolverKit:  *newContractResolverKit(resCfg),\n\t\tanchorSignDescriptor: anchorSignDescriptor,\n\t\tanchor:               anchor,\n\t\tbroadcastHeight:      broadcastHeight,\n\t\tchanPoint:            chanPoint,\n\t\tcurrentReport:        report,\n\t}\n\n\tr.initLogger(r)\n\n\treturn r\n}\n\n// ResolverKey returns an identifier which should be globally unique for this\n// particular resolver within the chain the original contract resides within.",
+      "length": 774,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) ResolverKey() []byte {",
+      "content": "func (c *anchorResolver) ResolverKey() []byte {\n\t// The anchor resolver is stateless and doesn't need a database key.\n\treturn nil\n}\n\n// Resolve offers the anchor output to the sweeper and waits for it to be swept.",
+      "length": 161,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) Resolve() (ContractResolver, error) {",
+      "content": "func (c *anchorResolver) Resolve() (ContractResolver, error) {\n\t// Attempt to update the sweep parameters to the post-confirmation\n\t// situation. We don't want to force sweep anymore, because the anchor\n\t// lost its special purpose to get the commitment confirmed. It is just\n\t// an output that we want to sweep only if it is economical to do so.\n\t//\n\t// An exclusive group is not necessary anymore, because we know that\n\t// this is the only anchor that can be swept.\n\t//\n\t// We also clear the parent tx information for cpfp, because the\n\t// commitment tx is confirmed.\n\t//\n\t// After a restart or when the remote force closes, the sweeper is not\n\t// yet aware of the anchor. In that case, it will be added as new input\n\t// to the sweeper.\n\trelayFeeRate := c.Sweeper.RelayFeePerKW()\n\n\tanchorInput := input.MakeBaseInput(\n\t\t&c.anchor,\n\t\tinput.CommitmentAnchor,\n\t\t&c.anchorSignDescriptor,\n\t\tc.broadcastHeight,\n\t\tnil,\n\t)\n\n\tresultChan, err := c.Sweeper.SweepInput(\n\t\t&anchorInput,\n\t\tsweep.Params{\n\t\t\tFee: sweep.FeePreference{\n\t\t\t\tFeeRate: relayFeeRate,\n\t\t\t},\n\t\t},\n\t)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tvar (\n\t\toutcome channeldb.ResolverOutcome\n\t\tspendTx *chainhash.Hash\n\t)\n\n\tselect {\n\tcase sweepRes := <-resultChan:\n\t\tswitch sweepRes.Err {\n\t\t// Anchor was swept successfully.\n\t\tcase nil:\n\t\t\tsweepTxID := sweepRes.Tx.TxHash()\n\n\t\t\tspendTx = &sweepTxID\n\t\t\toutcome = channeldb.ResolverOutcomeClaimed\n\n\t\t// Anchor was swept by someone else. This is possible after the\n\t\t// 16 block csv lock.\n\t\tcase sweep.ErrRemoteSpend:\n\t\t\tc.log.Warnf(\"our anchor spent by someone else\")\n\t\t\toutcome = channeldb.ResolverOutcomeUnclaimed\n\n\t\t// The sweeper gave up on sweeping the anchor. This happens\n\t\t// after the maximum number of sweep attempts has been reached.\n\t\t// See sweep.DefaultMaxSweepAttempts. Sweep attempts are\n\t\t// interspaced with random delays picked from a range that\n\t\t// increases exponentially.\n\t\t//\n\t\t// We consider the anchor as being lost.\n\t\tcase sweep.ErrTooManyAttempts:\n\t\t\tc.log.Warnf(\"anchor sweep abandoned\")\n\t\t\toutcome = channeldb.ResolverOutcomeUnclaimed\n\n\t\t// An unexpected error occurred.\n\t\tdefault:\n\t\t\tc.log.Errorf(\"unable to sweep anchor: %v\", sweepRes.Err)\n\n\t\t\treturn nil, sweepRes.Err\n\t\t}\n\n\tcase <-c.quit:\n\t\treturn nil, errResolverShuttingDown\n\t}\n\n\t// Update report to reflect that funds are no longer in limbo.\n\tc.reportLock.Lock()\n\tif outcome == channeldb.ResolverOutcomeClaimed {\n\t\tc.currentReport.RecoveredBalance = c.currentReport.LimboBalance\n\t}\n\tc.currentReport.LimboBalance = 0\n\treport := c.currentReport.resolverReport(\n\t\tspendTx, channeldb.ResolverTypeAnchor, outcome,\n\t)\n\tc.reportLock.Unlock()\n\n\tc.resolved = true\n\treturn nil, c.PutResolverReport(nil, report)\n}\n\n// Stop signals the resolver to cancel any current resolution processes, and\n// suspend.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 2669,
+      "tokens": 364,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) Stop() {",
+      "content": "func (c *anchorResolver) Stop() {\n\tclose(c.quit)\n}\n\n// IsResolved returns true if the stored state in the resolve is fully\n// resolved. In this case the target output can be forgotten.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 196,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) IsResolved() bool {",
+      "content": "func (c *anchorResolver) IsResolved() bool {\n\treturn c.resolved\n}\n\n// SupplementState allows the user of a ContractResolver to supplement it with\n// state required for the proper resolution of a contract.\n//\n// NOTE: Part of the ContractResolver interface.",
+      "length": 205,
+      "tokens": 33,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) SupplementState(_ *channeldb.OpenChannel) {",
+      "content": "func (c *anchorResolver) SupplementState(_ *channeldb.OpenChannel) {\n}\n\n// report returns a report on the resolution state of the contract.",
+      "length": 68,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) report() *ContractReport {",
+      "content": "func (c *anchorResolver) report() *ContractReport {\n\tc.reportLock.Lock()\n\tdefer c.reportLock.Unlock()\n\n\treportCopy := c.currentReport\n\treturn &reportCopy\n}\n",
+      "length": 98,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *anchorResolver) Encode(w io.Writer) error {",
+      "content": "func (c *anchorResolver) Encode(w io.Writer) error {\n\treturn errors.New(\"serialization not supported\")\n}\n\n// A compile time assertion to ensure anchorResolver meets the\n// ContractResolver interface.\nvar _ ContractResolver = (*anchorResolver)(nil)\n",
+      "length": 189,
+      "tokens": 23,
+      "embedding": []
+    }
+  ]
+}

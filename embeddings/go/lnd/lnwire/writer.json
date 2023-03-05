@@ -1,0 +1,251 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/writer.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func ErrOutpointIndexTooBig(index uint32) error {",
+      "content": "func ErrOutpointIndexTooBig(index uint32) error {\n\treturn fmt.Errorf(\n\t\t\"index for outpoint (%v) is greater than \"+\n\t\t\t\"max index of %v\", index, math.MaxUint16,\n\t)\n}\n\n// WriteBytes appends the given bytes to the provided buffer.",
+      "length": 172,
+      "tokens": 28,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteBytes(buf *bytes.Buffer, b []byte) error {",
+      "content": "func WriteBytes(buf *bytes.Buffer, b []byte) error {\n\t_, err := buf.Write(b)\n\treturn err\n}\n\n// WriteUint8 appends the uint8 to the provided buffer.",
+      "length": 90,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteUint8(buf *bytes.Buffer, n uint8) error {",
+      "content": "func WriteUint8(buf *bytes.Buffer, n uint8) error {\n\t_, err := buf.Write([]byte{n})\n\treturn err\n}\n\n// WriteUint16 appends the uint16 to the provided buffer. It encodes the\n// integer using big endian byte order.",
+      "length": 154,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteUint16(buf *bytes.Buffer, n uint16) error {",
+      "content": "func WriteUint16(buf *bytes.Buffer, n uint16) error {\n\tvar b [2]byte\n\tbinary.BigEndian.PutUint16(b[:], n)\n\t_, err := buf.Write(b[:])\n\treturn err\n}\n\n// WriteUint32 appends the uint32 to the provided buffer. It encodes the\n// integer using big endian byte order.",
+      "length": 199,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteUint32(buf *bytes.Buffer, n uint32) error {",
+      "content": "func WriteUint32(buf *bytes.Buffer, n uint32) error {\n\tvar b [4]byte\n\tbinary.BigEndian.PutUint32(b[:], n)\n\t_, err := buf.Write(b[:])\n\treturn err\n}\n\n// WriteUint64 appends the uint64 to the provided buffer. It encodes the\n// integer using big endian byte order.",
+      "length": 199,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteUint64(buf *bytes.Buffer, n uint64) error {",
+      "content": "func WriteUint64(buf *bytes.Buffer, n uint64) error {\n\tvar b [8]byte\n\tbinary.BigEndian.PutUint64(b[:], n)\n\t_, err := buf.Write(b[:])\n\treturn err\n}\n\n// WriteSatoshi appends the Satoshi value to the provided buffer.",
+      "length": 153,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteSatoshi(buf *bytes.Buffer, amount btcutil.Amount) error {",
+      "content": "func WriteSatoshi(buf *bytes.Buffer, amount btcutil.Amount) error {\n\treturn WriteUint64(buf, uint64(amount))\n}\n\n// WriteMilliSatoshi appends the MilliSatoshi value to the provided buffer.",
+      "length": 116,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteMilliSatoshi(buf *bytes.Buffer, amount MilliSatoshi) error {",
+      "content": "func WriteMilliSatoshi(buf *bytes.Buffer, amount MilliSatoshi) error {\n\treturn WriteUint64(buf, uint64(amount))\n}\n\n// WritePublicKey appends the compressed public key to the provided buffer.",
+      "length": 116,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func WritePublicKey(buf *bytes.Buffer, pub *btcec.PublicKey) error {",
+      "content": "func WritePublicKey(buf *bytes.Buffer, pub *btcec.PublicKey) error {\n\tif pub == nil {\n\t\treturn ErrNilPublicKey\n\t}\n\n\tserializedPubkey := pub.SerializeCompressed()\n\treturn WriteBytes(buf, serializedPubkey)\n}\n\n// WriteChannelID appends the ChannelID to the provided buffer.",
+      "length": 193,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteChannelID(buf *bytes.Buffer, channelID ChannelID) error {",
+      "content": "func WriteChannelID(buf *bytes.Buffer, channelID ChannelID) error {\n\treturn WriteBytes(buf, channelID[:])\n}\n\n// WriteNodeAlias appends the alias to the provided buffer.",
+      "length": 97,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteNodeAlias(buf *bytes.Buffer, alias NodeAlias) error {",
+      "content": "func WriteNodeAlias(buf *bytes.Buffer, alias NodeAlias) error {\n\treturn WriteBytes(buf, alias[:])\n}\n\n// WriteShortChannelID appends the ShortChannelID to the provided buffer. It\n// encodes the BlockHeight and TxIndex each using 3 bytes with big endian byte\n// order, and encodes txPosition using 2 bytes with big endian byte order.",
+      "length": 262,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteShortChannelID(buf *bytes.Buffer, shortChanID ShortChannelID) error {",
+      "content": "func WriteShortChannelID(buf *bytes.Buffer, shortChanID ShortChannelID) error {\n\t// Check that field fit in 3 bytes and write the blockHeight\n\tif shortChanID.BlockHeight > ((1 << 24) - 1) {\n\t\treturn errors.New(\"block height should fit in 3 bytes\")\n\t}\n\n\tvar blockHeight [4]byte\n\tbinary.BigEndian.PutUint32(blockHeight[:], shortChanID.BlockHeight)\n\n\tif _, err := buf.Write(blockHeight[1:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Check that field fit in 3 bytes and write the txIndex\n\tif shortChanID.TxIndex > ((1 << 24) - 1) {\n\t\treturn errors.New(\"tx index should fit in 3 bytes\")\n\t}\n\n\tvar txIndex [4]byte\n\tbinary.BigEndian.PutUint32(txIndex[:], shortChanID.TxIndex)\n\tif _, err := buf.Write(txIndex[1:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Write the TxPosition\n\treturn WriteUint16(buf, shortChanID.TxPosition)\n}\n\n// WriteSig appends the signature to the provided buffer.",
+      "length": 756,
+      "tokens": 111,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteSig(buf *bytes.Buffer, sig Sig) error {",
+      "content": "func WriteSig(buf *bytes.Buffer, sig Sig) error {\n\treturn WriteBytes(buf, sig[:])\n}\n\n// WriteSigs appends the slice of signatures to the provided buffer with its\n// length.",
+      "length": 118,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteSigs(buf *bytes.Buffer, sigs []Sig) error {",
+      "content": "func WriteSigs(buf *bytes.Buffer, sigs []Sig) error {\n\t// Write the length of the sigs.\n\tif err := WriteUint16(buf, uint16(len(sigs))); err != nil {\n\t\treturn err\n\t}\n\n\tfor _, sig := range sigs {\n\t\tif err := WriteSig(buf, sig); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\treturn nil\n}\n\n// WriteFailCode appends the FailCode to the provided buffer.",
+      "length": 269,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteFailCode(buf *bytes.Buffer, e FailCode) error {",
+      "content": "func WriteFailCode(buf *bytes.Buffer, e FailCode) error {\n\treturn WriteUint16(buf, uint16(e))\n}\n\n// WriteRawFeatureVector encodes the feature using the feature's Encode method\n// and appends the data to the provided buffer. An error will return if the\n// passed feature is nil.",
+      "length": 214,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteRawFeatureVector(buf *bytes.Buffer, feature *RawFeatureVector) error {",
+      "content": "func WriteRawFeatureVector(buf *bytes.Buffer, feature *RawFeatureVector) error {\n\tif feature == nil {\n\t\treturn ErrNilFeatureVector\n\t}\n\n\treturn feature.Encode(buf)\n}\n\n// WriteColorRGBA appends the RGBA color using three bytes.",
+      "length": 137,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteColorRGBA(buf *bytes.Buffer, e color.RGBA) error {",
+      "content": "func WriteColorRGBA(buf *bytes.Buffer, e color.RGBA) error {\n\t// Write R\n\tif err := WriteUint8(buf, e.R); err != nil {\n\t\treturn err\n\t}\n\n\t// Write G\n\tif err := WriteUint8(buf, e.G); err != nil {\n\t\treturn err\n\t}\n\n\t// Write B\n\treturn WriteUint8(buf, e.B)\n}\n\n// WriteShortChanIDEncoding appends the ShortChanIDEncoding to the provided\n// buffer.",
+      "length": 265,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteShortChanIDEncoding(buf *bytes.Buffer, e ShortChanIDEncoding) error {",
+      "content": "func WriteShortChanIDEncoding(buf *bytes.Buffer, e ShortChanIDEncoding) error {\n\treturn WriteUint8(buf, uint8(e))\n}\n\n// WriteFundingFlag appends the FundingFlag to the provided buffer.",
+      "length": 101,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteFundingFlag(buf *bytes.Buffer, flag FundingFlag) error {",
+      "content": "func WriteFundingFlag(buf *bytes.Buffer, flag FundingFlag) error {\n\treturn WriteUint8(buf, uint8(flag))\n}\n\n// WriteChanUpdateMsgFlags appends the update flag to the provided buffer.",
+      "length": 111,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteChanUpdateMsgFlags(buf *bytes.Buffer, f ChanUpdateMsgFlags) error {",
+      "content": "func WriteChanUpdateMsgFlags(buf *bytes.Buffer, f ChanUpdateMsgFlags) error {\n\treturn WriteUint8(buf, uint8(f))\n}\n\n// WriteChanUpdateChanFlags appends the update flag to the provided buffer.",
+      "length": 109,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteChanUpdateChanFlags(buf *bytes.Buffer, f ChanUpdateChanFlags) error {",
+      "content": "func WriteChanUpdateChanFlags(buf *bytes.Buffer, f ChanUpdateChanFlags) error {\n\treturn WriteUint8(buf, uint8(f))\n}\n\n// WriteDeliveryAddress appends the address to the provided buffer.",
+      "length": 101,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteDeliveryAddress(buf *bytes.Buffer, addr DeliveryAddress) error {",
+      "content": "func WriteDeliveryAddress(buf *bytes.Buffer, addr DeliveryAddress) error {\n\treturn writeDataWithLength(buf, addr)\n}\n\n// WritePingPayload appends the payload to the provided buffer.",
+      "length": 102,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WritePingPayload(buf *bytes.Buffer, payload PingPayload) error {",
+      "content": "func WritePingPayload(buf *bytes.Buffer, payload PingPayload) error {\n\treturn writeDataWithLength(buf, payload)\n}\n\n// WritePongPayload appends the payload to the provided buffer.",
+      "length": 105,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WritePongPayload(buf *bytes.Buffer, payload PongPayload) error {",
+      "content": "func WritePongPayload(buf *bytes.Buffer, payload PongPayload) error {\n\treturn writeDataWithLength(buf, payload)\n}\n\n// WriteWarningData appends the data to the provided buffer.",
+      "length": 102,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteWarningData(buf *bytes.Buffer, data WarningData) error {",
+      "content": "func WriteWarningData(buf *bytes.Buffer, data WarningData) error {\n\treturn writeDataWithLength(buf, data)\n}\n\n// WriteErrorData appends the data to the provided buffer.",
+      "length": 97,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteErrorData(buf *bytes.Buffer, data ErrorData) error {",
+      "content": "func WriteErrorData(buf *bytes.Buffer, data ErrorData) error {\n\treturn writeDataWithLength(buf, data)\n}\n\n// WriteOpaqueReason appends the reason to the provided buffer.",
+      "length": 102,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteOpaqueReason(buf *bytes.Buffer, reason OpaqueReason) error {",
+      "content": "func WriteOpaqueReason(buf *bytes.Buffer, reason OpaqueReason) error {\n\treturn writeDataWithLength(buf, reason)\n}\n\n// WriteBool appends the boolean to the provided buffer.",
+      "length": 97,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteBool(buf *bytes.Buffer, b bool) error {",
+      "content": "func WriteBool(buf *bytes.Buffer, b bool) error {\n\tif b {\n\t\treturn WriteBytes(buf, []byte{1})\n\t}\n\treturn WriteBytes(buf, []byte{0})\n}\n\n// WritePkScript appends the script to the provided buffer. Returns an error if\n// the provided script exceeds 34 bytes.",
+      "length": 198,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func WritePkScript(buf *bytes.Buffer, s PkScript) error {",
+      "content": "func WritePkScript(buf *bytes.Buffer, s PkScript) error {\n\t// The largest script we'll accept is a p2wsh which is exactly\n\t// 34 bytes long.\n\tscriptLength := len(s)\n\tif scriptLength > 34 {\n\t\treturn ErrPkScriptTooLong\n\t}\n\n\treturn wire.WriteVarBytes(buf, 0, s)\n}\n\n// WriteOutPoint appends the outpoint to the provided buffer.",
+      "length": 255,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteOutPoint(buf *bytes.Buffer, p wire.OutPoint) error {",
+      "content": "func WriteOutPoint(buf *bytes.Buffer, p wire.OutPoint) error {\n\t// Before we write anything to the buffer, check the Index is sane.\n\tif p.Index > math.MaxUint16 {\n\t\treturn ErrOutpointIndexTooBig(p.Index)\n\t}\n\n\tvar h [32]byte\n\tcopy(h[:], p.Hash[:])\n\tif _, err := buf.Write(h[:]); err != nil {\n\t\treturn err\n\t}\n\n\t// Write the index using two bytes.\n\treturn WriteUint16(buf, uint16(p.Index))\n}\n\n// WriteTCPAddr appends the TCP address to the provided buffer, either a IPv4\n// or a IPv6.",
+      "length": 402,
+      "tokens": 66,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteTCPAddr(buf *bytes.Buffer, addr *net.TCPAddr) error {",
+      "content": "func WriteTCPAddr(buf *bytes.Buffer, addr *net.TCPAddr) error {\n\tif addr == nil {\n\t\treturn ErrNilTCPAddress\n\t}\n\n\t// Make a slice of bytes to hold the data of descriptor and ip. At\n\t// most, we need 17 bytes - 1 byte for the descriptor, 16 bytes for\n\t// IPv6.\n\tdata := make([]byte, 0, 17)\n\n\tif addr.IP.To4() != nil {\n\t\tdata = append(data, uint8(tcp4Addr))\n\t\tdata = append(data, addr.IP.To4()...)\n\t} else {\n\t\tdata = append(data, uint8(tcp6Addr))\n\t\tdata = append(data, addr.IP.To16()...)\n\t}\n\n\tif _, err := buf.Write(data); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteUint16(buf, uint16(addr.Port))\n}\n\n// WriteOnionAddr appends the onion address to the provided buffer.",
+      "length": 576,
+      "tokens": 96,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteOnionAddr(buf *bytes.Buffer, addr *tor.OnionAddr) error {",
+      "content": "func WriteOnionAddr(buf *bytes.Buffer, addr *tor.OnionAddr) error {\n\tif addr == nil {\n\t\treturn ErrNilOnionAddress\n\t}\n\n\tvar (\n\t\tsuffixIndex int\n\t\tdescriptor  []byte\n\t)\n\n\t// Decide the suffixIndex and descriptor.\n\tswitch len(addr.OnionService) {\n\tcase tor.V2Len:\n\t\tdescriptor = []byte{byte(v2OnionAddr)}\n\t\tsuffixIndex = tor.V2Len - tor.OnionSuffixLen\n\n\tcase tor.V3Len:\n\t\tdescriptor = []byte{byte(v3OnionAddr)}\n\t\tsuffixIndex = tor.V3Len - tor.OnionSuffixLen\n\n\tdefault:\n\t\treturn ErrUnknownServiceLength\n\t}\n\n\t// Decode the address.\n\thost, err := tor.Base32Encoding.DecodeString(\n\t\taddr.OnionService[:suffixIndex],\n\t)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Perform the actual write when the above checks passed.\n\tif _, err := buf.Write(descriptor); err != nil {\n\t\treturn err\n\t}\n\tif _, err := buf.Write(host); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteUint16(buf, uint16(addr.Port))\n}\n\n// WriteOpaqueAddrs appends the payload of the given OpaqueAddrs to buffer.",
+      "length": 844,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteOpaqueAddrs(buf *bytes.Buffer, addr *OpaqueAddrs) error {",
+      "content": "func WriteOpaqueAddrs(buf *bytes.Buffer, addr *OpaqueAddrs) error {\n\tif addr == nil {\n\t\treturn ErrNilOpaqueAddrs\n\t}\n\n\t_, err := buf.Write(addr.Payload)\n\treturn err\n}\n\n// WriteNetAddrs appends a slice of addresses to the provided buffer with the\n// length info.",
+      "length": 183,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func WriteNetAddrs(buf *bytes.Buffer, addresses []net.Addr) error {",
+      "content": "func WriteNetAddrs(buf *bytes.Buffer, addresses []net.Addr) error {\n\t// First, we'll encode all the addresses into an intermediate\n\t// buffer. We need to do this in order to compute the total\n\t// length of the addresses.\n\tbuffer := make([]byte, 0, MaxMsgBody)\n\taddrBuf := bytes.NewBuffer(buffer)\n\n\tfor _, address := range addresses {\n\t\tswitch a := address.(type) {\n\t\tcase *net.TCPAddr:\n\t\t\tif err := WriteTCPAddr(addrBuf, a); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\tcase *tor.OnionAddr:\n\t\t\tif err := WriteOnionAddr(addrBuf, a); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\tcase *OpaqueAddrs:\n\t\t\tif err := WriteOpaqueAddrs(addrBuf, a); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\tdefault:\n\t\t\treturn ErrNilNetAddress\n\t\t}\n\t}\n\n\t// With the addresses fully encoded, we can now write out data.\n\treturn writeDataWithLength(buf, addrBuf.Bytes())\n}\n\n// writeDataWithLength writes the data and its length to the buffer.",
+      "length": 787,
+      "tokens": 122,
+      "embedding": []
+    },
+    {
+      "slug": "func writeDataWithLength(buf *bytes.Buffer, data []byte) error {",
+      "content": "func writeDataWithLength(buf *bytes.Buffer, data []byte) error {\n\tvar l [2]byte\n\tbinary.BigEndian.PutUint16(l[:], uint16(len(data)))\n\tif _, err := buf.Write(l[:]); err != nil {\n\t\treturn err\n\t}\n\n\t_, err := buf.Write(data)\n\treturn err\n}\n",
+      "length": 161,
+      "tokens": 24,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "filepath": "../implementations/go/lnd/invoices/mock.go",
+  "package": "invoices",
+  "sections": [
+    {
+      "slug": "type MockInvoiceDB struct {",
+      "content": "type MockInvoiceDB struct {\n\tmock.Mock\n}\n",
+      "length": 11,
+      "tokens": 2,
+      "embedding": []
+    },
+    {
+      "slug": "func NewInvoicesDBMock() *MockInvoiceDB {",
+      "content": "func NewInvoicesDBMock() *MockInvoiceDB {\n\treturn &MockInvoiceDB{}\n}\n",
+      "length": 25,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) AddInvoice(invoice *Invoice,",
+      "content": "func (m *MockInvoiceDB) AddInvoice(invoice *Invoice,\n\tpaymentHash lntypes.Hash) (uint64, error) {\n\n\targs := m.Called(invoice, paymentHash)\n\n\taddIndex, _ := args.Get(0).(uint64)\n\n\t// NOTE: this is a side effect of the AddInvoice method.\n\tinvoice.AddIndex = addIndex\n\n\treturn addIndex, args.Error(1)\n}\n",
+      "length": 236,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) InvoicesAddedSince(idx uint64) ([]Invoice, error) {",
+      "content": "func (m *MockInvoiceDB) InvoicesAddedSince(idx uint64) ([]Invoice, error) {\n\targs := m.Called(idx)\n\tinvoices, _ := args.Get(0).([]Invoice)\n\n\treturn invoices, args.Error(1)\n}\n",
+      "length": 93,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) InvoicesSettledSince(idx uint64) ([]Invoice, error) {",
+      "content": "func (m *MockInvoiceDB) InvoicesSettledSince(idx uint64) ([]Invoice, error) {\n\targs := m.Called(idx)\n\tinvoices, _ := args.Get(0).([]Invoice)\n\n\treturn invoices, args.Error(1)\n}\n",
+      "length": 93,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) LookupInvoice(ref InvoiceRef) (Invoice, error) {",
+      "content": "func (m *MockInvoiceDB) LookupInvoice(ref InvoiceRef) (Invoice, error) {\n\targs := m.Called(ref)\n\tinvoice, _ := args.Get(0).(Invoice)\n\n\treturn invoice, args.Error(1)\n}\n",
+      "length": 89,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) ScanInvoices(scanFunc InvScanFunc,",
+      "content": "func (m *MockInvoiceDB) ScanInvoices(scanFunc InvScanFunc,\n\treset func()) error {\n\n\targs := m.Called(scanFunc, reset)\n\n\treturn args.Error(0)\n}\n",
+      "length": 78,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) QueryInvoices(q InvoiceQuery) (InvoiceSlice, error) {",
+      "content": "func (m *MockInvoiceDB) QueryInvoices(q InvoiceQuery) (InvoiceSlice, error) {\n\targs := m.Called(q)\n\tinvoiceSlice, _ := args.Get(0).(InvoiceSlice)\n\n\treturn invoiceSlice, args.Error(1)\n}\n",
+      "length": 102,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) UpdateInvoice(ref InvoiceRef, setIDHint *SetID,",
+      "content": "func (m *MockInvoiceDB) UpdateInvoice(ref InvoiceRef, setIDHint *SetID,\n\tcallback InvoiceUpdateCallback) (*Invoice, error) {\n\n\targs := m.Called(ref, setIDHint, callback)\n\tinvoice, _ := args.Get(0).(*Invoice)\n\n\treturn invoice, args.Error(1)\n}\n",
+      "length": 163,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *MockInvoiceDB) DeleteInvoice(invoices []InvoiceDeleteRef) error {",
+      "content": "func (m *MockInvoiceDB) DeleteInvoice(invoices []InvoiceDeleteRef) error {\n\targs := m.Called(invoices)\n\n\treturn args.Error(0)\n}\n",
+      "length": 49,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

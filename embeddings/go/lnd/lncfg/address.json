@@ -1,0 +1,118 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/address.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type TCPResolver = func(network, addr string) (*net.TCPAddr, error)",
+      "content": "type TCPResolver = func(network, addr string) (*net.TCPAddr, error)\n\n// NormalizeAddresses returns a new slice with all the passed addresses\n// normalized with the given default port and all duplicates removed.",
+      "length": 140,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func NormalizeAddresses(addrs []string, defaultPort string,",
+      "content": "func NormalizeAddresses(addrs []string, defaultPort string,\n\ttcpResolver TCPResolver) ([]net.Addr, error) {\n\n\tresult := make([]net.Addr, 0, len(addrs))\n\tseen := map[string]struct{}{}\n\n\tfor _, addr := range addrs {\n\t\tparsedAddr, err := ParseAddressString(\n\t\t\taddr, defaultPort, tcpResolver,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"parse address %s failed: %w\",\n\t\t\t\taddr, err)\n\t\t}\n\n\t\tif _, ok := seen[parsedAddr.String()]; !ok {\n\t\t\tresult = append(result, parsedAddr)\n\t\t\tseen[parsedAddr.String()] = struct{}{}\n\t\t}\n\t}\n\n\treturn result, nil\n}\n\n// EnforceSafeAuthentication enforces \"safe\" authentication taking into account\n// the interfaces that the RPC servers are listening on, and if macaroons and\n// TLS is activated or not. To protect users from using dangerous config\n// combinations, we'll prevent disabling authentication if the server is\n// listening on a public interface.",
+      "length": 800,
+      "tokens": 114,
+      "embedding": []
+    },
+    {
+      "slug": "func EnforceSafeAuthentication(addrs []net.Addr, macaroonsActive,",
+      "content": "func EnforceSafeAuthentication(addrs []net.Addr, macaroonsActive,\n\ttlsActive bool) error {\n\n\t// We'll now examine all addresses that this RPC server is listening\n\t// on. If it's a localhost address or a private address, we'll skip it,\n\t// otherwise, we'll return an error if macaroons are inactive.\n\tfor _, addr := range addrs {\n\t\tif IsLoopback(addr.String()) || IsUnix(addr) || IsPrivate(addr) {\n\t\t\tcontinue\n\t\t}\n\n\t\tif !macaroonsActive {\n\t\t\treturn fmt.Errorf(\"detected RPC server listening on \"+\n\t\t\t\t\"publicly reachable interface %v with \"+\n\t\t\t\t\"authentication disabled! Refusing to start \"+\n\t\t\t\t\"with --no-macaroons specified\", addr)\n\t\t}\n\n\t\tif !tlsActive {\n\t\t\treturn fmt.Errorf(\"detected RPC server listening on \"+\n\t\t\t\t\"publicly reachable interface %v with \"+\n\t\t\t\t\"encryption disabled! Refusing to start \"+\n\t\t\t\t\"with --no-rest-tls specified\", addr)\n\t\t}\n\t}\n\n\treturn nil\n}\n\n// parseNetwork parses the network type of the given address.",
+      "length": 840,
+      "tokens": 124,
+      "embedding": []
+    },
+    {
+      "slug": "func parseNetwork(addr net.Addr) string {",
+      "content": "func parseNetwork(addr net.Addr) string {\n\tswitch addr := addr.(type) {\n\t// TCP addresses resolved through net.ResolveTCPAddr give a default\n\t// network of \"tcp\", so we'll map back the correct network for the given\n\t// address. This ensures that we can listen on the correct interface\n\t// (IPv4 vs IPv6).\n\tcase *net.TCPAddr:\n\t\tif addr.IP.To4() != nil {\n\t\t\treturn \"tcp4\"\n\t\t}\n\t\treturn \"tcp6\"\n\n\tdefault:\n\t\treturn addr.Network()\n\t}\n}\n\n// ListenOnAddress creates a listener that listens on the given address.",
+      "length": 445,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func ListenOnAddress(addr net.Addr) (net.Listener, error) {",
+      "content": "func ListenOnAddress(addr net.Addr) (net.Listener, error) {\n\treturn net.Listen(parseNetwork(addr), addr.String())\n}\n\n// TLSListenOnAddress creates a TLS listener that listens on the given address.",
+      "length": 133,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func TLSListenOnAddress(addr net.Addr,",
+      "content": "func TLSListenOnAddress(addr net.Addr,\n\tconfig *tls.Config) (net.Listener, error) {\n\treturn tls.Listen(parseNetwork(addr), addr.String(), config)\n}\n\n// IsLoopback returns true if an address describes a loopback interface.",
+      "length": 178,
+      "tokens": 21,
+      "embedding": []
+    },
+    {
+      "slug": "func IsLoopback(host string) bool {",
+      "content": "func IsLoopback(host string) bool {\n\tif strings.Contains(host, \"localhost\") {\n\t\treturn true\n\t}\n\n\trawHost, _, _ := net.SplitHostPort(host)\n\taddr := net.ParseIP(rawHost)\n\tif addr == nil {\n\t\treturn false\n\t}\n\n\treturn addr.IsLoopback()\n}\n\n// isIPv6Host returns true if the host is IPV6 and false otherwise.",
+      "length": 252,
+      "tokens": 38,
+      "embedding": []
+    },
+    {
+      "slug": "func isIPv6Host(host string) bool {",
+      "content": "func isIPv6Host(host string) bool {\n\tv6Addr := net.ParseIP(host)\n\tif v6Addr == nil {\n\t\treturn false\n\t}\n\n\t// The documentation states that if the IP address is an IPv6 address,\n\t// then To4() will return nil.\n\treturn v6Addr.To4() == nil\n}\n\n// isUnspecifiedHost returns true if the host IP is considered unspecified.",
+      "length": 268,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func isUnspecifiedHost(host string) bool {",
+      "content": "func isUnspecifiedHost(host string) bool {\n\taddr := net.ParseIP(host)\n\tif addr == nil {\n\t\treturn false\n\t}\n\n\treturn addr.IsUnspecified()\n}\n\n// IsUnix returns true if an address describes an Unix socket address.",
+      "length": 158,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func IsUnix(addr net.Addr) bool {",
+      "content": "func IsUnix(addr net.Addr) bool {\n\treturn strings.HasPrefix(addr.Network(), \"unix\")\n}\n\n// IsPrivate returns true if the address is private. The definitions are,\n//\n//\thttps://en.wikipedia.org/wiki/Link-local_address\n//\thttps://en.wikipedia.org/wiki/Multicast_address\n//\tLocal IPv4 addresses, https://tools.ietf.org/html/rfc1918\n//\tLocal IPv6 addresses, https://tools.ietf.org/html/rfc4193",
+      "length": 346,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func IsPrivate(addr net.Addr) bool {",
+      "content": "func IsPrivate(addr net.Addr) bool {\n\tswitch addr := addr.(type) {\n\tcase *net.TCPAddr:\n\t\t// Check 169.254.0.0/16 and fe80::/10.\n\t\tif addr.IP.IsLinkLocalUnicast() {\n\t\t\treturn true\n\t\t}\n\n\t\t// Check 224.0.0.0/4 and ff00::/8.\n\t\tif addr.IP.IsLinkLocalMulticast() {\n\t\t\treturn true\n\t\t}\n\n\t\t// Check 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16.\n\t\tif ip4 := addr.IP.To4(); ip4 != nil {\n\t\t\treturn ip4[0] == 10 ||\n\t\t\t\t(ip4[0] == 172 && ip4[1]&0xf0 == 16) ||\n\t\t\t\t(ip4[0] == 192 && ip4[1] == 168)\n\t\t}\n\n\t\t// Check fc00::/7.\n\t\treturn len(addr.IP) == net.IPv6len && addr.IP[0]&0xfe == 0xfc\n\n\tdefault:\n\t\treturn false\n\t}\n}\n\n// ParseAddressString converts an address in string format to a net.Addr that is\n// compatible with lnd. UDP is not supported because lnd needs reliable\n// connections. We accept a custom function to resolve any TCP addresses so\n// that caller is able control exactly how resolution is performed.",
+      "length": 834,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseAddressString(strAddress string, defaultPort string,",
+      "content": "func ParseAddressString(strAddress string, defaultPort string,\n\ttcpResolver TCPResolver) (net.Addr, error) {\n\n\tvar parsedNetwork, parsedAddr string\n\n\t// Addresses can either be in network://address:port format,\n\t// network:address:port, address:port, or just port. We want to support\n\t// all possible types.\n\tif strings.Contains(strAddress, \"://\") {\n\t\tparts := strings.Split(strAddress, \"://\")\n\t\tparsedNetwork, parsedAddr = parts[0], parts[1]\n\t} else if strings.Contains(strAddress, \":\") {\n\t\tparts := strings.Split(strAddress, \":\")\n\t\tparsedNetwork = parts[0]\n\t\tparsedAddr = strings.Join(parts[1:], \":\")\n\t}\n\n\t// Only TCP and Unix socket addresses are valid. We can't use IP or\n\t// UDP only connections for anything we do in lnd.\n\tswitch parsedNetwork {\n\tcase \"unix\", \"unixpacket\":\n\t\treturn net.ResolveUnixAddr(parsedNetwork, parsedAddr)\n\n\tcase \"tcp\", \"tcp4\", \"tcp6\":\n\t\treturn tcpResolver(\n\t\t\tparsedNetwork, verifyPort(parsedAddr, defaultPort),\n\t\t)\n\n\tcase \"ip\", \"ip4\", \"ip6\", \"udp\", \"udp4\", \"udp6\", \"unixgram\":\n\t\treturn nil, fmt.Errorf(\"only TCP or unix socket \"+\n\t\t\t\"addresses are supported: %s\", parsedAddr)\n\n\tdefault:\n\t\t// We'll now possibly apply the default port, use the local\n\t\t// host short circuit, or parse out an all interfaces listen.\n\t\taddrWithPort := verifyPort(strAddress, defaultPort)\n\t\trawHost, rawPort, _ := net.SplitHostPort(addrWithPort)\n\n\t\t// If we reach this point, then we'll check to see if we have\n\t\t// an onion addresses, if so, we can directly pass the raw\n\t\t// address and port to create the proper address.\n\t\tif tor.IsOnionHost(rawHost) {\n\t\t\tportNum, err := strconv.Atoi(rawPort)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\n\t\t\treturn &tor.OnionAddr{\n\t\t\t\tOnionService: rawHost,\n\t\t\t\tPort:         portNum,\n\t\t\t}, nil\n\t\t}\n\n\t\t// Otherwise, we'll attempt the resolve the host. The Tor\n\t\t// resolver is unable to resolve local addresses,\n\t\t// IPv6 addresses, or the all-interfaces address, so we'll use\n\t\t// the system resolver instead for those.\n\t\tif rawHost == \"\" || IsLoopback(rawHost) ||\n\t\t\tisIPv6Host(rawHost) || isUnspecifiedHost(rawHost) {\n\n\t\t\treturn net.ResolveTCPAddr(\"tcp\", addrWithPort)\n\t\t}\n\n\t\t// If we've reached this point, then it's possible that this\n\t\t// resolve returns an error if it isn't able to resolve the\n\t\t// host. For example, local entries in /etc/hosts will fail to\n\t\t// be resolved by Tor. In order to handle this case, we'll fall\n\t\t// back to the normal system resolver if we fail with an\n\t\t// identifiable error.\n\t\taddr, err := tcpResolver(\"tcp\", addrWithPort)\n\t\tif err != nil {\n\t\t\ttorErrStr := \"tor host is unreachable\"\n\t\t\tif strings.Contains(err.Error(), torErrStr) {\n\t\t\t\treturn net.ResolveTCPAddr(\"tcp\", addrWithPort)\n\t\t\t}\n\n\t\t\treturn nil, err\n\t\t}\n\n\t\treturn addr, nil\n\t}\n}\n\n// ParseLNAddressString converts a string of the form <pubkey>@<addr> into an\n// lnwire.NetAddress. The <pubkey> must be presented in hex, and result in a\n// 33-byte, compressed public key that lies on the secp256k1 curve. The <addr>\n// may be any address supported by ParseAddressString. If no port is specified,\n// the defaultPort will be used. Any tcp addresses that need resolving will be\n// resolved using the custom TCPResolver.",
+      "length": 3011,
+      "tokens": 433,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseLNAddressString(strAddress string, defaultPort string,",
+      "content": "func ParseLNAddressString(strAddress string, defaultPort string,\n\ttcpResolver TCPResolver) (*lnwire.NetAddress, error) {\n\n\tpubKey, parsedAddr, err := ParseLNAddressPubkey(strAddress)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Finally, parse the address string using our generic address parser.\n\taddr, err := ParseAddressString(parsedAddr, defaultPort, tcpResolver)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"invalid lightning address address: %v\", err)\n\t}\n\n\treturn &lnwire.NetAddress{\n\t\tIdentityKey: pubKey,\n\t\tAddress:     addr,\n\t}, nil\n}\n\n// ParseLNAddressPubkey converts a string of the form <pubkey>@<addr> into two\n// pieces: the pubkey bytes and an addr string. It validates that the pubkey\n// is of a valid form.",
+      "length": 632,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func ParseLNAddressPubkey(strAddress string) (*btcec.PublicKey, string, error) {",
+      "content": "func ParseLNAddressPubkey(strAddress string) (*btcec.PublicKey, string, error) {\n\t// Split the address string around the @ sign.\n\tparts := strings.Split(strAddress, \"@\")\n\n\t// The string is malformed if there are not exactly two parts.\n\tif len(parts) != 2 {\n\t\treturn nil, \"\", fmt.Errorf(\"invalid lightning address %s: \"+\n\t\t\t\"must be of the form <pubkey-hex>@<addr>\", strAddress)\n\t}\n\n\t// Now, take the first portion as the hex pubkey, and the latter as the\n\t// address string.\n\tparsedPubKey, parsedAddr := parts[0], parts[1]\n\n\t// Decode the hex pubkey to get the raw compressed pubkey bytes.\n\tpubKeyBytes, err := hex.DecodeString(parsedPubKey)\n\tif err != nil {\n\t\treturn nil, \"\", fmt.Errorf(\"invalid lightning address pubkey: %v\", err)\n\t}\n\n\t// The compressed pubkey should have a length of exactly 33 bytes.\n\tif len(pubKeyBytes) != 33 {\n\t\treturn nil, \"\", fmt.Errorf(\"invalid lightning address pubkey: \"+\n\t\t\t\"length must be 33 bytes, found %d\", len(pubKeyBytes))\n\t}\n\n\t// Parse the pubkey bytes to verify that it corresponds to valid public\n\t// key on the secp256k1 curve.\n\tpubKey, err := btcec.ParsePubKey(pubKeyBytes)\n\tif err != nil {\n\t\treturn nil, \"\", fmt.Errorf(\"invalid lightning address pubkey: %v\", err)\n\t}\n\n\treturn pubKey, parsedAddr, nil\n}\n\n// verifyPort makes sure that an address string has both a host and a port. If\n// there is no port found, the default port is appended. If the address is just\n// a port, then we'll assume that the user is using the short cut to specify a\n// localhost:port address.",
+      "length": 1390,
+      "tokens": 229,
+      "embedding": []
+    },
+    {
+      "slug": "func verifyPort(address string, defaultPort string) string {",
+      "content": "func verifyPort(address string, defaultPort string) string {\n\thost, port, err := net.SplitHostPort(address)\n\tif err != nil {\n\t\t// If the address itself is just an integer, then we'll assume\n\t\t// that we're mapping this directly to a localhost:port pair.\n\t\t// This ensures we maintain the legacy behavior.\n\t\tif _, err := strconv.Atoi(address); err == nil {\n\t\t\treturn net.JoinHostPort(\"localhost\", address)\n\t\t}\n\n\t\t// Otherwise, we'll assume that the address just failed to\n\t\t// attach its own port, so we'll use the default port. In the\n\t\t// case of IPv6 addresses, if the host is already surrounded by\n\t\t// brackets, then we'll avoid using the JoinHostPort function,\n\t\t// since it will always add a pair of brackets.\n\t\tif strings.HasPrefix(address, \"[\") {\n\t\t\treturn address + \":\" + defaultPort\n\t\t}\n\t\treturn net.JoinHostPort(address, defaultPort)\n\t}\n\n\t// In the case that both the host and port are empty, we'll use the\n\t// default port.\n\tif host == \"\" && port == \"\" {\n\t\treturn \":\" + defaultPort\n\t}\n\n\treturn address\n}\n\n// ClientAddressDialer creates a gRPC dialer that can also dial unix socket\n// addresses instead of just TCP addresses.",
+      "length": 1045,
+      "tokens": 176,
+      "embedding": []
+    },
+    {
+      "slug": "func ClientAddressDialer(defaultPort string) func(context.Context,",
+      "content": "func ClientAddressDialer(defaultPort string) func(context.Context,\n\tstring) (net.Conn, error) {\n\n\treturn func(ctx context.Context, addr string) (net.Conn, error) {\n\t\tparsedAddr, err := ParseAddressString(\n\t\t\taddr, defaultPort, net.ResolveTCPAddr,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\td := net.Dialer{}\n\t\treturn d.DialContext(\n\t\t\tctx, parsedAddr.Network(), parsedAddr.String(),\n\t\t)\n\t}\n}\n",
+      "length": 314,
+      "tokens": 40,
+      "embedding": []
+    }
+  ]
+}

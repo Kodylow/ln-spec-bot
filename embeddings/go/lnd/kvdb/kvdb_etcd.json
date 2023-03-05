@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/kvdb_etcd.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,",
+      "content": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,\n\tlogFile string) (*etcd.Config, func(), error) {\n\n\treturn etcd.NewEmbeddedEtcdInstance(\n\t\tpath, clientPort, peerPort, logFile,\n\t)\n}\n",
+      "length": 126,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

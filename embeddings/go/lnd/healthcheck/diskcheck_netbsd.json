@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/healthcheck/diskcheck_netbsd.go",
+  "package": "healthcheck",
+  "sections": [
+    {
+      "slug": "func AvailableDiskSpaceRatio(path string) (float64, error) {",
+      "content": "func AvailableDiskSpaceRatio(path string) (float64, error) {\n\ts := unix.Statvfs_t{}\n\terr := unix.Statvfs(path, &s)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\t// Calculate our free blocks/total blocks to get our total ratio of\n\t// free blocks.\n\treturn float64(s.Bfree) / float64(s.Blocks), nil\n}\n\n// AvailableDiskSpace returns the available disk space in bytes of the given\n// file system for netbsd.",
+      "length": 321,
+      "tokens": 54,
+      "embedding": []
+    },
+    {
+      "slug": "func AvailableDiskSpace(path string) (uint64, error) {",
+      "content": "func AvailableDiskSpace(path string) (uint64, error) {\n\ts := unix.Statvfs_t{}\n\terr := unix.Statvfs(path, &s)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\n\treturn s.Bavail * uint64(s.Bsize), nil\n}\n",
+      "length": 125,
+      "tokens": 22,
+      "embedding": []
+    }
+  ]
+}

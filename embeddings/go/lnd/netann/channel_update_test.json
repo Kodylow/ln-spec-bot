@@ -1,0 +1,34 @@
+{
+  "filepath": "../implementations/go/lnd/netann/channel_update_test.go",
+  "package": "netann_test",
+  "sections": [
+    {
+      "slug": "type mockSigner struct {",
+      "content": "type mockSigner struct {\n\terr error\n}\n",
+      "length": 11,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockSigner) SignMessage(_ keychain.KeyLocator,",
+      "content": "func (m *mockSigner) SignMessage(_ keychain.KeyLocator,\n\t_ []byte, _ bool) (*ecdsa.Signature, error) {\n\n\tif m.err != nil {\n\t\treturn nil, m.err\n\t}\n\n\treturn nil, nil\n}\n\nvar _ lnwallet.MessageSigner = (*mockSigner)(nil)\n\nvar (\n\tprivKey, _    = btcec.NewPrivateKey()\n\tprivKeySigner = keychain.NewPrivKeyMessageSigner(privKey, testKeyLoc)\n\n\tpubKey = privKey.PubKey()\n\n\terrFailedToSign = errors.New(\"unable to sign message\")\n)\n",
+      "length": 346,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "type updateDisableTest struct {",
+      "content": "type updateDisableTest struct {\n\tname         string\n\tstartEnabled bool\n\tdisable      bool\n\tstartTime    time.Time\n\tsigner       lnwallet.MessageSigner\n\texpErr       error\n}\n\nvar updateDisableTests = []updateDisableTest{\n\t{\n\t\tname:         \"working signer enabled to disabled\",\n\t\tstartEnabled: true,\n\t\tdisable:      true,\n\t\tstartTime:    time.Now(),\n\t\tsigner:       netann.NewNodeSigner(privKeySigner),\n\t},\n\t{\n\t\tname:         \"working signer enabled to enabled\",\n\t\tstartEnabled: true,\n\t\tdisable:      false,\n\t\tstartTime:    time.Now(),\n\t\tsigner:       netann.NewNodeSigner(privKeySigner),\n\t},\n\t{\n\t\tname:         \"working signer disabled to enabled\",\n\t\tstartEnabled: false,\n\t\tdisable:      false,\n\t\tstartTime:    time.Now(),\n\t\tsigner:       netann.NewNodeSigner(privKeySigner),\n\t},\n\t{\n\t\tname:         \"working signer disabled to disabled\",\n\t\tstartEnabled: false,\n\t\tdisable:      true,\n\t\tstartTime:    time.Now(),\n\t\tsigner:       netann.NewNodeSigner(privKeySigner),\n\t},\n\t{\n\t\tname:         \"working signer future monotonicity\",\n\t\tstartEnabled: true,\n\t\tdisable:      true,\n\t\tstartTime:    time.Now().Add(time.Hour), // must increment\n\t\tsigner:       netann.NewNodeSigner(privKeySigner),\n\t},\n\t{\n\t\tname:      \"failing signer\",\n\t\tstartTime: time.Now(),\n\t\tsigner:    &mockSigner{err: errFailedToSign},\n\t\texpErr:    errFailedToSign,\n\t},\n\t{\n\t\tname:      \"invalid sig from signer\",\n\t\tstartTime: time.Now(),\n\t\tsigner:    &mockSigner{}, // returns a nil signature\n\t\texpErr:    errors.New(\"cannot decode empty signature\"),\n\t},\n}\n\n// TestUpdateDisableFlag checks the behavior of UpdateDisableFlag, asserting\n// that the proper channel flags are set, the timestamp always increases\n// monotonically, and that the correct errors are returned in the event that the\n// signer is unable to produce a signature.",
+      "length": 1698,
+      "tokens": 175,
+      "embedding": []
+    },
+    {
+      "slug": "func TestUpdateDisableFlag(t *testing.T) {",
+      "content": "func TestUpdateDisableFlag(t *testing.T) {\n\tt.Parallel()\n\n\tfor _, tc := range updateDisableTests {\n\t\ttc := tc\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\t// Create the initial update, the only fields we are\n\t\t\t// concerned with in this test are the timestamp and the\n\t\t\t// channel flags.\n\t\t\togUpdate := &lnwire.ChannelUpdate{\n\t\t\t\tTimestamp: uint32(tc.startTime.Unix()),\n\t\t\t}\n\t\t\tif !tc.startEnabled {\n\t\t\t\togUpdate.ChannelFlags |= lnwire.ChanUpdateDisabled\n\t\t\t}\n\n\t\t\t// Create new update to sign using the same fields as\n\t\t\t// the original. UpdateDisableFlag will mutate the\n\t\t\t// passed channel update, so we keep the old one to test\n\t\t\t// against.\n\t\t\tnewUpdate := &lnwire.ChannelUpdate{\n\t\t\t\tTimestamp:    ogUpdate.Timestamp,\n\t\t\t\tChannelFlags: ogUpdate.ChannelFlags,\n\t\t\t}\n\n\t\t\t// Attempt to update and sign the new update, specifying\n\t\t\t// disabled or enabled as prescribed in the test case.\n\t\t\terr := netann.SignChannelUpdate(\n\t\t\t\ttc.signer, testKeyLoc, newUpdate,\n\t\t\t\tnetann.ChanUpdSetDisable(tc.disable),\n\t\t\t\tnetann.ChanUpdSetTimestamp,\n\t\t\t)\n\n\t\t\tvar fail bool\n\t\t\tswitch {\n\n\t\t\t// Both nil, pass.\n\t\t\tcase tc.expErr == nil && err == nil:\n\n\t\t\t// Both non-nil, compare error strings since some\n\t\t\t// methods don't return concrete error types.\n\t\t\tcase tc.expErr != nil && err != nil:\n\t\t\t\tif err.Error() != tc.expErr.Error() {\n\t\t\t\t\tfail = true\n\t\t\t\t}\n\n\t\t\t// Otherwise, one is nil and one is non-nil.\n\t\t\tdefault:\n\t\t\t\tfail = true\n\t\t\t}\n\n\t\t\tif fail {\n\t\t\t\tt.Fatalf(\"expected error: %v, got %v\",\n\t\t\t\t\ttc.expErr, err)\n\t\t\t}\n\n\t\t\t// Exit early if the test expected a failure.\n\t\t\tif tc.expErr != nil {\n\t\t\t\treturn\n\t\t\t}\n\n\t\t\t// Verify that the timestamp has increased from the\n\t\t\t// original update.\n\t\t\tif newUpdate.Timestamp <= ogUpdate.Timestamp {\n\t\t\t\tt.Fatalf(\"update timestamp should be \"+\n\t\t\t\t\t\"monotonically increasing, \"+\n\t\t\t\t\t\"original: %d, new %d\",\n\t\t\t\t\togUpdate.Timestamp, newUpdate.Timestamp)\n\t\t\t}\n\n\t\t\t// Verify that the disabled flag is properly set.\n\t\t\tdisabled := newUpdate.ChannelFlags&\n\t\t\t\tlnwire.ChanUpdateDisabled != 0\n\t\t\tif disabled != tc.disable {\n\t\t\t\tt.Fatalf(\"expected disable:%v, found:%v\",\n\t\t\t\t\ttc.disable, disabled)\n\t\t\t}\n\n\t\t\t// Finally, validate the signature using the router's\n\t\t\t// verification logic.\n\t\t\terr = routing.VerifyChannelUpdateSignature(\n\t\t\t\tnewUpdate, pubKey,\n\t\t\t)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"channel update failed to \"+\n\t\t\t\t\t\"validate: %v\", err)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 2250,
+      "tokens": 303,
+      "embedding": []
+    }
+  ]
+}

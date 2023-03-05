@@ -1,0 +1,90 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/store.go",
+  "package": "macaroons",
+  "sections": [
+    {
+      "slug": "type RootKeyStorage struct {",
+      "content": "type RootKeyStorage struct {\n\tkvdb.Backend\n\n\tencKeyMtx sync.RWMutex\n\tencKey    *snacl.SecretKey\n}\n\n// NewRootKeyStorage creates a RootKeyStorage instance.",
+      "length": 119,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "func NewRootKeyStorage(db kvdb.Backend) (*RootKeyStorage, error) {",
+      "content": "func NewRootKeyStorage(db kvdb.Backend) (*RootKeyStorage, error) {\n\t// If the store's bucket doesn't exist, create it.\n\terr := kvdb.Update(db, func(tx kvdb.RwTx) error {\n\t\t_, err := tx.CreateTopLevelBucket(rootKeyBucketName)\n\t\treturn err\n\t}, func() {})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\t// Return the DB wrapped in a RootKeyStorage object.\n\treturn &RootKeyStorage{\n\t\tBackend: db,\n\t\tencKey:  nil,\n\t}, nil\n}\n\n// CreateUnlock sets an encryption key if one is not already set, otherwise it\n// checks if the password is correct for the stored encryption key.",
+      "length": 475,
+      "tokens": 78,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) CreateUnlock(password *[]byte) error {",
+      "content": "func (r *RootKeyStorage) CreateUnlock(password *[]byte) error {\n\tr.encKeyMtx.Lock()\n\tdefer r.encKeyMtx.Unlock()\n\n\t// Check if we've already unlocked the store; return an error if so.\n\tif r.encKey != nil {\n\t\treturn ErrAlreadyUnlocked\n\t}\n\n\t// Check if a nil password has been passed; return an error if so.\n\tif password == nil {\n\t\treturn ErrPasswordRequired\n\t}\n\n\treturn kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\t\tdbKey := bucket.Get(encryptionKeyID)\n\t\tif len(dbKey) > 0 {\n\t\t\t// We've already stored a key, so try to unlock with\n\t\t\t// the password.\n\t\t\tencKey := &snacl.SecretKey{}\n\t\t\terr := encKey.Unmarshal(dbKey)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\terr = encKey.DeriveKey(password)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tr.encKey = encKey\n\t\t\treturn nil\n\t\t}\n\n\t\t// We haven't yet stored a key, so create a new one.\n\t\tencKey, err := snacl.NewSecretKey(\n\t\t\tpassword, scryptN, scryptR, scryptP,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\terr = bucket.Put(encryptionKeyID, encKey.Marshal())\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tr.encKey = encKey\n\t\treturn nil\n\t}, func() {})\n}\n\n// ChangePassword decrypts the macaroon root key with the old password and then\n// encrypts it again with the new password.",
+      "length": 1205,
+      "tokens": 187,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) ChangePassword(oldPw, newPw []byte) error {",
+      "content": "func (r *RootKeyStorage) ChangePassword(oldPw, newPw []byte) error {\n\t// We need the store to already be unlocked. With this we can make sure\n\t// that there already is a key in the DB.\n\tif r.encKey == nil {\n\t\treturn ErrStoreLocked\n\t}\n\n\t// Check if a nil password has been passed; return an error if so.\n\tif oldPw == nil || newPw == nil {\n\t\treturn ErrPasswordRequired\n\t}\n\n\treturn kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\t\tencKeyDb := bucket.Get(encryptionKeyID)\n\t\trootKeyDb := bucket.Get(DefaultRootKeyID)\n\n\t\t// Both the encryption key and the root key must be present\n\t\t// otherwise we are in the wrong state to change the password.\n\t\tif len(encKeyDb) == 0 || len(rootKeyDb) == 0 {\n\t\t\treturn ErrEncKeyNotFound\n\t\t}\n\n\t\t// Unmarshal parameters for old encryption key and derive the\n\t\t// old key with them.\n\t\tencKeyOld := &snacl.SecretKey{}\n\t\terr := encKeyOld.Unmarshal(encKeyDb)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\terr = encKeyOld.DeriveKey(&oldPw)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Create a new encryption key from the new password.\n\t\tencKeyNew, err := snacl.NewSecretKey(\n\t\t\t&newPw, scryptN, scryptR, scryptP,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Now try to decrypt the root key with the old encryption key,\n\t\t// encrypt it with the new one and then store it in the DB.\n\t\tdecryptedKey, err := encKeyOld.Decrypt(rootKeyDb)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\trootKey := make([]byte, len(decryptedKey))\n\t\tcopy(rootKey, decryptedKey)\n\t\tencryptedKey, err := encKeyNew.Encrypt(rootKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t\terr = bucket.Put(DefaultRootKeyID, encryptedKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\t// Finally, store the new encryption key parameters in the DB\n\t\t// as well.\n\t\terr = bucket.Put(encryptionKeyID, encKeyNew.Marshal())\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\tr.encKey = encKeyNew\n\t\treturn nil\n\t}, func() {})\n}\n\n// Get implements the Get method for the bakery.RootKeyStorage interface.",
+      "length": 1901,
+      "tokens": 299,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) Get(_ context.Context, id []byte) ([]byte, error) {",
+      "content": "func (r *RootKeyStorage) Get(_ context.Context, id []byte) ([]byte, error) {\n\tr.encKeyMtx.RLock()\n\tdefer r.encKeyMtx.RUnlock()\n\n\tif r.encKey == nil {\n\t\treturn nil, ErrStoreLocked\n\t}\n\tvar rootKey []byte\n\terr := kvdb.View(r.Backend, func(tx kvdb.RTx) error {\n\t\tbucket := tx.ReadBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\t\tdbKey := bucket.Get(id)\n\t\tif len(dbKey) == 0 {\n\t\t\treturn fmt.Errorf(\"root key with id %s doesn't exist\",\n\t\t\t\tstring(id))\n\t\t}\n\n\t\tdecKey, err := r.encKey.Decrypt(dbKey)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\n\t\trootKey = make([]byte, len(decKey))\n\t\tcopy(rootKey[:], decKey)\n\t\treturn nil\n\t}, func() {\n\t\trootKey = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn rootKey, nil\n}\n\n// RootKey implements the RootKey method for the bakery.RootKeyStorage\n// interface.",
+      "length": 712,
+      "tokens": 102,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) RootKey(ctx context.Context) ([]byte, []byte, error) {",
+      "content": "func (r *RootKeyStorage) RootKey(ctx context.Context) ([]byte, []byte, error) {\n\tr.encKeyMtx.RLock()\n\tdefer r.encKeyMtx.RUnlock()\n\n\tif r.encKey == nil {\n\t\treturn nil, nil, ErrStoreLocked\n\t}\n\tvar rootKey []byte\n\n\t// Read the root key ID from the context. If no key is specified in the\n\t// context, an error will be returned.\n\tid, err := RootKeyIDFromContext(ctx)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tif bytes.Equal(id, encryptionKeyID) {\n\t\treturn nil, nil, ErrKeyValueForbidden\n\t}\n\n\terr = kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\t\tdbKey := bucket.Get(id)\n\n\t\t// If there's a root key stored in the bucket, decrypt it and\n\t\t// return it.\n\t\tif len(dbKey) != 0 {\n\t\t\tdecKey, err := r.encKey.Decrypt(dbKey)\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\trootKey = make([]byte, len(decKey))\n\t\t\tcopy(rootKey[:], decKey[:])\n\t\t\treturn nil\n\t\t}\n\n\t\t// Otherwise, create a new root key, encrypt it,\n\t\t// and store it in the bucket.\n\t\tnewKey, err := generateAndStoreNewRootKey(bucket, id, r.encKey)\n\t\trootKey = newKey\n\t\treturn err\n\t}, func() {\n\t\trootKey = nil\n\t})\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\treturn rootKey, id, nil\n}\n\n// GenerateNewRootKey generates a new macaroon root key, replacing the previous\n// root key if it existed.",
+      "length": 1215,
+      "tokens": 191,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) GenerateNewRootKey() error {",
+      "content": "func (r *RootKeyStorage) GenerateNewRootKey() error {\n\t// We need the store to already be unlocked. With this we can make sure\n\t// that there already is a key in the DB that can be replaced.\n\tif r.encKey == nil {\n\t\treturn ErrStoreLocked\n\t}\n\treturn kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\t\t_, err := generateAndStoreNewRootKey(\n\t\t\tbucket, DefaultRootKeyID, r.encKey,\n\t\t)\n\t\treturn err\n\t}, func() {})\n}\n\n// SetRootKey sets the default macaroon root key, replacing the previous root\n// key if it existed.",
+      "length": 549,
+      "tokens": 85,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) SetRootKey(rootKey []byte) error {",
+      "content": "func (r *RootKeyStorage) SetRootKey(rootKey []byte) error {\n\tif r.encKey == nil {\n\t\treturn ErrStoreLocked\n\t}\n\tif len(rootKey) != RootKeyLen {\n\t\treturn fmt.Errorf(\"root key must be %v bytes\",\n\t\t\tRootKeyLen)\n\t}\n\n\tencryptedKey, err := r.encKey.Encrypt(rootKey)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\t\tif bucket == nil {\n\t\t\treturn ErrRootKeyBucketNotFound\n\t\t}\n\n\t\treturn bucket.Put(DefaultRootKeyID, encryptedKey)\n\t}, func() {})\n}\n\n// Close closes the underlying database and zeroes the encryption key stored\n// in memory.",
+      "length": 537,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) Close() error {",
+      "content": "func (r *RootKeyStorage) Close() error {\n\tr.encKeyMtx.Lock()\n\tdefer r.encKeyMtx.Unlock()\n\n\tif r.encKey != nil {\n\t\tr.encKey.Zero()\n\t\tr.encKey = nil\n\t}\n\n\t// Since we're not responsible for _creating_ the connection to our DB\n\t// backend, we also shouldn't close it. This should be handled\n\t// externally as to not interfere with remote DB connections in case we\n\t// need to open/close the store twice as happens in the password change\n\t// case.\n\treturn nil\n}\n\n// generateAndStoreNewRootKey creates a new random RootKeyLen-byte root key,\n// encrypts it with the given encryption key and stores it in the bucket.\n// Any previously set key will be overwritten.",
+      "length": 596,
+      "tokens": 98,
+      "embedding": []
+    },
+    {
+      "slug": "func generateAndStoreNewRootKey(bucket walletdb.ReadWriteBucket, id []byte,",
+      "content": "func generateAndStoreNewRootKey(bucket walletdb.ReadWriteBucket, id []byte,\n\tkey *snacl.SecretKey) ([]byte, error) {\n\n\trootKey := make([]byte, RootKeyLen)\n\tif _, err := io.ReadFull(rand.Reader, rootKey); err != nil {\n\t\treturn nil, err\n\t}\n\n\tencryptedKey, err := key.Encrypt(rootKey)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn rootKey, bucket.Put(id, encryptedKey)\n}\n\n// ListMacaroonIDs returns all the root key ID values except the value of\n// encryptedKeyID.",
+      "length": 370,
+      "tokens": 56,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) ListMacaroonIDs(_ context.Context) ([][]byte, error) {",
+      "content": "func (r *RootKeyStorage) ListMacaroonIDs(_ context.Context) ([][]byte, error) {\n\tr.encKeyMtx.RLock()\n\tdefer r.encKeyMtx.RUnlock()\n\n\t// Check it's unlocked.\n\tif r.encKey == nil {\n\t\treturn nil, ErrStoreLocked\n\t}\n\n\tvar rootKeySlice [][]byte\n\n\t// Read all the items in the bucket and append the keys, which are the\n\t// root key IDs we want.\n\terr := kvdb.View(r.Backend, func(tx kvdb.RTx) error {\n\t\t// appendRootKey is a function closure that appends root key ID\n\t\t// to rootKeySlice.\n\t\tappendRootKey := func(k, _ []byte) error {\n\t\t\t// Only append when the key value is not encryptedKeyID.\n\t\t\tif !bytes.Equal(k, encryptionKeyID) {\n\t\t\t\trootKeySlice = append(rootKeySlice, k)\n\t\t\t}\n\t\t\treturn nil\n\t\t}\n\n\t\treturn tx.ReadBucket(rootKeyBucketName).ForEach(appendRootKey)\n\t}, func() {\n\t\trootKeySlice = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn rootKeySlice, nil\n}\n\n// DeleteMacaroonID removes one specific root key ID. If the root key ID is\n// found and deleted, it will be returned.",
+      "length": 867,
+      "tokens": 134,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *RootKeyStorage) DeleteMacaroonID(",
+      "content": "func (r *RootKeyStorage) DeleteMacaroonID(\n\t_ context.Context, rootKeyID []byte) ([]byte, error) {\n\n\tr.encKeyMtx.RLock()\n\tdefer r.encKeyMtx.RUnlock()\n\n\t// Check it's unlocked.\n\tif r.encKey == nil {\n\t\treturn nil, ErrStoreLocked\n\t}\n\n\t// Check the rootKeyID is not empty.\n\tif len(rootKeyID) == 0 {\n\t\treturn nil, ErrMissingRootKeyID\n\t}\n\n\t// Deleting encryptedKeyID or DefaultRootKeyID is not allowed.\n\tif bytes.Equal(rootKeyID, encryptionKeyID) ||\n\t\tbytes.Equal(rootKeyID, DefaultRootKeyID) {\n\n\t\treturn nil, ErrDeletionForbidden\n\t}\n\n\tvar rootKeyIDDeleted []byte\n\terr := kvdb.Update(r.Backend, func(tx kvdb.RwTx) error {\n\t\tbucket := tx.ReadWriteBucket(rootKeyBucketName)\n\n\t\t// Check the key can be found. If not, return nil.\n\t\tif bucket.Get(rootKeyID) == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\t// Once the key is found, we do the deletion.\n\t\tif err := bucket.Delete(rootKeyID); err != nil {\n\t\t\treturn err\n\t\t}\n\t\trootKeyIDDeleted = rootKeyID\n\n\t\treturn nil\n\t}, func() {\n\t\trootKeyIDDeleted = nil\n\t})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn rootKeyIDDeleted, nil\n}\n",
+      "length": 960,
+      "tokens": 136,
+      "embedding": []
+    }
+  ]
+}

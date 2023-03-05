@@ -1,0 +1,209 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/client_db_test.go",
+  "package": "wtdb_test",
+  "sections": [
+    {
+      "slug": "type clientDBInit func(t *testing.T) wtclient.DB",
+      "content": "type clientDBInit func(t *testing.T) wtclient.DB\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type clientDBHarness struct {",
+      "content": "type clientDBHarness struct {\n\tt  *testing.T\n\tdb wtclient.DB\n}\n",
+      "length": 30,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func newClientDBHarness(t *testing.T, init clientDBInit) *clientDBHarness {",
+      "content": "func newClientDBHarness(t *testing.T, init clientDBInit) *clientDBHarness {\n\tdb := init(t)\n\n\th := &clientDBHarness{\n\t\tt:  t,\n\t\tdb: db,\n\t}\n\n\treturn h\n}\n",
+      "length": 66,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) insertSession(session *wtdb.ClientSession,",
+      "content": "func (h *clientDBHarness) insertSession(session *wtdb.ClientSession,\n\texpErr error) {\n\n\th.t.Helper()\n\n\terr := h.db.CreateClientSession(session)\n\trequire.ErrorIs(h.t, err, expErr)\n}\n",
+      "length": 105,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) listSessions(id *wtdb.TowerID,",
+      "content": "func (h *clientDBHarness) listSessions(id *wtdb.TowerID,\n\topts ...wtdb.ClientSessionListOption) map[wtdb.SessionID]*wtdb.ClientSession {\n\n\th.t.Helper()\n\n\tsessions, err := h.db.ListClientSessions(id, opts...)\n\trequire.NoError(h.t, err, \"unable to list client sessions\")\n\n\treturn sessions\n}\n",
+      "length": 223,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) nextKeyIndex(id wtdb.TowerID,",
+      "content": "func (h *clientDBHarness) nextKeyIndex(id wtdb.TowerID,\n\tblobType blob.Type) uint32 {\n\n\th.t.Helper()\n\n\tindex, err := h.db.NextSessionKeyIndex(id, blobType)\n\trequire.NoError(h.t, err, \"unable to create next session key index\")\n\trequire.NotZero(h.t, index, \"next key index should never be 0\")\n\n\treturn index\n}\n",
+      "length": 242,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) createTower(lnAddr *lnwire.NetAddress,",
+      "content": "func (h *clientDBHarness) createTower(lnAddr *lnwire.NetAddress,\n\texpErr error) *wtdb.Tower {\n\n\th.t.Helper()\n\n\ttower, err := h.db.CreateTower(lnAddr)\n\trequire.ErrorIs(h.t, err, expErr)\n\trequire.NotZero(h.t, tower.ID, \"tower id should never be 0\")\n\n\tfor _, session := range h.listSessions(&tower.ID) {\n\t\trequire.Equal(h.t, wtdb.CSessionActive, session.Status)\n\t}\n\n\treturn tower\n}\n",
+      "length": 300,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) removeTower(pubKey *btcec.PublicKey, addr net.Addr,",
+      "content": "func (h *clientDBHarness) removeTower(pubKey *btcec.PublicKey, addr net.Addr,\n\thasSessions bool, expErr error) {\n\n\th.t.Helper()\n\n\terr := h.db.RemoveTower(pubKey, addr)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\tif expErr != nil {\n\t\treturn\n\t}\n\n\tpubKeyStr := pubKey.SerializeCompressed()\n\n\tif addr != nil {\n\t\ttower, err := h.db.LoadTower(pubKey)\n\t\trequire.NoErrorf(h.t, err, \"expected tower %x to still exist\",\n\t\t\tpubKeyStr)\n\n\t\tremovedAddr := addr.String()\n\t\tfor _, towerAddr := range tower.Addresses {\n\t\t\trequire.NotEqualf(h.t, removedAddr, towerAddr,\n\t\t\t\t\"address %v not removed for tower %x\",\n\t\t\t\tremovedAddr, pubKeyStr)\n\t\t}\n\t} else {\n\t\ttower, err := h.db.LoadTower(pubKey)\n\t\tif hasSessions {\n\t\t\trequire.NoError(h.t, err, \"expected tower %x with \"+\n\t\t\t\t\"sessions to still exist\", pubKeyStr)\n\t\t} else {\n\t\t\trequire.Errorf(h.t, err, \"expected tower %x with no \"+\n\t\t\t\t\"sessions to not exist\", pubKeyStr)\n\t\t\treturn\n\t\t}\n\n\t\tfor _, session := range h.listSessions(&tower.ID) {\n\t\t\trequire.Equal(h.t, wtdb.CSessionInactive,\n\t\t\t\tsession.Status, \"expected status for session \"+\n\t\t\t\t\t\"%v to be %v, got %v\", session.ID,\n\t\t\t\twtdb.CSessionInactive, session.Status)\n\t\t}\n\t}\n}\n",
+      "length": 1032,
+      "tokens": 131,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) loadTower(pubKey *btcec.PublicKey,",
+      "content": "func (h *clientDBHarness) loadTower(pubKey *btcec.PublicKey,\n\texpErr error) *wtdb.Tower {\n\n\th.t.Helper()\n\n\ttower, err := h.db.LoadTower(pubKey)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn tower\n}\n",
+      "length": 126,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) loadTowerByID(id wtdb.TowerID,",
+      "content": "func (h *clientDBHarness) loadTowerByID(id wtdb.TowerID,\n\texpErr error) *wtdb.Tower {\n\n\th.t.Helper()\n\n\ttower, err := h.db.LoadTowerByID(id)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn tower\n}\n",
+      "length": 126,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) fetchChanSummaries() map[lnwire.ChannelID]wtdb.ClientChanSummary {",
+      "content": "func (h *clientDBHarness) fetchChanSummaries() map[lnwire.ChannelID]wtdb.ClientChanSummary {\n\th.t.Helper()\n\n\tsummaries, err := h.db.FetchChanSummaries()\n\trequire.NoError(h.t, err)\n\n\treturn summaries\n}\n",
+      "length": 101,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) registerChan(chanID lnwire.ChannelID,",
+      "content": "func (h *clientDBHarness) registerChan(chanID lnwire.ChannelID,\n\tsweepPkScript []byte, expErr error) {\n\n\th.t.Helper()\n\n\terr := h.db.RegisterChannel(chanID, sweepPkScript)\n\trequire.ErrorIs(h.t, err, expErr)\n}\n",
+      "length": 137,
+      "tokens": 14,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) commitUpdate(id *wtdb.SessionID,",
+      "content": "func (h *clientDBHarness) commitUpdate(id *wtdb.SessionID,\n\tupdate *wtdb.CommittedUpdate, expErr error) uint16 {\n\n\th.t.Helper()\n\n\tlastApplied, err := h.db.CommitUpdate(id, update)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn lastApplied\n}\n",
+      "length": 170,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) ackUpdate(id *wtdb.SessionID, seqNum uint16,",
+      "content": "func (h *clientDBHarness) ackUpdate(id *wtdb.SessionID, seqNum uint16,\n\tlastApplied uint16, expErr error) {\n\n\th.t.Helper()\n\n\terr := h.db.AckUpdate(id, seqNum, lastApplied)\n\trequire.ErrorIs(h.t, err, expErr)\n}\n\n// newTower is a helper function that creates a new tower with a randomly\n// generated public key and inserts it into the client DB.",
+      "length": 262,
+      "tokens": 40,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) newTower() *wtdb.Tower {",
+      "content": "func (h *clientDBHarness) newTower() *wtdb.Tower {\n\th.t.Helper()\n\n\tpk, err := randPubKey()\n\trequire.NoError(h.t, err)\n\n\t// Insert a random tower into the database.\n\treturn h.createTower(&lnwire.NetAddress{\n\t\tIdentityKey: pk,\n\t\tAddress:     pseudoAddr,\n\t}, nil)\n}\n",
+      "length": 201,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) fetchSessionCommittedUpdates(id *wtdb.SessionID,",
+      "content": "func (h *clientDBHarness) fetchSessionCommittedUpdates(id *wtdb.SessionID,\n\texpErr error) []wtdb.CommittedUpdate {\n\n\th.t.Helper()\n\n\tupdates, err := h.db.FetchSessionCommittedUpdates(id)\n\tif err != expErr {\n\t\th.t.Fatalf(\"expected fetch session committed updates error: \"+\n\t\t\t\"%v, got: %v\", expErr, err)\n\t}\n\n\treturn updates\n}\n",
+      "length": 237,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) isAcked(id *wtdb.SessionID, backupID *wtdb.BackupID,",
+      "content": "func (h *clientDBHarness) isAcked(id *wtdb.SessionID, backupID *wtdb.BackupID,\n\texpErr error) bool {\n\n\th.t.Helper()\n\n\tisAcked, err := h.db.IsAcked(id, backupID)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn isAcked\n}\n",
+      "length": 127,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) numAcked(id *wtdb.SessionID, expErr error) uint64 {",
+      "content": "func (h *clientDBHarness) numAcked(id *wtdb.SessionID, expErr error) uint64 {\n\th.t.Helper()\n\n\tnumAcked, err := h.db.NumAckedUpdates(id)\n\trequire.ErrorIs(h.t, err, expErr)\n\n\treturn numAcked\n}\n\n// testCreateClientSession asserts various conditions regarding the creation of\n// a new ClientSession. The test asserts:\n//   - client sessions can only be created if a session key index is reserved.\n//   - client sessions cannot be created with an incorrect session key index .\n//   - inserting duplicate sessions fails.",
+      "length": 424,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func testCreateClientSession(h *clientDBHarness) {",
+      "content": "func testCreateClientSession(h *clientDBHarness) {\n\tconst blobType = blob.TypeAltruistAnchorCommit\n\n\ttower := h.newTower()\n\n\t// Create a test client session to insert.\n\tsession := &wtdb.ClientSession{\n\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\tTowerID: tower.ID,\n\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\tBlobType: blobType,\n\t\t\t\t},\n\t\t\t\tMaxUpdates: 100,\n\t\t\t},\n\t\t\tRewardPkScript: []byte{0x01, 0x02, 0x03},\n\t\t},\n\t\tID: wtdb.SessionID([33]byte{0x01}),\n\t}\n\n\t// First, assert that this session is not already present in the\n\t// database.\n\t_, ok := h.listSessions(nil)[session.ID]\n\trequire.Falsef(h.t, ok, \"session for id %x should not exist yet\",\n\t\tsession.ID)\n\n\t// Attempting to insert the client session without reserving a session\n\t// key index should fail.\n\th.insertSession(session, wtdb.ErrNoReservedKeyIndex)\n\n\t// Now, reserve a session key for this tower.\n\tkeyIndex := h.nextKeyIndex(session.TowerID, blobType)\n\n\t// The client session hasn't been updated with the reserved key index\n\t// (since it's still zero). Inserting should fail due to the mismatch.\n\th.insertSession(session, wtdb.ErrIncorrectKeyIndex)\n\n\t// Reserve another key for the same index. Since no session has been\n\t// successfully created, it should return the same index to maintain\n\t// idempotency across restarts.\n\tkeyIndex2 := h.nextKeyIndex(session.TowerID, blobType)\n\trequire.Equalf(h.t, keyIndex, keyIndex2, \"next key index should \"+\n\t\t\"be idempotent: want: %v, got %v\", keyIndex, keyIndex2)\n\n\t// Now, set the client session's key index so that it is proper and\n\t// insert it. This should succeed.\n\tsession.KeyIndex = keyIndex\n\th.insertSession(session, nil)\n\n\t// Verify that the session now exists in the database.\n\t_, ok = h.listSessions(nil)[session.ID]\n\trequire.Truef(h.t, ok, \"session for id %x should exist now\", session.ID)\n\n\t// Attempt to insert the session again, which should fail due to the\n\t// session already existing.\n\th.insertSession(session, wtdb.ErrClientSessionAlreadyExists)\n\n\t// Finally, assert that reserving another key index succeeds with a\n\t// different key index, now that the first one has been finalized.\n\tkeyIndex3 := h.nextKeyIndex(session.TowerID, blobType)\n\trequire.NotEqualf(h.t, keyIndex, keyIndex3, \"key index still \"+\n\t\t\"reserved after creating session\")\n}\n\n// testFilterClientSessions asserts that we can correctly filter client sessions\n// for a specific tower.",
+      "length": 2283,
+      "tokens": 296,
+      "embedding": []
+    },
+    {
+      "slug": "func testFilterClientSessions(h *clientDBHarness) {",
+      "content": "func testFilterClientSessions(h *clientDBHarness) {\n\t// We'll create three client sessions, the first two belonging to one\n\t// tower, and the last belonging to another one.\n\tconst numSessions = 3\n\tconst blobType = blob.TypeAltruistCommit\n\ttowerSessions := make(map[wtdb.TowerID][]wtdb.SessionID)\n\tfor i := 0; i < numSessions; i++ {\n\t\ttower := h.newTower()\n\t\tkeyIndex := h.nextKeyIndex(tower.ID, blobType)\n\t\tsessionID := wtdb.SessionID([33]byte{byte(i)})\n\t\th.insertSession(&wtdb.ClientSession{\n\t\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\t\tTowerID: tower.ID,\n\t\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\t\tBlobType: blobType,\n\t\t\t\t\t},\n\t\t\t\t\tMaxUpdates: 100,\n\t\t\t\t},\n\t\t\t\tRewardPkScript: []byte{0x01, 0x02, 0x03},\n\t\t\t\tKeyIndex:       keyIndex,\n\t\t\t},\n\t\t\tID: sessionID,\n\t\t}, nil)\n\t\ttowerSessions[tower.ID] = append(\n\t\t\ttowerSessions[tower.ID], sessionID,\n\t\t)\n\t}\n\n\t// We should see the expected sessions for each tower when filtering\n\t// them.\n\tfor towerID, expectedSessions := range towerSessions {\n\t\tsessions := h.listSessions(&towerID)\n\t\trequire.Len(h.t, sessions, len(expectedSessions))\n\n\t\tfor _, expectedSession := range expectedSessions {\n\t\t\t_, ok := sessions[expectedSession]\n\t\t\trequire.Truef(h.t, ok, \"expected session %v for \"+\n\t\t\t\t\"tower %v\", expectedSession, towerID)\n\t\t}\n\t}\n}\n\n// testCreateTower asserts the behavior of creating new Tower objects within the\n// database, and that the latest address is always prepended to the list of\n// known addresses for the tower.",
+      "length": 1400,
+      "tokens": 168,
+      "embedding": []
+    },
+    {
+      "slug": "func testCreateTower(h *clientDBHarness) {",
+      "content": "func testCreateTower(h *clientDBHarness) {\n\t// Test that loading a tower with an arbitrary tower id fails.\n\th.loadTowerByID(20, wtdb.ErrTowerNotFound)\n\n\ttower := h.newTower()\n\trequire.Len(h.t, tower.Addresses, 1)\n\ttowerAddr := &lnwire.NetAddress{\n\t\tIdentityKey: tower.IdentityKey,\n\t\tAddress:     tower.Addresses[0],\n\t}\n\n\t// Load the tower from the database and assert that it matches the tower\n\t// we created.\n\ttower2 := h.loadTowerByID(tower.ID, nil)\n\trequire.Equal(h.t, tower, tower2)\n\n\ttower2 = h.loadTower(tower.IdentityKey, nil)\n\trequire.Equal(h.t, tower, tower2)\n\n\t// Insert the address again into the database. Since the address is the\n\t// same, this should result in an unmodified tower record.\n\ttowerDupAddr := h.createTower(towerAddr, nil)\n\trequire.Lenf(h.t, towerDupAddr.Addresses, 1, \"duplicate address \"+\n\t\t\"should be deduped\")\n\n\trequire.Equal(h.t, tower, towerDupAddr)\n\n\t// Generate a new address for this tower.\n\taddr2 := &net.TCPAddr{IP: []byte{0x02, 0x00, 0x00, 0x00}, Port: 9911}\n\n\tlnAddr2 := &lnwire.NetAddress{\n\t\tIdentityKey: tower.IdentityKey,\n\t\tAddress:     addr2,\n\t}\n\n\t// Insert the updated address, which should produce a tower with a new\n\t// address.\n\ttowerNewAddr := h.createTower(lnAddr2, nil)\n\n\t// Load the tower from the database, and assert that it matches the\n\t// tower returned from creation.\n\ttowerNewAddr2 := h.loadTowerByID(tower.ID, nil)\n\trequire.Equal(h.t, towerNewAddr, towerNewAddr2)\n\n\ttowerNewAddr2 = h.loadTower(tower.IdentityKey, nil)\n\trequire.Equal(h.t, towerNewAddr, towerNewAddr2)\n\n\t// Assert that there are now two addresses on the tower object.\n\trequire.Lenf(h.t, towerNewAddr.Addresses, 2, \"new address should be \"+\n\t\t\"added\")\n\n\t// Finally, assert that the new address was prepended since it is deemed\n\t// fresher.\n\trequire.Equal(h.t, tower.Addresses, towerNewAddr.Addresses[1:])\n}\n\n// testRemoveTower asserts the behavior of removing Tower objects as a whole and\n// removing addresses from Tower objects within the database.",
+      "length": 1874,
+      "tokens": 236,
+      "embedding": []
+    },
+    {
+      "slug": "func testRemoveTower(h *clientDBHarness) {",
+      "content": "func testRemoveTower(h *clientDBHarness) {\n\t// Generate a random public key we'll use for our tower.\n\tpk, err := randPubKey()\n\trequire.NoError(h.t, err)\n\n\t// Removing a tower that does not exist within the database should\n\t// result in a NOP.\n\th.removeTower(pk, nil, false, nil)\n\n\t// We'll create a tower with two addresses.\n\taddr1 := &net.TCPAddr{IP: []byte{0x01, 0x00, 0x00, 0x00}, Port: 9911}\n\taddr2 := &net.TCPAddr{IP: []byte{0x02, 0x00, 0x00, 0x00}, Port: 9911}\n\th.createTower(&lnwire.NetAddress{\n\t\tIdentityKey: pk,\n\t\tAddress:     addr1,\n\t}, nil)\n\th.createTower(&lnwire.NetAddress{\n\t\tIdentityKey: pk,\n\t\tAddress:     addr2,\n\t}, nil)\n\n\t// We'll then remove the second address. We should now only see the\n\t// first.\n\th.removeTower(pk, addr2, false, nil)\n\n\t// We'll then remove the first address. We should now see that the tower\n\t// has no addresses left.\n\th.removeTower(pk, addr1, false, wtdb.ErrLastTowerAddr)\n\n\t// Removing the tower as a whole from the database should succeed since\n\t// there aren't any active sessions for it.\n\th.removeTower(pk, nil, false, nil)\n\n\t// We'll then recreate the tower, but this time we'll create a session\n\t// for it.\n\ttower := h.createTower(&lnwire.NetAddress{\n\t\tIdentityKey: pk,\n\t\tAddress:     addr1,\n\t}, nil)\n\n\tconst blobType = blob.TypeAltruistCommit\n\tsession := &wtdb.ClientSession{\n\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\tTowerID: tower.ID,\n\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\tBlobType: blobType,\n\t\t\t\t},\n\t\t\t\tMaxUpdates: 100,\n\t\t\t},\n\t\t\tRewardPkScript: []byte{0x01, 0x02, 0x03},\n\t\t\tKeyIndex:       h.nextKeyIndex(tower.ID, blobType),\n\t\t},\n\t\tID: wtdb.SessionID([33]byte{0x01}),\n\t}\n\th.insertSession(session, nil)\n\tupdate := randCommittedUpdate(h.t, 1)\n\th.registerChan(update.BackupID.ChanID, nil, nil)\n\th.commitUpdate(&session.ID, update, nil)\n\n\t// We should not be able to fully remove it from the database since\n\t// there's a session and it has unacked updates.\n\th.removeTower(pk, nil, true, wtdb.ErrTowerUnackedUpdates)\n\n\t// Removing the tower after all sessions no longer have unacked updates\n\t// should result in the sessions becoming inactive.\n\th.ackUpdate(&session.ID, 1, 1, nil)\n\th.removeTower(pk, nil, true, nil)\n\n\t// Creating the tower again should mark all of the sessions active once\n\t// again.\n\th.createTower(&lnwire.NetAddress{\n\t\tIdentityKey: pk,\n\t\tAddress:     addr1,\n\t}, nil)\n}\n\n// testChanSummaries tests the process of a registering a channel and its\n// associated sweep pkscript.",
+      "length": 2353,
+      "tokens": 308,
+      "embedding": []
+    },
+    {
+      "slug": "func testChanSummaries(h *clientDBHarness) {",
+      "content": "func testChanSummaries(h *clientDBHarness) {\n\t// First, assert that this channel is not already registered.\n\tvar chanID lnwire.ChannelID\n\t_, ok := h.fetchChanSummaries()[chanID]\n\trequire.Falsef(h.t, ok, \"pkscript for channel %x should not exist yet\",\n\t\tchanID)\n\n\t// Generate a random sweep pkscript and register it for this channel.\n\texpPkScript := make([]byte, 22)\n\t_, err := io.ReadFull(crand.Reader, expPkScript)\n\trequire.NoError(h.t, err)\n\n\th.registerChan(chanID, expPkScript, nil)\n\n\t// Assert that the channel exists and that its sweep pkscript matches\n\t// the one we registered.\n\tsummary, ok := h.fetchChanSummaries()[chanID]\n\trequire.Truef(h.t, ok, \"pkscript for channel %x should not exist yet\",\n\t\tchanID)\n\trequire.Equal(h.t, expPkScript, summary.SweepPkScript)\n\n\t// Finally, assert that re-registering the same channel produces a\n\t// failure.\n\th.registerChan(chanID, expPkScript, wtdb.ErrChannelAlreadyRegistered)\n}\n\n// testCommitUpdate tests the behavior of CommitUpdate, ensuring that they can",
+      "length": 934,
+      "tokens": 116,
+      "embedding": []
+    },
+    {
+      "slug": "func testCommitUpdate(h *clientDBHarness) {",
+      "content": "func testCommitUpdate(h *clientDBHarness) {\n\tconst blobType = blob.TypeAltruistCommit\n\n\ttower := h.newTower()\n\tsession := &wtdb.ClientSession{\n\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\tTowerID: tower.ID,\n\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\tBlobType: blobType,\n\t\t\t\t},\n\t\t\t\tMaxUpdates: 100,\n\t\t\t},\n\t\t\tRewardPkScript: []byte{0x01, 0x02, 0x03},\n\t\t},\n\t\tID: wtdb.SessionID([33]byte{0x02}),\n\t}\n\n\t// Generate a random update and try to commit before inserting the\n\t// session, which should fail.\n\tupdate1 := randCommittedUpdate(h.t, 1)\n\th.commitUpdate(&session.ID, update1, wtdb.ErrClientSessionNotFound)\n\th.fetchSessionCommittedUpdates(\n\t\t&session.ID, wtdb.ErrClientSessionNotFound,\n\t)\n\n\t// Reserve a session key index and insert the session.\n\tsession.KeyIndex = h.nextKeyIndex(session.TowerID, blobType)\n\th.insertSession(session, nil)\n\n\t// Now, try to commit the update that failed initially which should\n\t// succeed. The lastApplied value should be 0 since we have not received\n\t// an ack from the tower.\n\tlastApplied := h.commitUpdate(&session.ID, update1, nil)\n\trequire.Zero(h.t, lastApplied)\n\n\t// Assert that the committed update appears in the client session's\n\t// CommittedUpdates map when loaded from disk and that there are no\n\t// AckedUpdates.\n\th.assertUpdates(session.ID, []wtdb.CommittedUpdate{*update1}, nil)\n\n\t// Try to commit the same update, which should succeed due to\n\t// idempotency (which is preserved when the breach hint is identical to\n\t// the on-disk update's hint). The lastApplied value should remain\n\t// unchanged.\n\tlastApplied2 := h.commitUpdate(&session.ID, update1, nil)\n\trequire.Equal(h.t, lastApplied, lastApplied2)\n\n\t// Assert that the loaded ClientSession is the same as before.\n\th.assertUpdates(session.ID, []wtdb.CommittedUpdate{*update1}, nil)\n\n\t// Generate another random update and try to commit it at the identical\n\t// sequence number. Since the breach hint has changed, this should fail.\n\tupdate2 := randCommittedUpdate(h.t, 1)\n\th.commitUpdate(&session.ID, update2, wtdb.ErrUpdateAlreadyCommitted)\n\n\t// Next, insert the new update at the next unallocated sequence number\n\t// which should succeed.\n\tupdate2.SeqNum = 2\n\tlastApplied3 := h.commitUpdate(&session.ID, update2, nil)\n\trequire.Equal(h.t, lastApplied, lastApplied3)\n\n\t// Check that both updates now appear as committed on the ClientSession\n\t// loaded from disk.\n\th.assertUpdates(session.ID, []wtdb.CommittedUpdate{\n\t\t*update1,\n\t\t*update2,\n\t}, nil)\n\n\t// Finally, create one more random update and try to commit it at index\n\t// 4, which should be rejected since 3 is the next slot the database\n\t// expects.\n\tupdate4 := randCommittedUpdate(h.t, 4)\n\th.commitUpdate(&session.ID, update4, wtdb.ErrCommitUnorderedUpdate)\n\n\t// Assert that the ClientSession loaded from disk remains unchanged.\n\th.assertUpdates(session.ID, []wtdb.CommittedUpdate{\n\t\t*update1,\n\t\t*update2,\n\t}, nil)\n}\n\n// testAckUpdate asserts the behavior of AckUpdate.",
+      "length": 2825,
+      "tokens": 342,
+      "embedding": []
+    },
+    {
+      "slug": "func testAckUpdate(h *clientDBHarness) {",
+      "content": "func testAckUpdate(h *clientDBHarness) {\n\tconst blobType = blob.TypeAltruistCommit\n\n\ttower := h.newTower()\n\n\t// Create a new session that the updates in this will be tied to.\n\tsession := &wtdb.ClientSession{\n\t\tClientSessionBody: wtdb.ClientSessionBody{\n\t\t\tTowerID: tower.ID,\n\t\t\tPolicy: wtpolicy.Policy{\n\t\t\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\t\t\tBlobType: blobType,\n\t\t\t\t},\n\t\t\t\tMaxUpdates: 100,\n\t\t\t},\n\t\t\tRewardPkScript: []byte{0x01, 0x02, 0x03},\n\t\t},\n\t\tID: wtdb.SessionID([33]byte{0x03}),\n\t}\n\n\t// Try to ack an update before inserting the client session, which\n\t// should fail.\n\th.ackUpdate(&session.ID, 1, 0, wtdb.ErrClientSessionNotFound)\n\n\t// Reserve a session key and insert the client session.\n\tsession.KeyIndex = h.nextKeyIndex(session.TowerID, blobType)\n\th.insertSession(session, nil)\n\n\t// Now, try to ack update 1. This should fail since update 1 was never\n\t// committed.\n\th.ackUpdate(&session.ID, 1, 0, wtdb.ErrCommittedUpdateNotFound)\n\n\t// Commit to a random update at seqnum 1.\n\tupdate1 := randCommittedUpdate(h.t, 1)\n\n\th.registerChan(update1.BackupID.ChanID, nil, nil)\n\tlastApplied := h.commitUpdate(&session.ID, update1, nil)\n\trequire.Zero(h.t, lastApplied)\n\n\t// Acking seqnum 1 should succeed.\n\th.ackUpdate(&session.ID, 1, 1, nil)\n\n\t// Acking seqnum 1 again should fail.\n\th.ackUpdate(&session.ID, 1, 1, wtdb.ErrCommittedUpdateNotFound)\n\n\t// Acking a valid seqnum with a reverted last applied value should fail.\n\th.ackUpdate(&session.ID, 1, 0, wtdb.ErrLastAppliedReversion)\n\n\t// Acking with a last applied greater than any allocated seqnum should\n\t// fail.\n\th.ackUpdate(&session.ID, 4, 3, wtdb.ErrUnallocatedLastApplied)\n\n\t// Assert that the ClientSession loaded from disk has one update in it's\n\t// AckedUpdates map, and that the committed update has been removed.\n\th.assertUpdates(session.ID, nil, map[uint16]wtdb.BackupID{\n\t\t1: update1.BackupID,\n\t})\n\n\t// Commit to another random update, and assert that the last applied\n\t// value is 1, since this was what was provided in the last successful\n\t// ack.\n\tupdate2 := randCommittedUpdate(h.t, 2)\n\th.registerChan(update2.BackupID.ChanID, nil, nil)\n\tlastApplied = h.commitUpdate(&session.ID, update2, nil)\n\trequire.EqualValues(h.t, 1, lastApplied)\n\n\t// Ack seqnum 2.\n\th.ackUpdate(&session.ID, 2, 2, nil)\n\n\t// Assert that both updates exist as AckedUpdates when loaded from disk.\n\th.assertUpdates(session.ID, nil, map[uint16]wtdb.BackupID{\n\t\t1: update1.BackupID,\n\t\t2: update2.BackupID,\n\t})\n\n\t// Acking again with a lower last applied should fail.\n\th.ackUpdate(&session.ID, 2, 1, wtdb.ErrLastAppliedReversion)\n\n\t// Acking an unallocated seqnum should fail.\n\th.ackUpdate(&session.ID, 4, 2, wtdb.ErrCommittedUpdateNotFound)\n\n\t// Acking with a last applied greater than any allocated seqnum should\n\t// fail.\n\th.ackUpdate(&session.ID, 4, 3, wtdb.ErrUnallocatedLastApplied)\n}\n",
+      "length": 2698,
+      "tokens": 326,
+      "embedding": []
+    },
+    {
+      "slug": "func (h *clientDBHarness) assertUpdates(id wtdb.SessionID,",
+      "content": "func (h *clientDBHarness) assertUpdates(id wtdb.SessionID,\n\texpectedPending []wtdb.CommittedUpdate,\n\texpectedAcked map[uint16]wtdb.BackupID) {\n\n\tcommittedUpdates := h.fetchSessionCommittedUpdates(&id, nil)\n\tcheckCommittedUpdates(h.t, committedUpdates, expectedPending)\n\n\t// Check acked updates.\n\tnumAcked := h.numAcked(&id, nil)\n\trequire.EqualValues(h.t, len(expectedAcked), numAcked)\n\tfor _, backupID := range expectedAcked {\n\t\tisAcked := h.isAcked(&id, &backupID, nil)\n\t\trequire.True(h.t, isAcked)\n\t}\n}\n\n// checkCommittedUpdates asserts that the CommittedUpdates on session match the\n// expUpdates provided.",
+      "length": 534,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func checkCommittedUpdates(t *testing.T, actualUpdates,",
+      "content": "func checkCommittedUpdates(t *testing.T, actualUpdates,\n\texpUpdates []wtdb.CommittedUpdate) {\n\n\tt.Helper()\n\n\t// We promote nil expUpdates to an initialized slice since the database\n\t// should never return a nil slice. This promotion is done purely out of\n\t// convenience for the testing framework.\n\tif expUpdates == nil {\n\t\texpUpdates = make([]wtdb.CommittedUpdate, 0)\n\t}\n\n\trequire.Equal(t, expUpdates, actualUpdates)\n}\n\n// TestClientDB asserts the behavior of a fresh client db, a reopened client db,\n// and the mock implementation. This ensures that all databases function\n// identically, especially in the negative paths.",
+      "length": 552,
+      "tokens": 82,
+      "embedding": []
+    },
+    {
+      "slug": "func TestClientDB(t *testing.T) {",
+      "content": "func TestClientDB(t *testing.T) {\n\tdbCfg := &kvdb.BoltConfig{DBTimeout: kvdb.DefaultDBTimeout}\n\tdbs := []struct {\n\t\tname string\n\t\tinit clientDBInit\n\t}{\n\t\t{\n\t\t\tname: \"fresh clientdb\",\n\t\t\tinit: func(t *testing.T) wtclient.DB {\n\t\t\t\tbdb, err := wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, t.TempDir(), \"wtclient.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err := wtdb.OpenClientDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tt.Cleanup(func() {\n\t\t\t\t\tdb.Close()\n\t\t\t\t})\n\n\t\t\t\treturn db\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"reopened clientdb\",\n\t\t\tinit: func(t *testing.T) wtclient.DB {\n\t\t\t\tpath := t.TempDir()\n\n\t\t\t\tbdb, err := wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, path, \"wtclient.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err := wtdb.OpenClientDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\t\t\t\tdb.Close()\n\n\t\t\t\tbdb, err = wtdb.NewBoltBackendCreator(\n\t\t\t\t\ttrue, path, \"wtclient.db\",\n\t\t\t\t)(dbCfg)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tdb, err = wtdb.OpenClientDB(bdb)\n\t\t\t\trequire.NoError(t, err)\n\n\t\t\t\tt.Cleanup(func() {\n\t\t\t\t\tdb.Close()\n\t\t\t\t})\n\n\t\t\t\treturn db\n\t\t\t},\n\t\t},\n\t\t{\n\t\t\tname: \"mock\",\n\t\t\tinit: func(t *testing.T) wtclient.DB {\n\t\t\t\treturn wtmock.NewClientDB()\n\t\t\t},\n\t\t},\n\t}\n\n\ttests := []struct {\n\t\tname string\n\t\trun  func(*clientDBHarness)\n\t}{\n\t\t{\n\t\t\tname: \"create client session\",\n\t\t\trun:  testCreateClientSession,\n\t\t},\n\t\t{\n\t\t\tname: \"filter client sessions\",\n\t\t\trun:  testFilterClientSessions,\n\t\t},\n\t\t{\n\t\t\tname: \"create tower\",\n\t\t\trun:  testCreateTower,\n\t\t},\n\t\t{\n\t\t\tname: \"remove tower\",\n\t\t\trun:  testRemoveTower,\n\t\t},\n\t\t{\n\t\t\tname: \"chan summaries\",\n\t\t\trun:  testChanSummaries,\n\t\t},\n\t\t{\n\t\t\tname: \"commit update\",\n\t\t\trun:  testCommitUpdate,\n\t\t},\n\t\t{\n\t\t\tname: \"ack update\",\n\t\t\trun:  testAckUpdate,\n\t\t},\n\t}\n\n\tfor _, database := range dbs {\n\t\tdb := database\n\t\tt.Run(db.name, func(t *testing.T) {\n\t\t\tt.Parallel()\n\n\t\t\tfor _, test := range tests {\n\t\t\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\t\t\th := newClientDBHarness(t, db.init)\n\n\t\t\t\t\ttest.run(h)\n\t\t\t\t})\n\t\t\t}\n\t\t})\n\t}\n}\n\n// randCommittedUpdate generates a random committed update.",
+      "length": 1861,
+      "tokens": 216,
+      "embedding": []
+    },
+    {
+      "slug": "func randCommittedUpdate(t *testing.T, seqNum uint16) *wtdb.CommittedUpdate {",
+      "content": "func randCommittedUpdate(t *testing.T, seqNum uint16) *wtdb.CommittedUpdate {\n\tvar chanID lnwire.ChannelID\n\t_, err := io.ReadFull(crand.Reader, chanID[:])\n\trequire.NoError(t, err)\n\n\tvar hint blob.BreachHint\n\t_, err = io.ReadFull(crand.Reader, hint[:])\n\trequire.NoError(t, err)\n\n\tencBlob := make([]byte, blob.Size(blob.FlagCommitOutputs.Type()))\n\t_, err = io.ReadFull(crand.Reader, encBlob)\n\trequire.NoError(t, err)\n\n\treturn &wtdb.CommittedUpdate{\n\t\tSeqNum: seqNum,\n\t\tCommittedUpdateBody: wtdb.CommittedUpdateBody{\n\t\t\tBackupID: wtdb.BackupID{\n\t\t\t\tChanID:       chanID,\n\t\t\t\tCommitHeight: 666,\n\t\t\t},\n\t\t\tHint:          hint,\n\t\t\tEncryptedBlob: encBlob,\n\t\t},\n\t}\n}\n",
+      "length": 556,
+      "tokens": 51,
+      "embedding": []
+    }
+  ]
+}

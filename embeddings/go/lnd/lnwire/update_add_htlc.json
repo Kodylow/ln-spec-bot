@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/update_add_htlc.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type UpdateAddHTLC struct {",
+      "content": "type UpdateAddHTLC struct {\n\t// ChanID is the particular active channel that this UpdateAddHTLC is\n\t// bound to.\n\tChanID ChannelID\n\n\t// ID is the identification server for this HTLC. This value is\n\t// explicitly included as it allows nodes to survive single-sided\n\t// restarts. The ID value for this sides starts at zero, and increases\n\t// with each offered HTLC.\n\tID uint64\n\n\t// Amount is the amount of millisatoshis this HTLC is worth.\n\tAmount MilliSatoshi\n\n\t// PaymentHash is the payment hash to be included in the HTLC this\n\t// request creates. The pre-image to this HTLC must be revealed by the\n\t// upstream peer in order to fully settle the HTLC.\n\tPaymentHash [32]byte\n\n\t// Expiry is the number of blocks after which this HTLC should expire.\n\t// It is the receiver's duty to ensure that the outgoing HTLC has a\n\t// sufficient expiry value to allow her to redeem the incoming HTLC.\n\tExpiry uint32\n\n\t// OnionBlob is the raw serialized mix header used to route an HTLC in\n\t// a privacy-preserving manner. The mix header is defined currently to\n\t// be parsed as a 4-tuple: (groupElement, routingInfo, headerMAC,\n\t// body).  First the receiving node should use the groupElement, and\n\t// its current onion key to derive a shared secret with the source.\n\t// Once the shared secret has been derived, the headerMAC should be\n\t// checked FIRST. Note that the MAC only covers the routingInfo field.\n\t// If the MAC matches, and the shared secret is fresh, then the node\n\t// should strip off a layer of encryption, exposing the next hop to be\n\t// used in the subsequent UpdateAddHTLC message.\n\tOnionBlob [OnionPacketSize]byte\n\n\t// ExtraData is the set of data that was appended to this message to\n\t// fill out the full maximum transport message size. These fields can\n\t// be used to specify optional data such as custom TLV fields.\n\tExtraData ExtraOpaqueData\n}\n\n// NewUpdateAddHTLC returns a new empty UpdateAddHTLC message.",
+      "length": 1848,
+      "tokens": 318,
+      "embedding": []
+    },
+    {
+      "slug": "func NewUpdateAddHTLC() *UpdateAddHTLC {",
+      "content": "func NewUpdateAddHTLC() *UpdateAddHTLC {\n\treturn &UpdateAddHTLC{}\n}\n\n// A compile time check to ensure UpdateAddHTLC implements the lnwire.Message\n// interface.\nvar _ Message = (*UpdateAddHTLC)(nil)\n\n// Decode deserializes a serialized UpdateAddHTLC message stored in the passed\n// io.Reader observing the specified protocol version.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 334,
+      "tokens": 48,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateAddHTLC) Decode(r io.Reader, pver uint32) error {",
+      "content": "func (c *UpdateAddHTLC) Decode(r io.Reader, pver uint32) error {\n\treturn ReadElements(r,\n\t\t&c.ChanID,\n\t\t&c.ID,\n\t\t&c.Amount,\n\t\tc.PaymentHash[:],\n\t\t&c.Expiry,\n\t\tc.OnionBlob[:],\n\t\t&c.ExtraData,\n\t)\n}\n\n// Encode serializes the target UpdateAddHTLC into the passed io.Writer\n// observing the protocol version specified.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 286,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateAddHTLC) Encode(w *bytes.Buffer, pver uint32) error {",
+      "content": "func (c *UpdateAddHTLC) Encode(w *bytes.Buffer, pver uint32) error {\n\tif err := WriteChannelID(w, c.ChanID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint64(w, c.ID); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteMilliSatoshi(w, c.Amount); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, c.PaymentHash[:]); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteUint32(w, c.Expiry); err != nil {\n\t\treturn err\n\t}\n\n\tif err := WriteBytes(w, c.OnionBlob[:]); err != nil {\n\t\treturn err\n\t}\n\n\treturn WriteBytes(w, c.ExtraData)\n}\n\n// MsgType returns the integer uniquely identifying this message type on the\n// wire.\n//\n// This is part of the lnwire.Message interface.",
+      "length": 564,
+      "tokens": 99,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateAddHTLC) MsgType() MessageType {",
+      "content": "func (c *UpdateAddHTLC) MsgType() MessageType {\n\treturn MsgUpdateAddHTLC\n}\n\n// TargetChanID returns the channel id of the link for which this message is\n// intended.\n//\n// NOTE: Part of peer.LinkUpdater interface.",
+      "length": 159,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *UpdateAddHTLC) TargetChanID() ChannelID {",
+      "content": "func (c *UpdateAddHTLC) TargetChanID() ChannelID {\n\treturn c.ChanID\n}\n",
+      "length": 17,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

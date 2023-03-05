@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/kvdb_no_etcd.go",
+  "package": "!kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,",
+      "content": "func StartEtcdTestBackend(path string, clientPort, peerPort uint16,\n\tlogFile string) (*etcd.Config, func(), error) {\n\n\treturn nil, func() {}, errEtcdNotAvailable\n}\n",
+      "length": 92,
+      "tokens": 12,
+      "embedding": []
+    }
+  ]
+}

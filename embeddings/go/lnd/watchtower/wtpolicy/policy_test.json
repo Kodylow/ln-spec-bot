@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtpolicy/policy_test.go",
+  "package": "wtpolicy_test",
+  "sections": [
+    {
+      "slug": "func TestPolicyValidate(t *testing.T) {",
+      "content": "func TestPolicyValidate(t *testing.T) {\n\tfor i := range validationTests {\n\t\ttest := validationTests[i]\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\terr := test.policy.Validate()\n\t\t\tif err != test.expErr {\n\t\t\t\tt.Fatalf(\"validation error mismatch, \"+\n\t\t\t\t\t\"want: %v, got: %v\", test.expErr, err)\n\t\t\t}\n\t\t})\n\t}\n}\n\n// TestPolicyIsAnchorChannel asserts that the IsAnchorChannel helper properly\n// reflects the anchor bit of the policy's blob type.",
+      "length": 385,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func TestPolicyIsAnchorChannel(t *testing.T) {",
+      "content": "func TestPolicyIsAnchorChannel(t *testing.T) {\n\tpolicyNoAnchor := wtpolicy.Policy{\n\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\tBlobType: blob.TypeAltruistCommit,\n\t\t},\n\t}\n\trequire.Equal(t, false, policyNoAnchor.IsAnchorChannel())\n\n\tpolicyAnchor := wtpolicy.Policy{\n\t\tTxPolicy: wtpolicy.TxPolicy{\n\t\t\tBlobType: blob.TypeAltruistAnchorCommit,\n\t\t},\n\t}\n\trequire.Equal(t, true, policyAnchor.IsAnchorChannel())\n}\n",
+      "length": 334,
+      "tokens": 25,
+      "embedding": []
+    }
+  ]
+}

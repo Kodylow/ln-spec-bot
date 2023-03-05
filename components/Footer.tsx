@@ -7,23 +7,23 @@ export const Footer: FC = () => {
       <div className="hidden sm:flex"></div>
 
       <div className="hidden sm:flex italic text-sm">
-        Created by
+        Built by
         <a
           className="hover:opacity-50 mx-1"
-          href="https://twitter.com/mckaywrigley"
+          href="https://twitter.com/kodylow"
           target="_blank"
           rel="noreferrer"
         >
-          Mckay Wrigley
+          Kody Low
         </a>
         based on the work of
         <a
           className="hover:opacity-50 ml-1"
-          href="https://twitter.com/balajis"
+          href="https://twitter.com/mckaywrigley"
           target="_blank"
           rel="noreferrer"
         >
-          Balaji Srinivasan
+          McKay Wrigley
         </a>
         .
       </div>
@@ -31,7 +31,7 @@ export const Footer: FC = () => {
       <div className="flex space-x-4">
         <a
           className="flex items-center hover:opacity-50"
-          href="https://twitter.com/mckaywrigley"
+          href="https://twitter.com/kodylow"
           target="_blank"
           rel="noreferrer"
         >
@@ -40,7 +40,7 @@ export const Footer: FC = () => {
 
         <a
           className="flex items-center hover:opacity-50"
-          href="https://github.com/mckaywrigley/the-network-state-gpt"
+          href="https://github.com/kodylow"
           target="_blank"
           rel="noreferrer"
         >

@@ -1,0 +1,48 @@
+{
+  "filepath": "../implementations/go/lnd/macaroons/constraints_test.go",
+  "package": "macaroons_test",
+  "sections": [
+    {
+      "slug": "func createDummyMacaroon(t *testing.T) *macaroon.Macaroon {",
+      "content": "func createDummyMacaroon(t *testing.T) *macaroon.Macaroon {\n\tdummyMacaroon, err := macaroon.New(\n\t\ttestRootKey, testID, testLocation, testVersion,\n\t)\n\trequire.NoError(t, err, \"Error creating initial macaroon\")\n\treturn dummyMacaroon\n}\n\n// TestAddConstraints tests that constraints can be added to an existing\n// macaroon and therefore tighten its restrictions.",
+      "length": 291,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func TestAddConstraints(t *testing.T) {",
+      "content": "func TestAddConstraints(t *testing.T) {\n\t// We need a dummy macaroon to start with. Create one without\n\t// a bakery, because we mock everything anyway.\n\tinitialMac := createDummyMacaroon(t)\n\n\t// Now add a constraint and make sure we have a cloned macaroon\n\t// with the constraint applied instead of a mutated initial one.\n\tnewMac, err := macaroons.AddConstraints(\n\t\tinitialMac, macaroons.TimeoutConstraint(1),\n\t)\n\trequire.NoError(t, err, \"Error adding constraint\")\n\tif &newMac == &initialMac {\n\t\tt.Fatalf(\"Initial macaroon has been changed, something \" +\n\t\t\t\"went wrong!\")\n\t}\n\n\t// Finally, test that the constraint has been added.\n\tif len(initialMac.Caveats()) == len(newMac.Caveats()) {\n\t\tt.Fatalf(\"No caveat has been added to the macaroon when \" +\n\t\t\t\"constraint was applied\")\n\t}\n}\n\n// TestTimeoutConstraint tests that a caveat for the lifetime of\n// a macaroon is created.",
+      "length": 812,
+      "tokens": 120,
+      "embedding": []
+    },
+    {
+      "slug": "func TestTimeoutConstraint(t *testing.T) {",
+      "content": "func TestTimeoutConstraint(t *testing.T) {\n\t// Get a configured version of the constraint function.\n\tconstraintFunc := macaroons.TimeoutConstraint(3)\n\n\t// Now we need a dummy macaroon that we can apply the constraint\n\t// function to.\n\ttestMacaroon := createDummyMacaroon(t)\n\terr := constraintFunc(testMacaroon)\n\trequire.NoError(t, err, \"Error applying timeout constraint\")\n\n\t// Finally, check that the created caveat has an\n\t// acceptable value.\n\tif !strings.HasPrefix(\n\t\tstring(testMacaroon.Caveats()[0].Id),\n\t\texpectedTimeCaveatSubstring,\n\t) {\n\n\t\tt.Fatalf(\"Added caveat '%s' does not meet the expectations!\",\n\t\t\ttestMacaroon.Caveats()[0].Id)\n\t}\n}\n\n// TestTimeoutConstraint tests that a caveat for the lifetime of\n// a macaroon is created.",
+      "length": 675,
+      "tokens": 84,
+      "embedding": []
+    },
+    {
+      "slug": "func TestIpLockConstraint(t *testing.T) {",
+      "content": "func TestIpLockConstraint(t *testing.T) {\n\t// Get a configured version of the constraint function.\n\tconstraintFunc := macaroons.IPLockConstraint(\"127.0.0.1\")\n\n\t// Now we need a dummy macaroon that we can apply the constraint\n\t// function to.\n\ttestMacaroon := createDummyMacaroon(t)\n\terr := constraintFunc(testMacaroon)\n\trequire.NoError(t, err, \"Error applying timeout constraint\")\n\n\t// Finally, check that the created caveat has an\n\t// acceptable value.\n\tif string(testMacaroon.Caveats()[0].Id) != \"ipaddr 127.0.0.1\" {\n\t\tt.Fatalf(\"Added caveat '%s' does not meet the expectations!\",\n\t\t\ttestMacaroon.Caveats()[0].Id)\n\t}\n}\n\n// TestIPLockBadIP tests that an IP constraint cannot be added if the\n// provided string is not a valid IP address.",
+      "length": 677,
+      "tokens": 90,
+      "embedding": []
+    },
+    {
+      "slug": "func TestIPLockBadIP(t *testing.T) {",
+      "content": "func TestIPLockBadIP(t *testing.T) {\n\tconstraintFunc := macaroons.IPLockConstraint(\"127.0.0/800\")\n\ttestMacaroon := createDummyMacaroon(t)\n\terr := constraintFunc(testMacaroon)\n\tif err == nil {\n\t\tt.Fatalf(\"IPLockConstraint with bad IP should fail.\")\n\t}\n}\n\n// TestCustomConstraint tests that a custom constraint with a name and value can\n// be added to a macaroon.",
+      "length": 315,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func TestCustomConstraint(t *testing.T) {",
+      "content": "func TestCustomConstraint(t *testing.T) {\n\t// Test a custom caveat with a value first.\n\tconstraintFunc := macaroons.CustomConstraint(\"unit-test\", \"test-value\")\n\ttestMacaroon := createDummyMacaroon(t)\n\trequire.NoError(t, constraintFunc(testMacaroon))\n\n\trequire.Equal(\n\t\tt, []byte(\"lnd-custom unit-test test-value\"),\n\t\ttestMacaroon.Caveats()[0].Id,\n\t)\n\trequire.True(t, macaroons.HasCustomCaveat(testMacaroon, \"unit-test\"))\n\trequire.False(t, macaroons.HasCustomCaveat(testMacaroon, \"test-value\"))\n\trequire.False(t, macaroons.HasCustomCaveat(testMacaroon, \"something\"))\n\trequire.False(t, macaroons.HasCustomCaveat(nil, \"foo\"))\n\n\tcustomCaveatCondition := macaroons.GetCustomCaveatCondition(\n\t\ttestMacaroon, \"unit-test\",\n\t)\n\trequire.Equal(t, customCaveatCondition, \"test-value\")\n\n\t// Custom caveats don't necessarily need a value, just the name is fine\n\t// too to create a tagged macaroon.\n\tconstraintFunc = macaroons.CustomConstraint(\"unit-test\", \"\")\n\ttestMacaroon = createDummyMacaroon(t)\n\trequire.NoError(t, constraintFunc(testMacaroon))\n\n\trequire.Equal(\n\t\tt, []byte(\"lnd-custom unit-test\"), testMacaroon.Caveats()[0].Id,\n\t)\n\trequire.True(t, macaroons.HasCustomCaveat(testMacaroon, \"unit-test\"))\n\trequire.False(t, macaroons.HasCustomCaveat(testMacaroon, \"test-value\"))\n\trequire.False(t, macaroons.HasCustomCaveat(testMacaroon, \"something\"))\n\n\tcustomCaveatCondition = macaroons.GetCustomCaveatCondition(\n\t\ttestMacaroon, \"unit-test\",\n\t)\n\trequire.Equal(t, customCaveatCondition, \"\")\n}\n",
+      "length": 1400,
+      "tokens": 100,
+      "embedding": []
+    }
+  ]
+}

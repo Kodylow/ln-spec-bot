@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/itest/lnd_nonstd_sweep_test.go",
+  "package": "itest",
+  "sections": [
+    {
+      "slug": "func testNonstdSweep(ht *lntest.HarnessTest) {",
+      "content": "func testNonstdSweep(ht *lntest.HarnessTest) {\n\tp2shAddr, err := btcutil.NewAddressScriptHash(\n\t\tmake([]byte, 1), harnessNetParams,\n\t)\n\trequire.NoError(ht, err)\n\n\tp2pkhAddr, err := btcutil.NewAddressPubKeyHash(\n\t\tmake([]byte, 20), harnessNetParams,\n\t)\n\trequire.NoError(ht, err)\n\n\tp2wshAddr, err := btcutil.NewAddressWitnessScriptHash(\n\t\tmake([]byte, 32), harnessNetParams,\n\t)\n\trequire.NoError(ht, err)\n\n\tp2wkhAddr, err := btcutil.NewAddressWitnessPubKeyHash(\n\t\tmake([]byte, 20), harnessNetParams,\n\t)\n\trequire.NoError(ht, err)\n\n\tp2trAddr, err := btcutil.NewAddressTaproot(\n\t\tmake([]byte, 32), harnessNetParams,\n\t)\n\trequire.NoError(ht, err)\n\n\ttests := []struct {\n\t\tname    string\n\t\taddress string\n\t}{\n\t\t{\n\t\t\tname:    \"p2sh SendCoins standardness\",\n\t\t\taddress: p2shAddr.EncodeAddress(),\n\t\t},\n\t\t{\n\t\t\tname:    \"p2pkh SendCoins standardness\",\n\t\t\taddress: p2pkhAddr.EncodeAddress(),\n\t\t},\n\t\t{\n\t\t\tname:    \"p2wsh SendCoins standardness\",\n\t\t\taddress: p2wshAddr.EncodeAddress(),\n\t\t},\n\t\t{\n\t\t\tname:    \"p2wkh SendCoins standardness\",\n\t\t\taddress: p2wkhAddr.EncodeAddress(),\n\t\t},\n\t\t{\n\t\t\tname:    \"p2tr SendCoins standardness\",\n\t\t\taddress: p2trAddr.EncodeAddress(),\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\t\tsuccess := ht.Run(test.name, func(t *testing.T) {\n\t\t\tst := ht.Subtest(t)\n\n\t\t\ttestNonStdSweepInner(st, test.address)\n\t\t})\n\t\tif !success {\n\t\t\tbreak\n\t\t}\n\t}\n}\n",
+      "length": 1251,
+      "tokens": 129,
+      "embedding": []
+    },
+    {
+      "slug": "func testNonStdSweepInner(ht *lntest.HarnessTest, address string) {",
+      "content": "func testNonStdSweepInner(ht *lntest.HarnessTest, address string) {\n\tcarol := ht.NewNode(\"carol\", nil)\n\n\t// Give Carol a UTXO so SendCoins will behave as expected.\n\tht.FundCoins(btcutil.SatoshiPerBitcoin, carol)\n\n\t// Set the fee estimate to 1sat/vbyte.\n\tht.SetFeeEstimate(250)\n\n\t// Make Carol call SendCoins with the SendAll flag and the created\n\t// address.\n\tsendReq := &lnrpc.SendCoinsRequest{\n\t\tAddr:        address,\n\t\tSatPerVbyte: 1,\n\t\tSendAll:     true,\n\t}\n\n\t// If a non-standard transaction was created, then this SendCoins call\n\t// will fail.\n\tcarol.RPC.SendCoins(sendReq)\n\n\t// Fetch the txid so we can grab the raw transaction.\n\ttxid := ht.Miner.AssertNumTxsInMempool(1)[0]\n\ttx := ht.Miner.GetRawTransaction(txid)\n\n\tmsgTx := tx.MsgTx()\n\n\t// Fetch the fee of the transaction.\n\tvar (\n\t\tinputVal  int\n\t\toutputVal int\n\t\tfee       int\n\t)\n\n\tfor _, inp := range msgTx.TxIn {\n\t\t// Fetch the previous outpoint's value.\n\t\tprevOut := inp.PreviousOutPoint\n\t\tptx := ht.Miner.GetRawTransaction(&prevOut.Hash)\n\n\t\tpout := ptx.MsgTx().TxOut[prevOut.Index]\n\t\tinputVal += int(pout.Value)\n\t}\n\n\tfor _, outp := range msgTx.TxOut {\n\t\toutputVal += int(outp.Value)\n\t}\n\n\tfee = inputVal - outputVal\n\n\t// Fetch the vsize of the transaction so we can determine if the\n\t// transaction pays >= 1 sat/vbyte.\n\trawTx := ht.Miner.GetRawTransactionVerbose(txid)\n\n\t// Require fee >= vbytes.\n\trequire.True(ht, fee >= int(rawTx.Vsize))\n\n\t// Mine a block to keep the mempool clean.\n\tht.MineBlocksAndAssertNumTxes(1, 1)\n}\n",
+      "length": 1363,
+      "tokens": 185,
+      "embedding": []
+    }
+  ]
+}

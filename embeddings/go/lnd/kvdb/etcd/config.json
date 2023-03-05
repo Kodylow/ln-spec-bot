@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/config.go",
+  "package": "etcd",
+  "sections": [
+    {
+      "slug": "type Config struct {",
+      "content": "type Config struct {\n\tEmbedded bool `long:\"embedded\" description:\"Use embedded etcd instance instead of the external one. Note: use for testing only.\"`\n\n\tEmbeddedClientPort uint16 `long:\"embedded_client_port\" description:\"Client port to use for the embedded instance. Note: use for testing only.\"`\n\n\tEmbeddedPeerPort uint16 `long:\"embedded_peer_port\" description:\"Peer port to use for the embedded instance. Note: use for testing only.\"`\n\n\tEmbeddedLogFile string `long:\"embedded_log_file\" description:\"Optional log file to use for embedded instance logs. note: use for testing only.\"`\n\n\tHost string `long:\"host\" description:\"Etcd database host.\"`\n\n\tUser string `long:\"user\" description:\"Etcd database user.\"`\n\n\tPass string `long:\"pass\" description:\"Password for the database user.\"`\n\n\tNamespace string `long:\"namespace\" description:\"The etcd namespace to use.\"`\n\n\tDisableTLS bool `long:\"disabletls\" description:\"Disable TLS for etcd connection. Caution: use for development only.\"`\n\n\tCertFile string `long:\"cert_file\" description:\"Path to the TLS certificate for etcd RPC.\"`\n\n\tKeyFile string `long:\"key_file\" description:\"Path to the TLS private key for etcd RPC.\"`\n\n\tInsecureSkipVerify bool `long:\"insecure_skip_verify\" description:\"Whether we intend to skip TLS verification\"`\n\n\tCollectStats bool `long:\"collect_stats\" description:\"Whether to collect etcd commit stats.\"`\n\n\tMaxMsgSize int `long:\"max_msg_size\" description:\"The maximum message size in bytes that we may send to etcd.\"`\n\n\t// SingleWriter should be set to true if we intend to only allow a\n\t// single writer to the database at a time.\n\tSingleWriter bool\n}\n\n// CloneWithSubNamespace clones the current configuration and returns a new\n// instance with the given sub namespace applied by appending it to the main\n// namespace.",
+      "length": 1733,
+      "tokens": 216,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Config) CloneWithSubNamespace(subNamespace string) *Config {",
+      "content": "func (c *Config) CloneWithSubNamespace(subNamespace string) *Config {\n\tns := c.Namespace\n\tif len(ns) == 0 {\n\t\tns = subNamespace\n\t} else {\n\t\tns = fmt.Sprintf(\"%s/%s\", ns, subNamespace)\n\t}\n\n\treturn &Config{\n\t\tEmbedded:           c.Embedded,\n\t\tEmbeddedClientPort: c.EmbeddedClientPort,\n\t\tEmbeddedPeerPort:   c.EmbeddedPeerPort,\n\t\tHost:               c.Host,\n\t\tUser:               c.User,\n\t\tPass:               c.Pass,\n\t\tNamespace:          ns,\n\t\tDisableTLS:         c.DisableTLS,\n\t\tCertFile:           c.CertFile,\n\t\tKeyFile:            c.KeyFile,\n\t\tInsecureSkipVerify: c.InsecureSkipVerify,\n\t\tCollectStats:       c.CollectStats,\n\t\tMaxMsgSize:         c.MaxMsgSize,\n\t\tSingleWriter:       c.SingleWriter,\n\t}\n}\n\n// CloneWithSingleWriter clones the current configuration and returns a new\n// instance with the single writer property set to true.",
+      "length": 742,
+      "tokens": 72,
+      "embedding": []
+    },
+    {
+      "slug": "func (c *Config) CloneWithSingleWriter() *Config {",
+      "content": "func (c *Config) CloneWithSingleWriter() *Config {\n\treturn &Config{\n\t\tEmbedded:           c.Embedded,\n\t\tEmbeddedClientPort: c.EmbeddedClientPort,\n\t\tEmbeddedPeerPort:   c.EmbeddedPeerPort,\n\t\tHost:               c.Host,\n\t\tUser:               c.User,\n\t\tPass:               c.Pass,\n\t\tNamespace:          c.Namespace,\n\t\tDisableTLS:         c.DisableTLS,\n\t\tCertFile:           c.CertFile,\n\t\tKeyFile:            c.KeyFile,\n\t\tInsecureSkipVerify: c.InsecureSkipVerify,\n\t\tCollectStats:       c.CollectStats,\n\t\tMaxMsgSize:         c.MaxMsgSize,\n\t\tSingleWriter:       true,\n\t}\n}\n",
+      "length": 499,
+      "tokens": 32,
+      "embedding": []
+    }
+  ]
+}

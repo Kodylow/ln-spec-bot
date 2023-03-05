@@ -1,0 +1,160 @@
+{
+  "filepath": "../implementations/go/lnd/internal/musig2v040/keys.go",
+  "package": "Copyright",
+  "sections": [
+    {
+      "slug": "type sortableKeys []*btcec.PublicKey",
+      "content": "type sortableKeys []*btcec.PublicKey\n\n// Less reports whether the element with index i must sort before the element\n// with index j.",
+      "length": 93,
+      "tokens": 18,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableKeys) Less(i, j int) bool {",
+      "content": "func (s sortableKeys) Less(i, j int) bool {\n\t// TODO(roasbeef): more efficient way to compare...\n\tkeyIBytes := schnorr.SerializePubKey(s[i])\n\tkeyJBytes := schnorr.SerializePubKey(s[j])\n\n\treturn bytes.Compare(keyIBytes, keyJBytes) == -1\n}\n\n// Swap swaps the elements with indexes i and j.",
+      "length": 236,
+      "tokens": 29,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableKeys) Swap(i, j int) {",
+      "content": "func (s sortableKeys) Swap(i, j int) {\n\ts[i], s[j] = s[j], s[i]\n}\n\n// Len is the number of elements in the collection.",
+      "length": 76,
+      "tokens": 16,
+      "embedding": []
+    },
+    {
+      "slug": "func (s sortableKeys) Len() int {",
+      "content": "func (s sortableKeys) Len() int {\n\treturn len(s)\n}\n\n// sortKeys takes a set of schnorr public keys and returns a new slice that is\n// a copy of the keys sorted in lexicographical order bytes on the x-only\n// pubkey serialization.",
+      "length": 190,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func sortKeys(keys []*btcec.PublicKey) []*btcec.PublicKey {",
+      "content": "func sortKeys(keys []*btcec.PublicKey) []*btcec.PublicKey {\n\tkeySet := sortableKeys(keys)\n\tif sort.IsSorted(keySet) {\n\t\treturn keys\n\t}\n\n\tsort.Sort(keySet)\n\treturn keySet\n}\n\n// keyHashFingerprint computes the tagged hash of the series of (sorted) public\n// keys passed as input. This is used to compute the aggregation coefficient\n// for each key. The final computation is:\n//   - H(tag=KeyAgg list, pk1 || pk2..)",
+      "length": 340,
+      "tokens": 53,
+      "embedding": []
+    },
+    {
+      "slug": "func keyHashFingerprint(keys []*btcec.PublicKey, sort bool) []byte {",
+      "content": "func keyHashFingerprint(keys []*btcec.PublicKey, sort bool) []byte {\n\tif sort {\n\t\tkeys = sortKeys(keys)\n\t}\n\n\t// We'll create a single buffer and slice into that so the bytes buffer\n\t// doesn't continually need to grow the underlying buffer.\n\tkeyAggBuf := make([]byte, 32*len(keys))\n\tkeyBytes := bytes.NewBuffer(keyAggBuf[0:0])\n\tfor _, key := range keys {\n\t\tkeyBytes.Write(schnorr.SerializePubKey(key))\n\t}\n\n\th := chainhash.TaggedHash(KeyAggTagList, keyBytes.Bytes())\n\treturn h[:]\n}\n\n// keyBytesEqual returns true if two keys are the same from the PoV of BIP\n// 340's 32-byte x-only public keys.",
+      "length": 507,
+      "tokens": 74,
+      "embedding": []
+    },
+    {
+      "slug": "func keyBytesEqual(a, b *btcec.PublicKey) bool {",
+      "content": "func keyBytesEqual(a, b *btcec.PublicKey) bool {\n\treturn bytes.Equal(\n\t\tschnorr.SerializePubKey(a),\n\t\tschnorr.SerializePubKey(b),\n\t)\n}\n\n// aggregationCoefficient computes the key aggregation coefficient for the\n// specified target key. The coefficient is computed as:\n//   - H(tag=KeyAgg coefficient, keyHashFingerprint(pks) || pk)",
+      "length": 274,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func aggregationCoefficient(keySet []*btcec.PublicKey,",
+      "content": "func aggregationCoefficient(keySet []*btcec.PublicKey,\n\ttargetKey *btcec.PublicKey, keysHash []byte,\n\tsecondKeyIdx int) *btcec.ModNScalar {\n\n\tvar mu btcec.ModNScalar\n\n\t// If this is the second key, then this coefficient is just one.\n\tif secondKeyIdx != -1 && keyBytesEqual(keySet[secondKeyIdx], targetKey) {\n\t\treturn mu.SetInt(1)\n\t}\n\n\t// Otherwise, we'll compute the full finger print hash for this given\n\t// key and then use that to compute the coefficient tagged hash:\n\t//  * H(tag=KeyAgg coefficient, keyHashFingerprint(pks, pk) || pk)\n\tvar coefficientBytes [64]byte\n\tcopy(coefficientBytes[:], keysHash[:])\n\tcopy(coefficientBytes[32:], schnorr.SerializePubKey(targetKey))\n\n\tmuHash := chainhash.TaggedHash(KeyAggTagCoeff, coefficientBytes[:])\n\n\tmu.SetByteSlice(muHash[:])\n\n\treturn &mu\n}\n\n// secondUniqueKeyIndex returns the index of the second unique key. If all keys\n// are the same, then a value of -1 is returned.",
+      "length": 838,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func secondUniqueKeyIndex(keySet []*btcec.PublicKey, sort bool) int {",
+      "content": "func secondUniqueKeyIndex(keySet []*btcec.PublicKey, sort bool) int {\n\tif sort {\n\t\tkeySet = sortKeys(keySet)\n\t}\n\n\t// Find the first key that isn't the same as the very first key (second\n\t// unique key).\n\tfor i := range keySet {\n\t\tif !keyBytesEqual(keySet[i], keySet[0]) {\n\t\t\treturn i\n\t\t}\n\t}\n\n\t// A value of negative one is used to indicate that all the keys in the\n\t// sign set are actually equal, which in practice actually makes musig2\n\t// useless, but we need a value to distinguish this case.\n\treturn -1\n}\n\n// KeyTweakDesc describes a tweak to be applied to the aggregated public key\n// generation and signing process. The IsXOnly specifies if the target key\n// should be converted to an x-only public key before tweaking.",
+      "length": 636,
+      "tokens": 117,
+      "embedding": []
+    },
+    {
+      "slug": "type KeyTweakDesc struct {",
+      "content": "type KeyTweakDesc struct {\n\t// Tweak is the 32-byte value that will modify the public key.\n\tTweak [32]byte\n\n\t// IsXOnly if true, then the public key will be mapped to an x-only key\n\t// before the tweaking operation is applied.\n\tIsXOnly bool\n}\n\n// KeyAggOption is a functional option argument that allows callers to specify\n// more or less information that has been pre-computed to the main routine.",
+      "length": 362,
+      "tokens": 64,
+      "embedding": []
+    },
+    {
+      "slug": "type KeyAggOption func(*keyAggOption)",
+      "content": "type KeyAggOption func(*keyAggOption)\n\n// keyAggOption houses the set of functional options that modify key\n// aggregation.",
+      "length": 83,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "type keyAggOption struct {",
+      "content": "type keyAggOption struct {\n\t// keyHash is the output of keyHashFingerprint for a given set of keys.\n\tkeyHash []byte\n\n\t// uniqueKeyIndex is the pre-computed index of the second unique key.\n\tuniqueKeyIndex *int\n\n\t// tweaks specifies a series of tweaks to be applied to the aggregated\n\t// public key.\n\ttweaks []KeyTweakDesc\n\n\t// taprootTweak controls if the tweaks above should be applied in a BIP\n\t// 340 style.\n\ttaprootTweak bool\n\n\t// bip86Tweak specifies that the taproot tweak should be done in a BIP\n\t// 86 style, where we don't expect an actual tweak and instead just\n\t// commit to the public key itself.\n\tbip86Tweak bool\n}\n\n// WithKeysHash allows key aggregation to be optimize, by allowing the caller\n// to specify the hash of all the keys.",
+      "length": 697,
+      "tokens": 121,
+      "embedding": []
+    },
+    {
+      "slug": "func WithKeysHash(keyHash []byte) KeyAggOption {",
+      "content": "func WithKeysHash(keyHash []byte) KeyAggOption {\n\treturn func(o *keyAggOption) {\n\t\to.keyHash = keyHash\n\t}\n}\n\n// WithUniqueKeyIndex allows the caller to specify the index of the second\n// unique key.",
+      "length": 143,
+      "tokens": 24,
+      "embedding": []
+    },
+    {
+      "slug": "func WithUniqueKeyIndex(idx int) KeyAggOption {",
+      "content": "func WithUniqueKeyIndex(idx int) KeyAggOption {\n\treturn func(o *keyAggOption) {\n\t\ti := idx\n\t\to.uniqueKeyIndex = &i\n\t}\n}\n\n// WithKeyTweaks allows a caller to specify a series of 32-byte tweaks that\n// should be applied to the final aggregated public key.",
+      "length": 198,
+      "tokens": 35,
+      "embedding": []
+    },
+    {
+      "slug": "func WithKeyTweaks(tweaks ...KeyTweakDesc) KeyAggOption {",
+      "content": "func WithKeyTweaks(tweaks ...KeyTweakDesc) KeyAggOption {\n\treturn func(o *keyAggOption) {\n\t\to.tweaks = tweaks\n\t}\n}\n\n// WithTaprootKeyTweak specifies that within this context, the final key should\n// use the taproot tweak as defined in BIP 341: outputKey = internalKey +\n// h_tapTweak(internalKey || scriptRoot). In this case, the aggregated key\n// before the tweak will be used as the internal key.\n//\n// This option should be used instead of WithKeyTweaks when the aggregated key\n// is intended to be used as a taproot output key that commits to a script\n// root.",
+      "length": 494,
+      "tokens": 87,
+      "embedding": []
+    },
+    {
+      "slug": "func WithTaprootKeyTweak(scriptRoot []byte) KeyAggOption {",
+      "content": "func WithTaprootKeyTweak(scriptRoot []byte) KeyAggOption {\n\treturn func(o *keyAggOption) {\n\t\tvar tweak [32]byte\n\t\tcopy(tweak[:], scriptRoot[:])\n\n\t\to.tweaks = []KeyTweakDesc{\n\t\t\t{\n\t\t\t\tTweak:   tweak,\n\t\t\t\tIsXOnly: true,\n\t\t\t},\n\t\t}\n\t\to.taprootTweak = true\n\t}\n}\n\n// WithBIP86KeyTweak specifies that then during key aggregation, the BIP 86\n// tweak which just commits to the hash of the serialized public key should be\n// used. This option should be used when signing with a key that was derived\n// using BIP 86.",
+      "length": 430,
+      "tokens": 69,
+      "embedding": []
+    },
+    {
+      "slug": "func WithBIP86KeyTweak() KeyAggOption {",
+      "content": "func WithBIP86KeyTweak() KeyAggOption {\n\treturn func(o *keyAggOption) {\n\t\to.tweaks = []KeyTweakDesc{\n\t\t\t{\n\t\t\t\tIsXOnly: true,\n\t\t\t},\n\t\t}\n\t\to.taprootTweak = true\n\t\to.bip86Tweak = true\n\t}\n}\n\n// defaultKeyAggOptions returns the set of default arguments for key\n// aggregation.",
+      "length": 219,
+      "tokens": 32,
+      "embedding": []
+    },
+    {
+      "slug": "func defaultKeyAggOptions() *keyAggOption {",
+      "content": "func defaultKeyAggOptions() *keyAggOption {\n\treturn &keyAggOption{}\n}\n\n// hasEvenY returns true if the affine representation of the passed jacobian\n// point has an even y coordinate.\n//\n// TODO(roasbeef): double check, can just check the y coord even not jacobian?",
+      "length": 214,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func hasEvenY(pJ btcec.JacobianPoint) bool {",
+      "content": "func hasEvenY(pJ btcec.JacobianPoint) bool {\n\tpJ.ToAffine()\n\tp := btcec.NewPublicKey(&pJ.X, &pJ.Y)\n\tkeyBytes := p.SerializeCompressed()\n\treturn keyBytes[0] == secp.PubKeyFormatCompressedEven\n}\n\n// tweakKey applies a tweaks to the passed public key using the specified\n// tweak. The parityAcc and tweakAcc are returned (in that order) which\n// includes the accumulate ration of the parity factor and the tweak multiplied\n// by the parity factor. The xOnly bool specifies if this is to be an x-only\n// tweak or not.",
+      "length": 458,
+      "tokens": 71,
+      "embedding": []
+    },
+    {
+      "slug": "func tweakKey(keyJ btcec.JacobianPoint, parityAcc btcec.ModNScalar, tweak [32]byte,",
+      "content": "func tweakKey(keyJ btcec.JacobianPoint, parityAcc btcec.ModNScalar, tweak [32]byte,\n\ttweakAcc btcec.ModNScalar,\n\txOnly bool) (btcec.JacobianPoint, btcec.ModNScalar, btcec.ModNScalar, error) {\n\n\t// First we'll compute the new parity factor for this key. If the key has\n\t// an odd y coordinate (not even), then we'll need to negate it (multiply\n\t// by -1 mod n, in this case).\n\tvar parityFactor btcec.ModNScalar\n\tif xOnly && !hasEvenY(keyJ) {\n\t\tparityFactor.SetInt(1).Negate()\n\t} else {\n\t\tparityFactor.SetInt(1)\n\t}\n\n\t// Next, map the tweak into a mod n integer so we can use it for\n\t// manipulations below.\n\ttweakInt := new(btcec.ModNScalar)\n\toverflows := tweakInt.SetBytes(&tweak)\n\tif overflows == 1 {\n\t\treturn keyJ, parityAcc, tweakAcc, ErrTweakedKeyOverflows\n\t}\n\n\t// Next, we'll compute: Q_i = g*Q + t*G, where g is our parityFactor and t\n\t// is the tweakInt above. We'll space things out a bit to make it easier to\n\t// follow.\n\t//\n\t// First compute t*G:\n\tvar tweakedGenerator btcec.JacobianPoint\n\tbtcec.ScalarBaseMultNonConst(tweakInt, &tweakedGenerator)\n\n\t// Next compute g*Q:\n\tbtcec.ScalarMultNonConst(&parityFactor, &keyJ, &keyJ)\n\n\t// Finally add both of them together to get our final\n\t// tweaked point.\n\tbtcec.AddNonConst(&tweakedGenerator, &keyJ, &keyJ)\n\n\t// As a sanity check, make sure that we didn't just end up with the\n\t// point at infinity.\n\tif keyJ == infinityPoint {\n\t\treturn keyJ, parityAcc, tweakAcc, ErrTweakedKeyIsInfinity\n\t}\n\n\t// As a final wrap up step, we'll accumulate the parity\n\t// factor and also this tweak into the final set of accumulators.\n\tparityAcc.Mul(&parityFactor)\n\ttweakAcc.Mul(&parityFactor).Add(tweakInt)\n\n\treturn keyJ, parityAcc, tweakAcc, nil\n}\n\n// AggregateKey is a final aggregated key along with a possible version of the\n// key without any tweaks applied.",
+      "length": 1665,
+      "tokens": 245,
+      "embedding": []
+    },
+    {
+      "slug": "type AggregateKey struct {",
+      "content": "type AggregateKey struct {\n\t// FinalKey is the final aggregated key which may include one or more\n\t// tweaks applied to it.\n\tFinalKey *btcec.PublicKey\n\n\t// PreTweakedKey is the aggregated *before* any tweaks have been\n\t// applied.  This should be used as the internal key in taproot\n\t// contexts.\n\tPreTweakedKey *btcec.PublicKey\n}\n\n// AggregateKeys takes a list of possibly unsorted keys and returns a single\n// aggregated key as specified by the musig2 key aggregation algorithm. A nil\n// value can be passed for keyHash, which causes this function to re-derive it.\n// In addition to the combined public key, the parity accumulator and the tweak\n// accumulator are returned as well.",
+      "length": 642,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func AggregateKeys(keys []*btcec.PublicKey, sort bool,",
+      "content": "func AggregateKeys(keys []*btcec.PublicKey, sort bool,\n\tkeyOpts ...KeyAggOption) (\n\t*AggregateKey, *btcec.ModNScalar, *btcec.ModNScalar, error) {\n\n\t// First, parse the set of optional signing options.\n\topts := defaultKeyAggOptions()\n\tfor _, option := range keyOpts {\n\t\toption(opts)\n\t}\n\n\t// Sort the set of public key so we know we're working with them in\n\t// sorted order for all the routines below.\n\tif sort {\n\t\tkeys = sortKeys(keys)\n\t}\n\n\t// The caller may provide the hash of all the keys as an optimization\n\t// during signing, as it already needs to be computed.\n\tif opts.keyHash == nil {\n\t\topts.keyHash = keyHashFingerprint(keys, sort)\n\t}\n\n\t// A caller may also specify the unique key index themselves so we\n\t// don't need to re-compute it.\n\tif opts.uniqueKeyIndex == nil {\n\t\tidx := secondUniqueKeyIndex(keys, sort)\n\t\topts.uniqueKeyIndex = &idx\n\t}\n\n\t// For each key, we'll compute the intermediate blinded key: a_i*P_i,\n\t// where a_i is the aggregation coefficient for that key, and P_i is\n\t// the key itself, then accumulate that (addition) into the main final\n\t// key: P = P_1 + P_2 ... P_N.\n\tvar finalKeyJ btcec.JacobianPoint\n\tfor _, key := range keys {\n\t\t// Port the key over to Jacobian coordinates as we need it in\n\t\t// this format for the routines below.\n\t\tvar keyJ btcec.JacobianPoint\n\t\tkey.AsJacobian(&keyJ)\n\n\t\t// Compute the aggregation coefficient for the key, then\n\t\t// multiply it by the key itself: P_i' = a_i*P_i.\n\t\tvar tweakedKeyJ btcec.JacobianPoint\n\t\ta := aggregationCoefficient(\n\t\t\tkeys, key, opts.keyHash, *opts.uniqueKeyIndex,\n\t\t)\n\t\tbtcec.ScalarMultNonConst(a, &keyJ, &tweakedKeyJ)\n\n\t\t// Finally accumulate this into the final key in an incremental\n\t\t// fashion.\n\t\tbtcec.AddNonConst(&finalKeyJ, &tweakedKeyJ, &finalKeyJ)\n\t}\n\n\t// We'll copy over the key at this point, since this represents the\n\t// aggregated key before any tweaks have been applied. This'll be used\n\t// as the internal key for script path proofs.\n\tfinalKeyJ.ToAffine()\n\tcombinedKey := btcec.NewPublicKey(&finalKeyJ.X, &finalKeyJ.Y)\n\n\t// At this point, if this is a taproot tweak, then we'll modify the\n\t// base tweak value to use the BIP 341 tweak value.\n\tif opts.taprootTweak {\n\t\t// Emulate the same behavior as txscript.ComputeTaprootOutputKey\n\t\t// which only operates on the x-only public key.\n\t\tkey, _ := schnorr.ParsePubKey(schnorr.SerializePubKey(\n\t\t\tcombinedKey,\n\t\t))\n\n\t\t// We only use the actual tweak bytes if we're not committing\n\t\t// to a BIP-0086 key only spend output. Otherwise, we just\n\t\t// commit to the internal key and an empty byte slice as the\n\t\t// root hash.\n\t\ttweakBytes := []byte{}\n\t\tif !opts.bip86Tweak {\n\t\t\ttweakBytes = opts.tweaks[0].Tweak[:]\n\t\t}\n\n\t\t// Compute the taproot key tagged hash of:\n\t\t// h_tapTweak(internalKey || scriptRoot). We only do this for\n\t\t// the first one, as you can only specify a single tweak when\n\t\t// using the taproot mode with this API.\n\t\ttapTweakHash := chainhash.TaggedHash(\n\t\t\tchainhash.TagTapTweak, schnorr.SerializePubKey(key),\n\t\t\ttweakBytes,\n\t\t)\n\t\topts.tweaks[0].Tweak = *tapTweakHash\n\t}\n\n\tvar (\n\t\terr       error\n\t\ttweakAcc  btcec.ModNScalar\n\t\tparityAcc btcec.ModNScalar\n\t)\n\tparityAcc.SetInt(1)\n\n\t// In this case we have a set of tweaks, so we'll incrementally apply\n\t// each one, until we have our final tweaked key, and the related\n\t// accumulators.\n\tfor i := 1; i <= len(opts.tweaks); i++ {\n\t\tfinalKeyJ, parityAcc, tweakAcc, err = tweakKey(\n\t\t\tfinalKeyJ, parityAcc, opts.tweaks[i-1].Tweak, tweakAcc,\n\t\t\topts.tweaks[i-1].IsXOnly,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, nil, nil, err\n\t\t}\n\t}\n\n\tfinalKeyJ.ToAffine()\n\tfinalKey := btcec.NewPublicKey(&finalKeyJ.X, &finalKeyJ.Y)\n\n\treturn &AggregateKey{\n\t\tPreTweakedKey: combinedKey,\n\t\tFinalKey:      finalKey,\n\t}, &parityAcc, &tweakAcc, nil\n}\n",
+      "length": 3569,
+      "tokens": 529,
+      "embedding": []
+    }
+  ]
+}

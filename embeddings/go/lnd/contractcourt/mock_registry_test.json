@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/mock_registry_test.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type notifyExitHopData struct {",
+      "content": "type notifyExitHopData struct {\n\tpayHash       lntypes.Hash\n\tpaidAmount    lnwire.MilliSatoshi\n\thodlChan      chan<- interface{}\n\texpiry        uint32\n\tcurrentHeight int32\n}\n",
+      "length": 136,
+      "tokens": 12,
+      "embedding": []
+    },
+    {
+      "slug": "type mockRegistry struct {",
+      "content": "type mockRegistry struct {\n\tnotifyChan       chan notifyExitHopData\n\tnotifyErr        error\n\tnotifyResolution invoices.HtlcResolution\n}\n",
+      "length": 105,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockRegistry) NotifyExitHopHtlc(payHash lntypes.Hash,",
+      "content": "func (r *mockRegistry) NotifyExitHopHtlc(payHash lntypes.Hash,\n\tpaidAmount lnwire.MilliSatoshi, expiry uint32, currentHeight int32,\n\tcircuitKey models.CircuitKey, hodlChan chan<- interface{},\n\tpayload invoices.Payload) (invoices.HtlcResolution, error) {\n\n\tr.notifyChan <- notifyExitHopData{\n\t\thodlChan:      hodlChan,\n\t\tpayHash:       payHash,\n\t\tpaidAmount:    paidAmount,\n\t\texpiry:        expiry,\n\t\tcurrentHeight: currentHeight,\n\t}\n\n\treturn r.notifyResolution, r.notifyErr\n}\n",
+      "length": 399,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockRegistry) HodlUnsubscribeAll(subscriber chan<- interface{}) {}",
+      "content": "func (r *mockRegistry) HodlUnsubscribeAll(subscriber chan<- interface{}) {}\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *mockRegistry) LookupInvoice(lntypes.Hash) (invoices.Invoice,",
+      "content": "func (r *mockRegistry) LookupInvoice(lntypes.Hash) (invoices.Invoice,\n\terror) {\n\n\treturn invoices.Invoice{}, invoices.ErrInvoiceNotFound\n}\n",
+      "length": 65,
+      "tokens": 6,
+      "embedding": []
+    }
+  ]
+}

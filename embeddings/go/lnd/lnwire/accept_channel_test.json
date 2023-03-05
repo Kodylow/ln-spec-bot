@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/accept_channel_test.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "func TestDecodeAcceptChannel(t *testing.T) {",
+      "content": "func TestDecodeAcceptChannel(t *testing.T) {\n\ttests := []struct {\n\t\tname           string\n\t\tshutdownScript DeliveryAddress\n\t}{\n\t\t{\n\t\t\tname:           \"no upfront shutdown script\",\n\t\t\tshutdownScript: nil,\n\t\t},\n\t\t{\n\t\t\tname:           \"empty byte array\",\n\t\t\tshutdownScript: []byte{},\n\t\t},\n\t\t{\n\t\t\tname:           \"upfront shutdown script set\",\n\t\t\tshutdownScript: []byte(\"example\"),\n\t\t},\n\t}\n\n\tfor _, test := range tests {\n\t\ttest := test\n\n\t\tt.Run(test.name, func(t *testing.T) {\n\t\t\tpriv, err := btcec.NewPrivateKey()\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"cannot create privkey: %v\", err)\n\t\t\t}\n\t\t\tpk := priv.PubKey()\n\n\t\t\tencoded := &AcceptChannel{\n\t\t\t\tPendingChannelID:      [32]byte{},\n\t\t\t\tFundingKey:            pk,\n\t\t\t\tRevocationPoint:       pk,\n\t\t\t\tPaymentPoint:          pk,\n\t\t\t\tDelayedPaymentPoint:   pk,\n\t\t\t\tHtlcPoint:             pk,\n\t\t\t\tFirstCommitmentPoint:  pk,\n\t\t\t\tUpfrontShutdownScript: test.shutdownScript,\n\t\t\t}\n\n\t\t\tbuf := &bytes.Buffer{}\n\t\t\tif _, err := WriteMessage(buf, encoded, 0); err != nil {\n\t\t\t\tt.Fatalf(\"cannot write message: %v\", err)\n\t\t\t}\n\n\t\t\tmsg, err := ReadMessage(buf, 0)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatalf(\"cannot read message: %v\", err)\n\t\t\t}\n\n\t\t\tdecoded := msg.(*AcceptChannel)\n\t\t\tif !bytes.Equal(\n\t\t\t\tdecoded.UpfrontShutdownScript, encoded.UpfrontShutdownScript,\n\t\t\t) {\n\n\t\t\t\tt.Fatalf(\"decoded script: %x does not equal encoded script: %x\",\n\t\t\t\t\tdecoded.UpfrontShutdownScript, encoded.UpfrontShutdownScript)\n\t\t\t}\n\t\t})\n\t}\n}\n",
+      "length": 1333,
+      "tokens": 148,
+      "embedding": []
+    }
+  ]
+}

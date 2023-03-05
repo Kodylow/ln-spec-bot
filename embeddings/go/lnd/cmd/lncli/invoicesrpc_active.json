@@ -1,0 +1,41 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/invoicesrpc_active.go",
+  "package": "invoicesrpc",
+  "sections": [
+    {
+      "slug": "func invoicesCommands() []cli.Command {",
+      "content": "func invoicesCommands() []cli.Command {\n\treturn []cli.Command{\n\t\tcancelInvoiceCommand,\n\t\taddHoldInvoiceCommand,\n\t\tsettleInvoiceCommand,\n\t}\n}\n",
+      "length": 95,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func getInvoicesClient(ctx *cli.Context) (invoicesrpc.InvoicesClient, func()) {",
+      "content": "func getInvoicesClient(ctx *cli.Context) (invoicesrpc.InvoicesClient, func()) {\n\tconn := getClientConn(ctx, false)\n\n\tcleanUp := func() {\n\t\tconn.Close()\n\t}\n\n\treturn invoicesrpc.NewInvoicesClient(conn), cleanUp\n}\n\nvar settleInvoiceCommand = cli.Command{\n\tName:     \"settleinvoice\",\n\tCategory: \"Invoices\",\n\tUsage:    \"Reveal a preimage and use it to settle the corresponding invoice.\",\n\tDescription: `\n\tTodo.`,\n\tArgsUsage: \"preimage\",\n\tFlags: []cli.Flag{\n\t\tcli.StringFlag{\n\t\t\tName: \"preimage\",\n\t\t\tUsage: \"the hex-encoded preimage (32 byte) which will \" +\n\t\t\t\t\"allow settling an incoming HTLC payable to this \" +\n\t\t\t\t\"preimage.\",\n\t\t},\n\t},\n\tAction: actionDecorator(settleInvoice),\n}\n",
+      "length": 572,
+      "tokens": 70,
+      "embedding": []
+    },
+    {
+      "slug": "func settleInvoice(ctx *cli.Context) error {",
+      "content": "func settleInvoice(ctx *cli.Context) error {\n\tvar (\n\t\tpreimage []byte\n\t\terr      error\n\t)\n\n\tctxc := getContext()\n\tclient, cleanUp := getInvoicesClient(ctx)\n\tdefer cleanUp()\n\n\targs := ctx.Args()\n\n\tswitch {\n\tcase ctx.IsSet(\"preimage\"):\n\t\tpreimage, err = hex.DecodeString(ctx.String(\"preimage\"))\n\tcase args.Present():\n\t\tpreimage, err = hex.DecodeString(args.First())\n\t}\n\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to parse preimage: %v\", err)\n\t}\n\n\tinvoice := &invoicesrpc.SettleInvoiceMsg{\n\t\tPreimage: preimage,\n\t}\n\n\tresp, err := client.SettleInvoice(ctxc, invoice)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar cancelInvoiceCommand = cli.Command{\n\tName:     \"cancelinvoice\",\n\tCategory: \"Invoices\",\n\tUsage:    \"Cancels a (hold) invoice.\",\n\tDescription: `\n\tTodo.`,\n\tArgsUsage: \"paymenthash\",\n\tFlags: []cli.Flag{\n\t\tcli.StringFlag{\n\t\t\tName: \"paymenthash\",\n\t\t\tUsage: \"the hex-encoded payment hash (32 byte) for which the \" +\n\t\t\t\t\"corresponding invoice will be canceled.\",\n\t\t},\n\t},\n\tAction: actionDecorator(cancelInvoice),\n}\n",
+      "length": 951,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func cancelInvoice(ctx *cli.Context) error {",
+      "content": "func cancelInvoice(ctx *cli.Context) error {\n\tvar (\n\t\tpaymentHash []byte\n\t\terr         error\n\t)\n\n\tctxc := getContext()\n\tclient, cleanUp := getInvoicesClient(ctx)\n\tdefer cleanUp()\n\n\targs := ctx.Args()\n\n\tswitch {\n\tcase ctx.IsSet(\"paymenthash\"):\n\t\tpaymentHash, err = hex.DecodeString(ctx.String(\"paymenthash\"))\n\tcase args.Present():\n\t\tpaymentHash, err = hex.DecodeString(args.First())\n\t}\n\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to parse preimage: %v\", err)\n\t}\n\n\tinvoice := &invoicesrpc.CancelInvoiceMsg{\n\t\tPaymentHash: paymentHash,\n\t}\n\n\tresp, err := client.CancelInvoice(ctxc, invoice)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n\nvar addHoldInvoiceCommand = cli.Command{\n\tName:     \"addholdinvoice\",\n\tCategory: \"Invoices\",\n\tUsage:    \"Add a new hold invoice.\",\n\tDescription: `\n\tAdd a new invoice, expressing intent for a future payment.\n\n\tInvoices without an amount can be created by not supplying any\n\tparameters or providing an amount of 0. These invoices allow the payer\n\tto specify the amount of satoshis they wish to send.`,\n\tArgsUsage: \"hash [amt]\",\n\tFlags: []cli.Flag{\n\t\tcli.StringFlag{\n\t\t\tName: \"memo\",\n\t\t\tUsage: \"a description of the payment to attach along \" +\n\t\t\t\t\"with the invoice (default=\\\"\\\")\",\n\t\t},\n\t\tcli.Int64Flag{\n\t\t\tName:  \"amt\",\n\t\t\tUsage: \"the amt of satoshis in this invoice\",\n\t\t},\n\t\tcli.Int64Flag{\n\t\t\tName:  \"amt_msat\",\n\t\t\tUsage: \"the amt of millisatoshis in this invoice\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"description_hash\",\n\t\t\tUsage: \"SHA-256 hash of the description of the payment. \" +\n\t\t\t\t\"Used if the purpose of payment cannot naturally \" +\n\t\t\t\t\"fit within the memo. If provided this will be \" +\n\t\t\t\t\"used instead of the description(memo) field in \" +\n\t\t\t\t\"the encoded invoice.\",\n\t\t},\n\t\tcli.StringFlag{\n\t\t\tName: \"fallback_addr\",\n\t\t\tUsage: \"fallback on-chain address that can be used in \" +\n\t\t\t\t\"case the lightning payment fails\",\n\t\t},\n\t\tcli.Int64Flag{\n\t\t\tName: \"expiry\",\n\t\t\tUsage: \"the invoice's expiry time in seconds. If not \" +\n\t\t\t\t\"specified, an expiry of \" +\n\t\t\t\t\"86400 seconds (24 hours) is implied.\",\n\t\t},\n\t\tcli.BoolFlag{\n\t\t\tName: \"private\",\n\t\t\tUsage: \"encode routing hints in the invoice with \" +\n\t\t\t\t\"private channels in order to assist the \" +\n\t\t\t\t\"payer in reaching you\",\n\t\t},\n\t},\n\tAction: actionDecorator(addHoldInvoice),\n}\n",
+      "length": 2159,
+      "tokens": 303,
+      "embedding": []
+    },
+    {
+      "slug": "func addHoldInvoice(ctx *cli.Context) error {",
+      "content": "func addHoldInvoice(ctx *cli.Context) error {\n\tvar (\n\t\tdescHash []byte\n\t\terr      error\n\t)\n\n\tctxc := getContext()\n\tclient, cleanUp := getInvoicesClient(ctx)\n\tdefer cleanUp()\n\n\targs := ctx.Args()\n\tif ctx.NArg() == 0 {\n\t\tcli.ShowCommandHelp(ctx, \"addholdinvoice\")\n\t\treturn nil\n\t}\n\n\thash, err := hex.DecodeString(args.First())\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to parse hash: %v\", err)\n\t}\n\n\targs = args.Tail()\n\n\tamt := ctx.Int64(\"amt\")\n\tamtMsat := ctx.Int64(\"amt_msat\")\n\n\tif !ctx.IsSet(\"amt\") && !ctx.IsSet(\"amt_msat\") && args.Present() {\n\t\tamt, err = strconv.ParseInt(args.First(), 10, 64)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"unable to decode amt argument: %v\", err)\n\t\t}\n\t}\n\n\tdescHash, err = hex.DecodeString(ctx.String(\"description_hash\"))\n\tif err != nil {\n\t\treturn fmt.Errorf(\"unable to parse description_hash: %v\", err)\n\t}\n\n\tinvoice := &invoicesrpc.AddHoldInvoiceRequest{\n\t\tMemo:            ctx.String(\"memo\"),\n\t\tHash:            hash,\n\t\tValue:           amt,\n\t\tValueMsat:       amtMsat,\n\t\tDescriptionHash: descHash,\n\t\tFallbackAddr:    ctx.String(\"fallback_addr\"),\n\t\tExpiry:          ctx.Int64(\"expiry\"),\n\t\tPrivate:         ctx.Bool(\"private\"),\n\t}\n\n\tresp, err := client.AddHoldInvoice(ctxc, invoice)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tprintRespJSON(resp)\n\n\treturn nil\n}\n",
+      "length": 1183,
+      "tokens": 137,
+      "embedding": []
+    }
+  ]
+}

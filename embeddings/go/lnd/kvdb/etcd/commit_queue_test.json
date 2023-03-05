@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/kvdb/etcd/commit_queue_test.go",
+  "package": "kvdb_etcd",
+  "sections": [
+    {
+      "slug": "func TestCommitQueue(t *testing.T) {",
+      "content": "func TestCommitQueue(t *testing.T) {\n\t// The duration of each commit.\n\tconst commitDuration = time.Millisecond * 500\n\tconst numCommits = 5\n\n\tvar wg sync.WaitGroup\n\tcommits := make([]string, numCommits)\n\tidx := int32(-1)\n\n\tcommit := func(tag string, sleep bool) func() {\n\t\treturn func() {\n\t\t\tdefer wg.Done()\n\n\t\t\t// Update our log of commit order. Avoid blocking\n\t\t\t// by preallocating the commit log and increasing\n\t\t\t// the log index atomically.\n\t\t\tif sleep {\n\t\t\t\ttime.Sleep(commitDuration)\n\t\t\t}\n\n\t\t\ti := atomic.AddInt32(&idx, 1)\n\t\t\tcommits[i] = tag\n\t\t}\n\t}\n\n\tctx := context.Background()\n\tctx, cancel := context.WithCancel(ctx)\n\tq := NewCommitQueue(ctx)\n\tdefer q.Stop()\n\tdefer cancel()\n\n\twg.Add(numCommits)\n\tt1 := time.Now()\n\n\t// Tx1 (long): reads: key1, key2, writes: key3, conflict: none\n\tq.Add(\n\t\tcommit(\"free\", true),\n\t\t[]string{\"key1\", \"key2\"},\n\t\t[]string{\"key3\"},\n\t)\n\t// Tx2: reads: key1, key2, writes: key3, conflict: Tx1\n\tq.Add(\n\t\tcommit(\"blocked1\", false),\n\t\t[]string{\"key1\", \"key2\"},\n\t\t[]string{\"key3\"},\n\t)\n\t// Tx3 (long): reads: key1, writes: key4, conflict: none\n\tq.Add(\n\t\tcommit(\"free\", true),\n\t\t[]string{\"key1\", \"key2\"},\n\t\t[]string{\"key4\"},\n\t)\n\t// Tx4 (long): reads: key1, writes: none, conflict: none\n\tq.Add(\n\t\tcommit(\"free\", true),\n\t\t[]string{\"key1\", \"key2\"},\n\t\t[]string{},\n\t)\n\t// Tx4: reads: key2, writes: key4 conflict: Tx3\n\tq.Add(\n\t\tcommit(\"blocked2\", false),\n\t\t[]string{\"key2\"},\n\t\t[]string{\"key4\"},\n\t)\n\n\t// Wait for all commits.\n\twg.Wait()\n\tt2 := time.Now()\n\n\t// Expected total execution time: delta.\n\t// 2 * commitDuration <= delta < 3 * commitDuration\n\tdelta := t2.Sub(t1)\n\trequire.LessOrEqual(t, int64(commitDuration*2), int64(delta))\n\trequire.Greater(t, int64(commitDuration*3), int64(delta))\n\n\t// Expect that the non-conflicting \"free\" transactions are executed\n\t// before the blocking ones, and the blocking ones are executed in\n\t// the order of addition.\n\trequire.Equal(t,\n\t\t[]string{\"free\", \"blocked1\", \"free\", \"free\", \"blocked2\"},\n\t\tcommits,\n\t)\n}\n",
+      "length": 1856,
+      "tokens": 241,
+      "embedding": []
+    }
+  ]
+}

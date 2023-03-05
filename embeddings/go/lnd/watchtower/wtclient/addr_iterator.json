@@ -1,0 +1,125 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtclient/addr_iterator.go",
+  "package": "wtclient",
+  "sections": [
+    {
+      "slug": "type AddressIterator interface {",
+      "content": "type AddressIterator interface {\n\t// Next returns the next candidate address. This iterator will always\n\t// return candidates in the order given when the iterator was\n\t// instantiated. If no more candidates are available,\n\t// ErrAddressesExhausted is returned.\n\tNext() (net.Addr, error)\n\n\t// NextAndLock does the same as described for Next, and it also places a\n\t// lock on the returned address so that the address can not be removed\n\t// until the lock on it has been released via ReleaseLock.\n\tNextAndLock() (net.Addr, error)\n\n\t// Peek returns the currently selected address in the iterator. If the\n\t// end of the iterator has been reached then it is reset and the first\n\t// item in the iterator is returned. Since the AddressIterator will\n\t// never have an empty address list, this function will never return a\n\t// nil value.\n\tPeek() net.Addr\n\n\t// PeekAndLock does the same as described for Peek, and it also places\n\t// a lock on the returned address so that the address can not be removed\n\t// until the lock on it has been released via ReleaseLock.\n\tPeekAndLock() net.Addr\n\n\t// ReleaseLock releases the lock held on the given address.\n\tReleaseLock(addr net.Addr)\n\n\t// Add adds a new address to the iterator.\n\tAdd(addr net.Addr)\n\n\t// Remove removes an existing address from the iterator. It disallows\n\t// the address from being removed if it is the last address in the\n\t// iterator or if there is currently a lock on the address.\n\tRemove(addr net.Addr) error\n\n\t// HasLocked returns true if the addressIterator has any locked\n\t// addresses.\n\tHasLocked() bool\n\n\t// GetAll returns a copy of all the addresses in the iterator.\n\tGetAll() []net.Addr\n\n\t// Reset clears the iterators state, and makes the address at the front\n\t// of the list the next item to be returned.\n\tReset()\n}\n\n// A compile-time check to ensure that addressIterator implements the\n// AddressIterator interface.\nvar _ AddressIterator = (*addressIterator)(nil)\n\n// addressIterator is a linked-list implementation of an AddressIterator.",
+      "length": 1917,
+      "tokens": 319,
+      "embedding": []
+    },
+    {
+      "slug": "type addressIterator struct {",
+      "content": "type addressIterator struct {\n\tmu             sync.Mutex\n\taddrList       *list.List\n\tcurrentTopAddr *list.Element\n\tcandidates     map[string]*candidateAddr\n\ttotalLockCount int\n}\n",
+      "length": 142,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "type candidateAddr struct {",
+      "content": "type candidateAddr struct {\n\taddr     net.Addr\n\tnumLocks int\n}\n\n// newAddressIterator constructs a new addressIterator.",
+      "length": 87,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func newAddressIterator(addrs ...net.Addr) (*addressIterator, error) {",
+      "content": "func newAddressIterator(addrs ...net.Addr) (*addressIterator, error) {\n\tif len(addrs) == 0 {\n\t\treturn nil, fmt.Errorf(\"must have at least one address\")\n\t}\n\n\titer := &addressIterator{\n\t\taddrList:   list.New(),\n\t\tcandidates: make(map[string]*candidateAddr),\n\t}\n\n\tfor _, addr := range addrs {\n\t\taddrID := addr.String()\n\t\titer.addrList.PushBack(addrID)\n\t\titer.candidates[addrID] = &candidateAddr{addr: addr}\n\t}\n\titer.Reset()\n\n\treturn iter, nil\n}\n\n// Reset clears the iterators state, and makes the address at the front of the\n// list the next item to be returned.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 525,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) Reset() {",
+      "content": "func (a *addressIterator) Reset() {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\ta.unsafeReset()\n}\n\n// unsafeReset clears the iterator state and makes the address at the front of\n// the list the next item to be returned.\n//\n// NOTE: this method is not thread safe and so should only be called if the\n// appropriate mutex is being held.",
+      "length": 280,
+      "tokens": 51,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) unsafeReset() {",
+      "content": "func (a *addressIterator) unsafeReset() {\n\t// Reset the next candidate to the front of the linked-list.\n\ta.currentTopAddr = a.addrList.Front()\n}\n\n// Next returns the next candidate address. This iterator will always return\n// candidates in the order given when the iterator was instantiated. If no more\n// candidates are available, ErrAddressesExhausted is returned.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 375,
+      "tokens": 58,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) Next() (net.Addr, error) {",
+      "content": "func (a *addressIterator) Next() (net.Addr, error) {\n\treturn a.next(false)\n}\n\n// NextAndLock does the same as described for Next, and it also places a lock on\n// the returned address so that the address can not be removed until the lock on\n// it has been released via ReleaseLock.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 279,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) NextAndLock() (net.Addr, error) {",
+      "content": "func (a *addressIterator) NextAndLock() (net.Addr, error) {\n\treturn a.next(true)\n}\n\n// next returns the next candidate address. This iterator will always return\n// candidates in the order given when the iterator was instantiated. If no more\n// candidates are available, ErrAddressesExhausted is returned.",
+      "length": 239,
+      "tokens": 36,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) next(lock bool) (net.Addr, error) {",
+      "content": "func (a *addressIterator) next(lock bool) (net.Addr, error) {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\t// Set the next candidate to the subsequent element.\n\ta.currentTopAddr = a.currentTopAddr.Next()\n\n\tfor a.currentTopAddr != nil {\n\t\t// Propose the address at the front of the list.\n\t\taddrID := a.currentTopAddr.Value.(string)\n\n\t\t// Check whether this address is still considered a candidate.\n\t\t// If it's not, we'll proceed to the next.\n\t\tcandidate, ok := a.candidates[addrID]\n\t\tif !ok {\n\t\t\tnextCandidate := a.currentTopAddr.Next()\n\t\t\ta.addrList.Remove(a.currentTopAddr)\n\t\t\ta.currentTopAddr = nextCandidate\n\t\t\tcontinue\n\t\t}\n\n\t\tif lock {\n\t\t\tcandidate.numLocks++\n\t\t\ta.totalLockCount++\n\t\t}\n\n\t\treturn candidate.addr, nil\n\t}\n\n\treturn nil, ErrAddressesExhausted\n}\n\n// Peek returns the currently selected address in the iterator. If the end of\n// the list has been reached then the iterator is reset and the first item in\n// the list is returned. Since the addressIterator will never have an empty\n// address list, this function will never return a nil value.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 1008,
+      "tokens": 146,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) Peek() net.Addr {",
+      "content": "func (a *addressIterator) Peek() net.Addr {\n\treturn a.peek(false)\n}\n\n// PeekAndLock does the same as described for Peek, and it also places a lock on\n// the returned address so that the address can not be removed until the lock\n// on it has been released via ReleaseLock.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 279,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) PeekAndLock() net.Addr {",
+      "content": "func (a *addressIterator) PeekAndLock() net.Addr {\n\treturn a.peek(true)\n}\n\n// peek returns the currently selected address in the iterator. If the end of\n// the list has been reached then the iterator is reset and the first item in\n// the list is returned. Since the addressIterator will never have an empty\n// address list, this function will never return a nil value. If lock is set to\n// true, the address will be locked for removal until ReleaseLock has been\n// called for the address.",
+      "length": 429,
+      "tokens": 80,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) peek(lock bool) net.Addr {",
+      "content": "func (a *addressIterator) peek(lock bool) net.Addr {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tfor {\n\t\t// If currentTopAddr is nil, it means we have reached the end of\n\t\t// the list, so we reset it here. The iterator always has at\n\t\t// least one address, so we can be sure that currentTopAddr will\n\t\t// be non-nil after calling reset here.\n\t\tif a.currentTopAddr == nil {\n\t\t\ta.unsafeReset()\n\t\t}\n\n\t\taddrID := a.currentTopAddr.Value.(string)\n\t\tcandidate, ok := a.candidates[addrID]\n\t\tif !ok {\n\t\t\tnextCandidate := a.currentTopAddr.Next()\n\t\t\ta.addrList.Remove(a.currentTopAddr)\n\t\t\ta.currentTopAddr = nextCandidate\n\t\t\tcontinue\n\t\t}\n\n\t\tif lock {\n\t\t\tcandidate.numLocks++\n\t\t\ta.totalLockCount++\n\t\t}\n\n\t\treturn candidate.addr\n\t}\n}\n\n// ReleaseLock releases the lock held on the given address.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 746,
+      "tokens": 106,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) ReleaseLock(addr net.Addr) {",
+      "content": "func (a *addressIterator) ReleaseLock(addr net.Addr) {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tcandidateAddr, ok := a.candidates[addr.String()]\n\tif !ok {\n\t\treturn\n\t}\n\n\tif candidateAddr.numLocks == 0 {\n\t\treturn\n\t}\n\n\tcandidateAddr.numLocks--\n\ta.totalLockCount--\n}\n\n// Add adds a new address to the iterator.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 287,
+      "tokens": 41,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) Add(addr net.Addr) {",
+      "content": "func (a *addressIterator) Add(addr net.Addr) {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tif _, ok := a.candidates[addr.String()]; ok {\n\t\treturn\n\t}\n\n\ta.addrList.PushBack(addr.String())\n\ta.candidates[addr.String()] = &candidateAddr{addr: addr}\n\n\t// If we've reached the end of our queue, then this candidate\n\t// will become the next.\n\tif a.currentTopAddr == nil {\n\t\ta.currentTopAddr = a.addrList.Back()\n\t}\n}\n\n// Remove removes an existing address from the iterator. It disallows the\n// address from being removed if it is the last address in the iterator or if\n// there is currently a lock on the address.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 588,
+      "tokens": 91,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) Remove(addr net.Addr) error {",
+      "content": "func (a *addressIterator) Remove(addr net.Addr) error {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tcandidate, ok := a.candidates[addr.String()]\n\tif !ok {\n\t\treturn nil\n\t}\n\n\tif len(a.candidates) == 1 {\n\t\treturn wtdb.ErrLastTowerAddr\n\t}\n\n\tif candidate.numLocks > 0 {\n\t\treturn ErrAddrInUse\n\t}\n\n\tdelete(a.candidates, addr.String())\n\treturn nil\n}\n\n// HasLocked returns true if the addressIterator has any locked addresses.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 390,
+      "tokens": 55,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) HasLocked() bool {",
+      "content": "func (a *addressIterator) HasLocked() bool {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\treturn a.totalLockCount > 0\n}\n\n// GetAll returns a copy of all the addresses in the iterator.\n//\n// NOTE: This is part of the AddressIterator interface.",
+      "length": 180,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func (a *addressIterator) GetAll() []net.Addr {",
+      "content": "func (a *addressIterator) GetAll() []net.Addr {\n\ta.mu.Lock()\n\tdefer a.mu.Unlock()\n\n\tvar addrs []net.Addr\n\tcursor := a.addrList.Front()\n\n\tfor cursor != nil {\n\t\taddrID := cursor.Value.(string)\n\n\t\taddr, ok := a.candidates[addrID]\n\t\tif !ok {\n\t\t\tcursor = cursor.Next()\n\t\t\tcontinue\n\t\t}\n\n\t\taddrs = append(addrs, addr.addr)\n\t\tcursor = cursor.Next()\n\t}\n\n\treturn addrs\n}\n",
+      "length": 292,
+      "tokens": 40,
+      "embedding": []
+    }
+  ]
+}

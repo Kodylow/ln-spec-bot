@@ -1,0 +1,13 @@
+{
+  "filepath": "../implementations/go/lnd/cmd/lncli/neutrino_default.go",
+  "package": "!neutrinorpc",
+  "sections": [
+    {
+      "slug": "func neutrinoCommands() []cli.Command {",
+      "content": "func neutrinoCommands() []cli.Command {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

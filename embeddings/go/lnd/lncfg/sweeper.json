@@ -1,0 +1,20 @@
+{
+  "filepath": "../implementations/go/lnd/lncfg/sweeper.go",
+  "package": "lncfg",
+  "sections": [
+    {
+      "slug": "type Sweeper struct {",
+      "content": "type Sweeper struct {\n\tBatchWindowDuration time.Duration `long:\"batchwindowduration\" description:\"Duration of the sweep batch window. The sweep is held back during the batch window to allow more inputs to be added and thereby lower the fee per input.\"`\n}\n\n// Validate checks the values configured for the sweeper.",
+      "length": 288,
+      "tokens": 42,
+      "embedding": []
+    },
+    {
+      "slug": "func (s *Sweeper) Validate() error {",
+      "content": "func (s *Sweeper) Validate() error {\n\tif s.BatchWindowDuration < 0 {\n\t\treturn fmt.Errorf(\"batchwindowduration must be positive\")\n\t}\n\n\treturn nil\n}\n",
+      "length": 104,
+      "tokens": 14,
+      "embedding": []
+    }
+  ]
+}

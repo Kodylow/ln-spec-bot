@@ -1,0 +1,188 @@
+{
+  "filepath": "../implementations/go/lnd/peer/test_utils.go",
+  "package": "peer",
+  "sections": [
+    {
+      "slug": "func createTestPeer(t *testing.T, notifier chainntnfs.ChainNotifier,",
+      "content": "func createTestPeer(t *testing.T, notifier chainntnfs.ChainNotifier,\n\tpublTx chan *wire.MsgTx, updateChan func(a, b *channeldb.OpenChannel),\n\tmockSwitch *mockMessageSwitch) (\n\t*Brontide, *lnwallet.LightningChannel, error) {\n\n\tnodeKeyLocator := keychain.KeyLocator{\n\t\tFamily: keychain.KeyFamilyNodeKey,\n\t}\n\taliceKeyPriv, aliceKeyPub := btcec.PrivKeyFromBytes(\n\t\tchannels.AlicesPrivKey,\n\t)\n\taliceKeySigner := keychain.NewPrivKeyMessageSigner(\n\t\taliceKeyPriv, nodeKeyLocator,\n\t)\n\tbobKeyPriv, bobKeyPub := btcec.PrivKeyFromBytes(\n\t\tchannels.BobsPrivKey,\n\t)\n\n\tchannelCapacity := btcutil.Amount(10 * 1e8)\n\tchannelBal := channelCapacity / 2\n\taliceDustLimit := btcutil.Amount(200)\n\tbobDustLimit := btcutil.Amount(1300)\n\tcsvTimeoutAlice := uint32(5)\n\tcsvTimeoutBob := uint32(4)\n\tisAliceInitiator := true\n\n\tprevOut := &wire.OutPoint{\n\t\tHash:  channels.TestHdSeed,\n\t\tIndex: 0,\n\t}\n\tfundingTxIn := wire.NewTxIn(prevOut, nil, nil)\n\n\taliceCfg := channeldb.ChannelConfig{\n\t\tChannelConstraints: channeldb.ChannelConstraints{\n\t\t\tDustLimit:        aliceDustLimit,\n\t\t\tMaxPendingAmount: lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tChanReserve:      btcutil.Amount(rand.Int63()),\n\t\t\tMinHTLC:          lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tMaxAcceptedHtlcs: uint16(rand.Int31()),\n\t\t\tCsvDelay:         uint16(csvTimeoutAlice),\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: aliceKeyPub,\n\t\t},\n\t}\n\tbobCfg := channeldb.ChannelConfig{\n\t\tChannelConstraints: channeldb.ChannelConstraints{\n\t\t\tDustLimit:        bobDustLimit,\n\t\t\tMaxPendingAmount: lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tChanReserve:      btcutil.Amount(rand.Int63()),\n\t\t\tMinHTLC:          lnwire.MilliSatoshi(rand.Int63()),\n\t\t\tMaxAcceptedHtlcs: uint16(rand.Int31()),\n\t\t\tCsvDelay:         uint16(csvTimeoutBob),\n\t\t},\n\t\tMultiSigKey: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tRevocationBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tPaymentBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tDelayBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t\tHtlcBasePoint: keychain.KeyDescriptor{\n\t\t\tPubKey: bobKeyPub,\n\t\t},\n\t}\n\n\tbobRoot, err := chainhash.NewHash(bobKeyPriv.Serialize())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tbobPreimageProducer := shachain.NewRevocationProducer(*bobRoot)\n\tbobFirstRevoke, err := bobPreimageProducer.AtIndex(0)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tbobCommitPoint := input.ComputeCommitmentPoint(bobFirstRevoke[:])\n\n\taliceRoot, err := chainhash.NewHash(aliceKeyPriv.Serialize())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\talicePreimageProducer := shachain.NewRevocationProducer(*aliceRoot)\n\taliceFirstRevoke, err := alicePreimageProducer.AtIndex(0)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\taliceCommitPoint := input.ComputeCommitmentPoint(aliceFirstRevoke[:])\n\n\taliceCommitTx, bobCommitTx, err := lnwallet.CreateCommitmentTxns(\n\t\tchannelBal, channelBal, &aliceCfg, &bobCfg, aliceCommitPoint,\n\t\tbobCommitPoint, *fundingTxIn, channeldb.SingleFunderTweaklessBit,\n\t\tisAliceInitiator, 0,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tdbAlice, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, dbAlice.Close())\n\t})\n\n\tdbBob, err := channeldb.Open(t.TempDir())\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, dbBob.Close())\n\t})\n\n\testimator := chainfee.NewStaticEstimator(12500, 0)\n\tfeePerKw, err := estimator.EstimateFeePerKW(1)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\t// TODO(roasbeef): need to factor in commit fee?\n\taliceCommit := channeldb.ChannelCommitment{\n\t\tCommitHeight:  0,\n\t\tLocalBalance:  lnwire.NewMSatFromSatoshis(channelBal),\n\t\tRemoteBalance: lnwire.NewMSatFromSatoshis(channelBal),\n\t\tFeePerKw:      btcutil.Amount(feePerKw),\n\t\tCommitFee:     feePerKw.FeeForWeight(input.CommitWeight),\n\t\tCommitTx:      aliceCommitTx,\n\t\tCommitSig:     bytes.Repeat([]byte{1}, 71),\n\t}\n\tbobCommit := channeldb.ChannelCommitment{\n\t\tCommitHeight:  0,\n\t\tLocalBalance:  lnwire.NewMSatFromSatoshis(channelBal),\n\t\tRemoteBalance: lnwire.NewMSatFromSatoshis(channelBal),\n\t\tFeePerKw:      btcutil.Amount(feePerKw),\n\t\tCommitFee:     feePerKw.FeeForWeight(input.CommitWeight),\n\t\tCommitTx:      bobCommitTx,\n\t\tCommitSig:     bytes.Repeat([]byte{1}, 71),\n\t}\n\n\tvar chanIDBytes [8]byte\n\tif _, err := io.ReadFull(crand.Reader, chanIDBytes[:]); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tshortChanID := lnwire.NewShortChanIDFromInt(\n\t\tbinary.BigEndian.Uint64(chanIDBytes[:]),\n\t)\n\n\taliceChannelState := &channeldb.OpenChannel{\n\t\tLocalChanCfg:            aliceCfg,\n\t\tRemoteChanCfg:           bobCfg,\n\t\tIdentityPub:             aliceKeyPub,\n\t\tFundingOutpoint:         *prevOut,\n\t\tShortChannelID:          shortChanID,\n\t\tChanType:                channeldb.SingleFunderTweaklessBit,\n\t\tIsInitiator:             isAliceInitiator,\n\t\tCapacity:                channelCapacity,\n\t\tRemoteCurrentRevocation: bobCommitPoint,\n\t\tRevocationProducer:      alicePreimageProducer,\n\t\tRevocationStore:         shachain.NewRevocationStore(),\n\t\tLocalCommitment:         aliceCommit,\n\t\tRemoteCommitment:        aliceCommit,\n\t\tDb:                      dbAlice.ChannelStateDB(),\n\t\tPackager:                channeldb.NewChannelPackager(shortChanID),\n\t\tFundingTxn:              channels.TestFundingTx,\n\t}\n\tbobChannelState := &channeldb.OpenChannel{\n\t\tLocalChanCfg:            bobCfg,\n\t\tRemoteChanCfg:           aliceCfg,\n\t\tIdentityPub:             bobKeyPub,\n\t\tFundingOutpoint:         *prevOut,\n\t\tChanType:                channeldb.SingleFunderTweaklessBit,\n\t\tIsInitiator:             !isAliceInitiator,\n\t\tCapacity:                channelCapacity,\n\t\tRemoteCurrentRevocation: aliceCommitPoint,\n\t\tRevocationProducer:      bobPreimageProducer,\n\t\tRevocationStore:         shachain.NewRevocationStore(),\n\t\tLocalCommitment:         bobCommit,\n\t\tRemoteCommitment:        bobCommit,\n\t\tDb:                      dbBob.ChannelStateDB(),\n\t\tPackager:                channeldb.NewChannelPackager(shortChanID),\n\t}\n\n\t// Set custom values on the channel states.\n\tupdateChan(aliceChannelState, bobChannelState)\n\n\taliceAddr := &net.TCPAddr{\n\t\tIP:   net.ParseIP(\"127.0.0.1\"),\n\t\tPort: 18555,\n\t}\n\n\tif err := aliceChannelState.SyncPending(aliceAddr, 0); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tbobAddr := &net.TCPAddr{\n\t\tIP:   net.ParseIP(\"127.0.0.1\"),\n\t\tPort: 18556,\n\t}\n\n\tif err := bobChannelState.SyncPending(bobAddr, 0); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\taliceSigner := &mock.SingleSigner{Privkey: aliceKeyPriv}\n\tbobSigner := &mock.SingleSigner{Privkey: bobKeyPriv}\n\n\talicePool := lnwallet.NewSigPool(1, aliceSigner)\n\tchannelAlice, err := lnwallet.NewLightningChannel(\n\t\taliceSigner, aliceChannelState, alicePool,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\t_ = alicePool.Start()\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, alicePool.Stop())\n\t})\n\n\tbobPool := lnwallet.NewSigPool(1, bobSigner)\n\tchannelBob, err := lnwallet.NewLightningChannel(\n\t\tbobSigner, bobChannelState, bobPool,\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\t_ = bobPool.Start()\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, bobPool.Stop())\n\t})\n\n\tchainIO := &mock.ChainIO{\n\t\tBestHeight: broadcastHeight,\n\t}\n\twallet := &lnwallet.LightningWallet{\n\t\tWalletController: &mock.WalletController{\n\t\t\tRootKey:               aliceKeyPriv,\n\t\t\tPublishedTransactions: publTx,\n\t\t},\n\t}\n\n\t// If mockSwitch is not set by the caller, set it to the default as the\n\t// caller does not need to control it.\n\tif mockSwitch == nil {\n\t\tmockSwitch = &mockMessageSwitch{}\n\t}\n\n\tnodeSignerAlice := netann.NewNodeSigner(aliceKeySigner)\n\n\tconst chanActiveTimeout = time.Minute\n\n\tchanStatusMgr, err := netann.NewChanStatusManager(&netann.ChanStatusConfig{\n\t\tChanStatusSampleInterval: 30 * time.Second,\n\t\tChanEnableTimeout:        chanActiveTimeout,\n\t\tChanDisableTimeout:       2 * time.Minute,\n\t\tDB:                       dbAlice.ChannelStateDB(),\n\t\tGraph:                    dbAlice.ChannelGraph(),\n\t\tMessageSigner:            nodeSignerAlice,\n\t\tOurPubKey:                aliceKeyPub,\n\t\tOurKeyLoc:                testKeyLoc,\n\t\tIsChannelActive:          func(lnwire.ChannelID) bool { return true },\n\t\tApplyChannelUpdate: func(*lnwire.ChannelUpdate,\n\t\t\t*wire.OutPoint, bool) error {\n\n\t\t\treturn nil\n\t\t},\n\t})\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\tif err = chanStatusMgr.Start(); err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\terrBuffer, err := queue.NewCircularBuffer(ErrorBufferSize)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\tvar pubKey [33]byte\n\tcopy(pubKey[:], aliceKeyPub.SerializeCompressed())\n\n\tcfgAddr := &lnwire.NetAddress{\n\t\tIdentityKey: aliceKeyPub,\n\t\tAddress:     aliceAddr,\n\t\tChainNet:    wire.SimNet,\n\t}\n\n\tinterceptableSwitchNotifier := &mock.ChainNotifier{\n\t\tEpochChan: make(chan *chainntnfs.BlockEpoch, 1),\n\t}\n\tinterceptableSwitchNotifier.EpochChan <- &chainntnfs.BlockEpoch{\n\t\tHeight: 1,\n\t}\n\n\tinterceptableSwitch, err := htlcswitch.NewInterceptableSwitch(\n\t\t&htlcswitch.InterceptableSwitchConfig{\n\t\t\tCltvRejectDelta:    testCltvRejectDelta,\n\t\t\tCltvInterceptDelta: testCltvRejectDelta + 3,\n\t\t\tNotifier:           interceptableSwitchNotifier,\n\t\t},\n\t)\n\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n\n\t// TODO(yy): change ChannelNotifier to be an interface.\n\tchannelNotifier := channelnotifier.New(dbAlice.ChannelStateDB())\n\trequire.NoError(t, channelNotifier.Start())\n\tt.Cleanup(func() {\n\t\trequire.NoError(t, channelNotifier.Stop(),\n\t\t\t\"stop channel notifier failed\")\n\t})\n\n\tcfg := &Config{\n\t\tAddr:              cfgAddr,\n\t\tPubKeyBytes:       pubKey,\n\t\tErrorBuffer:       errBuffer,\n\t\tChainIO:           chainIO,\n\t\tSwitch:            mockSwitch,\n\t\tChanActiveTimeout: chanActiveTimeout,\n\t\tInterceptSwitch:   interceptableSwitch,\n\t\tChannelDB:         dbAlice.ChannelStateDB(),\n\t\tFeeEstimator:      estimator,\n\t\tWallet:            wallet,\n\t\tChainNotifier:     notifier,\n\t\tChanStatusMgr:     chanStatusMgr,\n\t\tFeatures:          lnwire.NewFeatureVector(nil, lnwire.Features),\n\t\tDisconnectPeer:    func(b *btcec.PublicKey) error { return nil },\n\t\tChannelNotifier:   channelNotifier,\n\t}\n\n\talicePeer := NewBrontide(*cfg)\n\talicePeer.remoteFeatures = lnwire.NewFeatureVector(nil, lnwire.Features)\n\n\tchanID := lnwire.NewChanIDFromOutPoint(channelAlice.ChannelPoint())\n\talicePeer.activeChannels[chanID] = channelAlice\n\n\talicePeer.wg.Add(1)\n\tgo alicePeer.channelManager()\n\n\treturn alicePeer, channelBob, nil\n}\n\n// mockMessageSwitch is a mock implementation of the messageSwitch interface\n// used for testing without relying on a *htlcswitch.Switch in unit tests.",
+      "length": 10312,
+      "tokens": 868,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMessageSwitch struct {",
+      "content": "type mockMessageSwitch struct {\n\tlinks []htlcswitch.ChannelUpdateHandler\n}\n\n// BestHeight currently returns a dummy value.",
+      "length": 87,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageSwitch) BestHeight() uint32 {",
+      "content": "func (m *mockMessageSwitch) BestHeight() uint32 {\n\treturn 0\n}\n\n// CircuitModifier currently returns a dummy value.",
+      "length": 61,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageSwitch) CircuitModifier() htlcswitch.CircuitModifier {",
+      "content": "func (m *mockMessageSwitch) CircuitModifier() htlcswitch.CircuitModifier {\n\treturn nil\n}\n\n// RemoveLink currently does nothing.",
+      "length": 49,
+      "tokens": 8,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageSwitch) RemoveLink(cid lnwire.ChannelID) {}",
+      "content": "func (m *mockMessageSwitch) RemoveLink(cid lnwire.ChannelID) {}\n\n// CreateAndAddLink currently returns a dummy value.",
+      "length": 52,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageSwitch) CreateAndAddLink(cfg htlcswitch.ChannelLinkConfig,",
+      "content": "func (m *mockMessageSwitch) CreateAndAddLink(cfg htlcswitch.ChannelLinkConfig,\n\tlnChan *lnwallet.LightningChannel) error {\n\n\treturn nil\n}\n\n// GetLinksByInterface returns the active links.",
+      "length": 103,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageSwitch) GetLinksByInterface(pub [33]byte) (",
+      "content": "func (m *mockMessageSwitch) GetLinksByInterface(pub [33]byte) (\n\t[]htlcswitch.ChannelUpdateHandler, error) {\n\n\treturn m.links, nil\n}\n\n// mockUpdateHandler is a mock implementation of the ChannelUpdateHandler\n// interface. It is used in mockMessageSwitch's GetLinksByInterface method.",
+      "length": 213,
+      "tokens": 25,
+      "embedding": []
+    },
+    {
+      "slug": "type mockUpdateHandler struct {",
+      "content": "type mockUpdateHandler struct {\n\tcid lnwire.ChannelID\n}\n\n// newMockUpdateHandler creates a new mockUpdateHandler.",
+      "length": 78,
+      "tokens": 9,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockUpdateHandler(cid lnwire.ChannelID) *mockUpdateHandler {",
+      "content": "func newMockUpdateHandler(cid lnwire.ChannelID) *mockUpdateHandler {\n\treturn &mockUpdateHandler{\n\t\tcid: cid,\n\t}\n}\n\n// HandleChannelUpdate currently does nothing.",
+      "length": 87,
+      "tokens": 11,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) HandleChannelUpdate(msg lnwire.Message) {}",
+      "content": "func (m *mockUpdateHandler) HandleChannelUpdate(msg lnwire.Message) {}\n\n// ChanID returns the mockUpdateHandler's cid.",
+      "length": 46,
+      "tokens": 6,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) ChanID() lnwire.ChannelID { return m.cid }",
+      "content": "func (m *mockUpdateHandler) ChanID() lnwire.ChannelID { return m.cid }\n\n// Bandwidth currently returns a dummy value.",
+      "length": 45,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) Bandwidth() lnwire.MilliSatoshi { return 0 }",
+      "content": "func (m *mockUpdateHandler) Bandwidth() lnwire.MilliSatoshi { return 0 }\n\n// EligibleToForward currently returns a dummy value.",
+      "length": 53,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) EligibleToForward() bool { return false }",
+      "content": "func (m *mockUpdateHandler) EligibleToForward() bool { return false }\n\n// MayAddOutgoingHtlc currently returns nil.",
+      "length": 44,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) MayAddOutgoingHtlc(lnwire.MilliSatoshi) error { return nil }",
+      "content": "func (m *mockUpdateHandler) MayAddOutgoingHtlc(lnwire.MilliSatoshi) error { return nil }\n\n// ShutdownIfChannelClean currently returns nil.",
+      "length": 48,
+      "tokens": 5,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockUpdateHandler) ShutdownIfChannelClean() error { return nil }",
+      "content": "func (m *mockUpdateHandler) ShutdownIfChannelClean() error { return nil }\n",
+      "length": 0,
+      "tokens": 0,
+      "embedding": []
+    },
+    {
+      "slug": "type mockMessageConn struct {",
+      "content": "type mockMessageConn struct {\n\tt *testing.T\n\n\t// MessageConn embeds our interface so that the mock does not need to\n\t// implement every function. The mock will panic if an unspecified function\n\t// is called.\n\tMessageConn\n\n\t// writtenMessages is a channel that our mock pushes written messages into.\n\twrittenMessages chan []byte\n\n\treadMessages   chan []byte\n\tcurReadMessage []byte\n}\n",
+      "length": 339,
+      "tokens": 52,
+      "embedding": []
+    },
+    {
+      "slug": "func newMockConn(t *testing.T, expectedMessages int) *mockMessageConn {",
+      "content": "func newMockConn(t *testing.T, expectedMessages int) *mockMessageConn {\n\treturn &mockMessageConn{\n\t\tt:               t,\n\t\twrittenMessages: make(chan []byte, expectedMessages),\n\t\treadMessages:    make(chan []byte, 1),\n\t}\n}\n\n// SetWriteDeadline mocks setting write deadline for our conn.",
+      "length": 206,
+      "tokens": 23,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) SetWriteDeadline(time.Time) error {",
+      "content": "func (m *mockMessageConn) SetWriteDeadline(time.Time) error {\n\treturn nil\n}\n\n// Flush mocks a message conn flush.",
+      "length": 48,
+      "tokens": 10,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) Flush() (int, error) {",
+      "content": "func (m *mockMessageConn) Flush() (int, error) {\n\treturn 0, nil\n}\n\n// WriteMessage mocks sending of a message on our connection. It will push\n// the bytes sent into the mock's writtenMessages channel.",
+      "length": 147,
+      "tokens": 26,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) WriteMessage(msg []byte) error {",
+      "content": "func (m *mockMessageConn) WriteMessage(msg []byte) error {\n\tselect {\n\tcase m.writtenMessages <- msg:\n\tcase <-time.After(timeout):\n\t\tm.t.Fatalf(\"timeout sending message: %v\", msg)\n\t}\n\n\treturn nil\n}\n\n// assertWrite asserts that our mock as had WriteMessage called with the byte\n// slice we expect.",
+      "length": 226,
+      "tokens": 34,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) assertWrite(expected []byte) {",
+      "content": "func (m *mockMessageConn) assertWrite(expected []byte) {\n\tselect {\n\tcase actual := <-m.writtenMessages:\n\t\trequire.Equal(m.t, expected, actual)\n\n\tcase <-time.After(timeout):\n\t\tm.t.Fatalf(\"timeout waiting for write: %v\", expected)\n\t}\n}\n",
+      "length": 169,
+      "tokens": 19,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) SetReadDeadline(t time.Time) error {",
+      "content": "func (m *mockMessageConn) SetReadDeadline(t time.Time) error {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) ReadNextHeader() (uint32, error) {",
+      "content": "func (m *mockMessageConn) ReadNextHeader() (uint32, error) {\n\tm.curReadMessage = <-m.readMessages\n\treturn uint32(len(m.curReadMessage)), nil\n}\n",
+      "length": 79,
+      "tokens": 7,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) ReadNextBody(buf []byte) ([]byte, error) {",
+      "content": "func (m *mockMessageConn) ReadNextBody(buf []byte) ([]byte, error) {\n\treturn m.curReadMessage, nil\n}\n",
+      "length": 30,
+      "tokens": 4,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) RemoteAddr() net.Addr {",
+      "content": "func (m *mockMessageConn) RemoteAddr() net.Addr {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    },
+    {
+      "slug": "func (m *mockMessageConn) LocalAddr() net.Addr {",
+      "content": "func (m *mockMessageConn) LocalAddr() net.Addr {\n\treturn nil\n}\n",
+      "length": 12,
+      "tokens": 3,
+      "embedding": []
+    }
+  ]
+}

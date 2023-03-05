@@ -1,0 +1,83 @@
+{
+  "filepath": "../implementations/go/lnd/watchtower/wtdb/version.go",
+  "package": "wtdb",
+  "sections": [
+    {
+      "slug": "type txMigration func(tx kvdb.RwTx) error",
+      "content": "type txMigration func(tx kvdb.RwTx) error\n\n// dbMigration is a function which takes a prior outdated version of the\n// database instances and mutates the key/bucket structure to arrive at a more\n// up-to-date version of the database. If such a migration is defined, the\n// migration is responsible for starting any database transactions. This\n// migration type is useful in the case where it would be beneficial (in terms\n// of RAM usage) to split the migration between multiple db transactions.",
+      "length": 447,
+      "tokens": 76,
+      "embedding": []
+    },
+    {
+      "slug": "type dbMigration func(db kvdb.Backend) error",
+      "content": "type dbMigration func(db kvdb.Backend) error\n\n// version pairs a version number with the migration that would need to be\n// applied from the prior version to upgrade.",
+      "length": 119,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "type version struct {",
+      "content": "type version struct {\n\ttxMigration txMigration\n\tdbMigration dbMigration\n}\n\n// towerDBVersions stores all versions and migrations of the tower database.\n// This list will be used when opening the database to determine if any\n// migrations must be applied.\nvar towerDBVersions = []version{}\n\n// clientDBVersions stores all versions and migrations of the client database.\n// This list will be used when opening the database to determine if any\n// migrations must be applied.\nvar clientDBVersions = []version{\n\t{\n\t\ttxMigration: migration1.MigrateTowerToSessionIndex,\n\t},\n\t{\n\t\ttxMigration: migration2.MigrateClientChannelDetails,\n\t},\n\t{\n\t\ttxMigration: migration3.MigrateChannelIDIndex,\n\t},\n\t{\n\t\tdbMigration: migration4.MigrateAckedUpdates(\n\t\t\tmigration4.DefaultSessionsPerTx,\n\t\t),\n\t},\n}\n\n// getLatestDBVersion returns the last known database version.",
+      "length": 794,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func getLatestDBVersion(versions []version) uint32 {",
+      "content": "func getLatestDBVersion(versions []version) uint32 {\n\treturn uint32(len(versions))\n}\n\n// getMigrations returns a slice of all updates with a greater number that\n// curVersion that need to be applied to sync up with the latest version.",
+      "length": 177,
+      "tokens": 30,
+      "embedding": []
+    },
+    {
+      "slug": "func getMigrations(versions []version, curVersion uint32) []version {",
+      "content": "func getMigrations(versions []version, curVersion uint32) []version {\n\tvar updates []version\n\tfor i, v := range versions {\n\t\tif uint32(i)+1 > curVersion {\n\t\t\tupdates = append(updates, v)\n\t\t}\n\t}\n\n\treturn updates\n}\n\n// getDBVersion retrieves the current database version from the metadata bucket\n// using the dbVersionKey.",
+      "length": 239,
+      "tokens": 39,
+      "embedding": []
+    },
+    {
+      "slug": "func getDBVersion(tx kvdb.RTx) (uint32, error) {",
+      "content": "func getDBVersion(tx kvdb.RTx) (uint32, error) {\n\tmetadata := tx.ReadBucket(metadataBkt)\n\tif metadata == nil {\n\t\treturn 0, ErrUninitializedDB\n\t}\n\n\tversionBytes := metadata.Get(dbVersionKey)\n\tif len(versionBytes) != 4 {\n\t\treturn 0, ErrNoDBVersion\n\t}\n\n\treturn byteOrder.Uint32(versionBytes), nil\n}\n\n// initDBVersion initializes the top-level metadata bucket and writes the passed\n// version number as the current version.",
+      "length": 356,
+      "tokens": 46,
+      "embedding": []
+    },
+    {
+      "slug": "func initDBVersion(tx kvdb.RwTx, version uint32) error {",
+      "content": "func initDBVersion(tx kvdb.RwTx, version uint32) error {\n\t_, err := tx.CreateTopLevelBucket(metadataBkt)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn putDBVersion(tx, version)\n}\n\n// putDBVersion stores the passed database version in the metadata bucket under\n// the dbVersionKey.",
+      "length": 210,
+      "tokens": 31,
+      "embedding": []
+    },
+    {
+      "slug": "func putDBVersion(tx kvdb.RwTx, version uint32) error {",
+      "content": "func putDBVersion(tx kvdb.RwTx, version uint32) error {\n\tmetadata := tx.ReadWriteBucket(metadataBkt)\n\tif metadata == nil {\n\t\treturn ErrUninitializedDB\n\t}\n\n\tversionBytes := make([]byte, 4)\n\tbyteOrder.PutUint32(versionBytes, version)\n\treturn metadata.Put(dbVersionKey, versionBytes)\n}\n\n// versionedDB is a private interface implemented by both the tower and client\n// databases, permitting all versioning operations to be performed generically\n// on either.",
+      "length": 387,
+      "tokens": 47,
+      "embedding": []
+    },
+    {
+      "slug": "type versionedDB interface {",
+      "content": "type versionedDB interface {\n\t// bdb returns the underlying bbolt database.\n\tbdb() kvdb.Backend\n\n\t// Version returns the current version stored in the database.\n\tVersion() (uint32, error)\n}\n\n// initOrSyncVersions ensures that the database version is properly set before\n// opening the database up for regular use. When the database is being\n// initialized for the first time, the caller should set init to true, which\n// will simply write the latest version to the database. Otherwise, passing init\n// as false will cause the database to apply any needed migrations to ensure its\n// version matches the latest version in the provided versions list.",
+      "length": 607,
+      "tokens": 100,
+      "embedding": []
+    },
+    {
+      "slug": "func initOrSyncVersions(db versionedDB, init bool, versions []version) error {",
+      "content": "func initOrSyncVersions(db versionedDB, init bool, versions []version) error {\n\t// If the database has not yet been created, we'll initialize the\n\t// database version with the latest known version.\n\tif init {\n\t\treturn kvdb.Update(db.bdb(), func(tx kvdb.RwTx) error {\n\t\t\treturn initDBVersion(tx, getLatestDBVersion(versions))\n\t\t}, func() {})\n\t}\n\n\t// Otherwise, ensure that any migrations are applied to ensure the data\n\t// is in the format expected by the latest version.\n\treturn syncVersions(db, versions)\n}\n\n// syncVersions ensures the database version is consistent with the highest\n// known database version, applying any migrations that have not been made. If\n// the highest known version number is lower than the database's version, this\n// method will fail to prevent accidental reversions.",
+      "length": 701,
+      "tokens": 107,
+      "embedding": []
+    },
+    {
+      "slug": "func syncVersions(db versionedDB, versions []version) error {",
+      "content": "func syncVersions(db versionedDB, versions []version) error {\n\tcurVersion, err := db.Version()\n\tif err != nil {\n\t\treturn err\n\t}\n\n\tlatestVersion := getLatestDBVersion(versions)\n\tswitch {\n\n\t// Current version is higher than any known version, fail to prevent\n\t// reversion.\n\tcase curVersion > latestVersion:\n\t\treturn channeldb.ErrDBReversion\n\n\t// Current version matches highest known version, nothing to do.\n\tcase curVersion == latestVersion:\n\t\treturn nil\n\t}\n\n\t// Otherwise, apply any migrations in order to bring the database\n\t// version up to the highest known version.\n\tupdates := getMigrations(versions, curVersion)\n\tfor i, update := range updates {\n\t\tif update.dbMigration != nil && update.txMigration != nil {\n\t\t\treturn fmt.Errorf(\"cannot specify both a \" +\n\t\t\t\t\"tx-migration and a db-migration for a \" +\n\t\t\t\t\"single version\")\n\t\t}\n\n\t\tversion := curVersion + uint32(i) + 1\n\t\tlog.Infof(\"Applying migration #%d\", version)\n\n\t\tif update.dbMigration != nil {\n\t\t\terr = update.dbMigration(db.bdb())\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Unable to apply migration #%d: %v\",\n\t\t\t\t\tversion, err)\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\t// Note that unlike a txMigration, here we update the\n\t\t\t// db version in a transaction that is separate to the\n\t\t\t// transaction in which the db migration took place.\n\t\t\t// This means that the db migration function must be\n\t\t\t// idempotent.\n\t\t\terr = kvdb.Update(db.bdb(), func(tx kvdb.RwTx) error {\n\t\t\t\treturn putDBVersion(tx, version)\n\t\t\t}, func() {})\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\tcontinue\n\t\t}\n\n\t\tif update.txMigration == nil {\n\t\t\tcontinue\n\t\t}\n\n\t\terr = kvdb.Update(db.bdb(), func(tx kvdb.RwTx) error {\n\t\t\terr := update.txMigration(tx)\n\t\t\tif err != nil {\n\t\t\t\tlog.Errorf(\"Unable to apply migration #%d: %v\",\n\t\t\t\t\tversion, err)\n\t\t\t\treturn err\n\t\t\t}\n\n\t\t\treturn putDBVersion(tx, version)\n\t\t}, func() {})\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\n\treturn nil\n}\n",
+      "length": 1741,
+      "tokens": 262,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/netann/channel_update.go",
+  "package": "netann",
+  "sections": [
+    {
+      "slug": "type ChannelUpdateModifier func(*lnwire.ChannelUpdate)",
+      "content": "type ChannelUpdateModifier func(*lnwire.ChannelUpdate)\n\n// ChanUpdSetDisable is a functional option that sets the disabled channel flag\n// if disabled is true, and clears the bit otherwise.",
+      "length": 132,
+      "tokens": 22,
+      "embedding": []
+    },
+    {
+      "slug": "func ChanUpdSetDisable(disabled bool) ChannelUpdateModifier {",
+      "content": "func ChanUpdSetDisable(disabled bool) ChannelUpdateModifier {\n\treturn func(update *lnwire.ChannelUpdate) {\n\t\tif disabled {\n\t\t\t// Set the bit responsible for marking a channel as\n\t\t\t// disabled.\n\t\t\tupdate.ChannelFlags |= lnwire.ChanUpdateDisabled\n\t\t} else {\n\t\t\t// Clear the bit responsible for marking a channel as\n\t\t\t// disabled.\n\t\t\tupdate.ChannelFlags &= ^lnwire.ChanUpdateDisabled\n\t\t}\n\t}\n}\n\n// ChanUpdSetTimestamp is a functional option that sets the timestamp of the\n// update to the current time, or increments it if the timestamp is already in\n// the future.",
+      "length": 486,
+      "tokens": 73,
+      "embedding": []
+    },
+    {
+      "slug": "func ChanUpdSetTimestamp(update *lnwire.ChannelUpdate) {",
+      "content": "func ChanUpdSetTimestamp(update *lnwire.ChannelUpdate) {\n\tnewTimestamp := uint32(time.Now().Unix())\n\tif newTimestamp <= update.Timestamp {\n\t\t// Increment the prior value to ensure the timestamp\n\t\t// monotonically increases, otherwise the update won't\n\t\t// propagate.\n\t\tnewTimestamp = update.Timestamp + 1\n\t}\n\tupdate.Timestamp = newTimestamp\n}\n\n// SignChannelUpdate applies the given modifiers to the passed\n// lnwire.ChannelUpdate, then signs the resulting update. The provided update\n// should be the most recent, valid update, otherwise the timestamp may not\n// monotonically increase from the prior.\n//\n// NOTE: This method modifies the given update.",
+      "length": 581,
+      "tokens": 83,
+      "embedding": []
+    },
+    {
+      "slug": "func SignChannelUpdate(signer lnwallet.MessageSigner, keyLoc keychain.KeyLocator,",
+      "content": "func SignChannelUpdate(signer lnwallet.MessageSigner, keyLoc keychain.KeyLocator,\n\tupdate *lnwire.ChannelUpdate, mods ...ChannelUpdateModifier) error {\n\n\t// Apply the requested changes to the channel update.\n\tfor _, modifier := range mods {\n\t\tmodifier(update)\n\t}\n\n\t// Create the DER-encoded ECDSA signature over the message digest.\n\tsig, err := SignAnnouncement(signer, keyLoc, update)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\t// Parse the DER-encoded signature into a fixed-size 64-byte array.\n\tupdate.Signature, err = lnwire.NewSigFromSignature(sig)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\treturn nil\n}\n\n// ExtractChannelUpdate attempts to retrieve a lnwire.ChannelUpdate message from\n// an edge's info and a set of routing policies.\n//\n// NOTE: The passed policies can be nil.",
+      "length": 661,
+      "tokens": 101,
+      "embedding": []
+    },
+    {
+      "slug": "func ExtractChannelUpdate(ownerPubKey []byte,",
+      "content": "func ExtractChannelUpdate(ownerPubKey []byte,\n\tinfo *channeldb.ChannelEdgeInfo,\n\tpolicies ...*channeldb.ChannelEdgePolicy) (\n\t*lnwire.ChannelUpdate, error) {\n\n\t// Helper function to extract the owner of the given policy.\n\towner := func(edge *channeldb.ChannelEdgePolicy) []byte {\n\t\tvar pubKey *btcec.PublicKey\n\t\tif edge.ChannelFlags&lnwire.ChanUpdateDirection == 0 {\n\t\t\tpubKey, _ = info.NodeKey1()\n\t\t} else {\n\t\t\tpubKey, _ = info.NodeKey2()\n\t\t}\n\n\t\t// If pubKey was not found, just return nil.\n\t\tif pubKey == nil {\n\t\t\treturn nil\n\t\t}\n\n\t\treturn pubKey.SerializeCompressed()\n\t}\n\n\t// Extract the channel update from the policy we own, if any.\n\tfor _, edge := range policies {\n\t\tif edge != nil && bytes.Equal(ownerPubKey, owner(edge)) {\n\t\t\treturn ChannelUpdateFromEdge(info, edge)\n\t\t}\n\t}\n\n\treturn nil, ErrUnableToExtractChanUpdate\n}\n\n// UnsignedChannelUpdateFromEdge reconstructs an unsigned ChannelUpdate from the\n// given edge info and policy.",
+      "length": 860,
+      "tokens": 115,
+      "embedding": []
+    },
+    {
+      "slug": "func UnsignedChannelUpdateFromEdge(info *channeldb.ChannelEdgeInfo,",
+      "content": "func UnsignedChannelUpdateFromEdge(info *channeldb.ChannelEdgeInfo,\n\tpolicy *channeldb.ChannelEdgePolicy) *lnwire.ChannelUpdate {\n\n\treturn &lnwire.ChannelUpdate{\n\t\tChainHash:       info.ChainHash,\n\t\tShortChannelID:  lnwire.NewShortChanIDFromInt(policy.ChannelID),\n\t\tTimestamp:       uint32(policy.LastUpdate.Unix()),\n\t\tChannelFlags:    policy.ChannelFlags,\n\t\tMessageFlags:    policy.MessageFlags,\n\t\tTimeLockDelta:   policy.TimeLockDelta,\n\t\tHtlcMinimumMsat: policy.MinHTLC,\n\t\tHtlcMaximumMsat: policy.MaxHTLC,\n\t\tBaseFee:         uint32(policy.FeeBaseMSat),\n\t\tFeeRate:         uint32(policy.FeeProportionalMillionths),\n\t\tExtraOpaqueData: policy.ExtraOpaqueData,\n\t}\n}\n\n// ChannelUpdateFromEdge reconstructs a signed ChannelUpdate from the given edge\n// info and policy.",
+      "length": 679,
+      "tokens": 44,
+      "embedding": []
+    },
+    {
+      "slug": "func ChannelUpdateFromEdge(info *channeldb.ChannelEdgeInfo,",
+      "content": "func ChannelUpdateFromEdge(info *channeldb.ChannelEdgeInfo,\n\tpolicy *channeldb.ChannelEdgePolicy) (*lnwire.ChannelUpdate, error) {\n\n\tupdate := UnsignedChannelUpdateFromEdge(info, policy)\n\n\tvar err error\n\tupdate.Signature, err = lnwire.NewSigFromRawSignature(policy.SigBytes)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\treturn update, nil\n}\n",
+      "length": 264,
+      "tokens": 29,
+      "embedding": []
+    }
+  ]
+}

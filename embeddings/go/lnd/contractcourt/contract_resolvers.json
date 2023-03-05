@@ -1,0 +1,55 @@
+{
+  "filepath": "../implementations/go/lnd/contractcourt/contract_resolvers.go",
+  "package": "contractcourt",
+  "sections": [
+    {
+      "slug": "type ContractResolver interface {",
+      "content": "type ContractResolver interface {\n\t// ResolverKey returns an identifier which should be globally unique\n\t// for this particular resolver within the chain the original contract\n\t// resides within.\n\tResolverKey() []byte\n\n\t// Resolve instructs the contract resolver to resolve the output\n\t// on-chain. Once the output has been *fully* resolved, the function\n\t// should return immediately with a nil ContractResolver value for the\n\t// first return value.  In the case that the contract requires further\n\t// resolution, then another resolve is returned.\n\t//\n\t// NOTE: This function MUST be run as a goroutine.\n\tResolve() (ContractResolver, error)\n\n\t// SupplementState allows the user of a ContractResolver to supplement\n\t// it with state required for the proper resolution of a contract.\n\tSupplementState(*channeldb.OpenChannel)\n\n\t// IsResolved returns true if the stored state in the resolve is fully\n\t// resolved. In this case the target output can be forgotten.\n\tIsResolved() bool\n\n\t// Encode writes an encoded version of the ContractResolver into the\n\t// passed Writer.\n\tEncode(w io.Writer) error\n\n\t// Stop signals the resolver to cancel any current resolution\n\t// processes, and suspend.\n\tStop()\n}\n\n// htlcContractResolver is the required interface for htlc resolvers.",
+      "length": 1203,
+      "tokens": 182,
+      "embedding": []
+    },
+    {
+      "slug": "type htlcContractResolver interface {",
+      "content": "type htlcContractResolver interface {\n\tContractResolver\n\n\t// HtlcPoint returns the htlc's outpoint on the commitment tx.\n\tHtlcPoint() wire.OutPoint\n\n\t// Supplement adds additional information to the resolver that is\n\t// required before Resolve() is called.\n\tSupplement(htlc channeldb.HTLC)\n}\n\n// reportingContractResolver is a ContractResolver that also exposes a report on\n// the resolution state of the contract.",
+      "length": 365,
+      "tokens": 50,
+      "embedding": []
+    },
+    {
+      "slug": "type reportingContractResolver interface {",
+      "content": "type reportingContractResolver interface {\n\tContractResolver\n\n\treport() *ContractReport\n}\n\n// ResolverConfig contains the externally supplied configuration items that are\n// required by a ContractResolver implementation.",
+      "length": 171,
+      "tokens": 20,
+      "embedding": []
+    },
+    {
+      "slug": "type ResolverConfig struct {",
+      "content": "type ResolverConfig struct {\n\t// ChannelArbitratorConfig contains all the interfaces and closures\n\t// required for the resolver to interact with outside sub-systems.\n\tChannelArbitratorConfig\n\n\t// Checkpoint allows a resolver to check point its state. This function\n\t// should write the state of the resolver to persistent storage, and\n\t// return a non-nil error upon success. It takes a resolver report,\n\t// which contains information about the outcome and should be written\n\t// to disk if non-nil.\n\tCheckpoint func(ContractResolver, ...*channeldb.ResolverReport) error\n}\n\n// contractResolverKit is meant to be used as a mix-in struct to be embedded within a\n// given ContractResolver implementation. It contains all the common items that\n// a resolver requires to carry out its duties.",
+      "length": 743,
+      "tokens": 112,
+      "embedding": []
+    },
+    {
+      "slug": "type contractResolverKit struct {",
+      "content": "type contractResolverKit struct {\n\tResolverConfig\n\n\tlog btclog.Logger\n\n\tquit chan struct{}\n}\n\n// newContractResolverKit instantiates the mix-in struct.",
+      "length": 110,
+      "tokens": 13,
+      "embedding": []
+    },
+    {
+      "slug": "func newContractResolverKit(cfg ResolverConfig) *contractResolverKit {",
+      "content": "func newContractResolverKit(cfg ResolverConfig) *contractResolverKit {\n\treturn &contractResolverKit{\n\t\tResolverConfig: cfg,\n\t\tquit:           make(chan struct{}),\n\t}\n}\n\n// initLogger initializes the resolver-specific logger.",
+      "length": 147,
+      "tokens": 15,
+      "embedding": []
+    },
+    {
+      "slug": "func (r *contractResolverKit) initLogger(resolver ContractResolver) {",
+      "content": "func (r *contractResolverKit) initLogger(resolver ContractResolver) {\n\tlogPrefix := fmt.Sprintf(\"%T(%v):\", resolver, r.ChanPoint)\n\tr.log = build.NewPrefixLog(logPrefix, log)\n}\n\nvar (\n\t// errResolverShuttingDown is returned when the resolver stops\n\t// progressing because it received the quit signal.\n\terrResolverShuttingDown = errors.New(\"resolver shutting down\")\n)\n",
+      "length": 287,
+      "tokens": 34,
+      "embedding": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "filepath": "../implementations/go/lnd/lnwire/opaque_addrs.go",
+  "package": "lnwire",
+  "sections": [
+    {
+      "slug": "type OpaqueAddrs struct {",
+      "content": "type OpaqueAddrs struct {\n\tPayload []byte\n}\n\n// A compile-time assertion to ensure that OpaqueAddrs meets the net.Addr\n// interface.\nvar _ net.Addr = (*OpaqueAddrs)(nil)\n\n// String returns a human-readable string describing the target OpaqueAddrs.\n// Since this is an unknown address (and could even be multiple addresses), we\n// just return the hex string of the payload.\n//\n// This part of the net.Addr interface.",
+      "length": 378,
+      "tokens": 62,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpaqueAddrs) String() string {",
+      "content": "func (o *OpaqueAddrs) String() string {\n\treturn hex.EncodeToString(o.Payload)\n}\n\n// Network returns the name of the network this address is bound to. Since this\n// is an unknown address, we don't know the network and so just return a string\n// indicating this.\n//\n// This part of the net.Addr interface.",
+      "length": 256,
+      "tokens": 45,
+      "embedding": []
+    },
+    {
+      "slug": "func (o *OpaqueAddrs) Network() string {",
+      "content": "func (o *OpaqueAddrs) Network() string {\n\treturn \"unknown network for unrecognized address type\"\n}\n",
+      "length": 56,
+      "tokens": 8,
+      "embedding": []
+    }
+  ]
+}
