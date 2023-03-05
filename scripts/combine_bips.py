@@ -5,13 +5,13 @@ import os
 bips_embeddings = {}
 
 # Get the list of all the files in the folder
-file_list = os.listdir('./embeddings/bips')
+file_list = os.listdir('../embeddings/bips')
 
 # Loop through all the files
 for file in file_list:
 
   # Open the file and read the contents
-  with open('./embeddings/bips/' + file) as f:
+  with open('../embeddings/bips/' + file) as f:
     file_data = json.load(f)
 
   # Add the contents from the current file into our bips_embeddings
@@ -23,4 +23,4 @@ with open('bips_embeddings.json', 'w') as outfile:
 
 # Delete the remaining bips.json files
 for file in file_list:
-  os.remove('./embeddings/bips/' + file)
+  os.remove('../embeddings/bips/' + file)
